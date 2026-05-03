@@ -6,9 +6,9 @@ import io, os, sys, tempfile, threading, webbrowser
 from datetime import datetime
 from functools import partial
 from tkinter import (
-    ANCHOR, BooleanVar, Button, Canvas, Checkbutton, END, Entry, filedialog,
+    ANCHOR, BooleanVar, Button, Canvas, Checkbutton, DoubleVar, END, Entry, filedialog,
     Frame, HORIZONTAL, IntVar, Label, Listbox, Menu, Message, OptionMenu,
-    PhotoImage, Scrollbar, StringVar, Text, Tk, Toplevel, VERTICAL, messagebox,
+    PhotoImage, Scale, Scrollbar, StringVar, Text, Tk, Toplevel, VERTICAL, messagebox,
     ttk,
 )
 from tkinter.font import Font
@@ -202,11 +202,12 @@ class Txt2ImgPanel(Frame):
 
 
 class Img2ImgPanel(Frame):
-    """图生图面板"""
+    """图生图面板（v1.1 增强版）"""
     def __init__(self, master, app):
         super().__init__(master, bg=BG)
         self.app = app
         self.source_bytes = None
+        self.current_result_bytes = None
         self._build()
 
     def _build(self):
@@ -215,7 +216,7 @@ class Img2ImgPanel(Frame):
         left.pack(side="left", fill="both", expand=True, padx=10, pady=10)
         right.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
-        # 上传源图
+        # ── 参考图上传 ───────────────────────────────────────────
         Label(left, text="📤 参考图", bg=BG, fg=ACCENT,
               font=("Segoe UI", 11, "bold")).pack(anchor="w")
         self.src_canvas = Canvas(left, width=256, height=256,
@@ -228,14 +229,15 @@ class Img2ImgPanel(Frame):
                                font=("Segoe UI", 9))
         self.src_label.pack()
 
-        # 提示词
+        # ── 提示词 ──────────────────────────────────────────────
         Label(left, text="🎨 提示词（描述期望结果）", bg=BG, fg=ACCENT,
-              font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10,2))
+              font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 2))
         self.prompt_var = StringVar()
         Entry(left, textvariable=self.prompt_var, bg=BTN_BG,
               fg=FG, insertbackground=FG, relief="flat",
-              font=("Segoe UI", 11)).pack(fill="x", pady=(2,8), ipady=4)
+              font=("Segoe UI", 11)).pack(fill="x", pady=(2, 8), ipady=4)
 
+        # ── 尺寸 ────────────────────────────────────────────────
         Label(left, text="宽 高", bg=BG, fg=FG).pack(anchor="w")
         wh_frame = Frame(left, bg=BG)
         wh_frame.pack(pady=4)
@@ -247,6 +249,66 @@ class Img2ImgPanel(Frame):
         Entry(wh_frame, textvariable=self.h_var, bg=BTN_BG, fg=FG,
               width=8, relief="flat").pack(side="left")
 
+        # ── 变化强度滑块 ─────────────────────────────────────────
+        Label(left, text="🎚️ 变化强度（strength）", bg=BG, fg=ACCENT,
+              font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 2))
+
+        strength_frame = Frame(left, bg=BG)
+        strength_frame.pack(fill="x", pady=2)
+        self.strength_var = DoubleVar(value=0.7)
+
+        def _update_strength_label(v):
+            s = float(v)
+            label = "轻微变化" if s < 0.35 else "中等" if s < 0.65 else "大幅改造"
+            self.strength_label.config(text=f"{s:.1f} — {label}")
+
+        self.strength_scale = Scale(strength_frame, from_=0.1, to=0.9,
+                                     orient=HORIZONTAL, variable=self.strength_var,
+                                     command=_update_strength_label,
+                                     bg=BG, fg=FG, troughcolor=BTN_BG,
+                                     highlightthickness=0,
+                                     sliderrelief="flat", length=200,
+                                     digits=2, resolution=0.1)
+        self.strength_scale.pack(side="left")
+
+        self.strength_label = Label(strength_frame, text="0.7 — 中等",
+                                     bg=BG, fg=YELLOW, font=("Segoe UI", 9))
+        self.strength_label.pack(side="left", padx=6)
+
+        # 强度预设快捷按钮
+        presets = [("🌱 轻微", 0.3), ("⚖️ 中等", 0.7), ("💥 大幅", 0.9)]
+        preset_frame = Frame(left, bg=BG)
+        preset_frame.pack(fill="x", pady=(2, 6))
+        for label_text, val in presets:
+            btn = Button(preset_frame, text=label_text,
+                         bg=BTN_BG, fg=FG, relief="flat",
+                         font=("Segoe UI", 9),
+                         command=lambda v=val: (self.strength_var.set(v),
+                                                self.strength_scale.set(v),
+                                                _update_strength_label(v)))
+            btn.pack(side="left", padx=2)
+
+        # ── Provider 选择 ────────────────────────────────────────
+        Label(left, text="🔄 Provider（自动降级）", bg=BG, fg=ACCENT,
+              font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(6, 2))
+
+        self.provider_var = StringVar(value="自动（按优先级）")
+        provider_frame = Frame(left, bg=BG)
+        provider_frame.pack(fill="x", pady=2)
+
+        # 动态加载 img2img provider 列表
+        from services.image_service import _load_img2img_providers, IMG2IMG_PROVIDERS
+        _load_img2img_providers()
+        provider_options = ["自动（按优先级）"] + list(IMG2IMG_PROVIDERS.keys())
+
+        self.provider_menu = OptionMenu(provider_frame, self.provider_var,
+                                        *provider_options)
+        self.provider_menu.config(bg=BTN_BG, fg=FG, font=("Segoe UI", 10),
+                                  relief="flat", width=22)
+        self.provider_menu["menu"].config(bg=BTN_BG, fg=FG)
+        self.provider_menu.pack(side="left")
+
+        # ── 生成按钮 + 状态 ───────────────────────────────────────
         self.gen_btn = Button(left, text="🔄 图生图生成",
                                bg=ACCENT, fg="#1e1e2e",
                                font=("Segoe UI", 12, "bold"),
@@ -257,16 +319,23 @@ class Img2ImgPanel(Frame):
         Label(left, textvariable=self.status_var, bg=BG, fg=GREEN,
               font=("Segoe UI", 10)).pack(anchor="w")
 
-        # 预览
+        # ── 右侧：结果预览 ────────────────────────────────────────
         Label(right, text="🖼️  结果预览", bg=BG, fg=ACCENT,
               font=("Segoe UI", 11, "bold")).pack(anchor="w")
         self.canvas = Canvas(right, width=CANVAS_W, height=CANVAS_H,
                             bg=INFO_BG, highlightthickness=0)
         self.canvas.pack(pady=6)
         self.canvas_image = None
-        Button(right, text="💾 保存结果",
+
+        save_frame = Frame(right, bg=BG)
+        save_frame.pack(fill="x", pady=4)
+        Button(save_frame, text="💾 保存结果",
                bg=BTN_BG, fg=FG, relief="flat",
-               command=self._save).pack(pady=4)
+               command=self._save).pack(side="left", padx=2)
+        Button(save_frame, text="📂 打开文件夹",
+               bg=BTN_BG, fg=FG, relief="flat",
+               command=lambda: os.startfile(os.path.dirname(
+                   self.app.last_saved_path or "."))).pack(side="left", padx=2)
 
     def _select_source(self):
         path = filedialog.askopenfilename(
@@ -296,6 +365,12 @@ class Img2ImgPanel(Frame):
             return
         w = max(256, min(2048, self.w_var.get()))
         h = max(256, min(2048, self.h_var.get()))
+        strength = round(self.strength_var.get(), 2)
+
+        # Provider 选择："自动" = None（走默认顺序），否则只尝试指定 provider
+        selected = self.provider_var.get()
+        provider_order = None if selected == "自动（按优先级）" else [selected]
+
         self.gen_btn.config(state="disabled", text="生成中…")
         self.status_var.set("⏳ 正在生成…")
 
@@ -303,8 +378,14 @@ class Img2ImgPanel(Frame):
             try:
                 cfg = load_config()
                 data, used = generate_image_img2img(
-                    prompt, w, h, None, self.source_bytes, cfg)
+                    prompt, w, h, None, self.source_bytes, cfg,
+                    strength=strength,
+                    provider_order=provider_order,
+                    status_cb=lambda s: self.app.after(0,
+                        lambda msg=s: self.status_var.set(msg)),
+                )
                 path = save_image_file(data, prompt)
+                self.app.last_saved_path = path
                 self.app.after(0, lambda: self._show(data, used, path))
             except Exception as e:
                 self.app.after(0, lambda: self.status_var.set(f"✗ {e}"))
@@ -316,6 +397,7 @@ class Img2ImgPanel(Frame):
 
     def _show(self, data, used, path):
         try:
+            self.current_result_bytes = data   # 保存原始字节，供 _save() 使用
             img = PILImage.open(io.BytesIO(data))
             img.thumbnail((CANVAS_W, CANVAS_H), PILImage.LANCZOS)
             self.tk_img = ImageTk.PhotoImage(img)
@@ -328,14 +410,14 @@ class Img2ImgPanel(Frame):
             self.status_var.set(f"✗ 显示失败：{e}")
 
     def _save(self):
-        if not hasattr(self, "tk_img"):
+        if not self.current_result_bytes:
             messagebox.showinfo("提示", "先生成图片再保存！")
             return
         path = filedialog.asksaveasfilename(
             defaultextension=".png",
             filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg")])
         if path:
-            PILImage.open(io.BytesIO(self.source_bytes)).save(path)
+            PILImage.open(io.BytesIO(self.current_result_bytes)).save(path)
 
 
 class HistoryPanel(Frame):
@@ -480,6 +562,24 @@ class SettingsPanel(Frame):
                             row=row, column=0, columnspan=2, sticky="w", padx=16, pady=1)
             row += 1
 
+        # 语言选择
+        Label(inner, text="🌐 界面语言", bg=BG, fg=ACCENT,
+              font=("Segoe UI", 13, "bold")).grid(
+                  row=row, column=0, columnspan=2, sticky="w", pady=(16, 4))
+        row += 1
+
+        from services.i18n import available_locales, current_locale
+        self.lang_var = StringVar(value=current_locale())
+        lang_frame = Frame(inner, bg=BG)
+        lang_frame.grid(row=row, column=0, columnspan=2, sticky="w", padx=8)
+        for code, name in available_locales():
+            Radiobutton(lang_frame, text=name, variable=self.lang_var,
+                        value=code, bg=BG, fg=FG, selectcolor=BTN_BG,
+                        activebackground=BG, activeforeground=FG,
+                        font=("Segoe UI", 10),
+                        command=lambda c=code: self._on_lang_change(c)).pack(side="left", padx=8)
+        row += 1
+
         # 按钮
         btn_frame = Frame(inner, bg=BG)
         btn_frame.grid(row=row, column=0, columnspan=2, pady=16)
@@ -501,10 +601,16 @@ class SettingsPanel(Frame):
             e.delete(0, END)
             e.insert(0, val)
 
+    def _on_lang_change(self, code):
+        """切换语言（实时预览，保存后生效）"""
+        from services.i18n import set_locale
+        set_locale(code)
+
     def _save(self):
         cfg = {key_id: e.get().strip() for key_id, e in self.entries.items()}
         enabled = [n for n, v in self.provider_vars.items() if v.get()]
         cfg["provider_order"] = enabled
+        cfg["language"] = self.lang_var.get()
         save_config(cfg)
         messagebox.showinfo("保存成功", "配置已保存，重启后生效！")
 

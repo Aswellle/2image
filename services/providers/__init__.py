@@ -10,7 +10,7 @@ Provider 注册表 v1.0
 from services.providers.pollinations    import try_pollinations
 from services.providers.gemini          import try_gemini
 from services.providers.cloudflare_ai   import try_cloudflare_ai
-from services.providers.modelslab       import try_modelslab
+from services.providers.modelslab       import try_modelslab, try_modelslab_img2img
 from services.providers.siliconflow     import try_siliconflow
 from services.providers.together_ai     import try_together_ai
 from services.providers.openrouter      import try_openrouter
@@ -18,12 +18,12 @@ from services.providers.huggingface     import try_hf_inference
 from services.providers.stablehorde     import try_stablehorde
 from services.providers.segmind         import try_segmind
 from services.providers.openai_dalle    import try_openai_dalle
-from services.providers.stability_ai     import try_stability_ai
-from services.providers.replicate_flux   import try_replicate
+from services.providers.stability_ai    import try_stability_ai, try_stability_img2img
+from services.providers.replicate_flux  import try_replicate
 from services.providers.xai_grok        import try_xai_grok
 from services.providers.ideogram        import try_ideogram
 from services.providers.recraft         import try_recraft
-from services.providers.leonardoai      import try_leonardo
+from services.providers.leonardoai     import try_leonardo, try_leonardo_img2img
 
 FREE_PROVIDERS = {
     # 免费 / 近乎免费（无需 Key 或免费额度充足）

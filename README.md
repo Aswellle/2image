@@ -49,11 +49,11 @@
 
 ### 计划接入的高质量 Provider
 
-| Provider | 状态 | 特点 |
-|----------|------|------|
-| **Ideogram** | 计划中 | 以文字渲染（text rendering）质量著称，Prompt 中的文字不易变形 |
-| **Leonardo.ai** | 计划中 | 游戏资产风格见长，每日免费 Credits，img2img 能力强 |
-| **Recraft V3** | 计划中 | 矢量风格 / 渲染风格独特，无竞品可替代 |
+| Provider | 接入状态 | img2img | 备注 |
+|----------|----------|---------|------|
+| **Ideogram V2** | ✅ 已接入 | ❌ 不支持 | 文字渲染质量最佳，API v2 仅文生图 |
+| **Leonardo.ai** | ✅ 已接入 | ✅ **已支持** | 游戏资产风格见长，每日免费 Credits |
+| **Recraft V3** | ❌ 已下线 | ❌ | 官方已关闭公共 API（2025年），代码保留占位 |
 
 ---
 
@@ -134,6 +134,10 @@ python main.py
 │   ├── translation.py          # 中译英
 │   ├── logger.py               # 调试日志
 │   ├── phrase_library.py       # 短语词库管理
+│   ├── i18n.py                 # 多语言支持（zh_CN / en_US）
+│   ├── locales/               # i18n locale 文件
+│   │   ├── zh_CN.json
+│   │   └── en_US.json
 │   └── providers/             # 各 Provider 实现
 │       ├── __init__.py         # 注册表（FREE_PROVIDERS / PAID_PROVIDERS）
 │       ├── gemini.py           # Google Gemini 2.5 Flash Image
@@ -203,9 +207,10 @@ image_service.generate_image()
         ▼
   编码为 base64 → 发送给支持的 Provider
         │
-        ├─▶ Pollinations.AI（直接支持）
+        ├─▶ Pollinations.AI（直接支持，零配置）
         ├─▶ ModelsLab（img2img 模式）
-        ├─▶ Stability AI（image-to-image）
+        ├─▶ Leonardo.ai（init_image + prompt，v1.1 新增）
+        ├─▶ Stability AI（image-to-image，v1.1 新增）
         └─▶ OpenRouter（部分模型支持）
 ```
 
@@ -223,25 +228,21 @@ image_service.generate_image()
 
 ## 开发路线图
 
-### v1.0（当前）
-- [x] 文生图核心调度
-- [x] 9+ Provider 接入
-- [x] 免费/付费 Provider 分类
-- [x] 批量变体生成
-- [x] SQLite 历史管理
-- [x] 提示词助手（DeepSeek V3）
-- [ ] **图生图（img2img）正式支持**
-
-### v1.1（下一版）
-- [ ] 图生图 UI 入口（参考图上传）
-- [ ] Ideogram API 接入
-- [ ] Leonardo.ai API 接入
-- [ ] Recraft V3 API 接入
+### v1.1（当前版本 — 2026-05-04）
+- [x] **Img2ImgPanel._save() 修复**：保存生成结果而非参考图
+- [x] **图生图 UI 增强**：strength 强度滑块 + provider 选择下拉框 + 强度预设快捷按钮
+- [x] **Leonardo.ai img2img 接入**：完整实现 `try_leonardo_img2img()`
+- [x] **Stability AI img2img 接入**：完整实现 `try_stability_img2img()`
+- [x] **统一 img2img 抽象层**：`IMG2IMG_PROVIDERS` 注册表 + strength 参数 + 竞速降级
+- [x] **Recraft API 探测**：确认官方已下线（2025年），保留占位代码
+- [x] **多语言 i18n 架构**：`services/locales/` + zh_CN/en_US + 语言切换选择器
+- [x] Ideogram API 接入
+- [ ] 图生图历史写入（results 写入 SQLite）
 
 ### v2.0（中长期）
-- [ ] 图生图支持所有 Provider
-- [ ] ControlNet / LoRA 风格迁移
-- [ ] 多语言 UI
+- [ ] ControlNet / LoRA 风格迁移（仅本地 Provider）
+- [ ] 图生图支持所有剩余 Provider
+- [ ] 完整多语言 UI（覆盖所有 UI 文本）
 
 ---
 

@@ -1,0 +1,84 @@
+{
+  "_meta": {
+    "language": "en_US",
+    "name": "English",
+    "version": "1.1"
+  },
+  "app": {
+    "ready": "Ready",
+    "generating": "Generating…",
+    "success": "✓ {provider} | Saved: {filename}",
+    "error": "✗ {message}",
+    "saved_ok": "Saved successfully",
+    "saved_to": "Saved to: {path}"
+  },
+  "tabs": {
+    "txt2img": "📝 Text-to-Image",
+    "img2img": "🔄 Image-to-Image",
+    "history": "📚 History",
+    "settings": "⚙️  Settings"
+  },
+  "txt2img": {
+    "prompt": "Prompt",
+    "negative_prompt": "Negative Prompt (optional)",
+    "width": "Width",
+    "height": "Height",
+    "seed": "Seed (leave empty for random)",
+    "generate_btn": "🚀 Generate",
+    "preview": "🖼️  Preview",
+    "save_local": "💾 Save",
+    "open_folder": "🖼️ Open Folder",
+    "prompt_required": "Please enter a prompt!"
+  },
+  "img2img": {
+    "source_image": "📤 Reference Image",
+    "select_source": "📂 Choose Reference",
+    "no_source": "Not selected",
+    "prompt": "Prompt (describe desired result)",
+    "width_height": "W × H",
+    "strength": "🎚️ Strength",
+    "strength_light": "Light change",
+    "strength_medium": "Medium",
+    "strength_heavy": "Heavy remix",
+    "preset_light": "🌱 Light",
+    "preset_medium": "⚖️ Medium",
+    "preset_heavy": "💥 Heavy",
+    "provider": "🔄 Provider (auto-fallback)",
+    "provider_auto": "Auto (by priority)",
+    "generate_btn": "🔄 Generate",
+    "preview": "🖼️  Result Preview",
+    "save_result": "💾 Save Result",
+    "open_folder": "📂 Open Folder",
+    "source_required": "Please select a reference image first!",
+    "prompt_required": "Please enter a prompt!",
+    "generate_first": "Generate an image first before saving!"
+  },
+  "history": {
+    "refresh": "🔄 Refresh",
+    "delete": "🗑️ Delete Selected",
+    "search_placeholder": "",
+    "search": "🔍 Search",
+    "no_history": "(No history yet)"
+  },
+  "settings": {
+    "api_keys": "🔑 API Keys",
+    "provider_priority": "⬆️ Default Provider Priority",
+    "provider_hint": "(Auto-fallback order on failure)",
+    "save": "💾 Save Settings",
+    "debug_log": "📋 Debug Log",
+    "language": "🌐 Interface Language",
+    "language_zh": "简体中文",
+    "language_en": "English"
+  },
+  "wizard": {
+    "title": "🎉 First-Time Setup Wizard",
+    "subtitle": "Choose APIs to configure (can skip)",
+    "skip": "Skip, configure manually later",
+    "free_title": "🆓 Free APIs (Recommended)",
+    "paid_title": "💎 Paid APIs",
+    "configured": "Configured: {name}",
+    "not_configured": "Not configured",
+    "save_and_start": "💾 Save & Start",
+    "get_key": "Get Key →"
+  }
+}

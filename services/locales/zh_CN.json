@@ -1,0 +1,84 @@
+{
+  "_meta": {
+    "language": "zh_CN",
+    "name": "简体中文",
+    "version": "1.1"
+  },
+  "app": {
+    "ready": "就绪",
+    "generating": "生成中…",
+    "success": "✓ {provider} | 已保存：{filename}",
+    "error": "✗ {message}",
+    "saved_ok": "保存成功",
+    "saved_to": "已保存至：{path}"
+  },
+  "tabs": {
+    "txt2img": "📝 文生图",
+    "img2img": "🔄 图生图",
+    "history": "📚 历史",
+    "settings": "⚙️  设置"
+  },
+  "txt2img": {
+    "prompt": "提示词",
+    "negative_prompt": "负面提示词（可选）",
+    "width": "宽",
+    "height": "高",
+    "seed": "Seed（留空随机）",
+    "generate_btn": "🚀 生成图片",
+    "preview": "🖼️  预览",
+    "save_local": "💾 保存本地",
+    "open_folder": "🖼️ 打开文件夹",
+    "prompt_required": "请输入提示词！"
+  },
+  "img2img": {
+    "source_image": "📤 参考图",
+    "select_source": "📂 选择参考图",
+    "no_source": "未选择",
+    "prompt": "提示词（描述期望结果）",
+    "width_height": "宽 高",
+    "strength": "🎚️ 变化强度（strength）",
+    "strength_light": "轻微变化",
+    "strength_medium": "中等",
+    "strength_heavy": "大幅改造",
+    "preset_light": "🌱 轻微",
+    "preset_medium": "⚖️ 中等",
+    "preset_heavy": "💥 大幅",
+    "provider": "🔄 Provider（自动降级）",
+    "provider_auto": "自动（按优先级）",
+    "generate_btn": "🔄 图生图生成",
+    "preview": "🖼️  结果预览",
+    "save_result": "💾 保存结果",
+    "open_folder": "📂 打开文件夹",
+    "source_required": "请先选择参考图！",
+    "prompt_required": "请输入提示词！",
+    "generate_first": "先生成图片再保存！"
+  },
+  "history": {
+    "refresh": "🔄 刷新",
+    "delete": "🗑️ 删除选中",
+    "search_placeholder": "",
+    "search": "🔍 搜索",
+    "no_history": "（暂无历史记录）"
+  },
+  "settings": {
+    "api_keys": "🔑 API Keys",
+    "provider_priority": "⬆️ 默认 Provider 优先级",
+    "provider_hint": "（失败时按从上到下顺序自动切换）",
+    "save": "💾 保存设置",
+    "debug_log": "📋 调试日志",
+    "language": "🌐 界面语言",
+    "language_zh": "简体中文",
+    "language_en": "English"
+  },
+  "wizard": {
+    "title": "🎉 首次使用配置向导",
+    "subtitle": "选择你想要配置的 API（可跳过）",
+    "skip": "跳过，稍后手动配置",
+    "free_title": "🆓 免费接口（推荐）",
+    "paid_title": "💎 付费接口",
+    "configured": "已配置：{name}",
+    "not_configured": "未配置",
+    "save_and_start": "💾 保存并开始使用",
+    "get_key": "获取 Key →"
+  }
+}

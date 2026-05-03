@@ -57,6 +57,7 @@ DEFAULT_CONFIG: dict = {
     "default_size":           "1024x1024",
     "show_wizard_on_start":   True,
     "variant_quality":        "high",
+    "language":               "zh_CN",   # UI 语言：zh_CN / en_US
 }
 
 

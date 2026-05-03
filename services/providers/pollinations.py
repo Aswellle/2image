@@ -68,7 +68,8 @@ def try_pollinations(
 
 def try_pollinations_img2img(
     prompt: str, w: int, h: int, seed: int,
-    source_bytes: bytes, cfg: dict, log: Callable
+    source_bytes: bytes, cfg: dict, log: Callable,
+    strength: float = None,
 ) -> Tuple[bytes, str]:
     """
     图生图：将 source_bytes 作为参考图，

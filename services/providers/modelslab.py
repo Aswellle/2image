@@ -73,8 +73,9 @@ def _extract_image(data, log) -> bytes:
     raise ValueError(f"ModelsLab 响应无 image 字段")
 
 
-def try_modelslab_img2img(prompt, w, h, seed, source_bytes, cfg, log) -> Tuple[bytes, str]:
-    """ModelsLab 图生图"""
+def try_modelslab_img2img(prompt, w, h, seed, source_bytes, cfg, log,
+                          strength: float = None) -> Tuple[bytes, str]:
+    """ModelsLab 图生图（strength 参数预留，Pollinations 兼容）"""
     key = cfg.get("modelslab_key", "").strip()
     if not key:
         raise ValueError("需要 ModelsLab API Key！")
