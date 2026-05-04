@@ -228,7 +228,14 @@ image_service.generate_image()
 
 ## 开发路线图
 
-### v1.1（当前版本 — 2026-05-04）
+### v1.2（当前版本 — 2026-05-04）
+- [x] **Txt2ImgPanel 历史写入**：生成完成后调用 `add_entry()` 写入 SQLite
+- [x] **Img2ImgPanel 历史写入**：生成完成后调用 `add_entry(is_img2img=True)` 写入 SQLite，含参考图标记
+- [x] **HistoryPanel 删除修复**：`delete_entry()` 实际删除 SQLite 记录（`remove_file=False` 保留图片）
+- [x] **HistoryPanel 双击打开**：`image_path` 列名修正 + Windows `os.startfile()` 系统图片查看器
+- [x] **repository 线程安全确认**：`sqlite3.connect(..., check_same_thread=False)` 支持多线程安全写入
+
+### v1.1（2026-05-04）
 - [x] **Img2ImgPanel._save() 修复**：保存生成结果而非参考图
 - [x] **图生图 UI 增强**：strength 强度滑块 + provider 选择下拉框 + 强度预设快捷按钮
 - [x] **Leonardo.ai img2img 接入**：完整实现 `try_leonardo_img2img()`
@@ -237,12 +244,11 @@ image_service.generate_image()
 - [x] **Recraft API 探测**：确认官方已下线（2025年），保留占位代码
 - [x] **多语言 i18n 架构**：`services/locales/` + zh_CN/en_US + 语言切换选择器
 - [x] Ideogram API 接入
-- [ ] 图生图历史写入（results 写入 SQLite）
 
 ### v2.0（中长期）
 - [ ] ControlNet / LoRA 风格迁移（仅本地 Provider）
+- [ ] 完整 i18n UI 文本外化（所有中文硬编码 → `get_text()` 调用）
 - [ ] 图生图支持所有剩余 Provider
-- [ ] 完整多语言 UI（覆盖所有 UI 文本）
 
 ---
 

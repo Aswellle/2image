@@ -17,7 +17,7 @@ from PIL import Image as PILImage, ImageTk
 # 本地模块
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config.settings import load_config, save_config
-from data.repository import HistoryRepository
+from data.repository import HistoryRepository, add_entry, delete_entry
 from services.image_service import generate_image, generate_image_img2img, save_image_file
 from services.logger import get_log_content, clear_log
 
@@ -167,6 +167,14 @@ class Txt2ImgPanel(Frame):
                 self.current_image_bytes = data
                 path = save_image_file(data, prompt)
                 self.app.last_saved_path = path
+                # 写入 SQLite 历史记录
+                add_entry(
+                    prompt=prompt,
+                    translated="",
+                    image_path=path,
+                    provider=used,
+                    is_img2img=False,
+                )
                 self.app.after(0, lambda: self._show(data, used, path))
             except Exception as e:
                 self.app.after(0, lambda: self.status_var.set(f"✗ {e}"))
@@ -386,6 +394,15 @@ class Img2ImgPanel(Frame):
                 )
                 path = save_image_file(data, prompt)
                 self.app.last_saved_path = path
+                # 写入 SQLite 历史记录（含 img2img 标记和参考图路径）
+                add_entry(
+                    prompt=prompt,
+                    translated="",
+                    image_path=path,
+                    provider=used,
+                    is_img2img=True,
+                    source_img="[in-memory-bytes]",  # 源图为内存字节，不存路径
+                )
                 self.app.after(0, lambda: self._show(data, used, path))
             except Exception as e:
                 self.app.after(0, lambda: self.status_var.set(f"✗ {e}"))
@@ -473,16 +490,28 @@ class HistoryPanel(Frame):
 
     def _delete(self):
         sel = self.listbox.curselection()
-        if sel:
-            self.listbox.delete(sel[0])
+        if not sel:
+            return
+        idx = sel[0]
+        # 根据 Listbox 当前显示顺序找到对应的数据库记录
+        rows = self.repo.get_all(50)
+        if idx < len(rows):
+            entry_id = rows[idx].get("id")
+            if entry_id:
+                # 同时从 SQLite 删除记录（文件可选保留）
+                delete_entry(entry_id, remove_file=False)
+        self.listbox.delete(idx)
 
     def _open(self):
+        """双击打开图片：用系统默认图片查看器"""
         idx = self.listbox.index("anchor")
         rows = self.repo.get_all(50)
         if idx < len(rows):
-            p = rows[idx].get("file_path", "")
+            p = rows[idx].get("image_path", "")
             if p and os.path.exists(p):
-                webbrowser.open(p)
+                webbrowser.open(p) if sys.platform != "win32" else os.startfile(p)
+            else:
+                messagebox.showwarning("提示", "图片文件不存在，可能已被移动或删除。")
 
 
 class SettingsPanel(Frame):
