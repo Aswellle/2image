@@ -2,15 +2,18 @@
   "_meta": {
     "language": "en_US",
     "name": "English",
-    "version": "1.1"
+    "version": "2.0"
   },
   "app": {
+    "title": "2image — Text-to-Image / Image-to-Image",
     "ready": "Ready",
     "generating": "Generating…",
     "success": "✓ {provider} | Saved: {filename}",
     "error": "✗ {message}",
     "saved_ok": "Saved successfully",
-    "saved_to": "Saved to: {path}"
+    "saved_to": "Saved to: {path}",
+    "generate_disabled": "Generating…",
+    "img2img_disabled": "Generating…"
   },
   "tabs": {
     "txt2img": "📝 Text-to-Image",
@@ -28,18 +31,22 @@
     "preview": "🖼️  Preview",
     "save_local": "💾 Save",
     "open_folder": "🖼️ Open Folder",
-    "prompt_required": "Please enter a prompt!"
+    "prompt_required": "Please enter a prompt!",
+    "save_first": "Generate an image first before saving!"
   },
   "img2img": {
     "source_image": "📤 Reference Image",
     "select_source": "📂 Choose Reference",
     "no_source": "Not selected",
+    "source_selected": "Selected: {filename}",
+    "source_load_error": "Image load failed: {error}",
     "prompt": "Prompt (describe desired result)",
     "width_height": "W × H",
     "strength": "🎚️ Strength",
     "strength_light": "Light change",
     "strength_medium": "Medium",
     "strength_heavy": "Heavy remix",
+    "strength_display": "{value} — {label}",
     "preset_light": "🌱 Light",
     "preset_medium": "⚖️ Medium",
     "preset_heavy": "💥 Heavy",
@@ -51,14 +58,16 @@
     "open_folder": "📂 Open Folder",
     "source_required": "Please select a reference image first!",
     "prompt_required": "Please enter a prompt!",
-    "generate_first": "Generate an image first before saving!"
+    "generate_first": "Generate an image first before saving!",
+    "display_failed": "✗ Display failed: {error}"
   },
   "history": {
     "refresh": "🔄 Refresh",
     "delete": "🗑️ Delete Selected",
     "search_placeholder": "",
     "search": "🔍 Search",
-    "no_history": "(No history yet)"
+    "no_history": "(No history yet)",
+    "file_not_exist": "Image file not found. It may have been moved or deleted."
   },
   "settings": {
     "api_keys": "🔑 API Keys",
@@ -68,7 +77,11 @@
     "debug_log": "📋 Debug Log",
     "language": "🌐 Interface Language",
     "language_zh": "简体中文",
-    "language_en": "English"
+    "language_en": "English",
+    "saved_reboot": "Settings saved. Restart to take effect!",
+    "debug_title": "Debug Log",
+    "no_log": "(No log)",
+    "siliconflow_key": "SiliconFlow API Key"
   },
   "wizard": {
     "title": "🎉 First-Time Setup Wizard",

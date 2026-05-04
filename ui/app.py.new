@@ -19,7 +19,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config.settings import load_config, save_config
 from data.repository import HistoryRepository, add_entry, delete_entry
 from services.image_service import generate_image, generate_image_img2img, save_image_file
-from services.i18n import get_text, format
 from services.logger import get_log_content, clear_log
 
 
@@ -54,9 +53,9 @@ class ToolBar(Frame):
                  "activebackground": BTN_HV, "activeforeground": FG,
                  "relief": "flat", "padx": 16, "pady": 8}
         titles = [(get_text("tabs.txt2img"),  "tab_txt2img"),
-                  (get_text("tabs.img2img"),  "tab_img2img"),
-                  (get_text("tabs.history"),  "tab_history"),
-                  (get_text("tabs.settings"), "tab_settings")]
+                   (get_text("tabs.img2img"),  "tab_img2img"),
+                   ("📚 历史",    "tab_history"),
+                   (get_text("tabs.settings"),   "tab_settings")]
         for emoji, tab_id in titles:
             btn = Button(self, text=emoji, cnf=style,
                          command=lambda t=tab_id: self.app.switch_tab(t))
@@ -154,8 +153,8 @@ class Txt2ImgPanel(Frame):
         w = max(256, min(2048, self.w_var.get()))
         h = max(256, min(2048, self.h_var.get()))
         seed = self.seed_var.get() or None
-        self.gen_btn.config(state="disabled", text=get_text("app.generate_disabled"))
-        self.status_var.set(get_text("app.generating"))
+        self.gen_btn.config(state="disabled", text=get_text("app.generating"))
+        self.status_var.set("⏳ 正在生成…")
 
         def work():
             try:
@@ -239,7 +238,7 @@ class Img2ImgPanel(Frame):
         self.src_label.pack()
 
         # ── 提示词 ──────────────────────────────────────────────
-        Label(left, text=get_text("img2img.prompt"), bg=BG, fg=ACCENT,
+        Label(left, text="🎨 提示词（描述期望结果）", bg=BG, fg=ACCENT,
               font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 2))
         self.prompt_var = StringVar()
         Entry(left, textvariable=self.prompt_var, bg=BTN_BG,
@@ -268,10 +267,8 @@ class Img2ImgPanel(Frame):
 
         def _update_strength_label(v):
             s = float(v)
-            label_key = "img2img.strength_light" if s < 0.35 else "img2img.strength_medium" if s < 0.65 else "img2img.strength_heavy"
-            self.strength_label.config(text=format("img2img.strength_display",
-                                                   value=f"{s:.1f}",
-                                                   label=get_text(label_key)))
+            label = get_text("img2img.strength_light") if s < 0.35 else get_text("img2img.strength_medium") if s < 0.65 else get_text("img2img.strength_heavy")
+            self.strength_label.config(text=f"{s:.1f} — {label}")
 
         self.strength_scale = Scale(strength_frame, from_=0.1, to=0.9,
                                      orient=HORIZONTAL, variable=self.strength_var,
@@ -282,16 +279,12 @@ class Img2ImgPanel(Frame):
                                      digits=2, resolution=0.1)
         self.strength_scale.pack(side="left")
 
-        self.strength_label = Label(strength_frame, text=format("img2img.strength_display",
-                                                                  value="0.7",
-                                                                  label=get_text("img2img.strength_medium")),
+        self.strength_label = Label(strength_frame, text=f'0.7 — {get_text("img2img.strength_medium")}',
                                      bg=BG, fg=YELLOW, font=("Segoe UI", 9))
         self.strength_label.pack(side="left", padx=6)
 
         # 强度预设快捷按钮
-        presets = [(get_text("img2img.preset_light"), 0.3),
-                   (get_text("img2img.preset_medium"), 0.7),
-                   (get_text("img2img.preset_heavy"), 0.9)]
+        presets = [(get_text("img2img.preset_light"), 0.3), (get_text("img2img.preset_medium"), 0.7), (get_text("img2img.preset_heavy"), 0.9)]
         preset_frame = Frame(left, bg=BG)
         preset_frame.pack(fill="x", pady=(2, 6))
         for label_text, val in presets:
@@ -337,7 +330,7 @@ class Img2ImgPanel(Frame):
         # ── 右侧：结果预览 ────────────────────────────────────────
         Label(right, text=get_text("img2img.preview"), bg=BG, fg=ACCENT,
               font=("Segoe UI", 11, "bold")).pack(anchor="w")
-        self.canvas = Canvas(right, width=CANVAS_W, height=CANVAS_W,
+        self.canvas = Canvas(right, width=CANVAS_W, height=CANVAS_H,
                             bg=INFO_BG, highlightthickness=0)
         self.canvas.pack(pady=6)
         self.canvas_image = None
@@ -354,7 +347,7 @@ class Img2ImgPanel(Frame):
 
     def _select_source(self):
         path = filedialog.askopenfilename(
-            filetypes=[("Images", "*.png *.jpg *.jpeg *.webp *.bmp")])
+            filetypes=[("图片", "*.png *.jpg *.jpeg *.webp *.bmp")])
         if not path:
             return
         with open(path, "rb") as f:
@@ -366,9 +359,9 @@ class Img2ImgPanel(Frame):
             if hasattr(self, "src_img"):
                 self.src_canvas.delete(self.src_img)
             self.src_img = self.src_canvas.create_image(128, 128, image=self.src_tk)
-            self.src_label.config(text=format("img2img.source_selected", filename=os.path.basename(path)))
+            self.src_label.config(text=f"已选：{os.path.basename(path)}")
         except Exception as e:
-            messagebox.showerror(get_text("app.error"), format("img2img.source_load_error", error=str(e)))
+            messagebox.showerror("错误", fformat("img2img.source_load_error", error=str(e)))
 
     def _on_generate(self):
         if not self.source_bytes:
@@ -376,7 +369,7 @@ class Img2ImgPanel(Frame):
             return
         prompt = self.prompt_var.get().strip()
         if not prompt:
-            messagebox.showwarning(get_text("app.title"), get_text("img2img.prompt_required"))
+            messagebox.showwarning(get_text("app.title"), get_text("txt2img.prompt_required"))
             return
         w = max(256, min(2048, self.w_var.get()))
         h = max(256, min(2048, self.h_var.get()))
@@ -386,8 +379,8 @@ class Img2ImgPanel(Frame):
         selected = self.provider_var.get()
         provider_order = None if selected == get_text("img2img.provider_auto") else [selected]
 
-        self.gen_btn.config(state="disabled", text=get_text("app.img2img_disabled"))
-        self.status_var.set(get_text("app.generating"))
+        self.gen_btn.config(state="disabled", text=get_text("app.generating"))
+        self.status_var.set("⏳ 正在生成…")
 
         def work():
             try:
@@ -435,7 +428,7 @@ class Img2ImgPanel(Frame):
 
     def _save(self):
         if not self.current_result_bytes:
-            messagebox.showinfo(get_text("app.title"), get_text("img2img.generate_first"))
+            messagebox.showinfo(get_text("app.title"), get_text("txt2img.save_first"))
             return
         path = filedialog.asksaveasfilename(
             defaultextension=".png",
@@ -548,10 +541,10 @@ class SettingsPanel(Frame):
 
         keys = [
             ("gemini_key",    "Google Gemini API Key"),
-            ("openai_key",   "OpenAI API Key (DALL-E)"),
+            ("openai_key",   "OpenAI API Key（DALL-E）"),
             ("openrouter_key","OpenRouter API Key"),
             ("together_key", "Together AI API Key"),
-            ("siliconflow_key","siliconflow_key"),
+            ("siliconflow_key","硅基流动 API Key"),
             ("cf_account_id","Cloudflare Account ID"),
             ("cf_api_token", "Cloudflare API Token"),
             ("modelslab_key","ModelsLab API Key"),
@@ -567,10 +560,7 @@ class SettingsPanel(Frame):
 
         row = 1
         for key_id, label in keys:
-            display = get_text(f"settings.{key_id}") if not key_id.startswith(("cf_", "hf_", "replicate", "xai", "ideogram", "recraft", "leonardo", "gemini", "openai", "openrouter", "together", "modelslab", "segmind", "stability")) else label
-            if key_id == "siliconflow_key":
-                display = get_text("settings.siliconflow_key")
-            Label(inner, text=display, bg=BG, fg=FG,
+            Label(inner, text=label, bg=BG, fg=FG,
                  font=("Segoe UI", 10)).grid(row=row, column=0, sticky="w", padx=8, pady=3)
             e = Entry(inner, bg=BTN_BG, fg=FG, relief="flat",
                       font=("Segoe UI", 10), show="*" if "key" in key_id else "",

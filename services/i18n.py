@@ -107,6 +107,17 @@ def get_text(key: str, default: Optional[str] = None) -> str:
     return default if default is not None else key
 
 
+def format(key: str, **kwargs) -> str:
+    """
+    获取翻译文本并做 {placeholder} 插值。
+
+    示例：
+        format("app.success", provider="Pollinations", filename="img.png")
+        # → "✓ Pollinations | 已保存：img.png"
+    """
+    return get_text(key).format(**kwargs)
+
+
 def set_locale(lang: str) -> bool:
     """
     切换 UI 语言。
