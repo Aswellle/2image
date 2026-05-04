@@ -209,10 +209,24 @@ image_service.generate_image()
         │
         ├─▶ Pollinations.AI（直接支持，零配置）
         ├─▶ ModelsLab（img2img 模式）
-        ├─▶ Leonardo.ai（init_image + prompt，v1.1 新增）
+        ├─▶ Leonardo.ai（init_image + image_preproc，支持 ControlNet，v1.1 新增）
         ├─▶ Stability AI（image-to-image，v1.1 新增）
         ├─▶ Replicate SDXL（init_image + strength，v2.0 P2 新增）
         └─▶ OpenRouter（部分模型支持）
+
+### ControlNet 风格迁移（v2.0 P3）
+
+Leonardo.ai 支持四种 ControlNet 模式，通过 `image_preproc` 参数控制：
+
+| 模式 | image_preproc 值 | 说明 |
+|------|-----------------|------|
+| **边缘检测（Canny）** | `canny_edge` | 提取参考图边缘线条，保留构图 |
+| **姿态检测（OpenPose）** | `openpose` | 提取人物骨骼/姿势，保持姿势生成 |
+| **深度图（Depth）** | `depth_maps` | 提取空间深度，保留立体结构 |
+| **无（普通图生图）** | `none` | 普通 img2img，无 ControlNet |
+
+注意：其他 img2img provider（Pollinations / ModelsLab / Stability / Replicate）暂不支持 ControlNet，
+`control_mode` 参数传入后会忽略，只执行普通 img2img。
 ```
 
 ---
@@ -249,7 +263,7 @@ image_service.generate_image()
 ### v2.0（中长期）
 - [x] **完整 i18n UI 文本外化**（v2.0 P1）：所有中文硬编码 → `get_text()` / `format()`，新增插值 API，zh_CN/en_US 双语言完整覆盖
 - [x] **Replicate SDXL img2img 接入**（v2.0 P2）：`try_replicate_img2img()` 使用 Stability AI SDXL 模型，注册到 `IMG2IMG_PROVIDERS`，README 能力矩阵更新
-- [ ] ControlNet / LoRA 风格迁移（仅本地 Provider）
+- [x] **ControlNet / LoRA 风格迁移**（v2.0 P3）：`control_mode` 参数（none/canny/openpose/depth）贯穿调度层，所有 img2img provider 签名统一扩展，Leonardo.ai 实现 `image_preproc` 映射；UI 新增 ControlNet 模式选择器；README 更新功能说明
 
 ---
 

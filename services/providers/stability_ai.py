@@ -76,11 +76,13 @@ def try_stability_img2img(
     cfg: dict,
     log: Callable,
     strength: float = 0.7,
+    control_mode: str = "none",
 ) -> Tuple[bytes, str]:
     """
     Stability AI 图生图（新增）。
     使用 stable-diffusion-xl-burn-2 engine，通过 init_image + prompt + strength 控制。
     strength: 控制参考图影响程度（0.1=轻微变化 ~ 0.9=大幅改造），默认 0.7
+    control_mode 参数：Stability AI API 不直接支持 ControlNet，此参数会被忽略。
     """
     key = cfg.get("stability_key", "").strip()
     if not key:

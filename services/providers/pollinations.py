@@ -70,11 +70,12 @@ def try_pollinations_img2img(
     prompt: str, w: int, h: int, seed: int,
     source_bytes: bytes, cfg: dict, log: Callable,
     strength: float = None,
+    control_mode: str = "none",
 ) -> Tuple[bytes, str]:
     """
     图生图：将 source_bytes 作为参考图，
     Pollinations 通过 URL 参数 image=<url> 或 base64 编码实现。
-    这里用 base64 data URI 传给 image 参数。
+    control_mode 参数：Pollinations 不支持 ControlNet，此参数会被忽略。
     """
     b64 = base64.b64encode(source_bytes).decode()
     image_ref = f"data:image/jpeg;base64,{b64}"

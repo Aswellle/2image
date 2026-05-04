@@ -95,6 +95,7 @@ def generate_image_img2img(
     source_bytes: bytes,
     cfg: dict,
     strength: float = 0.7,
+    control_mode: str = "none",
     provider_order: list = None,
     status_cb: Callable[[str], None] = None,
     log_cb: Callable[[str], None] = None,
@@ -109,7 +110,7 @@ def generate_image_img2img(
     4. 每个 provider 失败后自动切换下一个
     5. 所有失败才抛异常
 
-    参数：
+    Parameters:
         prompt       提示词
         w, h         输出尺寸
         seed         随机种子（None=随机）
@@ -118,10 +119,13 @@ def generate_image_img2img(
         strength     变化程度 0.1~0.9（默认 0.7）
                      0.1 = 轻微变化，0.5 = 中等，0.9 = 大幅改造
                      注意：Pollinations 不支持此参数，会自动忽略
+        control_mode ControlNet 模式（v2.0 P3 新增）
+                     "none" / "canny" / "openpose" / "depth"
+                     目前仅 Leonardo.ai 支持，其他 Provider 自动忽略此参数
         provider_order  可选，指定 provider 顺序
         status_cb    UI 状态回调
         log_cb       日志回调
-    返回：
+    Returns:
         (image_bytes, provider_name)
     """
     if seed is None:
@@ -151,6 +155,7 @@ def generate_image_img2img(
             data, used = fn(
                 prompt, w, h, seed, source_bytes, cfg, log_cb,
                 strength=strength,
+                control_mode=control_mode,
             )
             log_to_file(f"✓ {name} img2img 成功")
             return data, used

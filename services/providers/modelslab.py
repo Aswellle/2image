@@ -74,8 +74,12 @@ def _extract_image(data, log) -> bytes:
 
 
 def try_modelslab_img2img(prompt, w, h, seed, source_bytes, cfg, log,
-                          strength: float = None) -> Tuple[bytes, str]:
-    """ModelsLab 图生图（strength 参数预留，Pollinations 兼容）"""
+                          strength: float = None,
+                          control_mode: str = "none",
+                          ) -> Tuple[bytes, str]:
+    """ModelsLab 图生图（strength 参数预留，Pollinations 兼容）。
+    control_mode 参数：ModelsLab 不支持 ControlNet，此参数会被忽略。
+    """
     key = cfg.get("modelslab_key", "").strip()
     if not key:
         raise ValueError("需要 ModelsLab API Key！")

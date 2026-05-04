@@ -258,6 +258,29 @@ class Img2ImgPanel(Frame):
         Entry(wh_frame, textvariable=self.h_var, bg=BTN_BG, fg=FG,
               width=8, relief="flat").pack(side="left")
 
+        # ── ControlNet 模式选择（v2.0 P3）────────────────────────────
+        Label(left, text=get_text("img2img.control_mode"), bg=BG, fg=ACCENT,
+              font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 2))
+        Label(left, text=get_text("img2img.control_mode_hint"), bg=BG, fg=YELLOW,
+              font=("Segoe UI", 8)).pack(anchor="w")
+
+        control_frame = Frame(left, bg=BG)
+        control_frame.pack(fill="x", pady=2)
+        self.control_var = StringVar(value="none")
+
+        control_options = [
+            (get_text("img2img.control_none"),     "none"),
+            (get_text("img2img.control_canny"),    "canny"),
+            (get_text("img2img.control_openpose"), "openpose"),
+            (get_text("img2img.control_depth"),    "depth"),
+        ]
+        self.control_menu = OptionMenu(control_frame, self.control_var,
+                                        *[opt[0] for opt in control_options])
+        self.control_menu.config(bg=BTN_BG, fg=FG, font=("Segoe UI", 10),
+                                 relief="flat", width=22)
+        self.control_menu["menu"].config(bg=BTN_BG, fg=FG)
+        self.control_menu.pack(side="left")
+
         # ── 变化强度滑块 ─────────────────────────────────────────
         Label(left, text=get_text("img2img.strength"), bg=BG, fg=ACCENT,
               font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 2))
@@ -382,6 +405,16 @@ class Img2ImgPanel(Frame):
         h = max(256, min(2048, self.h_var.get()))
         strength = round(self.strength_var.get(), 2)
 
+        # ControlNet 模式：把显示文字映射回内部值
+        control_options = [
+            ("none",     get_text("img2img.control_none")),
+            ("canny",    get_text("img2img.control_canny")),
+            ("openpose", get_text("img2img.control_openpose")),
+            ("depth",    get_text("img2img.control_depth")),
+        ]
+        control_map = {label: key for key, label in control_options}
+        control_mode = control_map.get(self.control_var.get(), "none")
+
         # Provider 选择："自动" = None（走默认顺序），否则只尝试指定 provider
         selected = self.provider_var.get()
         provider_order = None if selected == get_text("img2img.provider_auto") else [selected]
@@ -395,6 +428,7 @@ class Img2ImgPanel(Frame):
                 data, used = generate_image_img2img(
                     prompt, w, h, None, self.source_bytes, cfg,
                     strength=strength,
+                    control_mode=control_mode,
                     provider_order=provider_order,
                     status_cb=lambda s: self.app.after(0,
                         lambda msg=s: self.status_var.set(msg)),

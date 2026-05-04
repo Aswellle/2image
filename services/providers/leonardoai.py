@@ -99,12 +99,28 @@ def try_leonardo_img2img(
     cfg: dict,
     log: Callable,
     strength: float = 0.7,
+    control_mode: str = "none",
 ) -> Tuple[bytes, str]:
     """
-    Leonardo.ai 图生图（新增）
-    通过 init_image + strength 控制变化程度。
+    Leonardo.ai 图生图（v1.1 初版，v2.0 P3 增强 ControlNet）。
+
+    Leonardo.ai API 支持 image_preproc 参数，实现 ControlNet 风格迁移：
+      - "canny_edge"  边缘检测：保留参考图边缘/构图
+      - "openpose"    姿态检测：保留人物姿势
+      - "depth"       深度图：保留空间深度结构
+      - "none"        普通图生图（无 ControlNet）
+
     strength: 0.1(轻微变化) ~ 0.9(大幅改造)，默认 0.7
     """
+
+    # ── ControlNet 模式映射 ─────────────────────────────────────
+    _CONTROL_MODES = {
+        "none":     None,                   # 普通 img2img，无 ControlNet
+        "canny":    "canny_edge",
+        "openpose": "openpose",
+        "depth":    "depth_maps",
+    }
+    image_preproc = _CONTROL_MODES.get(control_mode, None)
     key = cfg.get("leonardo_key", "").strip()
     if not key:
         raise ValueError("需要 Leonardo.ai API Key！注册：https://app.leonardo.ai/")
@@ -131,7 +147,7 @@ def try_leonardo_img2img(
         "style_uuid": preset,
         # 图生图专用参数
         "init_image": f"data:image/jpeg;base64,{b64}",
-        "image_preproc": "canny_edge",        # 预处理：边缘检测保留构图
+        "image_preproc": image_preproc if image_preproc else "canny_edge",  # ControlNet 模式
         "control_strength": round(strength, 2),  # 0.0~1.0，控制变化程度
     }
     if seed and seed > 0:
@@ -163,7 +179,8 @@ def try_leonardo_img2img(
                 image_bytes = _poll(gen_id, headers, log)
                 _LAST_DONE[0] = time.time()
                 log("[Leonardo.ai img2img] 生成成功 ✓")
-                return (image_bytes, f"Leonardo/img2img({strength})")
+                mode_tag = f"/{control_mode}" if control_mode != "none" else ""
+                return (image_bytes, f"Leonardo/img2img({strength}){mode_tag}")
             except (ValueError, RuntimeError) as e:
                 last_err = e
                 log(f"[Leonardo.ai img2img] 错误：{e}")

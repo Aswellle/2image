@@ -64,6 +64,7 @@ def try_replicate_img2img(
     prompt: str, w: int, h: int, seed: int,
     source_bytes: bytes, cfg: dict, log: Callable,
     strength: float = 0.7,
+    control_mode: str = "none",
 ) -> Tuple[bytes, str]:
     """
     Replicate 图生图（img2img）。
@@ -74,11 +75,13 @@ def try_replicate_img2img(
     模型支持 init_image（参考图）+ strength 参数（变化强度）。
     注意：FLUX.1 系列（flux-1.1-pro / schnell）不支持 img2img，
     因此 img2img 专用 SDXL 而非 FLUX。
+    control_mode 参数：Replicate SDXL 不直接支持 ControlNet，此参数会被忽略。
 
     参数：
         source_bytes 参考图原始字节
         strength     变化强度 0.1~1.0（默认 0.7）
                      0.1 = 轻微变化，0.5 = 中等，0.9 = 大幅改造
+        control_mode ControlNet 模式（目前忽略，保留扩展性）
         cfg          配置字典（含 replicate_key）
     返回：
         (image_bytes, provider_name)
