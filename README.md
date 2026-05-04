@@ -246,9 +246,8 @@ image_service.generate_image()
 - [x] Ideogram API 接入
 
 ### v2.0（中长期）
+- [x] **完整 i18n UI 文本外化**（v2.0 P1）：所有中文硬编码 → `get_text()` / `format()`，新增插值 API，zh_CN/en_US 双语言完整覆盖
 - [ ] ControlNet / LoRA 风格迁移（仅本地 Provider）
-- [ ] 完整 i18n UI 文本外化（所有中文硬编码 → `get_text()` 调用）
-- [ ] 图生图支持所有剩余 Provider
 
 ---
 
