@@ -6,9 +6,13 @@ data/repository.py — SQLite 历史记录存取层
 import os
 import sqlite3
 import time
+import threading
+import uuid
 from datetime import datetime, timedelta
 
 from config.settings import DB_FILE
+
+_ID_LOCK = threading.Lock()
 
 
 def _conn() -> sqlite3.Connection:
@@ -56,8 +60,10 @@ def init_db() -> None:
 def add_entry(prompt: str, translated: str, image_path: str,
               provider: str, is_img2img: bool = False,
               source_img: str = "") -> dict:
-    eid = int(time.time() * 1000)
     ts  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # 用 UUID 保证多线程下唯一性
+    with _ID_LOCK:
+        eid = int(time.time() * 1_000_000) + hash(uuid.uuid4().hex[:6]) % 1000
     with _conn() as c:
         c.execute(
             "INSERT INTO history"
@@ -309,3 +315,24 @@ def get_year_stats(year: int) -> dict:
         "best_month": dict(month_rows) if month_rows else None,
         "best_day":   dict(day_rows)   if day_rows   else None,
     }
+
+
+# ─── 向后兼容 Facade ──────────────────────────────────────────────────────
+class HistoryRepository:
+    """兼容旧代码的类包装，不改变原有函数式 API。"""
+    add_entry         = staticmethod(add_entry)
+    delete_entry      = staticmethod(delete_entry)
+    get_all_entries   = staticmethod(get_all_entries)
+    get_entry         = staticmethod(get_entry)
+    rename_entry      = staticmethod(rename_entry)
+    toggle_favorite   = staticmethod(toggle_favorite)
+    update_tags       = staticmethod(update_tags)
+    get_all_tags      = staticmethod(get_all_tags)
+    get_stats         = staticmethod(get_stats)
+    clear_all_entries = staticmethod(clear_all_entries)
+    count_entries     = staticmethod(count_entries)
+    migrate_from_json = staticmethod(migrate_from_json)
+    get_year_heatmap  = staticmethod(get_year_heatmap)
+    get_available_years = staticmethod(get_available_years)
+    get_year_stats    = staticmethod(get_year_stats)
+    init_db           = staticmethod(init_db)
