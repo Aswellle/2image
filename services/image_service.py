@@ -38,11 +38,13 @@ def _load_img2img_providers():
     from services.providers.modelslab import try_modelslab_img2img
     from services.providers.leonardoai import try_leonardo_img2img
     from services.providers.stability_ai import try_stability_img2img
+    from services.providers.replicate_flux import try_replicate_img2img
 
     IMG2IMG_PROVIDERS["Pollinations.AI"]  = try_pollinations_img2img
     IMG2IMG_PROVIDERS["ModelsLab"]         = try_modelslab_img2img
     IMG2IMG_PROVIDERS["Leonardo.ai"]       = try_leonardo_img2img
     IMG2IMG_PROVIDERS["Stability AI"]     = try_stability_img2img
+    IMG2IMG_PROVIDERS["Replicate SDXL"]   = try_replicate_img2img
 
 
 # ─── txt2img（原有逻辑，完全不变）────────────────────────────────────

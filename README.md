@@ -44,7 +44,7 @@
 |----------|------|---------|---------|------|
 | **OpenAI DALL-E 3** | dall-e-3 | $0.04~0.12/张 | 否 | 行业标杆，质量最优 |
 | **Stability AI** | core / sd3 | 按张计费 | **是** | SD3 嫡系，画风丰富 |
-| **Replicate FLUX.1 Pro** | flux-1.1-pro | 较贵 | 否 | FLUX 最强闭源版本 |
+| **Replicate FLUX.1 Pro** | flux-1.1-pro | 较贵 | **SDXL** ✅ | FLUX 最强闭源版本；img2img 使用 SDXL 模型 |
 | **xAI Grok Imagine** | grok-2-image-1212 | $0.07/张 | 否 | Aurora 模型，注册送 $25 |
 
 ### 计划接入的高质量 Provider
@@ -211,6 +211,7 @@ image_service.generate_image()
         ├─▶ ModelsLab（img2img 模式）
         ├─▶ Leonardo.ai（init_image + prompt，v1.1 新增）
         ├─▶ Stability AI（image-to-image，v1.1 新增）
+        ├─▶ Replicate SDXL（init_image + strength，v2.0 P2 新增）
         └─▶ OpenRouter（部分模型支持）
 ```
 
@@ -247,6 +248,7 @@ image_service.generate_image()
 
 ### v2.0（中长期）
 - [x] **完整 i18n UI 文本外化**（v2.0 P1）：所有中文硬编码 → `get_text()` / `format()`，新增插值 API，zh_CN/en_US 双语言完整覆盖
+- [x] **Replicate SDXL img2img 接入**（v2.0 P2）：`try_replicate_img2img()` 使用 Stability AI SDXL 模型，注册到 `IMG2IMG_PROVIDERS`，README 能力矩阵更新
 - [ ] ControlNet / LoRA 风格迁移（仅本地 Provider）
 
 ---
