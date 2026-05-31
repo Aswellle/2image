@@ -126,7 +126,7 @@ Each provider module MUST define a `PROVIDER_INFO` dict at module level:
 PROVIDER_INFO = {
     "name": "Display Name",
     "category": "free",       # one of: free, paid, commercial
-    "key_name": "sf_key",     # config key for API credentials
+    "config_key": "sf_key",   # config key for API credentials (NOT key_name)
     "description": "Brief description"
 }
 ```
@@ -139,33 +139,44 @@ def try_<name>(
     w: int,            # target width
     h: int,            # target height
     seed: int,         # guaranteed non-None by image_service
-    cfg: dict,         # global config (read API keys from cfg["key_name"])
+    cfg: dict,         # global config (read API keys from cfg["config_key"])
     log: Callable[[str], None]  # logging callback
 ) -> Tuple[bytes, str]:
     # Returns: (image_bytes, provider_display_name)
-    # Raises: ValueError (skip this provider — try next)
-    #         RuntimeError (fatal after retries — skip this provider)
+    # Raises: ValueError  (missing key / config error — try next provider)
+    #         RuntimeError (fatal after retries — try next provider)
+    #         TimeoutError (request timed out — try next provider)
 ```
 
 **Rules**:
 - Raise `ValueError` for missing API key or configuration issues
-- `image_service.py` catches only `ValueError` — all other exceptions crash through
-- Use `@with_retries` decorator from `services/providers/retry.py` for transient HTTP failures
+- `image_service.py` catches `(ValueError, RuntimeError, TimeoutError)` — all fall through to next provider
+- Import shared HTTP utilities from `services/providers/_net.py` (do NOT duplicate):
 
-### with_retries Decorator
+```python
+from services.providers._net import (
+    SESSION as _session,                          # shared requests.Session with connection pooling
+    validate_image_url as _validate_image_url,   # SSRF guard — call before downloading any URL from API
+    safe_error_text as _safe_error_text,          # extract safe error text from API responses
+)
+```
+
+### with_retries Decorator (adoption pending)
+
+`services/providers/retry.py` provides a `@with_retries` decorator. **Note: as of 2026-05, zero providers use it** — each provider implements rate-limiting inline. The decorator signature is:
 
 ```python
 from services.providers.retry import with_retries
 
-@with_retries(max_retries=3, base_delay=2.0, backoff=2.0, rate_limit=0.5)
+@with_retries(max_retries=3, base_delay=3.0, rate_limit_wait=30.0, min_interval=2.0)
 def try_myprovider(prompt, w, h, seed, cfg, log):
     ...
 ```
 
-- `max_retries`: maximum retry attempts after first failure (default 2)
-- `base_delay`: initial wait in seconds (default 1.0)
-- `backoff`: multiplier for exponential backoff (default 2.0)
-- `rate_limit`: min seconds between calls (default 0.0)
+- `max_retries`: maximum retry attempts (default 3)
+- `base_delay`: initial wait in seconds (default 3.0)
+- `rate_limit_wait`: wait on HTTP 429 (default 30.0)
+- `min_interval`: minimum seconds between calls (default 2.0)
 
 ### Threading Pattern
 
@@ -449,9 +460,10 @@ pytest tests/ -v --cov=data --cov=services --cov-report=term-missing
 ## Adding a New Provider
 
 1. Create `services/providers/<name>.py` with:
-   - `PROVIDER_INFO` dict (`name`, `category`, `key_name`, `description`)
+   - `PROVIDER_INFO` dict (`name`, `category`, `config_key`, `description`)
+   - Import from `services/providers/_net.py`: `SESSION`, `validate_image_url`, `safe_error_text`
    - `try_<name>(prompt, w, h, seed, cfg, log) -> (bytes, str)` function
-   - Raise `ValueError` on missing key, use `@with_retries` for HTTP calls
+   - Raise `ValueError` on missing key; call `validate_image_url()` before downloading any URL from the API response
 2. No manual registration needed — `services/providers/__init__.py` auto-discovers via `pkgutil.iter_modules`
 3. Add config key to `DEFAULT_CONFIG` in `config/settings.py`
 4. Add wizard UI card in `ui/wizard_free.py` or `ui/wizard_paid.py`

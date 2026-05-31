@@ -20,6 +20,36 @@ def test_siliconflow_missing_key_raises_valueerror():
         try_siliconflow("test prompt", 512, 512, 42, {"sf_key": ""}, print)
 
 
+import importlib
+
+# Parametrized: all providers that require a non-empty API key must raise ValueError
+# when that key is absent. This enforces the provider error-contract.
+# stablehorde is excluded: empty key = anonymous mode (valid usage).
+_PROVIDER_KEY_CASES = [
+    ("services.providers.huggingface",   "try_hf_inference",  {"hf_token": ""}),
+    ("services.providers.cloudflare_ai", "try_cloudflare_ai", {"cf_account_id": "", "cf_api_token": ""}),
+    ("services.providers.segmind",       "try_segmind",       {"segmind_key": ""}),
+    ("services.providers.replicate_flux","try_replicate",     {"replicate_key": ""}),
+    ("services.providers.stability_ai",  "try_stability_ai",  {"stability_key": ""}),
+    ("services.providers.together_ai",   "try_together_ai",   {"together_key": ""}),
+    ("services.providers.xai_grok",      "try_xai_grok",      {"xai_key": ""}),
+    ("services.providers.openrouter",    "try_openrouter",    {"openrouter_key": ""}),
+    ("services.providers.fal_flux",      "try_fal_flux",      {"fal_key": ""}),
+    ("services.providers.ideogram",      "try_ideogram",      {"ideogram_key": ""}),
+    ("services.providers.recraft",       "try_recraft",       {"recraft_key": ""}),
+    ("services.providers.modelslab",     "try_modelslab",     {"modelslab_key": ""}),
+]
+
+@pytest.mark.parametrize("module,fn,cfg", _PROVIDER_KEY_CASES,
+                          ids=[c[1] for c in _PROVIDER_KEY_CASES])
+def test_provider_missing_key_raises_valueerror(module, fn, cfg):
+    """Every keyed provider must raise ValueError on missing/empty API key."""
+    mod = importlib.import_module(module)
+    func = getattr(mod, fn)
+    with pytest.raises(ValueError):
+        func("test prompt", 512, 512, 42, cfg, print)
+
+
 def test_validate_image_url_blocks_non_https():
     from services.providers._net import validate_image_url
     assert not validate_image_url("http://cdn.example.com/test.png")
