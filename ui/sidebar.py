@@ -109,6 +109,7 @@ class HistorySidebar:
         self._thumbs: dict = {}
         self._fav_only      = False
         self._inline_frame  = None
+        self._ctx_menu: tk.Menu | None = None   # 共享右键菜单单例
 
         self._tag_filter = ""
         self._hist_gen = 0
@@ -421,12 +422,15 @@ class HistorySidebar:
 
         # ── 右键菜单（快速操作，减少操作层级）────────────────
         def _show_ctx(ev, en=e):
-            """弹出右键上下文菜单"""
-            menu = tk.Menu(self.app.root, tearoff=0,
-                           bg=C["panel"], fg=C["text"],
-                           activebackground=C["acc"],
-                           activeforeground="white",
-                           font=F["body"])
+            """弹出右键上下文菜单（使用共享单例，避免每次右键创建新 Menu widget）"""
+            if self._ctx_menu is None:
+                self._ctx_menu = tk.Menu(self.app.root, tearoff=0,
+                                         bg=C["panel"], fg=C["text"],
+                                         activebackground=C["acc"],
+                                         activeforeground="white",
+                                         font=F["body"])
+            menu = self._ctx_menu
+            menu.delete(0, "end")
 
             # 📋 复制提示词
             def _copy_prompt():
@@ -478,7 +482,6 @@ class HistorySidebar:
                              command=lambda en_=en: self._del_entry(en_["id"]),
                              foreground="#e05555")
             menu.post(ev.x_root, ev.y_root)
-            menu.bind("<FocusOut>", lambda _: menu.destroy())
 
         for w in [card, inn, right, _thumb_f, thumb_lbl, title_lbl, sub_lbl]:
             w.bind("<Button-3>", _show_ctx)
