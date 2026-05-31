@@ -21,6 +21,11 @@ FREE_PROVIDERS = {}
 PAID_PROVIDERS = {}
 COMMERCIAL_PROVIDERS = {}
 
+# config_key for each provider (None = no key required).
+# Downstream code (smart_router, UI status bar) should derive their
+# own maps from this dict rather than maintaining separate hardcoded copies.
+PROVIDER_KEYS: dict = {}
+
 _for_loop_registry = {
     "free": FREE_PROVIDERS,
     "paid": PAID_PROVIDERS,
@@ -49,6 +54,9 @@ for loader, module_name, is_pkg in pkgutil.iter_modules(__path__):
     category = info.get("category", "free")
     if category in _for_loop_registry:
         _for_loop_registry[category][info["name"]] = try_fn
+
+    # Single source of truth for config keys
+    PROVIDER_KEYS[info["name"]] = info.get("config_key")
 
 ALL_PROVIDERS = {**FREE_PROVIDERS, **PAID_PROVIDERS, **COMMERCIAL_PROVIDERS}
 DEFAULT_ORDER = list(FREE_PROVIDERS.keys())

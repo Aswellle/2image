@@ -115,28 +115,14 @@ _KEYWORD_RULES: list = [
       "launch", "企业", "corporate"], "brand_tech"),
 ]
 
-# ── 付费接口对应的 cfg Key ─────────────────────────────────────
-_KEY_MAP: dict = {
-    "Ideogram v2 (文字入图)":     "ideogram_key",
-    "fal.ai FLUX Ultra (高质量)": "fal_key",
-    "Recraft v3 (设计/插画)":     "recraft_key",
-    "💎 OpenAI DALL-E 3":         "openai_key",
-    "💎 Stability AI":             "stability_key",
-    "💎 Replicate FLUX":           "replicate_key",
-    "💎 xAI Grok Imagine":         "xai_key",
-}
+# ── 付费接口对应的 cfg Key（从注册表生成，不再手动维护）──────────
+from services.providers import PROVIDER_KEYS as _PROVIDER_KEYS, FREE_PROVIDERS as _FREE_PROVIDERS_DICT
 
-_FREE_PROVIDERS: set = {
-    "硅基流动 SiliconFlow (★推荐)",
-    "Google Gemini (免费500次/天)",
-    "Pollinations.AI (免费·无需Key)",
-    "Cloudflare AI (免费1万次/天)",
-    "ModelsLab (免费100次/天)",
-    "Segmind (注册送$5)",
-    "OpenRouter (部分免费)",
-    "HuggingFace (备用)",
-    "StableHorde (兜底)",
-}
+# name -> config_key for providers that require a key
+_KEY_MAP: dict = {name: key for name, key in _PROVIDER_KEYS.items() if key}
+
+# set of free provider names (no key required or key is None)
+_FREE_PROVIDERS: set = set(_FREE_PROVIDERS_DICT.keys())
 
 
 def _filter_available(order: list, cfg: dict) -> list:
