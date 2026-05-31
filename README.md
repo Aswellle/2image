@@ -113,10 +113,3 @@ python tools/build_inno_installer.py --app-name "MyApp" --version 1.0.0 --src-di
 
 
 
-OpenRouters统一API管理密钥
-
-sk-or-v1-REDACTED
-
-OpenRouters密钥(cc switch 2)
-
-sk-or-v1-REDACTED

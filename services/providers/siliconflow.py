@@ -9,18 +9,8 @@ v3 变体高质量模式（variant_hq）：
   · 标准模式保持原有参数不变
 """
 import time
-import requests
-# Session with connection pooling for HTTP keep-alive
-_session = requests.Session()
-_adapter = requests.adapters.HTTPAdapter(
-    pool_connections=2, pool_maxsize=4, max_retries=1)
-_session.mount("https://", _adapter)
-_session.mount("http://", _adapter)
-
 from typing import Callable, Tuple
-
-import ipaddress
-from urllib.parse import urlparse
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
     "name": "硅基流动 SiliconFlow (★推荐)",
@@ -29,35 +19,6 @@ PROVIDER_INFO = {
 }
 
 
-def _validate_image_url(url: str) -> bool:
-    """Block non-HTTPS URLs and internal/reserved IP ranges to prevent SSRF."""
-    try:
-        parsed = urlparse(url)
-        if parsed.scheme not in ("https",):
-            return False
-        hostname = parsed.hostname
-        if not hostname:
-            return False
-        addr = ipaddress.ip_address(hostname)
-        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
-            return False
-    except ValueError:
-        pass
-    return True
-
-
-def _safe_error_text(resp) -> str:
-    """Extract safe error message from API response, avoiding raw body leakage."""
-    try:
-        body = resp.json()
-        err = body.get("error", {})
-        if isinstance(err, dict):
-            return err.get("message", "") or str(err)[:150]
-        if isinstance(err, str):
-            return err[:150]
-        return body.get("message", "") or str(body)[:150]
-    except Exception:
-        return f"HTTP {resp.status_code}"
 # ── 标准模式：速度与质量平衡（单张生成）──────────────────────────
 SF_STD_MODELS = [
     # (model_id,                                   max_sz, steps, use_guid, guidance)

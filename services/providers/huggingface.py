@@ -18,16 +18,8 @@ v2 修复：
 import base64
 import threading
 import time
-import requests
-# Session with connection pooling for HTTP keep-alive
-_session = requests.Session()
-_adapter = requests.adapters.HTTPAdapter(
-    pool_connections=2, pool_maxsize=4, max_retries=1)
-_session.mount("https://", _adapter)
-_session.mount("http://", _adapter)
-import ipaddress
-from urllib.parse import urlparse
 from typing import Callable, Tuple
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
     "name": "HuggingFace (备用)",
@@ -37,35 +29,6 @@ PROVIDER_INFO = {
 }
 
 
-def _validate_image_url(url: str) -> bool:
-    """Block non-HTTPS URLs and internal/reserved IP ranges to prevent SSRF."""
-    try:
-        parsed = urlparse(url)
-        if parsed.scheme not in ("https",):
-            return False
-        hostname = parsed.hostname
-        if not hostname:
-            return False
-        addr = ipaddress.ip_address(hostname)
-        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
-            return False
-    except ValueError:
-        pass
-    return True
-
-
-def _safe_error_text(resp) -> str:
-    """Extract safe error message from API response, avoiding raw body leakage."""
-    try:
-        body = resp.json()
-        err = body.get("error", {})
-        if isinstance(err, dict):
-            return err.get("message", "") or str(err)[:150]
-        if isinstance(err, str):
-            return err[:150]
-        return body.get("message", "") or str(body)[:150]
-    except Exception:
-        return f"HTTP {resp.status_code}"
 # ── 进程级串行锁：保证同一时刻只有 1 个 HF 请求在飞 ─────────────────
 _HF_LOCK      = threading.Lock()
 _LAST_DONE_TS = [0.0]
