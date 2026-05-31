@@ -104,7 +104,7 @@ THEMES = {
 # Active theme dict — for future runtime switching.
 # Existing UI files import DARK_THEME as C directly; this global C
 # is for new code that wants runtime theme switching.
-C = DARK_THEME.copy()
+C = DARK_THEME  # same object — mutations via apply_theme() are visible to all importers
 
 
 def apply_theme(theme_name: str) -> None:

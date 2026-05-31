@@ -71,69 +71,73 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int,
 
         result = None
 
-        # ── 持锁：等间隔 → 发请求 → 请求结束后更新时间戳 ────────
+        # ── 持锁范围仅限限速等待：锁释放后再发 HTTP 请求 ──────────
+        # 修复：原版锁覆盖整个 HTTP 调用，导致批量 N 线程完全串行。
+        # 正确做法：只在锁内等待最小间隔，锁外并发执行实际请求。
         with _POLL_LOCK:
-            # 等待距上次完成 >= _MIN_INTERVAL
             gap = time.time() - _LAST_DONE_TS[0]
             if gap < _MIN_INTERVAL:
                 wait = _MIN_INTERVAL - gap
                 log(f"  [Pollinations] 限速等待 {wait:.1f}s…")
                 time.sleep(wait)
+            # 预占时间槽后立即释放锁，让其他线程进入等待队列
+            _LAST_DONE_TS[0] = time.time()
 
-            for attempt in range(1, _MAX_RETRY + 1):
-                try:
-                    resp = _session.get(url, params=params,
-                                        timeout=_TIMEOUT, allow_redirects=True)
-                except requests.exceptions.ConnectionError as e:
-                    log(f"    网络错误: {e}")
-                    break
-                except requests.exceptions.Timeout:
-                    log(f"    超时（{_TIMEOUT}s）第{attempt}次")
-                    if attempt < _MAX_RETRY:
-                        time.sleep(10 * attempt)
-                        continue
-                    break
-
-                sc = resp.status_code
-                ct = resp.headers.get("Content-Type", "")
-                log(f"    [{attempt}] 状态:{sc}  ct:{ct}")
-
-                if sc in (429, 503):
-                    ra = resp.headers.get("Retry-After", "")
-                    w2 = int(ra) if ra.isdigit() else max(_MIN_INTERVAL, 20)
-                    log(f"    限速/不可用，等待 {w2:.0f}s…")
-                    time.sleep(w2)
-                    if attempt < _MAX_RETRY:
-                        continue
-                    break
-
-                if sc == 500:
-                    w2 = 15 * attempt
-                    log(f"    服务器 500，等待 {w2}s…")
-                    time.sleep(w2)
-                    if attempt < _MAX_RETRY:
-                        continue
-                    break
-
-                if sc != 200:
-                    log(f"    {sc}，换模型…")
-                    break
-
-                if "image" not in ct:
-                    log(f"    非图片响应({ct})，换模型…")
-                    break
-
-                if len(resp.content) < 1024:
-                    log("    数据过小，换模型…")
-                    break
-
-                log(f"  ✓ Pollinations/{model} 成功 "
-                    f"{len(resp.content)//1024}KB")
-                result = (resp.content, f"Pollinations/{model}")
+        # HTTP 请求在锁外执行，多线程可真正并发
+        for attempt in range(1, _MAX_RETRY + 1):
+            try:
+                resp = _session.get(url, params=params,
+                                    timeout=_TIMEOUT, allow_redirects=True)
+            except requests.exceptions.ConnectionError as e:
+                log(f"    网络错误: {e}")
+                break
+            except requests.exceptions.Timeout:
+                log(f"    超时（{_TIMEOUT}s）第{attempt}次")
+                if attempt < _MAX_RETRY:
+                    time.sleep(10 * attempt)
+                    continue
                 break
 
-            # ── 关键修复：请求完成后才更新时间戳 ────────────────
-            _LAST_DONE_TS[0] = time.time()
+            sc = resp.status_code
+            ct = resp.headers.get("Content-Type", "")
+            log(f"    [{attempt}] 状态:{sc}  ct:{ct}")
+
+            if sc in (429, 503):
+                ra = resp.headers.get("Retry-After", "")
+                w2 = int(ra) if ra.isdigit() else max(_MIN_INTERVAL, 20)
+                log(f"    限速/不可用，等待 {w2:.0f}s…")
+                time.sleep(w2)
+                if attempt < _MAX_RETRY:
+                    continue
+                break
+
+            if sc == 500:
+                w2 = 15 * attempt
+                log(f"    服务器 500，等待 {w2}s…")
+                time.sleep(w2)
+                if attempt < _MAX_RETRY:
+                    continue
+                break
+
+            if sc != 200:
+                log(f"    {sc}，换模型…")
+                break
+
+            if "image" not in ct:
+                log(f"    非图片响应({ct})，换模型…")
+                break
+
+            if len(resp.content) < 1024:
+                log("    数据过小，换模型…")
+                break
+
+            log(f"  ✓ Pollinations/{model} 成功 "
+                f"{len(resp.content)//1024}KB")
+            result = (resp.content, f"Pollinations/{model}")
+            break
+
+        # 请求完成后更新实际完成时间戳（GIL 保证 list 赋值原子性）
+        _LAST_DONE_TS[0] = time.time()
 
         if result:
             return result

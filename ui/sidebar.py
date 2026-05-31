@@ -269,15 +269,19 @@ class HistorySidebar:
 
         for w in self.hi.winfo_children(): w.destroy()
         self._scroll_widgets.discard(self.hi)
-        kw    = self.sv.get().strip()
-        items = get_all_entries(keyword=kw, only_favorites=self._fav_only,
-                                tag_filter=self._tag_filter)
+        kw = self.sv.get().strip()
         HIST_PAGE_SIZE = 100
         if not load_all:
+            # Fetch one extra row to detect "has more" without loading all rows
+            items = get_all_entries(keyword=kw, only_favorites=self._fav_only,
+                                    tag_filter=self._tag_filter,
+                                    limit=HIST_PAGE_SIZE + 1)
             _has_more = len(items) > HIST_PAGE_SIZE
             if _has_more:
                 items = items[:HIST_PAGE_SIZE]
         else:
+            items = get_all_entries(keyword=kw, only_favorites=self._fav_only,
+                                    tag_filter=self._tag_filter)
             _has_more = False
         if not items:
             msg = ("暂无收藏" if self._fav_only else
