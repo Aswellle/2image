@@ -80,6 +80,16 @@ def load_config() -> dict:
     except Exception as e:
         import sys
         print(f"[warn] 配置加载失败，使用默认配置: {e}", file=sys.stderr)
+
+    # 环境变量覆盖（最高优先级，用于 CI 密钥注入）
+    # 命名规则: TEXTIMG_<CONFIG_KEY_UPPERCASE>
+    # 示例: TEXTIMG_SF_KEY, TEXTIMG_HF_TOKEN, TEXTIMG_OPENAI_KEY
+    _prefix = "TEXTIMG_"
+    for key in DEFAULT_CONFIG:
+        env_val = os.environ.get(_prefix + key.upper(), "")
+        if env_val:
+            cfg[key] = env_val
+
     return cfg
 
 
