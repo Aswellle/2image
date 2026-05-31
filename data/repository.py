@@ -145,7 +145,17 @@ def get_all_entries(keyword: str = "",
         """)
         params.append(tag_filter)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    sql = f"SELECT * FROM history {where} ORDER BY id DESC"
+    # Derive tags from junction tables (single source of truth)
+    # instead of reading the legacy CSV column in history.tags
+    _tags_subq = (
+        "(SELECT GROUP_CONCAT(t.name, ',') "
+        "FROM entry_tag et JOIN tag t ON et.tag_id = t.id "
+        "WHERE et.entry_id = h.id ORDER BY t.name)"
+    )
+    cols = (f"h.id, h.timestamp, h.prompt, h.translated, h.image_path, "
+            f"h.provider, h.nickname, h.favorited, "
+            f"COALESCE({_tags_subq}, '') AS tags")
+    sql = f"SELECT {cols} FROM history h {where} ORDER BY h.id DESC"
     if limit > 0:
         sql += " LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -176,11 +186,12 @@ def toggle_favorite(entry_id: int, favorited: bool) -> None:
 
 
 def update_tags(entry_id: int, tags: str) -> None:
-    """Set tags for an entry. tags is comma-separated string."""
+    """Set tags for an entry. tags is comma-separated string.
+    Junction tables (tag, entry_tag) are the single source of truth.
+    The legacy history.tags CSV column is no longer written.
+    """
     with _conn() as c:
-        # Also update the legacy CSV column for backward compat
         cleaned = ",".join(sorted(set(t.strip() for t in tags.split(",") if t.strip())))
-        c.execute("UPDATE history SET tags = ? WHERE id = ?", (cleaned, entry_id))
 
         # Remove old junction entries
         c.execute("DELETE FROM entry_tag WHERE entry_id = ?", (entry_id,))

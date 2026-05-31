@@ -221,7 +221,9 @@ class ImageViewerWindow(tk.Toplevel):
                 self._pending_job = None
             processed += 1
         if self._polling:
-            self.after(2, self._poll_queue)
+            # Adaptive interval: short when rendering, long when idle
+            interval = 16 if (processed > 0 or self._pending_job) else 100
+            self.after(interval, self._poll_queue)
 
     def _start_polling(self):
         if not self._polling:

@@ -8,7 +8,6 @@ __pycache__/
 .eggs/
 dist/
 build/
-*.spec
 
 # Virtual environments
 .venv/
@@ -20,9 +19,6 @@ env/
 *.log
 config.json
 
-# PyInstaller artifacts
-main.spec
-
 # IDE / tools
 .history/
 .omc/
@@ -32,6 +28,8 @@ main.spec
 
 # Installer output
 installer/*.exe
+installer/Output/
+installer/auto_*.iss
 installer/*.iss.bak
 
 # Misc
