@@ -15,14 +15,8 @@ v4 修复：
 import threading
 import time
 import urllib.parse
-import requests
-# Session with connection pooling for HTTP keep-alive
-_session = requests.Session()
-_adapter = requests.adapters.HTTPAdapter(
-    pool_connections=2, pool_maxsize=4, max_retries=1)
-_session.mount("https://", _adapter)
-_session.mount("http://", _adapter)
 from typing import Callable, Tuple
+from services.providers._net import SESSION as _session
 
 PROVIDER_INFO = {
     "name": "Pollinations.AI (免费·无需Key)",

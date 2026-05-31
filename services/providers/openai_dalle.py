@@ -1,11 +1,6 @@
 """services/providers/openai_dalle.py — OpenAI DALL-E 3"""
-import base64, requests
-# Session with connection pooling for HTTP keep-alive
-_session = requests.Session()
-_adapter = requests.adapters.HTTPAdapter(
-    pool_connections=2, pool_maxsize=4, max_retries=1)
-_session.mount("https://", _adapter)
-_session.mount("http://", _adapter)
+import base64
+from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
     "name": "💎 OpenAI DALL-E 3",
@@ -14,18 +9,6 @@ PROVIDER_INFO = {
 }
 
 
-def _safe_error_text(resp) -> str:
-    """Extract safe error message from API response, avoiding raw body leakage."""
-    try:
-        body = resp.json()
-        err = body.get("error", {})
-        if isinstance(err, dict):
-            return err.get("message", "") or str(err)[:150]
-        if isinstance(err, str):
-            return err[:150]
-        return body.get("message", "") or str(body)[:150]
-    except Exception:
-        return f"HTTP {resp.status_code}"
 
 _SIZES = {(1024,1024):"1024x1024", (1792,1024):"1792x1024", (1024,1792):"1024x1792"}
 

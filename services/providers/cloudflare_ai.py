@@ -18,14 +18,8 @@ API 响应：直接返回 base64 编码的图片数据（无需二次下载）
 """
 import base64
 import time
-import requests
-# Session with connection pooling for HTTP keep-alive
-_session = requests.Session()
-_adapter = requests.adapters.HTTPAdapter(
-    pool_connections=2, pool_maxsize=4, max_retries=1)
-_session.mount("https://", _adapter)
-_session.mount("http://", _adapter)
 from typing import Callable, Tuple
+from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
     "name": "Cloudflare AI (免费1万次/天)",
@@ -34,18 +28,6 @@ PROVIDER_INFO = {
 }
 
 
-def _safe_error_text(resp) -> str:
-    """Extract safe error message from API response, avoiding raw body leakage."""
-    try:
-        body = resp.json()
-        err = body.get("error", {})
-        if isinstance(err, dict):
-            return err.get("message", "") or str(err)[:150]
-        if isinstance(err, str):
-            return err[:150]
-        return body.get("message", "") or str(body)[:150]
-    except Exception:
-        return f"HTTP {resp.status_code}"
 
 _API_BASE = "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}"
 _TIMEOUT  = 60
