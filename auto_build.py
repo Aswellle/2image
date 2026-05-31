@@ -11,14 +11,14 @@ import sys
 import json
 from pathlib import Path
 
-# 配置区
-PROJECT_DIR = r"D:\Chrome Downloads\Programs\text_to_iamge_app_refactored"
-MAIN_PY = os.path.join(PROJECT_DIR, "main.py")
-ICON = os.path.join(PROJECT_DIR, "ICON_256x256.ico")
-DIST_DIR = os.path.join(PROJECT_DIR, "dist")
-BUILD_DIR = os.path.join(PROJECT_DIR, "build")
-VERSION_FILE = os.path.join(PROJECT_DIR, "version.json")
-INNO_TEMPLATE = os.path.join(PROJECT_DIR, "installer", "template.iss")
+# 配置区（动态路径，适用于任意机器）
+PROJECT_DIR = Path(__file__).resolve().parent
+MAIN_PY      = str(PROJECT_DIR / "main.py")
+ICON         = str(PROJECT_DIR / "ICON_256x256.ico")
+DIST_DIR     = str(PROJECT_DIR / "dist")
+BUILD_DIR    = str(PROJECT_DIR / "build")
+VERSION_FILE = str(PROJECT_DIR / "version.json")
+INNO_TEMPLATE = str(PROJECT_DIR / "installer" / "template.iss")
 ISCC_PATH = "ISCC"  # 或 Inno Setup 的完整路径
 
 # 读取版本号

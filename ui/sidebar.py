@@ -449,7 +449,8 @@ class HistorySidebar:
                 p = en.get("image_path", "")
                 if p and os.path.exists(p):
                     self.app.cur_path   = p
-                    self.app._cur_bytes = open(p, "rb").read()
+                    with open(p, "rb") as _fh:
+                        self.app._cur_bytes = _fh.read()
                     self.app._open_viewer()
 
             # ➕ 加入生成队列

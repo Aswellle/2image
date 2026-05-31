@@ -77,8 +77,9 @@ def load_config() -> dict:
             if saved_ver < 2:
                 saved = _migrate_config_v1_to_v2(saved)
             cfg.update(saved)
-    except Exception:
-        pass  # 配置加载失败，使用默认配置
+    except Exception as e:
+        import sys
+        print(f"[warn] 配置加载失败，使用默认配置: {e}", file=sys.stderr)
     return cfg
 
 
@@ -90,8 +91,10 @@ def _migrate_config_v1_to_v2(cfg: dict) -> dict:
 
 
 def save_config(cfg: dict) -> None:
-    """将配置持久化到磁盘。"""
+    """将配置持久化到磁盘（原子写入，防止断电损坏）。"""
     os.makedirs(APP_DIR, mode=0o700, exist_ok=True)
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+    tmp = CONFIG_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cfg, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, CONFIG_FILE)  # atomic on POSIX; near-atomic on Windows
     os.chmod(CONFIG_FILE, 0o600)

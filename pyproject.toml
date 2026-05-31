@@ -1,0 +1,10 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short"
+
+[tool.coverage.run]
+source = ["services", "data", "config"]
+omit = ["tests/*", "ui/*"]
+
+[tool.coverage.report]
+fail_under = 30

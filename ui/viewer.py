@@ -299,7 +299,8 @@ class ImageViewerWindow(tk.Toplevel):
             images_real = os.path.realpath(IMAGES_DIR)
             if not real.startswith(images_real + os.sep):
                 return
-            self.load_bytes(open(path, "rb").read(), path)
+            with open(path, "rb") as _fh:
+                self.load_bytes(_fh.read(), path)
 
     # ── 信息更新 ───────────────────────────────────────────────
     def _update_info(self):

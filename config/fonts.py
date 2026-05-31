@@ -56,7 +56,8 @@ def _download(url: str, dest: str) -> bool:
             data = r.read()
         if len(data) < 30_000:
             return False
-        open(dest, "wb").write(data)
+        with open(dest, "wb") as _fh:
+            _fh.write(data)
         return True
     except Exception:
         return False

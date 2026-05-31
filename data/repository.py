@@ -194,6 +194,7 @@ def update_tags(entry_id: int, tags: str) -> None:
             tag_id = c.execute("SELECT id FROM tag WHERE name = ?", (tag_name,)).fetchone()[0]
             c.execute("INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)",
                       (entry_id, tag_id))
+        c.commit()
 
 
 # ─── 统计 ─────────────────────────────────────────────────────

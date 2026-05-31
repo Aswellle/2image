@@ -436,7 +436,8 @@ class MainContent:
             dialog.unbind_all("<Button-4>")
             dialog.unbind_all("<Button-5>")
             if path and os.path.exists(path):
-                data = open(path, "rb").read()
+                with open(path, "rb") as _fh:
+                    data = _fh.read()
                 self._set_compare_image(data)
             dialog.destroy()
 
@@ -532,7 +533,8 @@ class MainContent:
             title="选取对比图片",
             filetypes=[("图片", "*.png *.jpg *.jpeg *.webp"), ("所有文件", "*.*")])
         if path:
-            data = open(path, "rb").read()
+            with open(path, "rb") as _fh:
+                data = _fh.read()
             self._set_compare_image(data)
         dialog.destroy()
 
@@ -575,7 +577,8 @@ class MainContent:
     def _set_cmp_from_entry(self, e: dict):
         path = e.get("image_path", "")
         if path and os.path.exists(path):
-            data = open(path, "rb").read()
+            with open(path, "rb") as _fh:
+                data = _fh.read()
             self._set_compare_image(data)
             self._nb.select(0)
             self.app._st(f"⚖ 已设置对比图：{self.app._display_title(e)}", "ok")
@@ -602,7 +605,8 @@ class MainContent:
 
     def _show_file(self, path: str):
         if path and os.path.exists(path):
-            data = open(path, "rb").read()
+            with open(path, "rb") as _fh:
+                data = _fh.read()
             self.app._cur_bytes = data; self._set_preview(data)
 
     def _update_char_count(self):

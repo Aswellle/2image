@@ -286,12 +286,16 @@ class App:
         menubar.add_cascade(label=_("menu_data"), menu=m_data)
         m_data.add_command(label="  📊  统计看板…",  command=self._show_stats)
         m_data.add_separator()
+        def _open_path(p):
+            if os.name == "nt":
+                os.startfile(p)
+            else:
+                import subprocess as _sp
+                _sp.Popen(["xdg-open", p])
         m_data.add_command(label="  📁  数据文件夹",
-            command=lambda: (os.startfile(APP_DIR) if os.name == "nt"
-                             else os.system(f"xdg-open '{APP_DIR}'")))
+            command=lambda: _open_path(APP_DIR))
         m_data.add_command(label="  📄  调试日志",
-            command=lambda: (os.startfile(LOG_FILE) if os.name == "nt"
-                             else os.system(f"xdg-open '{LOG_FILE}'")))
+            command=lambda: _open_path(LOG_FILE))
 
         # ── ⚙ 设置 ───────────────────────────────────────────────
         m_set = _menu(menubar)
@@ -506,7 +510,8 @@ class App:
                 self._log(f"⚠ 保留后找不到图片文件: {img_path}")
                 return
             try:
-                data = open(img_path, "rb").read()
+                with open(img_path, "rb") as _fh:
+                    data = _fh.read()
             except Exception as e:
                 self._log(f"⚠ 读取保留图片失败: {e}")
                 return
