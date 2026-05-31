@@ -258,15 +258,18 @@ def get_stats() -> dict:
             " GROUP BY provider ORDER BY cnt DESC LIMIT 10"
         ).fetchall()
 
-        # 近 7 天每日数量
+        # 近 7 天每日数量（单次 GROUP BY 替代 7 个独立查询）
+        week_start = (datetime.now() - timedelta(days=6)).strftime("%Y-%m-%d")
+        daily_rows = c.execute(
+            "SELECT substr(timestamp, 1, 10) AS day, COUNT(*) AS cnt "
+            "FROM history WHERE timestamp >= ? GROUP BY day",
+            (week_start,)
+        ).fetchall()
+        daily_map = {r["day"]: r["cnt"] for r in daily_rows}
         daily = []
         for i in range(6, -1, -1):
             d = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
-            cnt = c.execute(
-                "SELECT COUNT(*) FROM history WHERE timestamp LIKE ?",
-                (f"{d}%",)
-            ).fetchone()[0]
-            daily.append((d[5:], cnt))   # "MM-DD"
+            daily.append((d[5:], daily_map.get(d, 0)))   # "MM-DD"
 
         # Tags 热度 — use junction tables
         tag_rows = c.execute(
