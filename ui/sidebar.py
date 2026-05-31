@@ -506,7 +506,13 @@ class HistorySidebar:
                     except Exception: pass
             except Exception: pass
 
-        self._card_widgets[e["id"]] = {"fn": _sel_updater, "is_fav": is_fav}
+        # 存储 card 和 star_btn 引用，支持原地更新（避免单条操作触发全量重建）
+        self._card_widgets[e["id"]] = {
+            "fn":       _sel_updater,
+            "is_fav":   is_fav,
+            "card":     card,
+            "star_btn": star_btn,
+        }
 
     # ══════════════════════════════════════════════════════════
     #   轻量选中态切换（不重建列表，零闪烁）
@@ -749,18 +755,53 @@ class HistorySidebar:
         if is_fav:
             if not messagebox.askyesno("取消收藏", f'从喜爱列表移除？\n\n「{title}」', parent=self.app.root): return
             toggle_favorite(entry["id"], False)
+            new_fav = False
         else:
             if not messagebox.askyesno("添加收藏", f'收藏到喜爱列表？\n\n「{title}」', parent=self.app.root): return
             toggle_favorite(entry["id"], True)
-        self.app._refresh_hist()
+            new_fav = True
+
+        cd = self._card_widgets.get(entry["id"])
+        if cd and not self._fav_only:
+            # 原地更新：仅改星号颜色 + 卡片背景，不重建列表
+            cd["is_fav"] = new_fav
+            try:
+                cd["star_btn"].config(
+                    text="★" if new_fav else "☆",
+                    fg=C["star_on"] if new_fav else C["star_off"]
+                )
+                cd["fn"](entry["id"] == self.app.sel_id, new_fav)
+            except Exception:
+                self.app._refresh_hist()  # 退化：widget 已销毁则全量刷新
+        else:
+            # 仅收藏模式下需重建（卡片可能需要从列表消失）
+            self.app._refresh_hist()
 
     def _del_entry(self, eid):
         if not messagebox.askyesno(_("dlg_confirm_delete"),
                 _("dlg_confirm_delete"),
                 parent=self.app.root): return
         delete_entry(eid, remove_file=True)
-        if self.app.sel_id == eid: self.app.sel_id = None; self.app._reset_view()
-        else: self.app._refresh_hist()
+
+        # 原地移除卡片，不重建整个列表
+        cd = self._card_widgets.pop(eid, None)
+        if cd and cd.get("card"):
+            try:
+                cd["card"].destroy()
+                if self.app.sel_id == eid:
+                    self.app.sel_id = None
+                    self.app._reset_view()
+                self._refresh_tag_chips()
+                return
+            except Exception:
+                pass  # 退化到全量刷新
+
+        # 退化路径：卡片 widget 已不存在
+        if self.app.sel_id == eid:
+            self.app.sel_id = None
+            self.app._reset_view()
+        else:
+            self.app._refresh_hist()
 
     def _clear_hist(self):
         n = count_entries()
