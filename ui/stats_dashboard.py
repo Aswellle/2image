@@ -231,11 +231,11 @@ class StatsDashboard:
         def _hide_tip(_=None):
             if tip_after[0]:
                 try: win.after_cancel(tip_after[0])
-                except: pass
+                except Exception: pass
                 tip_after[0] = None
             if tip_win[0]:
                 try: tip_win[0].destroy()
-                except: pass
+                except Exception: pass
                 tip_win[0] = None
 
         # ── 绘制热力图 ──────────────────────────────────────────
@@ -352,13 +352,13 @@ class StatsDashboard:
                     _show_tip(ev.x_root, ev.y_root, tip_text)
                 if tip_after[0]:
                     try: win.after_cancel(tip_after[0])
-                    except: pass
+                    except Exception: pass
                 tip_after[0] = win.after(300, _do_show)
 
             def _on_leave(ev):
                 if tip_after[0]:
                     try: win.after_cancel(tip_after[0])
-                    except: pass
+                    except Exception: pass
                     tip_after[0] = None
                 _hide_tip()
 

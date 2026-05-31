@@ -16,6 +16,41 @@ def test_all_providers_fail_raises_runtimeerror():
         generate_image("test prompt", 512, 512, 42, cfg, provider_order=key_required)
 
 
+def test_runtimeerror_triggers_provider_fallback():
+    """RuntimeError from a provider must fall through to the next provider."""
+    from unittest.mock import patch
+
+    def bad_provider(prompt, w, h, seed, cfg, log):
+        raise RuntimeError("Blocked unsafe image URL: https://10.0.0.1/evil.png")
+
+    def good_provider(prompt, w, h, seed, cfg, log):
+        return b"fake_image_bytes", "GoodProvider"
+
+    with patch("services.image_service.ALL_PROVIDERS",
+               {"bad": bad_provider, "good": good_provider}):
+        data, used = generate_image("test", 512, 512, 42, {},
+                                    provider_order=["bad", "good"])
+    assert used == "GoodProvider"
+    assert data == b"fake_image_bytes"
+
+
+def test_timeouterror_triggers_provider_fallback():
+    """TimeoutError from a provider must fall through to the next provider."""
+    from unittest.mock import patch
+
+    def timeout_provider(prompt, w, h, seed, cfg, log):
+        raise TimeoutError("120s timeout waiting for response")
+
+    def good_provider(prompt, w, h, seed, cfg, log):
+        return b"image_bytes", "GoodProvider"
+
+    with patch("services.image_service.ALL_PROVIDERS",
+               {"slow": timeout_provider, "good": good_provider}):
+        data, used = generate_image("test", 512, 512, 42, {},
+                                    provider_order=["slow", "good"])
+    assert used == "GoodProvider"
+
+
 def test_save_image_file():
     """save_image_file should create a valid PNG with metadata."""
     from services.image_service import save_image_file

@@ -87,8 +87,9 @@ TAG_PALETTE = [
 ]
 
 def tag_color(tag: str) -> str:
-    """确定性标签颜色（hash → palette）。"""
-    h = sum(ord(c) for c in tag)
+    """确定性标签颜色（hash → palette）。使用 md5 避免字符顺序碰撞。"""
+    import hashlib
+    h = int(hashlib.md5(tag.encode()).hexdigest(), 16)
     return TAG_PALETTE[h % len(TAG_PALETTE)]
 
 

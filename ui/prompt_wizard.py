@@ -643,13 +643,13 @@ class PromptWizard(tk.Toplevel):
             old_card.config(bg=C["card"], highlightbackground=C["sep"])
             for w in old_card.winfo_children():
                 try: w.config(bg=C["card"])
-                except: pass
+                except Exception: pass
         self._sel_tid = tid
         card, cat_color = self._tmpl_cards[tid]
         card.config(bg=C["card_hl"], highlightbackground=cat_color)
         for w in card.winfo_children():
             try: w.config(bg=C["card_hl"])
-            except: pass
+            except Exception: pass
         t = TEMPLATES[tid]
         self._tmpl_status.config(
             text=f"✅  已选：{t['name']}  |  {t['size_hint']}", fg=C["ok"])

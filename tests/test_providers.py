@@ -90,6 +90,33 @@ def test_validate_image_url_allows_public_cdn():
         assert validate_image_url("https://cdn.example.com/test.png")
 
 
+def test_validate_image_url_blocks_ipv4_mapped_ipv6_loopback():
+    from services.providers._net import validate_image_url
+    from unittest.mock import patch
+    import socket
+    # ::ffff:127.0.0.1 — IPv4-mapped loopback; must be unwrapped and blocked
+    mock_result = [(socket.AF_INET6, socket.SOCK_STREAM, 6, '',
+                    ('::ffff:127.0.0.1', 443, 0, 0))]
+    with patch('services.providers._net.socket.getaddrinfo', return_value=mock_result):
+        assert not validate_image_url("https://cdn.example.com/img.png")
+
+
+def test_validate_image_url_blocks_ipv4_mapped_ipv6_link_local():
+    from services.providers._net import validate_image_url
+    from unittest.mock import patch
+    import socket
+    # ::ffff:169.254.169.254 — cloud metadata via IPv6 literal
+    mock_result = [(socket.AF_INET6, socket.SOCK_STREAM, 6, '',
+                    ('::ffff:169.254.169.254', 443, 0, 0))]
+    with patch('services.providers._net.socket.getaddrinfo', return_value=mock_result):
+        assert not validate_image_url("https://metadata.internal/latest/")
+
+
+def test_validate_image_url_blocks_native_ipv6_loopback():
+    from services.providers._net import validate_image_url
+    assert not validate_image_url("https://[::1]/img.png")
+
+
 def test_validate_image_url_allows_literal_public_ip():
     from services.providers._net import validate_image_url
     # Literal public IP — no DNS lookup, tests IP-check path directly
