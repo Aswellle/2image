@@ -17,7 +17,7 @@ v2 修复：
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "StableHorde (兜底)",
@@ -207,17 +207,14 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int,
         raise ValueError("StableHorde generation 无 img URL")
 
     log(f"  下载图片: {img_url[:60]}…")
-    if not _validate_image_url(img_url):
-        raise RuntimeError(f"Blocked unsafe image URL: {img_url[:100]}")
-    # 下载带重试（R2 URL 偶尔需要重定向）
+    # 下载带重试（R2 URL 偶尔需要重定向；safe_get_image 验证所有重定向目标）
     for attempt in range(1, 4):
         try:
-            ir = _session.get(img_url, timeout=60, allow_redirects=True)
-            ir.raise_for_status()
-            if len(ir.content) >= 1024:
-                log(f"  ✓ StableHorde/{model} 成功，{len(ir.content)//1024}KB")
-                return ir.content, f"StableHorde/{model}"
-            log(f"    图片数据过小({len(ir.content)}B)，重试{attempt}…")
+            data = _safe_get_image(img_url, timeout=60)
+            if len(data) >= 1024:
+                log(f"  ✓ StableHorde/{model} 成功，{len(data)//1024}KB")
+                return data, f"StableHorde/{model}"
+            log(f"    图片数据过小({len(data)}B)，重试{attempt}…")
         except Exception as e:
             log(f"    下载失败({attempt}): {e}")
             if attempt < 3:

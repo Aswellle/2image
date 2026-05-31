@@ -8,7 +8,7 @@ Together AI — FLUX.1-schnell-Free 免费端点
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "Together AI (FLUX Free·免费)",
@@ -114,11 +114,7 @@ def _extract_image(data: dict, log: Callable) -> bytes:
         raise ValueError(f"Together AI 响应无 url 或 b64_json：{items[0]}")
 
     log(f"[Together AI] 下载图片：{url[:80]}…")
-    if not _validate_image_url(url):
-        raise RuntimeError(f"Blocked unsafe image URL: {url[:100]}")
-    r = _session.get(url, timeout=60)
-    r.raise_for_status()
-    return r.content
+    return _safe_get_image(url, timeout=60)
 
 
 # Together AI FLUX Free 端点支持的尺寸：必须是 64 的倍数，范围 256~1440

@@ -13,7 +13,7 @@ import base64
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "Recraft v3 (设计/插画)",
@@ -92,12 +92,9 @@ def try_recraft(prompt: str, w: int, h: int, seed: int,
 
     img_url = data[0].get("url", "")
     if img_url:
-        if not _validate_image_url(img_url):
-            raise RuntimeError(f"Blocked unsafe image URL: {img_url[:100]}")
-        ir = _session.get(img_url, timeout=60)
-        ir.raise_for_status()
-        log(f"  ✓ Recraft v3 成功（URL）{len(ir.content) // 1024}KB")
-        return ir.content, f"Recraft/v3-{style}"
+        data = _safe_get_image(img_url, timeout=60)
+        log(f"  ✓ Recraft v3 成功（URL）{len(data) // 1024}KB")
+        return data, f"Recraft/v3-{style}"
 
     b64 = data[0].get("b64_json", "")
     if b64:

@@ -19,7 +19,7 @@ import base64
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "HuggingFace (备用)",
@@ -193,12 +193,9 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
                     if isinstance(j, dict):
                         imgs = j.get("images", [])
                         if imgs and imgs[0].get("url"):
-                            if not _validate_image_url(imgs[0]['url']):
-                                raise RuntimeError(f"Blocked unsafe image URL: {imgs[0]['url'][:100]}")
-                            ir = _session.get(imgs[0]['url'], timeout=60)
-                            ir.raise_for_status()
+                            img_data = _safe_get_image(imgs[0]['url'], timeout=60)
                             log(f"  ✓ HuggingFace/{sn} 成功（images.url）")
-                            result = (ir.content, f"HuggingFace/{sn}")
+                            result = (img_data, f"HuggingFace/{sn}")
                             break
 
                         # 格式 C：{"data": [{"b64_json"|"url": ...}]}
@@ -210,12 +207,9 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
                                 result = (img, f"HuggingFace/{sn}")
                                 break
                             if data[0].get("url"):
-                                if not _validate_image_url(data[0]['url']):
-                                    raise RuntimeError(f"Blocked unsafe image URL: {data[0]['url'][:100]}")
-                                ir = _session.get(data[0]['url'], timeout=60)
-                                ir.raise_for_status()
+                                img_data = _safe_get_image(data[0]['url'], timeout=60)
                                 log(f"  ✓ HuggingFace/{sn} 成功（data.url）")
-                                result = (ir.content, f"HuggingFace/{sn}")
+                                result = (img_data, f"HuggingFace/{sn}")
                                 break
 
                         err_info = j.get("error", str(j)[:100])

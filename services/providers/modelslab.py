@@ -21,7 +21,7 @@ v2 修复：
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "ModelsLab (免费100次/天)",
@@ -63,16 +63,13 @@ _HQ_NEGATIVE = (
 
 
 def _download_image(url: str, log: Callable) -> bytes:
-    """下载图片，带重试。"""
-    if not _validate_image_url(url):
-        raise RuntimeError(f"Blocked unsafe image URL: {url[:100]}")
+    """下载图片，带重试。safe_get_image 验证 URL 及所有重定向目标。"""
     for attempt in range(1, 4):
         try:
-            ir = _session.get(url, timeout=120)
-            ir.raise_for_status()
-            if len(ir.content) >= 1024:
-                return ir.content
-            log(f"    下载数据过小（{len(ir.content)}B），重试{attempt}…")
+            data = _safe_get_image(url, timeout=120)
+            if len(data) >= 1024:
+                return data
+            log(f"    下载数据过小（{len(data)}B），重试{attempt}…")
         except Exception as e:
             log(f"    下载失败({attempt}): {e}")
             if attempt < 3:

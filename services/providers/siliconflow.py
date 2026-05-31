@@ -10,7 +10,7 @@ v3 变体高质量模式（variant_hq）：
 """
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "硅基流动 SiliconFlow (★推荐)",
@@ -130,10 +130,7 @@ def try_siliconflow(prompt: str, w: int, h: int, seed: int,
 
         inf_time = resp.json().get("timings", {}).get("inference", "?")
         log(f"  ✓ 成功，推理耗时 {inf_time}s，下载中…")
-        if not _validate_image_url(img_url):
-            raise RuntimeError(f"Blocked unsafe image URL: {img_url[:100]}")
-        ir = _session.get(img_url, timeout=60)
-        ir.raise_for_status()
-        return ir.content, f"硅基流动/{model_id.split('/')[-1]}"
+        data = _safe_get_image(img_url, timeout=60)
+        return data, f"硅基流动/{model_id.split('/')[-1]}"
 
     raise ValueError("所有硅基流动免费模型均失败")

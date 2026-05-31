@@ -7,7 +7,7 @@ Key: Header  Api-Key: <key>
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "Ideogram v2 (文字入图)",
@@ -92,9 +92,6 @@ def try_ideogram(prompt: str, w: int, h: int, seed: int,
         raise ValueError("Ideogram 响应中无图片 URL")
 
     log("  下载图片中…")
-    if not _validate_image_url(img_url):
-        raise RuntimeError(f"Blocked unsafe image URL: {img_url[:100]}")
-    ir = _session.get(img_url, timeout=60)
-    ir.raise_for_status()
-    log(f"  ✓ Ideogram v2 成功  {len(ir.content) // 1024}KB")
-    return ir.content, "Ideogram/v2"
+    data = _safe_get_image(img_url, timeout=60)
+    log(f"  ✓ Ideogram v2 成功  {len(data) // 1024}KB")
+    return data, "Ideogram/v2"

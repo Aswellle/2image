@@ -23,7 +23,7 @@ import base64
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 
 PROVIDER_INFO = {
@@ -136,11 +136,7 @@ def _extract_image(data: dict, log: Callable) -> bytes:
     url = items[0].get("url", "")
     if url:
         log(f"[xAI Grok] 下载图片：{url[:80]}…")
-        if not _validate_image_url(url):
-            raise RuntimeError(f"Blocked unsafe image URL: {url[:100]}")
-        r = _session.get(url, timeout=60)
-        r.raise_for_status()
-        return r.content
+        return _safe_get_image(url, timeout=60)
 
     b64 = items[0].get("b64_json", "")
     if b64:

@@ -151,11 +151,7 @@ def _fetch_or_decode(url_or_b64: str, log: Callable) -> bytes:
     parsed = urlparse(url_or_b64)
     if parsed.scheme in ("http", "https"):
         log(f"[OpenRouter] 下载图片：{url_or_b64[:80]}…")
-        if not _validate_image_url(url_or_b64):
-            raise RuntimeError(f"Blocked unsafe image URL: {url_or_b64[:100]}")
-        r = _session.get(url_or_b64, timeout=60)
-        r.raise_for_status()
-        return r.content
+        return _safe_get_image(url_or_b64, timeout=60)
 
     # 最后尝试当作纯 base64
     try:

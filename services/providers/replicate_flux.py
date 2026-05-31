@@ -1,6 +1,6 @@
 """services/providers/replicate_flux.py — Replicate FLUX"""
 import base64, time
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "💎 Replicate FLUX",
@@ -49,9 +49,7 @@ def try_replicate(prompt, w, h, seed, cfg, log):
     if img_url.startswith("data:"):
         log(f"  ✓ Replicate {slug} 成功（data URI）")
         return base64.b64decode(img_url.split(",",1)[1]), f"Replicate/{slug}"
-    if not _validate_image_url(img_url):
-        raise RuntimeError(f"Blocked unsafe image URL: {img_url[:100]}")
     log(f"  下载图片: {img_url[:60]}…")
-    ir = _session.get(img_url, timeout=60); ir.raise_for_status()
+    data = _safe_get_image(img_url, timeout=60)
     log(f"  ✓ Replicate {slug} 成功")
-    return ir.content, f"Replicate/{slug}"
+    return data, f"Replicate/{slug}"

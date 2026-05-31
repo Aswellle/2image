@@ -7,7 +7,7 @@ Key: Header  Authorization: Key <key>
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "name": "fal.ai FLUX Ultra (高质量)",
@@ -113,12 +113,9 @@ def try_fal_flux(prompt: str, w: int, h: int, seed: int,
             if not img_url:
                 raise ValueError("fal.ai 结果中无图片 URL")
             log("  下载图片中…")
-            if not _validate_image_url(img_url):
-                raise RuntimeError(f"Blocked unsafe image URL: {img_url[:100]}")
-            ir = _session.get(img_url, timeout=120)
-            ir.raise_for_status()
-            log(f"  ✓ fal.ai FLUX Ultra 成功  {len(ir.content) // 1024}KB")
-            return ir.content, "fal.ai/FLUX-Ultra"
+            data = _safe_get_image(img_url, timeout=120)
+            log(f"  ✓ fal.ai FLUX Ultra 成功  {len(data) // 1024}KB")
+            return data, "fal.ai/FLUX-Ultra"
 
         if status in ("FAILED", "CANCELLED"):
             raise ValueError(f"fal.ai 任务失败: {status}")
