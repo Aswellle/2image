@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+*.spec
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# App data (stored in ~/.text_to_image_app/)
+*.db
+*.log
+config.json
+
+# PyInstaller artifacts
+main.spec
+
+# IDE / tools
+.history/
+.omc/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Installer output
+installer/*.exe
+installer/*.iss.bak
+
+# Misc
+*.bak
+Thumbs.db
+desktop.ini
