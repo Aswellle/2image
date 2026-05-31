@@ -22,16 +22,19 @@ THUMB_SIZE   = 90
 # ══════════════════════════════════════════════════════════════
 class _Tooltip:
     """
-    鼠标悬停气泡提示。
-    · 悬停 450ms 后开始显示（避免误触产生闪烁）
-    · 约 16ms/帧、共 8 帧，平滑淡入到不透明
-    · 鼠标离开 / 点击按钮时立即消除
+    鼠标悬停气泡提示（类级 Toplevel 单例）。
+    · 悬停 450ms 后开始显示
+    · 所有实例共享一个 Toplevel 窗口，避免每次 hover 创建/销毁 Toplevel
+    · 100 张卡片 × 5 个按钮 = 500 实例，但只有 1 个 Toplevel 对象
     """
+    _tip_win: tk.Toplevel | None = None   # 共享 Toplevel 单例
+    _tip_lbl: tk.Label | None = None      # 共享文本标签
+    _active: '_Tooltip | None' = None     # 当前正在显示的实例
+
     def __init__(self, widget: tk.Widget, text: str, delay_ms: int = 450):
         self._w     = widget
         self._text  = text
         self._delay = delay_ms
-        self._tip   = None
         self._job   = None
         self._alpha = 0.0
         widget.bind("<Enter>",       self._schedule,  add="+")
@@ -44,7 +47,8 @@ class _Tooltip:
 
     def _cancel(self, _=None):
         self._cancel_job()
-        self._destroy_tip()
+        if _Tooltip._active is self:
+            _Tooltip._hide_shared()
 
     def _cancel_job(self):
         if self._job:
@@ -52,48 +56,55 @@ class _Tooltip:
             except Exception: pass
             self._job = None
 
-    def _destroy_tip(self):
-        if self._tip:
-            try: self._tip.destroy()
+    @classmethod
+    def _hide_shared(cls):
+        cls._active = None
+        if cls._tip_win:
+            try: cls._tip_win.wm_attributes("-alpha", 0.0)
             except Exception: pass
-            self._tip = None
 
     def _show(self):
         self._job = None
-        if self._tip: return
+        _Tooltip._active = self
         try:
-            # 气泡出现在控件正下方，偏右 4px
             wx = self._w.winfo_rootx() + 4
             wy = self._w.winfo_rooty() + self._w.winfo_height() + 6
-            tip = tk.Toplevel(self._w)
-            tip.wm_overrideredirect(True)
-            tip.wm_attributes("-topmost", True)
-            # 初始完全透明，后续渐显
-            try: tip.wm_attributes("-alpha", 0.0)
+
+            # 懒初始化共享 Toplevel（整个 sidebar 生命周期只创建一次）
+            if _Tooltip._tip_win is None or not _Tooltip._tip_win.winfo_exists():
+                win = tk.Toplevel(self._w)
+                win.wm_overrideredirect(True)
+                win.wm_attributes("-topmost", True)
+                try: win.wm_attributes("-alpha", 0.0)
+                except Exception: pass
+                frm = tk.Frame(win, bg="#1e3a5f",
+                               highlightbackground="#4a7adf", highlightthickness=1)
+                frm.pack()
+                lbl = tk.Label(frm, font=F["small"], bg="#1e3a5f",
+                               fg="#eaeaea", padx=9, pady=5)
+                lbl.pack()
+                _Tooltip._tip_win = win
+                _Tooltip._tip_lbl = lbl
+
+            _Tooltip._tip_lbl.config(text=self._text)
+            _Tooltip._tip_win.wm_geometry(f"+{wx}+{wy}")
+            try: _Tooltip._tip_win.wm_attributes("-alpha", 0.0)
             except Exception: pass
-            tip.wm_geometry(f"+{wx}+{wy}")
+            _Tooltip._tip_win.lift()
 
-            frm = tk.Frame(tip, bg="#1e3a5f",
-                           highlightbackground="#4a7adf",
-                           highlightthickness=1)
-            frm.pack()
-            tk.Label(frm, text=self._text,
-                     font=F["small"], bg="#1e3a5f",
-                     fg="#eaeaea", padx=9, pady=5).pack()
-
-            self._tip   = tip
             self._alpha = 0.0
             self._fade_in()
         except Exception:
-            self._tip = None
+            _Tooltip._active = None
 
     def _fade_in(self):
-        if not self._tip: return
+        if _Tooltip._active is not self or _Tooltip._tip_win is None:
+            return
         self._alpha = min(1.0, self._alpha + 0.15)
         try:
-            self._tip.wm_attributes("-alpha", self._alpha)
+            _Tooltip._tip_win.wm_attributes("-alpha", self._alpha)
         except Exception:
-            self._tip = None; return
+            _Tooltip._active = None; return
         if self._alpha < 1.0:
             self._w.after(16, self._fade_in)   # ~60 fps
 
