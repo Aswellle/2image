@@ -143,7 +143,7 @@ class HistorySidebar:
                   font=F["body"], padx=8, pady=2, cursor="hand2",
                   command=self.app._export).pack(side="right", padx=8, pady=8)
 
-        sf = tk.Frame(L, bg=C["panel"], pady=4); sf.pack(fill="x", padx=6)
+        sf = tk.Frame(L, bg=C["panel"], pady=2); sf.pack(fill="x", padx=6)
         self.sv = tk.StringVar()
         def _on_search(*_):
             if self._search_timer:
@@ -152,15 +152,31 @@ class HistorySidebar:
         self.sv.trace("w", _on_search)
         _srf = tk.Frame(sf, bg=C["entry"],
                         highlightbackground=C["ok"], highlightthickness=1)
-        _srf.pack(fill="x", padx=2)
+        _srf.pack(fill="x", padx=2, pady=(4, 4))
         _sre = tk.Entry(_srf, textvariable=self.sv, bg=C["entry"], fg=C["text"],
                         insertbackground="white", font=F["body"],
                         bd=0, relief="flat")
         _sre.pack(fill="x", ipady=5, padx=2)
         _sre.bind("<FocusIn>",  lambda _: _srf.config(highlightbackground=C["entry"]), add="+")
         _sre.bind("<FocusOut>", lambda _: _srf.config(highlightbackground=C["ok"]),    add="+")
-        tk.Label(sf, text=_("search_placeholder"), font=F["small"],
-                 bg=C["panel"], fg="#6a7a9a").pack(anchor="w", padx=4)
+
+        # 占位符覆盖层：place() 在 Entry 上方，输入内容或获焦时隐藏（不影响 sv）
+        _ph_lbl = tk.Label(_srf, text=_("search_placeholder"),
+                           font=F["body"], bg=C["entry"], fg="#6a7a9a",
+                           bd=0, padx=6)
+        _ph_lbl.place(x=2, y=0, relheight=1.0)
+        # 点击占位符文字也能获焦到输入框
+        _ph_lbl.bind("<Button-1>", lambda _: _sre.focus_set())
+
+        def _upd_ph(*_):
+            if self.sv.get():
+                _ph_lbl.place_forget()
+            else:
+                _ph_lbl.place(x=2, y=0, relheight=1.0)
+
+        _sre.bind("<FocusIn>",  lambda _: _ph_lbl.place_forget(), add="+")
+        _sre.bind("<FocusOut>", lambda _: _upd_ph(),              add="+")
+        self.sv.trace("w", _upd_ph)
 
         flt = tk.Frame(L, bg=C["panel"]); flt.pack(fill="x", padx=6, pady=(0, 2))
         self._btn_all = tk.Button(flt, text=_("btn_show_all"), font=F["small_b"],
