@@ -60,22 +60,80 @@ class MainContent:
 
 
     def _build(self, R):
-        # ── ttk 暗色主题配置 ──────────────────────────────────────
+        # ── ttk 暗色主题配置（全局，对整个 Tk 实例生效）─────────────
         style = ttk.Style()
-        style.theme_use("clam")  # clam theme allows customization
-        style.configure("TNotebook", background=C["bg"], borderwidth=0)
+        style.theme_use("clam")
+
+        # ── Notebook / Tab ────────────────────────────────────────
+        style.configure("TNotebook",
+                        background=C["bg"], borderwidth=0,
+                        bordercolor=C["sep"],
+                        lightcolor=C["bg"], darkcolor=C["bg"])
         style.configure("TNotebook.Tab",
                         background=C["panel"], foreground=C["sub"],
-                        padding=[12, 4], font=F["small_b"])
+                        padding=[12, 4], font=F["small_b"],
+                        bordercolor=C["sep"],
+                        lightcolor=C["panel"], darkcolor=C["panel"])
         style.map("TNotebook.Tab",
-                  background=[("selected", C["acc"])],
-                  foreground=[("selected", "white")])
+                  background=[("selected", C["acc"]),
+                               ("active",   C["hl"])],
+                  foreground=[("selected", "white"),
+                               ("active",   "white")],
+                  lightcolor=[("selected", C["acc"])],
+                  darkcolor=[("selected",  C["acc"])])
+
+        # ── Combobox 字段及箭头区完整状态映射 ────────────────────────
+        # 覆盖 clam 主题默认状态，防止 focus/hover 时字段变回系统色
         style.configure("TCombobox",
-                        fieldbackground=C["entry"], background=C["acc"],
-                        foreground=C["text"], arrowcolor=C["text"])
+                        fieldbackground=C["entry"],
+                        background=C["acc"],
+                        foreground=C["text"],
+                        arrowcolor=C["text"],
+                        selectbackground=C["acc"],
+                        selectforeground="white",
+                        insertcolor=C["text"],
+                        bordercolor=C["sep"],
+                        lightcolor=C["entry"],
+                        darkcolor=C["entry"])
         style.map("TCombobox",
-                  fieldbackground=[("readonly", C["entry"])],
-                  foreground=[("readonly", C["text"])])
+                  fieldbackground=[
+                      ("readonly", "focus",  C["entry"]),
+                      ("readonly", "!focus", C["entry"]),
+                      ("focus",              C["entry"]),
+                      ("!focus",             C["entry"]),
+                      ("disabled",           C["panel"]),
+                  ],
+                  foreground=[
+                      ("readonly",  C["text"]),
+                      ("focus",     C["text"]),
+                      ("disabled",  C["sub"]),
+                  ],
+                  selectbackground=[
+                      ("focus",  C["acc"]),
+                      ("!focus", C["acc"]),
+                  ],
+                  selectforeground=[
+                      ("focus",  "white"),
+                      ("!focus", "white"),
+                  ],
+                  background=[
+                      ("active",  C["hl"]),   # 箭头按钮 hover
+                      ("!active", C["acc"]),  # 箭头按钮常态
+                  ],
+                  arrowcolor=[
+                      ("disabled", C["sub"]),
+                      ("active",   "white"),
+                      ("!active",  C["text"]),
+                  ])
+
+        # ── 弹出下拉列表（Listbox）颜色 ───────────────────────────
+        # ttk.Combobox 的弹出框是 tk.Listbox，须用 option_add 设置
+        self.app.root.option_add("*TCombobox*Listbox.background",       C["entry"])
+        self.app.root.option_add("*TCombobox*Listbox.foreground",       C["text"])
+        self.app.root.option_add("*TCombobox*Listbox.selectBackground", C["acc"])
+        self.app.root.option_add("*TCombobox*Listbox.selectForeground", "white")
+        self.app.root.option_add("*TCombobox*Listbox.relief",           "flat")
+        self.app.root.option_add("*TCombobox*Listbox.borderWidth",      "0")
         tk.Label(R, text=_("app_input_label"),
                  font=F["btn"], bg=C["bg"], fg=C["text"]
                  ).pack(anchor="w", pady=(12, 4), padx=14)
