@@ -44,6 +44,10 @@ class MainContent:
         self._cmp_photo = None
         self._cmp_mode = False
 
+        # 图生图参考图状态
+        self._ref_image: bytes | None = None
+        self._ref_strength = tk.DoubleVar(value=0.6)
+
         # Resize timers
         self._prev_resize_timer = None
         self._cmp_resize_timer = None
@@ -184,6 +188,32 @@ class MainContent:
                   command=self.app._gen_variants).pack(side="left")
         tk.Label(opt2, text=_("shortcut_hint"),
                  font=F["small"], bg=C["bg"], fg="#6a7a9a").pack(side="left", padx=6)
+
+        # ── 图生图参考图行 ─────────────────────────────────────────
+        ref_bar = tk.Frame(R, bg=C["bg"]); ref_bar.pack(fill="x", padx=14, pady=(0, 2))
+        tk.Label(ref_bar, text="🖼 参考图", font=F["body"],
+                 bg=C["bg"], fg=C["sub"]).pack(side="left")
+        tk.Button(ref_bar, text="选取", font=F["small"],
+                  bg=C["acc"], fg="white", bd=0, padx=8, pady=3,
+                  cursor="hand2", command=self._pick_ref_image
+                  ).pack(side="left", padx=(4, 0))
+        self._ref_clear_btn = tk.Button(ref_bar, text="✕ 清除", font=F["small"],
+                  bg="#2a1018", fg=C["hl"], bd=0, padx=6, pady=3,
+                  cursor="hand2", command=self._clear_ref_image, state="disabled")
+        self._ref_clear_btn.pack(side="left", padx=(2, 0))
+        tk.Frame(ref_bar, bg=C["sep"], width=1).pack(side="left", fill="y", padx=8, pady=3)
+        tk.Label(ref_bar, text="强度", font=F["small"], bg=C["bg"], fg=C["sub"]).pack(side="left")
+        self._ref_strength_lbl = tk.Label(ref_bar, text="0.6", font=F["small_b"],
+                                           bg=C["bg"], fg=C["ok"], width=3)
+        self._ref_strength_lbl.pack(side="left", padx=(2, 0))
+        def _upd_strength(*_):
+            self._ref_strength_lbl.config(text=f"{self._ref_strength.get():.1f}")
+        self._ref_strength.trace("w", _upd_strength)
+        ttk.Scale(ref_bar, from_=0.1, to=0.9, variable=self._ref_strength,
+                  orient="horizontal", length=100).pack(side="left", padx=(2, 4))
+        self._ref_name_lbl = tk.Label(ref_bar, text="（未选取）", font=F["small"],
+                                       bg=C["bg"], fg=C["sub"])
+        self._ref_name_lbl.pack(side="left")
 
         # 接口状态栏
         tok_bar = tk.Frame(R, bg=C["panel"]); tok_bar.pack(fill="x", padx=14, pady=(0, 4))
@@ -620,3 +650,30 @@ class MainContent:
             self._char_lbl.config(text=_("lbl_chars", n=n), fg=color)
         except Exception:
             pass
+
+    # ══════════════════════════════════════════════════════════
+    #   图生图参考图管理
+    # ══════════════════════════════════════════════════════════
+    def _pick_ref_image(self):
+        """弹出文件选择器，读取参考图字节并更新 UI 状态。"""
+        path = filedialog.askopenfilename(
+            title="选取参考图（图生图）",
+            filetypes=[("图片", "*.png *.jpg *.jpeg *.webp *.bmp"),
+                       ("所有文件", "*.*")])
+        if not path:
+            return
+        try:
+            with open(path, "rb") as _fh:
+                self._ref_image = _fh.read()
+            name = os.path.basename(path)
+            self._ref_name_lbl.config(text=f"✓ {name[:28]}", fg=C["ok"])
+            self._ref_clear_btn.config(state="normal")
+        except Exception as e:
+            self._ref_image = None
+            self._ref_name_lbl.config(text=f"读取失败: {e}", fg=C["hl"])
+
+    def _clear_ref_image(self):
+        """清除参考图，切回纯文生图模式。"""
+        self._ref_image = None
+        self._ref_name_lbl.config(text="（未选取）", fg=C["sub"])
+        self._ref_clear_btn.config(state="disabled")

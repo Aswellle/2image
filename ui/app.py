@@ -769,11 +769,16 @@ class App:
                 translated = translate_zh_to_en(prompt, log_cb=self._log)
                 self._batch_params["translated"] = translated
             try:
+                ref_image = getattr(self.content, '_ref_image', None)
+                strength  = getattr(self.content, '_ref_strength', None)
+                strength  = strength.get() if strength is not None else 0.6
                 data, used = generate_image(
                     translated, w, h, seed, self.cfg,
                     provider_order=porder,
                     status_cb=_make_status_cb(len(porder)),
-                    log_cb=self._log)
+                    log_cb=self._log,
+                    ref_image=ref_image,
+                    strength=strength)
                 path = save_image_file(data, prompt,
                                        seed=seed, provider=used,
                                        translated=translated,
