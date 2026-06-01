@@ -23,6 +23,111 @@ from ui.batch_panel import BatchPanel
 from ui.queue_panel import QueuePanel
 from ui.app_protocol import MainContentProtocol
 
+# ══════════════════════════════════════════════════════════════
+#   自定义强度滑块（Canvas 渐变轨道 + 可拖拽圆形手柄）
+# ══════════════════════════════════════════════════════════════
+class _StrengthSlider:
+    """
+    Canvas 绘制的强度滑块。
+    范围 0.1~0.9；轨道颜色渐变：蓝（微调） → 紫（融合） → 红（重构）。
+    """
+    W = 260; H = 58
+    TX = 12; TW = 236; TY = 22; TH = 6
+    HR = 9   # 手柄半径
+    # 三段渐变颜色锚点
+    _STOPS = [(0.1, "#1d4ed8"), (0.5, "#7c3aed"), (0.9, "#dc2626")]
+
+    def __init__(self, parent: tk.Frame, variable: tk.DoubleVar):
+        self.var = variable
+        self.cv = tk.Canvas(parent, width=self.W, height=self.H,
+                            bg="#0a1628", bd=0, highlightthickness=0,
+                            cursor="hand2")
+        self._gradient = self._build_gradient(60)   # 预计算渐变色带
+        self._draw()
+        self.cv.bind("<ButtonPress-1>",  self._on_press)
+        self.cv.bind("<B1-Motion>",      self._on_drag)
+        self.var.trace("w", lambda *_: self._draw())
+
+    def pack(self, **kw): self.cv.pack(**kw)
+    def grid(self, **kw): self.cv.grid(**kw)
+
+    # ── 工具 ──────────────────────────────────────────────────
+    def _val_to_x(self, v: float) -> int:
+        return int(self.TX + (v - 0.1) / 0.8 * self.TW)
+
+    def _x_to_val(self, x: int) -> float:
+        v = 0.1 + (x - self.TX) / self.TW * 0.8
+        return round(max(0.1, min(0.9, v)), 2)
+
+    @staticmethod
+    def _lerp(c1: str, c2: str, t: float) -> str:
+        r1,g1,b1 = int(c1[1:3],16), int(c1[3:5],16), int(c1[5:7],16)
+        r2,g2,b2 = int(c2[1:3],16), int(c2[3:5],16), int(c2[5:7],16)
+        return (f"#{int(r1+(r2-r1)*t):02x}"
+                f"{int(g1+(g2-g1)*t):02x}"
+                f"{int(b1+(b2-b1)*t):02x}")
+
+    def _build_gradient(self, n: int) -> list:
+        stops = self._STOPS
+        colors = []
+        for i in range(n):
+            t = i / (n - 1)   # 0..1 对应 0.1..0.9
+            # 找区间
+            for j in range(len(stops) - 1):
+                v0, c0 = stops[j]; v1, c1 = stops[j+1]
+                seg_t0 = (v0 - 0.1) / 0.8; seg_t1 = (v1 - 0.1) / 0.8
+                if t <= seg_t1:
+                    local = (t - seg_t0) / (seg_t1 - seg_t0)
+                    colors.append(self._lerp(c0, c1, local))
+                    break
+            else:
+                colors.append(stops[-1][1])
+        return colors
+
+    # ── 绘制 ──────────────────────────────────────────────────
+    def _draw(self):
+        cv = self.cv; cv.delete("all")
+        W, TX, TW, TY, TH, HR = self.W, self.TX, self.TW, self.TY, self.TH, self.HR
+        val = self.var.get()
+        hx = self._val_to_x(val)
+        n = len(self._gradient)
+        sw = TW / n   # 每段宽度
+
+        # ── 渐变轨道 ──────────────────────────────────────────
+        for i, col in enumerate(self._gradient):
+            x0 = TX + i * sw; x1 = x0 + sw + 1
+            cv.create_rectangle(x0, TY, x1, TY + TH, fill=col, outline="")
+
+        # ── 已走过的高亮段 ────────────────────────────────────
+        cv.create_rectangle(TX, TY, hx, TY + TH,
+                            fill="", outline="white", width=0, stipple="")
+        cv.create_rectangle(TX, TY, hx + 1, TY + TH + 1,
+                            fill="", outline="#ffffff44", width=0)
+
+        # ── 手柄 ─────────────────────────────────────────────
+        cy = TY + TH // 2
+        cv.create_oval(hx - HR - 1, cy - HR - 1, hx + HR + 1, cy + HR + 1,
+                       fill="#0a1628", outline="#ffffff55", width=1)
+        cv.create_oval(hx - HR, cy - HR, hx + HR, cy + HR,
+                       fill="white", outline="#4a7adf", width=2)
+
+        # ── 数值标签（手柄上方）─────────────────────────────
+        cv.create_text(hx, TY - 5, text=f"{val:.1f}",
+                       font=F["small_b"], fill=C["ok"], anchor="s")
+
+        # ── 锚点刻度 + 标签（轨道下方）──────────────────────
+        marks = [(0.1, "微调"), (0.5, "融合"), (0.9, "重构")]
+        for mv, mt in marks:
+            mx = self._val_to_x(mv)
+            cv.create_line(mx, TY + TH, mx, TY + TH + 4, fill="#3a5a8a", width=1)
+            cv.create_text(mx, TY + TH + 14, text=mt,
+                           font=F["small"], fill="#4a6a9a", anchor="n")
+
+    # ── 事件 ──────────────────────────────────────────────────
+    def _on_press(self, e): self.var.set(self._x_to_val(e.x))
+    def _on_drag(self,  e): self.var.set(self._x_to_val(e.x))
+
+
 class MainContent:
     """Right-panel main content: input, preview, variants, queue, log."""
 
@@ -44,9 +149,12 @@ class MainContent:
         self._cmp_photo = None
         self._cmp_mode = False
 
+        # 生成模式："t2i" 文生图 | "i2i" 图生图
+        self._gen_mode = "t2i"
         # 图生图参考图状态
         self._ref_image: bytes | None = None
         self._ref_strength = tk.DoubleVar(value=0.6)
+        self._ref_thumb_photo = None   # 预览缩略图 PhotoImage（防 GC）
 
         # Resize timers
         self._prev_resize_timer = None
@@ -247,31 +355,27 @@ class MainContent:
         tk.Label(opt2, text=_("shortcut_hint"),
                  font=F["small"], bg=C["bg"], fg="#6a7a9a").pack(side="left", padx=6)
 
-        # ── 图生图参考图行 ─────────────────────────────────────────
-        ref_bar = tk.Frame(R, bg=C["bg"]); ref_bar.pack(fill="x", padx=14, pady=(0, 2))
-        tk.Label(ref_bar, text="🖼 参考图", font=F["body"],
-                 bg=C["bg"], fg=C["sub"]).pack(side="left")
-        tk.Button(ref_bar, text="选取", font=F["small"],
-                  bg=C["acc"], fg="white", bd=0, padx=8, pady=3,
-                  cursor="hand2", command=self._pick_ref_image
-                  ).pack(side="left", padx=(4, 0))
-        self._ref_clear_btn = tk.Button(ref_bar, text="✕ 清除", font=F["small"],
-                  bg="#2a1018", fg=C["hl"], bd=0, padx=6, pady=3,
-                  cursor="hand2", command=self._clear_ref_image, state="disabled")
-        self._ref_clear_btn.pack(side="left", padx=(2, 0))
-        tk.Frame(ref_bar, bg=C["sep"], width=1).pack(side="left", fill="y", padx=8, pady=3)
-        tk.Label(ref_bar, text="强度", font=F["small"], bg=C["bg"], fg=C["sub"]).pack(side="left")
-        self._ref_strength_lbl = tk.Label(ref_bar, text="0.6", font=F["small_b"],
-                                           bg=C["bg"], fg=C["ok"], width=3)
-        self._ref_strength_lbl.pack(side="left", padx=(2, 0))
-        def _upd_strength(*_):
-            self._ref_strength_lbl.config(text=f"{self._ref_strength.get():.1f}")
-        self._ref_strength.trace("w", _upd_strength)
-        ttk.Scale(ref_bar, from_=0.1, to=0.9, variable=self._ref_strength,
-                  orient="horizontal", length=100).pack(side="left", padx=(2, 4))
-        self._ref_name_lbl = tk.Label(ref_bar, text="（未选取）", font=F["small"],
-                                       bg=C["bg"], fg=C["sub"])
-        self._ref_name_lbl.pack(side="left")
+        # ── 生成模式切换行 ─────────────────────────────────────────
+        mode_row = tk.Frame(R, bg=C["bg"]); mode_row.pack(fill="x", padx=14, pady=(0, 3))
+        self._mode_row = mode_row   # 锚点：图生图面板重新 pack 时对齐到此行之后
+        self._mode_t2i_btn = tk.Button(mode_row, text="📝 文生图", font=F["small_b"],
+            bg=C["hl"], fg="white", bd=0, padx=14, pady=5, cursor="hand2", relief="flat",
+            command=lambda: self._switch_mode("t2i"))
+        self._mode_t2i_btn.pack(side="left")
+        self._mode_i2i_btn = tk.Button(mode_row, text="🖼 图生图", font=F["small_b"],
+            bg=C["panel"], fg=C["sub"], bd=0, padx=14, pady=5, cursor="hand2", relief="flat",
+            command=lambda: self._switch_mode("i2i"))
+        self._mode_i2i_btn.pack(side="left", padx=(3, 0))
+        tk.Label(mode_row, text="图生图支持: Stability AI · fal.ai",
+                 font=F["small"], bg=C["bg"], fg="#3a5a7a").pack(side="right")
+
+        # ── 图生图面板（折叠/展开，初始隐藏）────────────────────────
+        self._i2i_panel = tk.Frame(R, bg="#0a1628",
+            highlightbackground="#1d3560", highlightthickness=1)
+        # pack() 顺序在此确定，初始 pack_forget 隐藏
+        self._i2i_panel.pack(fill="x", padx=14, pady=(0, 4))
+        self._build_i2i_panel()
+        self._i2i_panel.pack_forget()   # 默认隐藏，切换为图生图模式时显示
 
         # 接口状态栏
         tok_bar = tk.Frame(R, bg=C["panel"]); tok_bar.pack(fill="x", padx=14, pady=(0, 4))
@@ -710,10 +814,85 @@ class MainContent:
             pass
 
     # ══════════════════════════════════════════════════════════
-    #   图生图参考图管理
+    #   生成模式切换 + 图生图面板
     # ══════════════════════════════════════════════════════════
+    def _build_i2i_panel(self):
+        """构建图生图面板内容（在 self._i2i_panel 内部）。"""
+        p = self._i2i_panel
+        inner = tk.Frame(p, bg="#0a1628"); inner.pack(fill="x", padx=12, pady=(10, 6))
+        inner.columnconfigure(1, weight=1)
+
+        # ── 左：参考图预览 Canvas（可点击选图）──────────────────
+        self._ref_prev_cv = tk.Canvas(inner, width=80, height=80,
+            bg="#0d1a2e", bd=0, highlightthickness=1,
+            highlightbackground="#1d3560", cursor="hand2")
+        self._ref_prev_cv.grid(row=0, column=0, rowspan=3, sticky="nw", padx=(0, 14))
+        self._ref_prev_cv.bind("<Button-1>", lambda _: self._pick_ref_image())
+        self._draw_ref_placeholder()
+
+        # ── 右上：文件名 + 选取按钮 ──────────────────────────────
+        btn_row = tk.Frame(inner, bg="#0a1628"); btn_row.grid(row=0, column=1, sticky="ew")
+        self._ref_file_lbl = tk.Label(btn_row, text="未选取参考图",
+            font=F["small"], bg="#0a1628", fg="#4a6a8a", anchor="w")
+        self._ref_file_lbl.pack(side="left", fill="x", expand=True)
+        self._ref_pick_btn = tk.Button(btn_row, text="选取图片", font=F["small"],
+            bg="#1d4ed8", fg="white", bd=0, padx=10, pady=4, cursor="hand2",
+            command=self._pick_ref_image)
+        self._ref_pick_btn.pack(side="right")
+
+        # ── 右中：强度标题 ────────────────────────────────────────
+        tk.Label(inner, text="变化强度", font=F["small"],
+                 bg="#0a1628", fg=C["sub"], anchor="w").grid(
+                 row=1, column=1, sticky="w", pady=(6, 0))
+
+        # ── 右下：自定义渐变滑块 ──────────────────────────────────
+        self._strength_slider = _StrengthSlider(inner, self._ref_strength)
+        self._strength_slider.grid(row=2, column=1, sticky="w", pady=(2, 0))
+
+        # ── 底部：清除按钮 ────────────────────────────────────────
+        bot = tk.Frame(p, bg="#0a1628"); bot.pack(fill="x", padx=12, pady=(0, 10))
+        self._ref_clear_btn = tk.Button(bot, text="✕ 清除参考图", font=F["small"],
+            bg="#2a1018", fg=C["hl"], bd=0, padx=12, pady=4, cursor="hand2",
+            state="disabled", command=self._clear_ref_image)
+        self._ref_clear_btn.pack(side="left")
+        tk.Label(bot, text="图片越小强度数值越低变化约小",
+                 font=F["small"], bg="#0a1628", fg="#3a5a7a").pack(side="right")
+
+    def _switch_mode(self, mode: str):
+        """切换文生图 / 图生图模式，更新按钮外观和面板显示。"""
+        self._gen_mode = mode
+        if mode == "t2i":
+            self._mode_t2i_btn.config(bg=C["hl"],    fg="white")
+            self._mode_i2i_btn.config(bg=C["panel"], fg=C["sub"])
+            self._i2i_panel.pack_forget()
+        else:
+            self._mode_t2i_btn.config(bg=C["panel"], fg=C["sub"])
+            self._mode_i2i_btn.config(bg="#1d4ed8",  fg="white")
+            # after= 保证面板插回模式切换行正下方，不漂到列表末尾
+            self._i2i_panel.pack(fill="x", padx=14, pady=(0, 4),
+                                  after=self._mode_row)
+
+    def _draw_ref_placeholder(self):
+        """在参考图预览 Canvas 上绘制占位符。"""
+        cv = self._ref_prev_cv; cv.delete("all")
+        cv.create_text(40, 30, text="🖼", font=(F["_sans"], 22), fill="#1d3560")
+        cv.create_text(40, 58, text="点击选取", font=F["small"], fill="#2a4a7a")
+
+    def _update_ref_thumb(self):
+        """将参考图字节渲染为预览缩略图。"""
+        if self._ref_image is None:
+            self._draw_ref_placeholder(); return
+        try:
+            img = Image.open(io.BytesIO(self._ref_image))
+            img.thumbnail((76, 76), Image.LANCZOS)
+            self._ref_thumb_photo = ImageTk.PhotoImage(img)
+            cv = self._ref_prev_cv; cv.delete("all")
+            cv.create_image(40, 40, image=self._ref_thumb_photo, anchor="center")
+        except Exception:
+            self._draw_ref_placeholder()
+
     def _pick_ref_image(self):
-        """弹出文件选择器，读取参考图字节并更新 UI 状态。"""
+        """弹出文件选择器，读取参考图字节并更新预览和 UI 状态。"""
         path = filedialog.askopenfilename(
             title="选取参考图（图生图）",
             filetypes=[("图片", "*.png *.jpg *.jpeg *.webp *.bmp"),
@@ -724,14 +903,20 @@ class MainContent:
             with open(path, "rb") as _fh:
                 self._ref_image = _fh.read()
             name = os.path.basename(path)
-            self._ref_name_lbl.config(text=f"✓ {name[:28]}", fg=C["ok"])
+            self._ref_file_lbl.config(
+                text=f"✓  {name[:30]}", fg=C["ok"])
             self._ref_clear_btn.config(state="normal")
+            self._ref_pick_btn.config(text="重新选取")
+            self._update_ref_thumb()
         except Exception as e:
             self._ref_image = None
-            self._ref_name_lbl.config(text=f"读取失败: {e}", fg=C["hl"])
+            self._ref_file_lbl.config(text=f"读取失败: {e}", fg=C["hl"])
 
     def _clear_ref_image(self):
-        """清除参考图，切回纯文生图模式。"""
+        """清除参考图，恢复占位符。"""
         self._ref_image = None
-        self._ref_name_lbl.config(text="（未选取）", fg=C["sub"])
+        self._ref_thumb_photo = None
+        self._ref_file_lbl.config(text="未选取参考图", fg="#4a6a8a")
         self._ref_clear_btn.config(state="disabled")
+        self._ref_pick_btn.config(text="选取图片")
+        self._draw_ref_placeholder()

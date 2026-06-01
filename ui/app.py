@@ -769,9 +769,18 @@ class App:
                 translated = translate_zh_to_en(prompt, log_cb=self._log)
                 self._batch_params["translated"] = translated
             try:
-                ref_image = getattr(self.content, '_ref_image', None)
-                strength  = getattr(self.content, '_ref_strength', None)
-                strength  = strength.get() if strength is not None else 0.6
+                # 只在图生图模式且已选取参考图时传入，文生图模式始终为 None
+                _gen_mode = getattr(self.content, '_gen_mode', 't2i')
+                if _gen_mode == 'i2i':
+                    ref_image = getattr(self.content, '_ref_image', None)
+                    strength  = getattr(self.content, '_ref_strength', None)
+                    strength  = strength.get() if strength is not None else 0.6
+                    if ref_image is None:
+                        self.root.after(0, lambda: self._err("图生图模式需要先选取参考图"))
+                        return
+                else:
+                    ref_image = None
+                    strength  = 0.6
                 data, used = generate_image(
                     translated, w, h, seed, self.cfg,
                     provider_order=porder,
