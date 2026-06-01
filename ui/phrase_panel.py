@@ -249,11 +249,16 @@ class PhrasePanel(tk.Toplevel):
                  ).pack(side="left", padx=(10, 4), pady=8)
         self._sv = tk.StringVar()
         self._sv.trace("w", lambda *_: self._apply_search())
-        tk.Entry(sf, textvariable=self._sv,
-                 bg=C["entry"], fg=C["text"],
-                 insertbackground="white",
-                 font=F["input"], bd=0, relief="flat", width=30
-                 ).pack(side="left", ipady=5, pady=8, padx=(0, 8))
+        _sef = tk.Frame(sf, bg=C["entry"],
+                        highlightbackground=C["ok"], highlightthickness=1)
+        _sef.pack(side="left", pady=6, padx=(0, 8))
+        _se = tk.Entry(_sef, textvariable=self._sv,
+                       bg=C["entry"], fg=C["text"],
+                       insertbackground="white",
+                       font=F["input"], bd=0, relief="flat", width=28)
+        _se.pack(fill="x", padx=4, ipady=4)
+        _se.bind("<FocusIn>",  lambda _: _sef.config(highlightbackground=C["entry"]), add="+")
+        _se.bind("<FocusOut>", lambda _: _sef.config(highlightbackground=C["ok"]),    add="+")
         tk.Button(sf, text="✕ 清空搜索",
                   font=F["small"], bg=C["panel"], fg=C["sub"],
                   bd=0, padx=8, cursor="hand2",
@@ -323,14 +328,17 @@ class PhrasePanel(tk.Toplevel):
                  font=F["body_b"],
                  bg=C["panel"], fg=C["sub"]
                  ).pack(side="left")
-        nef = tk.Frame(add_row, bg=C["entry"])
+        nef = tk.Frame(add_row, bg=C["entry"],
+                       highlightbackground=C["ok"], highlightthickness=1)
         nef.pack(side="left", fill="x", expand=True, padx=(4, 6))
         self._new_phrase_var = tk.StringVar()
-        tk.Entry(nef, textvariable=self._new_phrase_var,
-                 bg=C["entry"], fg=C["text"],
-                 insertbackground="white",
-                 font=F["input"], bd=0, relief="flat"
-                 ).pack(fill="x", padx=8, ipady=5)
+        _ne = tk.Entry(nef, textvariable=self._new_phrase_var,
+                       bg=C["entry"], fg=C["text"],
+                       insertbackground="white",
+                       font=F["input"], bd=0, relief="flat")
+        _ne.pack(fill="x", padx=8, ipady=5)
+        _ne.bind("<FocusIn>",  lambda _: nef.config(highlightbackground=C["entry"]), add="+")
+        _ne.bind("<FocusOut>", lambda _: nef.config(highlightbackground=C["ok"]),    add="+")
         tk.Button(add_row, text="添加到当前分类",
                   font=F["body"], bg=C["ok"], fg="#0a1a0a",
                   bd=0, padx=12, pady=4, cursor="hand2",

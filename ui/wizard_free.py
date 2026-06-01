@@ -207,6 +207,7 @@ class ConfigWizard(tk.Toplevel):
                                 bg=C["entry"], fg=C["text"], insertbackground="white",
                                 font=F["input"], bd=0, relief="flat")
         cf_id_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._gb(ef_cfid, cf_id_entry)
 
         cf_tok_row = tk.Frame(inner, bg=C["bg"]); cf_tok_row.pack(fill="x", padx=PX, pady=(10, 0))
         tk.Label(cf_tok_row, text="Cloudflare API Token:",
@@ -530,17 +531,25 @@ class ConfigWizard(tk.Toplevel):
     def _divider(self, parent):
         tk.Frame(parent, bg="#2a3a5a", height=1).pack(fill="x", padx=24, pady=12)
 
+    @staticmethod
+    def _gb(frame: tk.Frame, entry) -> None:
+        """绿边 idle，获焦后变隐形。"""
+        frame.config(highlightbackground=C["ok"], highlightthickness=1)
+        entry.bind("<FocusIn>",  lambda _: frame.config(highlightbackground=C["entry"]), add="+")
+        entry.bind("<FocusOut>", lambda _: frame.config(highlightbackground=C["ok"]),    add="+")
+
     def _eye_btn(self, parent, entry):
         showing = [False]
         def toggle():
             showing[0] = not showing[0]
             entry.config(show="" if showing[0] else "*")
             btn.config(text="🙈" if showing[0] else "👁")
-        
+
         btn = tk.Button(parent, text="👁", font=F["input"],
                         bg=C["entry"], fg=C["sub"], bd=0, padx=8,
                         cursor="hand2", command=toggle)
         btn.pack(side="right", padx=4)
+        self._gb(parent, entry)  # 绿边：idle 显示，获焦后隐藏
 
     def _save(self):
         self._dirty = False

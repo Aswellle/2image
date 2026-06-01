@@ -149,10 +149,21 @@ class ImageViewerWindow(tk.Toplevel):
                                     font=F["body"], bg=C["panel"], fg=C["warn"])
         self._info_tip.pack(side="right", padx=14)
 
-        # Metadata label (PNG tEXt chunks)
-        self._meta_lbl = tk.Label(self, text="", font=F["mono_tiny"],
-                                   bg=C["bg"], fg=C["sub"], anchor="w", justify="left")
-        self._meta_lbl.pack(fill="x", padx=8, pady=(0, 4))
+        # ── 元信息浮层（左上角悬浮按钮 + 透明文本覆盖）────────────────
+        # 默认隐藏；点击 ℹ 按钮切换显示/隐藏，不遮挡图片主体
+        self._meta_visible = False
+        self._meta_toggle_btn = tk.Button(
+            self.cv, text="ℹ", font=F["body"],
+            bg="#1a2540", fg="#4a7adf",
+            bd=0, padx=6, pady=2, cursor="hand2",
+            relief="flat", command=self._toggle_meta)
+        self._meta_btn_win = self.cv.create_window(
+            10, 10, anchor="nw", window=self._meta_toggle_btn)
+        # 透明背景文本（无背景面板，不干扰图片观感）
+        self._meta_text_id = self.cv.create_text(
+            10, 44, anchor="nw", text="",
+            font=F["mono_tiny"], fill="#c8d8f0",
+            state="hidden", tags="meta")
 
         # 事件绑定
         self.cv.bind("<MouseWheel>",      self._on_wheel)
@@ -316,18 +327,33 @@ class ImageViewerWindow(tk.Toplevel):
             self._info_file.config(text=f"文件: {os.path.basename(self._cur_path)}")
 
     def _show_metadata(self):
-        """Extract and display PNG text metadata."""
-        if hasattr(self, '_meta_lbl'):
-            if self._img_orig is None:
-                self._meta_lbl.config(text="")
-                return
-            meta = self._img_orig.info or {}
-            lines = []
-            for key in ("Prompt", "Translated", "Provider", "Seed", "Size"):
-                val = meta.get(key, "")
-                if val:
-                    lines.append(f"{key}: {val}")
-            self._meta_lbl.config(text="\n".join(lines) if lines else "无元数据")
+        """更新元信息文本内容（只保留 Provider 和 Seed，移除提示词和尺寸）。"""
+        if not hasattr(self, '_meta_text_id'):
+            return
+        if self._img_orig is None:
+            self.cv.itemconfig(self._meta_text_id, text="")
+            return
+        meta = self._img_orig.info or {}
+        lines = []
+        for key in ("Provider", "Seed"):
+            val = meta.get(key, "")
+            if val:
+                lines.append(f"{key}: {val}")
+        text = "\n".join(lines) if lines else "无元数据"
+        self.cv.itemconfig(self._meta_text_id, text=text)
+        # 保持用户当前的显示/隐藏状态
+        state = "normal" if self._meta_visible else "hidden"
+        self.cv.itemconfig(self._meta_text_id, state=state)
+
+    def _toggle_meta(self):
+        """切换元信息显示/隐藏。"""
+        self._meta_visible = not self._meta_visible
+        if self._meta_visible:
+            self.cv.itemconfig(self._meta_text_id, state="normal")
+            self._meta_toggle_btn.config(fg=C["ok"])
+        else:
+            self.cv.itemconfig(self._meta_text_id, state="hidden")
+            self._meta_toggle_btn.config(fg="#4a7adf")
 
     # ── 缩放 ───────────────────────────────────────────────────
     def _zoom_fit(self):

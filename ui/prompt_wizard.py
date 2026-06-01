@@ -390,6 +390,8 @@ class PromptWizard(tk.Toplevel):
                           font=F["label_lg"], bd=0, relief="flat")
         kw_ent.pack(fill="x", padx=12, ipady=10)
         kw_ent.bind("<Return>", lambda e: self._generate_param())
+        kw_ent.bind("<FocusIn>",  lambda _: kf.config(highlightbackground=C["entry"]), add="+")
+        kw_ent.bind("<FocusOut>", lambda _: kf.config(highlightbackground=C["ok"]),    add="+")
         # 示例提示
         tk.Label(parent,
                  text="  示例：东亚少女  海边咖啡馆  黄昏  白色长裙",
@@ -465,13 +467,16 @@ class PromptWizard(tk.Toplevel):
 
         # ── 额外补充 ───────────────────────────────────────────
         self._sec_label(parent, "📝  额外补充（可选）", PX)
-        ef = tk.Frame(parent, bg=C["entry"])
+        ef = tk.Frame(parent, bg=C["entry"],
+                      highlightbackground=C["ok"], highlightthickness=1)
         ef.pack(fill="x", padx=PX, pady=(6, 0))
         self.extra_var = tk.StringVar()
-        tk.Entry(ef, textvariable=self.extra_var,
-                 bg=C["entry"], fg=C["text"], insertbackground="white",
-                 font=F["input"], bd=0, relief="flat"
-                 ).pack(fill="x", padx=10, ipady=7)
+        _ee = tk.Entry(ef, textvariable=self.extra_var,
+                       bg=C["entry"], fg=C["text"], insertbackground="white",
+                       font=F["input"], bd=0, relief="flat")
+        _ee.pack(fill="x", padx=10, ipady=7)
+        _ee.bind("<FocusIn>",  lambda _: ef.config(highlightbackground=C["entry"]), add="+")
+        _ee.bind("<FocusOut>", lambda _: ef.config(highlightbackground=C["ok"]),    add="+")
         tk.Label(parent,
                  text="  💡  如：不要水印、主体面朝右边、禁止出现文字",
                  font=F["body_i"], bg=C["bg"],

@@ -150,9 +150,15 @@ class HistorySidebar:
                 self.app.root.after_cancel(self._search_timer)
             self._search_timer = self.app.root.after(250, self.app._refresh_hist)
         self.sv.trace("w", _on_search)
-        tk.Entry(sf, textvariable=self.sv, bg=C["entry"], fg=C["text"],
-                 insertbackground="white", font=F["body"],
-                 bd=0, relief="flat").pack(fill="x", ipady=5, padx=2)
+        _srf = tk.Frame(sf, bg=C["entry"],
+                        highlightbackground=C["ok"], highlightthickness=1)
+        _srf.pack(fill="x", padx=2)
+        _sre = tk.Entry(_srf, textvariable=self.sv, bg=C["entry"], fg=C["text"],
+                        insertbackground="white", font=F["body"],
+                        bd=0, relief="flat")
+        _sre.pack(fill="x", ipady=5, padx=2)
+        _sre.bind("<FocusIn>",  lambda _: _srf.config(highlightbackground=C["entry"]), add="+")
+        _sre.bind("<FocusOut>", lambda _: _srf.config(highlightbackground=C["ok"]),    add="+")
         tk.Label(sf, text=_("search_placeholder"), font=F["small"],
                  bg=C["panel"], fg="#6a7a9a").pack(anchor="w", padx=4)
 
