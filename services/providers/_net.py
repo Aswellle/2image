@@ -18,7 +18,7 @@ import requests
 # ── 共享 Session（连接池 + HTTP keep-alive）─────────────────────────
 SESSION = requests.Session()
 _adapter = requests.adapters.HTTPAdapter(
-    pool_connections=2, pool_maxsize=4, max_retries=1)
+    pool_connections=6, pool_maxsize=12, max_retries=0)
 SESSION.mount("https://", _adapter)
 SESSION.mount("http://", _adapter)
 

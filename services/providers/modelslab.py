@@ -20,10 +20,12 @@ v2 修复：
 """
 import threading
 import time
+import requests
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
+    "id": "modelslab",
     "name": "ModelsLab (免费100次/天)",
     "category": "free",
     "config_key": "modelslab_key",
@@ -120,78 +122,82 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
 
         result = None
 
-        # ── 持锁串行 ─────────────────────────────────────────────
+        # ── 仅用锁保护限速 + 发包，响应处理和等待均在锁外 ────────
+        _resp = None
+        _net_error = None
         with _ML_LOCK:
             gap = time.time() - _LAST_DONE_TS[0]
             if gap < _MIN_INTERVAL:
                 time.sleep(_MIN_INTERVAL - gap)
-
             try:
-                resp = _session.post(_API_URL, json=payload, timeout=_TIMEOUT)
+                _resp = _session.post(_API_URL, json=payload, timeout=_TIMEOUT)
             except requests.exceptions.ConnectionError as e:
-                log(f"    网络错误: {e}，换模型…")
-                _LAST_DONE_TS[0] = time.time()
-                continue
+                _net_error = ("conn", e)
             except requests.exceptions.Timeout:
-                log("    提交超时，换模型…")
-                _LAST_DONE_TS[0] = time.time()
-                continue
-
+                _net_error = ("timeout", None)
             _LAST_DONE_TS[0] = time.time()
-            sc = resp.status_code
-            log(f"    提交状态:{sc}")
 
-            if sc == 401:
-                raise ValueError("ModelsLab API Key 无效，请检查设置")
-            if sc == 402:
-                raise ValueError("ModelsLab 免费额度已用尽，请等明天重置")
-            if sc == 429:
-                ra = resp.headers.get("Retry-After", "")
-                w2 = int(ra) if ra.isdigit() else 10
-                log(f"    429 限速，等待 {w2}s…")
-                time.sleep(w2)
-                # 限速直接换模型，不重试（已用锁保证串行，重试意义不大）
-                continue
-            if sc not in (200, 201):
-                log(f"    {sc}，换模型…")
-                continue
+        # ── 锁外处理响应 ─────────────────────────────────────────
+        if _net_error:
+            kind, exc = _net_error
+            if kind == "conn":
+                log(f"    网络错误: {exc}，换模型…")
+            else:
+                log("    提交超时，换模型…")
+            continue
 
+        sc = _resp.status_code
+        log(f"    提交状态:{sc}")
+
+        if sc == 401:
+            raise ValueError("ModelsLab API Key 无效，请检查设置")
+        if sc == 402:
+            raise ValueError("ModelsLab 免费额度已用尽，请等明天重置")
+        if sc == 429:
+            ra = _resp.headers.get("Retry-After", "")
+            w2 = int(ra) if ra.isdigit() else 10
+            log(f"    429 限速，等待 {w2}s…")
+            time.sleep(w2)  # 锁外等待，不阻塞其他线程
+            continue
+        if sc not in (200, 201):
+            log(f"    {sc}，换模型…")
+            continue
+
+        try:
+            j = _resp.json()
+        except Exception:
+            log("    无法解析 JSON，换模型…")
+            continue
+
+        status = j.get("status", "")
+
+        # ── 状态：success → 直接下载（锁外）────────────────────────
+        if status == "success":
+            outputs = j.get("output", [])
+            if not outputs:
+                log("    output 为空，换模型…")
+                continue
             try:
-                j = resp.json()
-            except Exception:
-                log("    无法解析 JSON，换模型…")
+                img_bytes = _download_image(outputs[0], log)
+                log(f"  ✓ ModelsLab/{model_id} 成功，"
+                    f"{len(img_bytes)//1024}KB")
+                result = (img_bytes, f"ModelsLab/{model_id}")
+            except Exception as e:
+                log(f"    下载失败: {e}，换模型…")
+            continue
+
+        # ── 状态：processing → 轮询（锁外）─────────────────────────
+        if status in ("processing", "queued"):
+            fetch_id = j.get("id")
+            if not fetch_id:
+                # 有些版本在 future_links 里
+                fl = j.get("future_links", [])
+                fetch_id = fl[0] if fl else None
+            if not fetch_id:
+                log("    无法获取轮询 ID，换模型…")
                 continue
 
-            status = j.get("status", "")
-
-            # ── 状态：success → 直接下载 ─────────────────────────
-            if status == "success":
-                outputs = j.get("output", [])
-                if not outputs:
-                    log("    output 为空，换模型…")
-                    continue
-                try:
-                    img_bytes = _download_image(outputs[0], log)
-                    log(f"  ✓ ModelsLab/{model_id} 成功，"
-                        f"{len(img_bytes)//1024}KB")
-                    result = (img_bytes, f"ModelsLab/{model_id}")
-                except Exception as e:
-                    log(f"    下载失败: {e}，换模型…")
-                continue
-
-            # ── 状态：processing → 轮询（在锁外轮询，避免长时间占锁）─
-            if status in ("processing", "queued"):
-                fetch_id = j.get("id")
-                if not fetch_id:
-                    # 有些版本在 future_links 里
-                    fl = j.get("future_links", [])
-                    fetch_id = fl[0] if fl else None
-                if not fetch_id:
-                    log("    无法获取轮询 ID，换模型…")
-                    continue
-
-                log(f"    队列处理中（id={fetch_id}），开始轮询（最多{_MAX_POLL * _POLL_INTERVAL}s）…")
-                # 先释放锁，在锁外轮询（轮询时间可能很长）
+            log(f"    队列处理中（id={fetch_id}），开始轮询（最多{_MAX_POLL * _POLL_INTERVAL}s）…")
         # ── 锁外轮询 ─────────────────────────────────────────────
         if status in ("processing", "queued") and fetch_id:
             poll_result = None

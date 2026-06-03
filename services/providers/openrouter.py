@@ -10,11 +10,13 @@ OpenRouter 图像生成 — 部分模型免费（如 opengvlab/internvl3-14b:fre
 import base64
 import threading
 import time
+import requests
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
 
 
 PROVIDER_INFO = {
+    "id": "openrouter",
     "name": "OpenRouter (部分免费)",
     "category": "free",
     "config_key": "openrouter_key",

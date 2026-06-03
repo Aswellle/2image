@@ -45,7 +45,7 @@ def generate_image(prompt, w, h, seed, cfg,
             data, used = fn(prompt, w, h, seed, eff_cfg, log_cb)
             log_to_file(f"✓ {name} 成功")
             return data, used
-        except (ValueError, RuntimeError, TimeoutError) as e:
+        except Exception as e:
             errors.append(f"[{name}] {type(e).__name__}: {e}")
             log_to_file(f"✗ {name}: {e}")
             if status_cb: status_cb(f"⚠ {name} 失败，切换…")

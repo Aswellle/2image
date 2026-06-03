@@ -12,6 +12,7 @@ from typing import Callable, Tuple
 from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
+    "id": "fal_flux",
     "name": "fal.ai FLUX Ultra (高质量)",
     "category": "commercial",
     "config_key": "fal_key",

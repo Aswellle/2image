@@ -145,17 +145,19 @@ def get_all_entries(keyword: str = "",
         """)
         params.append(tag_filter)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    # Derive tags from junction tables (single source of truth)
-    # instead of reading the legacy CSV column in history.tags
-    _tags_subq = (
-        "(SELECT GROUP_CONCAT(t.name, ',') "
-        "FROM entry_tag et JOIN tag t ON et.tag_id = t.id "
-        "WHERE et.entry_id = h.id ORDER BY t.name)"
+    # CTE computes all tag aggregations in one pass, then LEFT JOIN replaces
+    # the previous per-row correlated subquery (N+1 → 1 query).
+    sql = (
+        "WITH tag_agg AS ("
+        "  SELECT et.entry_id, GROUP_CONCAT(t.name, ',') AS tags"
+        "  FROM entry_tag et JOIN tag t ON et.tag_id = t.id"
+        "  GROUP BY et.entry_id"
+        ") "
+        "SELECT h.id, h.timestamp, h.prompt, h.translated, h.image_path, "
+        "h.provider, h.nickname, h.favorited, COALESCE(ta.tags, '') AS tags "
+        "FROM history h "
+        f"LEFT JOIN tag_agg ta ON ta.entry_id = h.id {where} ORDER BY h.id DESC"
     )
-    cols = (f"h.id, h.timestamp, h.prompt, h.translated, h.image_path, "
-            f"h.provider, h.nickname, h.favorited, "
-            f"COALESCE({_tags_subq}, '') AS tags")
-    sql = f"SELECT {cols} FROM history h {where} ORDER BY h.id DESC"
     if limit > 0:
         sql += " LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -167,7 +169,18 @@ def get_all_entries(keyword: str = "",
 def get_entry(entry_id: int):
     with _conn() as c:
         row = c.execute("SELECT * FROM history WHERE id=?", (entry_id,)).fetchone()
-    return dict(row) if row else None
+        if row is None:
+            return None
+        entry = dict(row)
+        # Derive tags from junction table; legacy history.tags column is always ""
+        tags_row = c.execute(
+            "SELECT GROUP_CONCAT(t.name, ',') AS tags "
+            "FROM entry_tag et JOIN tag t ON et.tag_id = t.id "
+            "WHERE et.entry_id = ?",
+            (entry_id,)
+        ).fetchone()
+        entry["tags"] = (tags_row["tags"] or "") if tags_row else ""
+    return entry
 
 
 # ─── 更新 ─────────────────────────────────────────────────────

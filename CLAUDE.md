@@ -13,11 +13,14 @@ pytest tests/
 pytest tests/test_providers.py          # single file
 pytest tests/ -k "siliconflow"          # filter by name
 
-# Build Windows installer (update hardcoded PROJECT_DIR in auto_build.py first)
+# Lint (catches undefined names, unused imports — run alongside tests)
+ruff check services/ ui/ config/ data/ tests/ --select F,E9
+
+# Build Windows installer
 python auto_build.py
 ```
 
-Dependencies: `pip install pillow requests pytest`
+Dependencies: `pip install -r requirements.txt`
 
 ## Architecture
 
@@ -39,6 +42,8 @@ main.py
         ui/stats_dashboard.py
 ```
 
+UI panels interact with `App` only through the `SidebarProtocol` / `MainContentProtocol` interfaces defined in `ui/app_protocol.py` — never importing `App` directly. Tests inject `MockApp` from `tests/conftest.py`.
+
 ### Provider system
 
 Providers live in `services/providers/`. Each file exports a `PROVIDER_INFO` dict and a `try_<name>()` function — `__init__.py` auto-discovers them via `pkgutil`, no manual registration needed.
@@ -48,6 +53,7 @@ PROVIDER_INFO = {
     "name": "Display Name",
     "category": "free",   # free | paid | commercial
     "config_key": "sf_key",
+    # "try_fn": "custom_fn_name",  # optional; defaults to try_<module_name>
 }
 
 def try_xxx(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
@@ -55,21 +61,34 @@ def try_xxx(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) ->
     # Raises ValueError on failure (scheduler falls through to next provider)
 ```
 
-Every provider must implement a module-level rate-limit lock (`_last_call` + `_lock = threading.Lock()`).
+Every provider must:
+- Handle rate limiting with a module-level `_last_call = [0.0]` + `_lock = threading.Lock()` pattern. Acquire the lock, sleep if needed, then release before making the HTTP call.
+- Use `SESSION` from `services/providers/_net.py` for HTTP requests (shared connection pool).
+- Use `safe_get_image(url)` from `_net.py` to download API-returned image URLs — this performs SSRF validation (DNS-resolved IP range checks) and redirect-following checks.
+- Use `safe_error_text(resp)` from `_net.py` to extract error messages from API responses.
 
-`image_service.generate_image()` iterates `DEFAULT_ORDER` (all free providers), catches `ValueError` and falls through. Pass `provider_order=` to override.
+`PROVIDER_INFO["config_key"]` feeds into `PROVIDER_KEYS` (exported from `services/providers/__init__.py`), which is the single source of truth for which config dict key a provider requires. `smart_router.py` and the status bar derive their key maps from `PROVIDER_KEYS` — don't hardcode a separate copy.
 
-`services/smart_router.py` maps intent keywords / template IDs to optimized provider sequences — use `get_provider_order(prompt, cfg, template_id=...)` before calling `generate_image`.
+img2img mode: `generate_image()` accepts `ref_image: bytes | None` and `strength: float`. If `ref_image` is set, a copy of `cfg` is passed to providers with `_ref_image` and `_ref_strength` keys; providers that support img2img should read those keys. The original `cfg` is never mutated.
+
+`image_service.generate_image()` iterates `DEFAULT_ORDER` (all free providers), catches `ValueError`/`RuntimeError`/`TimeoutError` and falls through. Pass `provider_order=` to override.
+
+`services/smart_router.py` maps intent keywords / template IDs to optimized provider sequences — use `get_provider_order(prompt, cfg, template_id=...)` before calling `generate_image`. It auto-filters providers whose config keys are missing and always guarantees a non-empty list (falls back to Pollinations.AI).
 
 ### Config and theming
 
-- All UI modules import colors from `config/theme.py` as `DARK_THEME as C` — never hardcode hex values.
-- All user-visible strings go through `config/i18n.py` as `_("key")`.
-- New provider config keys must be added to `DEFAULT_CONFIG` in `config/settings.py` so `load_config()` backfills them on upgrade.
+- All UI modules import colors from `config/theme.py` as `DARK_THEME as C`. New code that needs runtime theme switching can import the module-level `C` dict and call `apply_theme(name)`.
+- All user-visible strings go through `config/i18n.py` as `_("key")`. Supports `zh-CN` (default), `zh-TW`, `en`. Call `init_language(cfg)` on startup; use `_("key", param=val)` for formatted strings.
+- New provider config keys must be added to `DEFAULT_CONFIG` in `config/settings.py` so `load_config()` backfills them on upgrade. `load_config()` handles `config_version` migrations internally.
 
 ### Database
 
 Thread-local SQLite connections via `_conn()` in `data/repository.py`. Schema upgrades use `ALTER TABLE` in `init_db()` (no migration files). PNG metadata (prompt, seed, provider) is embedded in image files at save time.
+
+Three fixtures in `tests/conftest.py`:
+- `in_memory_db` — calls `repository._set_test_db(":memory:")` for repository tests
+- `mock_app` — minimal `MockApp` satisfying `SidebarProtocol`/`MainContentProtocol` for panel tests
+- `tk_root` — creates and tears down a real `tk.Tk()` instance for widget tests
 
 ### Prompt optimization
 
@@ -79,5 +98,5 @@ Thread-local SQLite connections via `_conn()` in `data/repository.py`. Schema up
 
 - Providers raise `ValueError` on failure, never return `None`.
 - `image_service.generate_image()` raises `RuntimeError` only when all providers fail.
-- Internal/reserved IPs are blocked in providers that fetch remote URLs (SSRF guard — see `_validate_image_url` in `siliconflow.py` as the reference pattern).
+- All providers that download external URLs must use `safe_get_image()` from `services/providers/_net.py` — never call `validate_image_url()` manually followed by a raw `requests.get()`, because that pattern is vulnerable to TOCTOU on redirects.
 - `auto_build.py` has a hardcoded `PROJECT_DIR` — update before running on a new machine.

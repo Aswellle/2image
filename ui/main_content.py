@@ -98,16 +98,10 @@ class _StrengthSlider:
             x0 = TX + i * sw; x1 = x0 + sw + 1
             cv.create_rectangle(x0, TY, x1, TY + TH, fill=col, outline="")
 
-        # ── 已走过的高亮段 ────────────────────────────────────
-        cv.create_rectangle(TX, TY, hx, TY + TH,
-                            fill="", outline="white", width=0, stipple="")
-        cv.create_rectangle(TX, TY, hx + 1, TY + TH + 1,
-                            fill="", outline="#ffffff44", width=0)
-
         # ── 手柄 ─────────────────────────────────────────────
         cy = TY + TH // 2
         cv.create_oval(hx - HR - 1, cy - HR - 1, hx + HR + 1, cy + HR + 1,
-                       fill="#0a1628", outline="#ffffff55", width=1)
+                       fill="#0a1628", outline="#5c6470", width=1)
         cv.create_oval(hx - HR, cy - HR, hx + HR, cy + HR,
                        fill="white", outline="#4a7adf", width=2)
 

@@ -25,6 +25,9 @@ def _enable_dpi_awareness():
 def main():
     _enable_dpi_awareness()
 
+    from PIL import Image
+    Image.MAX_IMAGE_PIXELS = 40_000_000  # decompression-bomb guard (~40 Mpx)
+
     # ── 字体初始化（加载缓存字体，后台下载缺失字体）────────────
     from config.fonts import init_fonts
     init_fonts()

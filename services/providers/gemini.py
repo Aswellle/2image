@@ -9,11 +9,13 @@ Google Gemini 2.5 Flash Image — 免费 500 次/天
 import base64
 import threading
 import time
+import requests
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 
 PROVIDER_INFO = {
+    "id": "gemini",
     "name": "Google Gemini (免费500次/天)",
     "category": "free",
     "config_key": "gemini_key",

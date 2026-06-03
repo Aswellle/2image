@@ -18,10 +18,12 @@ v2 修复：
 import base64
 import threading
 import time
+import requests
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
+    "id": "huggingface",
     "name": "HuggingFace (备用)",
     "category": "free",
     "config_key": "hf_token",
@@ -96,134 +98,147 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
         body = {"inputs": prompt, "parameters": params_dict}
 
         result = None
+        _retry_sleep = 0
 
-        # ── 持锁串行 ─────────────────────────────────────────────
-        with _HF_LOCK:
-            gap = time.time() - _LAST_DONE_TS[0]
-            if gap < _MIN_INTERVAL:
-                time.sleep(_MIN_INTERVAL - gap)
+        # ── 每次尝试仅持锁做限速检查+发包，重试等待移至锁外 ─────
+        for attempt in range(1, 4):   # 最多 3 次重试
+            if _retry_sleep > 0:
+                time.sleep(_retry_sleep)
+                _retry_sleep = 0
 
-            for attempt in range(1, 4):   # 最多 3 次重试
+            _resp = None
+            _dispatch_err = None
+            with _HF_LOCK:
+                gap = time.time() - _LAST_DONE_TS[0]
+                if gap < _MIN_INTERVAL:
+                    time.sleep(_MIN_INTERVAL - gap)
                 try:
-                    resp = _session.post(url, headers=headers,
-                                         json=body, timeout=_TIMEOUT)
+                    _resp = _session.post(url, headers=headers,
+                                          json=body, timeout=_TIMEOUT)
                 except requests.exceptions.ConnectionError as e:
-                    log(f"    网络错误: {e}")
+                    _dispatch_err = ("conn", e)
+                except requests.exceptions.Timeout as e:
+                    _dispatch_err = ("timeout", e)
+                _LAST_DONE_TS[0] = time.time()
+
+            # 处理网络错误（锁外）
+            if _dispatch_err:
+                kind, exc = _dispatch_err
+                if kind == "conn":
+                    log(f"    网络错误: {exc}")
                     break
-                except requests.exceptions.Timeout:
+                else:
                     log(f"    超时（{_TIMEOUT}s）第{attempt}次")
                     if attempt < 3:
-                        time.sleep(15 * attempt)
+                        _retry_sleep = 15 * attempt
                         continue
                     break
 
-                sc = resp.status_code
-                log(f"    [{attempt}] 状态:{sc}")
+            resp = _resp
+            sc = resp.status_code
+            log(f"    [{attempt}] 状态:{sc}")
 
-                if sc == 401:
-                    raise ValueError("HuggingFace Token 无效或已过期")
-                if sc == 403:
-                    raise ValueError("HuggingFace Token 无 Inference 权限")
-                if sc in (404, 410):
-                    log(f"    {sc} 模型不可用，换模型…")
+            if sc == 401:
+                raise ValueError("HuggingFace Token 无效或已过期")
+            if sc == 403:
+                raise ValueError("HuggingFace Token 无 Inference 权限")
+            if sc in (404, 410):
+                log(f"    {sc} 模型不可用，换模型…")
+                break
+
+            if sc == 429:
+                # 精确读取 Retry-After（等待在锁外进行）
+                ra = resp.headers.get("Retry-After", "")
+                w2 = int(ra) if ra.isdigit() else 30
+                log(f"    429 限速，等待 {w2}s…")
+                _retry_sleep = w2
+                if attempt < 3:
+                    continue
+                break
+
+            if sc == 503:
+                # x-wait-for-model=true 情况下 503 表示模型仍在加载（等待在锁外进行）
+                log(f"    503 模型加载中，等待 20s…")
+                _retry_sleep = 20
+                if attempt < 3:
+                    continue
+                break
+
+            if sc not in (200, 201):
+                # 尝试读取错误详情
+                try:
+                    err_body = resp.json()
+                    err_msg  = err_body.get("error", _safe_error_text(resp))
+                except Exception:
+                    err_msg = _safe_error_text(resp)
+                log(f"    {sc}: {err_msg}，换模型…")
+                break
+
+            # ── 解析响应 ────────────────────────────────────
+            ct = resp.headers.get("Content-Type", "")
+
+            # 直接图片二进制
+            if "image" in ct:
+                log(f"  ✓ HuggingFace/{sn} 成功（直接图片）")
+                result = (resp.content, f"HuggingFace/{sn}")
+                break
+
+            # JSON 格式
+            if "json" in ct or ct == "":
+                try:
+                    j = resp.json()
+                except Exception:
+                    log("    非 JSON，换模型…")
                     break
 
-                if sc == 429:
-                    # 精确读取 Retry-After
-                    ra = resp.headers.get("Retry-After", "")
-                    w2 = int(ra) if ra.isdigit() else 30
-                    log(f"    429 限速，等待 {w2}s…")
-                    time.sleep(w2)
-                    if attempt < 3:
-                        continue
-                    break
-
-                if sc == 503:
-                    # x-wait-for-model=true 情况下 503 表示模型仍在加载
-                    log(f"    503 模型加载中，等待 20s…")
-                    time.sleep(20)
-                    if attempt < 3:
-                        continue
-                    break
-
-                if sc not in (200, 201):
-                    # 尝试读取错误详情
-                    try:
-                        err_body = resp.json()
-                        err_msg  = err_body.get("error", _safe_error_text(resp))
-                    except Exception:
-                        err_msg = _safe_error_text(resp)
-                    log(f"    {sc}: {err_msg}，换模型…")
-                    break
-
-                # ── 解析响应 ────────────────────────────────────
-                ct = resp.headers.get("Content-Type", "")
-
-                # 直接图片二进制
-                if "image" in ct:
-                    log(f"  ✓ HuggingFace/{sn} 成功（直接图片）")
-                    result = (resp.content, f"HuggingFace/{sn}")
-                    break
-
-                # JSON 格式
-                if "json" in ct or ct == "":
-                    try:
-                        j = resp.json()
-                    except Exception:
-                        log("    非 JSON，换模型…")
+                # 格式 A：list[{"generated_image"|"image"|"b64_json": ...}]
+                if isinstance(j, list) and j:
+                    item = j[0]
+                    for key in ("generated_image", "image", "b64_json"):
+                        val = item.get(key)
+                        if val:
+                            try:
+                                img = base64.b64decode(val)
+                                log(f"  ✓ HuggingFace/{sn} 成功（list.{key}）")
+                                result = (img, f"HuggingFace/{sn}")
+                            except Exception:
+                                pass
+                            break
+                    if result:
                         break
 
-                    # 格式 A：list[{"generated_image"|"image"|"b64_json": ...}]
-                    if isinstance(j, list) and j:
-                        item = j[0]
-                        for key in ("generated_image", "image", "b64_json"):
-                            val = item.get(key)
-                            if val:
-                                try:
-                                    img = base64.b64decode(val)
-                                    log(f"  ✓ HuggingFace/{sn} 成功（list.{key}）")
-                                    result = (img, f"HuggingFace/{sn}")
-                                except Exception:
-                                    pass
-                                break
-                        if result:
-                            break
+                # 格式 B：{"images": [{"url": ...}]}
+                if isinstance(j, dict):
+                    imgs = j.get("images", [])
+                    if imgs and imgs[0].get("url"):
+                        img_data = _safe_get_image(imgs[0]['url'], timeout=60)
+                        log(f"  ✓ HuggingFace/{sn} 成功（images.url）")
+                        result = (img_data, f"HuggingFace/{sn}")
+                        break
 
-                    # 格式 B：{"images": [{"url": ...}]}
-                    if isinstance(j, dict):
-                        imgs = j.get("images", [])
-                        if imgs and imgs[0].get("url"):
-                            img_data = _safe_get_image(imgs[0]['url'], timeout=60)
-                            log(f"  ✓ HuggingFace/{sn} 成功（images.url）")
+                    # 格式 C：{"data": [{"b64_json"|"url": ...}]}
+                    data = j.get("data", [])
+                    if data:
+                        if data[0].get("b64_json"):
+                            img = base64.b64decode(data[0]["b64_json"])
+                            log(f"  ✓ HuggingFace/{sn} 成功（data.b64_json）")
+                            result = (img, f"HuggingFace/{sn}")
+                            break
+                        if data[0].get("url"):
+                            img_data = _safe_get_image(data[0]['url'], timeout=60)
+                            log(f"  ✓ HuggingFace/{sn} 成功（data.url）")
                             result = (img_data, f"HuggingFace/{sn}")
                             break
 
-                        # 格式 C：{"data": [{"b64_json"|"url": ...}]}
-                        data = j.get("data", [])
-                        if data:
-                            if data[0].get("b64_json"):
-                                img = base64.b64decode(data[0]["b64_json"])
-                                log(f"  ✓ HuggingFace/{sn} 成功（data.b64_json）")
-                                result = (img, f"HuggingFace/{sn}")
-                                break
-                            if data[0].get("url"):
-                                img_data = _safe_get_image(data[0]['url'], timeout=60)
-                                log(f"  ✓ HuggingFace/{sn} 成功（data.url）")
-                                result = (img_data, f"HuggingFace/{sn}")
-                                break
-
-                        err_info = j.get("error", str(j)[:100])
-                        log(f"    未知 JSON: {err_info}，换模型…")
-                        break
-
-                    log("    未识别 JSON 格式，换模型…")
+                    err_info = j.get("error", str(j)[:100])
+                    log(f"    未知 JSON: {err_info}，换模型…")
                     break
 
-                log(f"    未知 Content-Type={ct}，换模型…")
+                log("    未识别 JSON 格式，换模型…")
                 break
 
-            # 请求完成后更新时间戳（无论成功失败）
-            _LAST_DONE_TS[0] = time.time()
+            log(f"    未知 Content-Type={ct}，换模型…")
+            break
 
         if result:
             return result

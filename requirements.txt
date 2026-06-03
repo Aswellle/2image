@@ -1,2 +1,4 @@
-Pillow>=10.3.0
-requests>=2.32.3
+Pillow>=10.0.0,<11
+requests>=2.31.0,<3
+pytest>=7.0.0
+ruff>=0.4.0

@@ -41,8 +41,8 @@ from ui.phrase_panel import PhrasePanel
 from ui.sidebar import HistorySidebar
 from ui.main_content import MainContent
 
-from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color
-from config.i18n import _
+from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color, init_theme
+from config.i18n import _, init_language
 MAX_NICK_LEN = 20
 SIDEBAR_DEF  = 360
 SIDEBAR_MIN  = 240
@@ -62,6 +62,8 @@ class App:
         root.minsize(1000, 720)
 
         self.cfg            = load_config()
+        init_theme(self.cfg)
+        init_language(self.cfg)
         self.cur_path       = None
         self.sel_id         = None
         self._viewer_win    = None
@@ -313,13 +315,13 @@ class App:
                  font=F["title"], bg=C["acc"], fg="white"
                  ).pack(side="left", padx=16)
         # 付费接口数量
-        self._top_paid_lbl = tk.Label(bar, text=_("status_paid_count", n=0, total=4),
+        self._top_paid_lbl = tk.Label(bar, text=_("status_paid_count", n=0, total=len(PAID_PROVIDERS)),
                                        font=F["body"], bg=C["acc"], fg=C["sub"])
         self._top_paid_lbl.pack(side="right", padx=(0, 16))
         # 分隔线
         tk.Frame(bar, bg="#2a4a8a", width=1).pack(side="right", fill="y", pady=10)
         # 免费接口数量
-        self._top_free_lbl = tk.Label(bar, text=_("status_free_count", n=0, total=9),
+        self._top_free_lbl = tk.Label(bar, text=_("status_free_count", n=0, total=len(FREE_PROVIDERS)),
                                        font=F["body"], bg=C["acc"], fg=C["warn"])
         self._top_free_lbl.pack(side="right", padx=(4, 14))
 
@@ -656,11 +658,11 @@ class App:
         # ── 顶栏计数标签 ──────────────────────────────────────────
         free_has_key = bool(sf or hf or gem or ort or mdl or sgm or (cfa and cft))
         self._top_free_lbl.config(
-            text=_("status_free_count", n=free_count, total=9),
+            text=_("status_free_count", n=free_count, total=len(FREE_PROVIDERS)),
             fg=C["ok"] if free_has_key else C["warn"],
         )
         self._top_paid_lbl.config(
-            text=_("status_paid_count", n=paid_count, total=4),
+            text=_("status_paid_count", n=paid_count, total=len(PAID_PROVIDERS)),
             fg="#a78bfa" if paid_count else C["sub"],
         )
 

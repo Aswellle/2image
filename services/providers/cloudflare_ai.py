@@ -18,10 +18,12 @@ API 响应：直接返回 base64 编码的图片数据（无需二次下载）
 """
 import base64
 import time
+import requests
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
+    "id": "cloudflare_ai",
     "name": "Cloudflare AI (免费1万次/天)",
     "category": "free",
     "config_key": "cf_account_id",

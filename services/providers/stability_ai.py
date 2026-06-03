@@ -3,6 +3,7 @@ import base64
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
+    "id": "stability_ai",
     "name": "💎 Stability AI",
     "category": "paid",
     "config_key": "stability_key",

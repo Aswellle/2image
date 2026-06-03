@@ -18,10 +18,12 @@ v2 修复：
 import base64
 import threading
 import time
+import requests
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session
 
 PROVIDER_INFO = {
+    "id": "segmind",
     "name": "Segmind (注册送$5)",
     "category": "free",
     "config_key": "segmind_key",

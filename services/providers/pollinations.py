@@ -15,10 +15,12 @@ v4 修复：
 import threading
 import time
 import urllib.parse
+import requests
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session
 
 PROVIDER_INFO = {
+    "id": "pollinations",
     "name": "Pollinations.AI (免费·无需Key)",
     "category": "free",
     "config_key": None,

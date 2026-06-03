@@ -8,11 +8,13 @@ v3 变体高质量模式（variant_hq）：
   · 跳过低质量蒸馏快速模型（SDXL-Lightning/sdxl-turbo），确保变体质量
   · 标准模式保持原有参数不变
 """
+import requests
 import time
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
+    "id": "siliconflow",
     "name": "硅基流动 SiliconFlow (★推荐)",
     "category": "free",
     "config_key": "sf_key",

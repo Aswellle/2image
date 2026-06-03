@@ -3,6 +3,7 @@ import base64
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
+    "id": "openai_dalle",
     "name": "💎 OpenAI DALL-E 3",
     "category": "paid",
     "config_key": "openai_key",

@@ -16,10 +16,12 @@ v2 修复：
 """
 import threading
 import time
+import requests
 from typing import Callable, Tuple
 from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
+    "id": "stablehorde",
     "name": "StableHorde (兜底)",
     "category": "free",
     "config_key": "stablehorde_key",
