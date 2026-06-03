@@ -37,12 +37,24 @@ class _StrengthSlider:
     # 三段渐变颜色锚点
     _STOPS = [(0.1, "#1d4ed8"), (0.5, "#7c3aed"), (0.9, "#dc2626")]
 
-    def __init__(self, parent: tk.Frame, variable: tk.DoubleVar):
+    def __init__(self, parent: tk.Frame, variable: tk.DoubleVar,
+                 *, w: int = 0, h: int = 0, marks: bool = True):
+        # Allow compact mode: pass w/h to override defaults
+        if w and h:
+            self.W = w; self.H = h
+            self.TX = 10; self.TW = w - 20
+            self.TY = max(12, h // 3); self.TH = 5; self.HR = 7
+        else:
+            self.W = self.__class__.W; self.H = self.__class__.H
+            self.TX = self.__class__.TX; self.TW = self.__class__.TW
+            self.TY = self.__class__.TY; self.TH = self.__class__.TH
+            self.HR = self.__class__.HR
+        self.marks = marks
         self.var = variable
         self.cv = tk.Canvas(parent, width=self.W, height=self.H,
                             bg="#0a1628", bd=0, highlightthickness=0,
                             cursor="hand2")
-        self._gradient = self._build_gradient(60)   # 预计算渐变色带
+        self._gradient = self._build_gradient(60)
         self._draw()
         self.cv.bind("<ButtonPress-1>",  self._on_press)
         self.cv.bind("<B1-Motion>",      self._on_drag)
@@ -109,13 +121,13 @@ class _StrengthSlider:
         cv.create_text(hx, TY - 5, text=f"{val:.1f}",
                        font=F["small_b"], fill=C["ok"], anchor="s")
 
-        # ── 锚点刻度 + 标签（轨道下方）──────────────────────
-        marks = [(0.1, "微调"), (0.5, "融合"), (0.9, "重构")]
-        for mv, mt in marks:
-            mx = self._val_to_x(mv)
-            cv.create_line(mx, TY + TH, mx, TY + TH + 4, fill="#3a5a8a", width=1)
-            cv.create_text(mx, TY + TH + 14, text=mt,
-                           font=F["small"], fill="#4a6a9a", anchor="n")
+        # ── 锚点刻度 + 标签（轨道下方，紧凑模式下省略）──────────
+        if self.marks:
+            for mv, mt in [(0.1, "微调"), (0.5, "融合"), (0.9, "重构")]:
+                mx = self._val_to_x(mv)
+                cv.create_line(mx, TY + TH, mx, TY + TH + 4, fill="#3a5a8a", width=1)
+                cv.create_text(mx, TY + TH + 14, text=mt,
+                               font=F["small"], fill="#4a6a9a", anchor="n")
 
     # ── 事件 ──────────────────────────────────────────────────
     def _on_press(self, e): self.var.set(self._x_to_val(e.x))
@@ -811,46 +823,43 @@ class MainContent:
     #   生成模式切换 + 图生图面板
     # ══════════════════════════════════════════════════════════
     def _build_i2i_panel(self):
-        """构建图生图面板内容（在 self._i2i_panel 内部）。"""
+        """构建图生图面板内容（紧凑双行布局，约 70px 高度）。"""
         p = self._i2i_panel
-        inner = tk.Frame(p, bg="#0a1628"); inner.pack(fill="x", padx=12, pady=(10, 6))
+        inner = tk.Frame(p, bg="#0a1628")
+        inner.pack(fill="x", padx=12, pady=(8, 6))
         inner.columnconfigure(1, weight=1)
 
-        # ── 左：参考图预览 Canvas（可点击选图）──────────────────
-        self._ref_prev_cv = tk.Canvas(inner, width=80, height=80,
+        # ── 左：48×48 参考图预览 Canvas ──────────────────────────
+        self._ref_prev_cv = tk.Canvas(inner, width=48, height=48,
             bg="#0d1a2e", bd=0, highlightthickness=1,
             highlightbackground="#1d3560", cursor="hand2")
-        self._ref_prev_cv.grid(row=0, column=0, rowspan=3, sticky="nw", padx=(0, 14))
+        self._ref_prev_cv.grid(row=0, column=0, rowspan=2, sticky="nw", padx=(0, 10))
         self._ref_prev_cv.bind("<Button-1>", lambda _: self._pick_ref_image())
         self._draw_ref_placeholder()
 
-        # ── 右上：文件名 + 选取按钮 ──────────────────────────────
-        btn_row = tk.Frame(inner, bg="#0a1628"); btn_row.grid(row=0, column=1, sticky="ew")
+        # ── 右 row 0：文件名 + 选取 + 清除 ─────────────────────
+        btn_row = tk.Frame(inner, bg="#0a1628")
+        btn_row.grid(row=0, column=1, sticky="ew", pady=(0, 4))
         self._ref_file_lbl = tk.Label(btn_row, text="未选取参考图",
             font=F["small"], bg="#0a1628", fg="#4a6a8a", anchor="w")
         self._ref_file_lbl.pack(side="left", fill="x", expand=True)
+        self._ref_clear_btn = tk.Button(btn_row, text="✕", font=F["small"],
+            bg="#2a1018", fg=C["hl"], bd=0, padx=6, pady=3, cursor="hand2",
+            state="disabled", command=self._clear_ref_image)
+        self._ref_clear_btn.pack(side="right", padx=(4, 0))
         self._ref_pick_btn = tk.Button(btn_row, text="选取图片", font=F["small"],
-            bg="#1d4ed8", fg="white", bd=0, padx=10, pady=4, cursor="hand2",
+            bg="#1d4ed8", fg="white", bd=0, padx=8, pady=3, cursor="hand2",
             command=self._pick_ref_image)
         self._ref_pick_btn.pack(side="right")
 
-        # ── 右中：强度标题 ────────────────────────────────────────
-        tk.Label(inner, text="变化强度", font=F["small"],
-                 bg="#0a1628", fg=C["sub"], anchor="w").grid(
-                 row=1, column=1, sticky="w", pady=(6, 0))
-
-        # ── 右下：自定义渐变滑块 ──────────────────────────────────
-        self._strength_slider = _StrengthSlider(inner, self._ref_strength)
-        self._strength_slider.grid(row=2, column=1, sticky="w", pady=(2, 0))
-
-        # ── 底部：清除按钮 ────────────────────────────────────────
-        bot = tk.Frame(p, bg="#0a1628"); bot.pack(fill="x", padx=12, pady=(0, 10))
-        self._ref_clear_btn = tk.Button(bot, text="✕ 清除参考图", font=F["small"],
-            bg="#2a1018", fg=C["hl"], bd=0, padx=12, pady=4, cursor="hand2",
-            state="disabled", command=self._clear_ref_image)
-        self._ref_clear_btn.pack(side="left")
-        tk.Label(bot, text="图片越小强度数值越低变化约小",
-                 font=F["small"], bg="#0a1628", fg="#3a5a7a").pack(side="right")
+        # ── 右 row 1：强度标签 + 紧凑滑块（w=200, h=30, 无刻度文字）─
+        str_row = tk.Frame(inner, bg="#0a1628")
+        str_row.grid(row=1, column=1, sticky="ew")
+        tk.Label(str_row, text="变化强度", font=F["small"],
+                 bg="#0a1628", fg=C["sub"]).pack(side="left", padx=(0, 6))
+        self._strength_slider = _StrengthSlider(str_row, self._ref_strength,
+                                                 w=200, h=30, marks=False)
+        self._strength_slider.pack(side="left")
 
     def _switch_mode(self, mode: str):
         """切换文生图 / 图生图模式，更新按钮外观和面板显示。"""
@@ -867,10 +876,10 @@ class MainContent:
                                   after=self._mode_row)
 
     def _draw_ref_placeholder(self):
-        """在参考图预览 Canvas 上绘制占位符。"""
+        """在参考图预览 Canvas 上绘制占位符（48×48）。"""
         cv = self._ref_prev_cv; cv.delete("all")
-        cv.create_text(40, 30, text="🖼", font=(F["_sans"], 22), fill="#1d3560")
-        cv.create_text(40, 58, text="点击选取", font=F["small"], fill="#2a4a7a")
+        cv.create_text(24, 16, text="🖼", font=(F["_sans"], 16), fill="#1d3560")
+        cv.create_text(24, 36, text="点击选取", font=F["small"], fill="#2a4a7a")
 
     def _update_ref_thumb(self):
         """将参考图字节渲染为预览缩略图。"""
@@ -878,10 +887,10 @@ class MainContent:
             self._draw_ref_placeholder(); return
         try:
             img = Image.open(io.BytesIO(self._ref_image))
-            img.thumbnail((76, 76), Image.LANCZOS)
+            img.thumbnail((44, 44), Image.LANCZOS)
             self._ref_thumb_photo = ImageTk.PhotoImage(img)
             cv = self._ref_prev_cv; cv.delete("all")
-            cv.create_image(40, 40, image=self._ref_thumb_photo, anchor="center")
+            cv.create_image(24, 24, image=self._ref_thumb_photo, anchor="center")
         except Exception:
             self._draw_ref_placeholder()
 
