@@ -363,7 +363,6 @@ class MainContent:
 
         # ── 生成模式切换行 ─────────────────────────────────────────
         mode_row = tk.Frame(R, bg=C["bg"]); mode_row.pack(fill="x", padx=14, pady=(0, 3))
-        self._mode_row = mode_row   # 锚点：图生图面板重新 pack 时对齐到此行之后
         self._mode_t2i_btn = tk.Button(mode_row, text="📝 文生图", font=F["small_b"],
             bg=C["hl"], fg="white", bd=0, padx=14, pady=5, cursor="hand2", relief="flat",
             command=lambda: self._switch_mode("t2i"))
@@ -375,35 +374,15 @@ class MainContent:
         tk.Label(mode_row, text="图生图支持: Stability AI · fal.ai",
                  font=F["small"], bg=C["bg"], fg="#3a5a7a").pack(side="right")
 
-        # ── 图生图面板（折叠/展开，初始隐藏）────────────────────────
-        self._i2i_panel = tk.Frame(R, bg="#0a1628",
+        # ── 模式面板（固定高度容器：t2i/i2i 均保持相同高度，预览区不位移）──
+        self._mode_panel = tk.Frame(R, bg=C["bg"], height=76)
+        self._mode_panel.pack(fill="x", padx=14, pady=(0, 4))
+        self._mode_panel.pack_propagate(False)
+
+        self._i2i_panel = tk.Frame(self._mode_panel, bg="#0a1628",
             highlightbackground="#1d3560", highlightthickness=1)
-        # pack() 顺序在此确定，初始 pack_forget 隐藏
-        self._i2i_panel.pack(fill="x", padx=14, pady=(0, 4))
         self._build_i2i_panel()
-        self._i2i_panel.pack_forget()   # 默认隐藏，切换为图生图模式时显示
-
-        # 接口状态栏
-        tok_bar = tk.Frame(R, bg=C["panel"]); tok_bar.pack(fill="x", padx=14, pady=(0, 4))
-        self.hf_status_lbl = tk.Label(tok_bar, text="", font=F["body"],
-                                       bg=C["panel"], fg=C["sub"], padx=10)
-        self.hf_status_lbl.pack(side="left")
-        self.sh_status_lbl = tk.Label(tok_bar, text="", font=F["body"],
-                                       bg=C["panel"], fg=C["sub"], padx=10)
-        self.sh_status_lbl.pack(side="left")
-        tk.Button(tok_bar, text=_("btn_paid_config"), font=F["body"],
-                  bg="#7c3aed", fg="white", bd=0, padx=8, pady=3, cursor="hand2",
-                  command=self.app._open_paid_wizard).pack(side="right", padx=4, pady=5)
-        tk.Button(tok_bar, text=_("btn_free_config"), font=F["body"],
-                  bg=C["hl"], fg="white", bd=0, padx=8, pady=3, cursor="hand2",
-                  command=self.app._open_wizard).pack(side="right", padx=4, pady=5)
-
-        # ── 标签统计区 ────────────────────────────────────────
-        self._tag_stat_frame = tk.Frame(R, bg=C["panel"])
-        self._tag_stat_frame.pack(fill="x", padx=14, pady=(0, 4))
-        self._tag_stat_inner = tk.Frame(self._tag_stat_frame, bg=C["panel"])
-        self._tag_stat_inner.pack(fill="x", padx=8, pady=4)
-        self.app.root.after(200, self._refresh_tag_stats)
+        # 初始 t2i 模式：容器高度固定 76px，i2i 面板未显示
 
         # 状态栏
         self.stv = tk.StringVar(value=_("status_ready"))
@@ -442,39 +421,10 @@ class MainContent:
                   command=self.app._clr_log).pack(anchor="e", padx=4, pady=2)
 
     # ══════════════════════════════════════════════════════════
-    #   标签统计区
+    #   标签统计（已移除独立行；统计数据仍可在顶部菜单统计看板中查看）
     # ══════════════════════════════════════════════════════════
     def _refresh_tag_stats(self):
-        for w in self._tag_stat_inner.winfo_children(): w.destroy()
-        try:
-            stats    = get_stats()
-            top_tags = stats.get("top_tags", [])
-        except Exception:
-            top_tags = []
-        if not top_tags:
-            tk.Label(self._tag_stat_inner,
-                     text="🏷 暂无标签  —  在历史记录卡片中点击 🏷 添加",
-                     font=F["small_i"], bg=C["panel"], fg=C["sub"]
-                     ).pack(anchor="w"); return
-        tk.Label(self._tag_stat_inner, text="🏷 标签统计：",
-                 font=F["small_b"], bg=C["panel"], fg=C["sub"]).pack(side="left")
-        for tag, cnt in top_tags[:8]:
-            tc     = tag_color(tag)
-            active = (self.app._tag_filter == tag)
-            chip   = tk.Frame(self._tag_stat_inner,
-                               bg=tc if active else C["panel"],
-                               highlightbackground=tc, highlightthickness=1)
-            chip.pack(side="left", padx=(0, 4))
-            tk.Label(chip, text=tag, font=F["small_b"],
-                     bg=tc if active else C["panel"], fg="white",
-                     padx=5, pady=2).pack(side="left")
-            tk.Label(chip, text=str(cnt), font=F["mono_tiny"],
-                     bg=tc if active else C["panel"],
-                     fg="#c0ffee" if active else C["sub"],
-                     padx=3, pady=2).pack(side="left")
-            for w in chip.winfo_children():
-                w.bind("<Button-1>", lambda ev, t=tag: self.app._on_tag_filter_changed(t))
-            chip.bind("<Button-1>", lambda ev, t=tag: self.app._on_tag_filter_changed(t))
+        pass  # row removed; kept as no-op for callers (sidebar, queue_panel, app)
 
     # ══════════════════════════════════════════════════════════
     #   预览 Tab（含对比）— Fix-2: 补充 _cmp_label_b.pack()
@@ -862,7 +812,7 @@ class MainContent:
         self._strength_slider.pack(side="left")
 
     def _switch_mode(self, mode: str):
-        """切换文生图 / 图生图模式，更新按钮外观和面板显示。"""
+        """切换文生图/图生图模式。_mode_panel 高度固定，i2i 面板在容器内显隐。"""
         self._gen_mode = mode
         if mode == "t2i":
             self._mode_t2i_btn.config(bg=C["hl"],    fg="white")
@@ -871,9 +821,7 @@ class MainContent:
         else:
             self._mode_t2i_btn.config(bg=C["panel"], fg=C["sub"])
             self._mode_i2i_btn.config(bg="#1d4ed8",  fg="white")
-            # after= 保证面板插回模式切换行正下方，不漂到列表末尾
-            self._i2i_panel.pack(fill="x", padx=14, pady=(0, 4),
-                                  after=self._mode_row)
+            self._i2i_panel.pack(fill="both", expand=True)
 
     def _draw_ref_placeholder(self):
         """在参考图预览 Canvas 上绘制占位符（48×48）。"""

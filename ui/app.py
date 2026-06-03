@@ -323,7 +323,15 @@ class App:
         # 免费接口数量
         self._top_free_lbl = tk.Label(bar, text=_("status_free_count", n=0, total=len(FREE_PROVIDERS)),
                                        font=F["body"], bg=C["acc"], fg=C["warn"])
-        self._top_free_lbl.pack(side="right", padx=(4, 14))
+        self._top_free_lbl.pack(side="right", padx=(4, 8))
+        # 接口配置按钮（原位于主内容区接口状态栏，移至顶栏节省垂直空间）
+        tk.Frame(bar, bg="#2a4a8a", width=1).pack(side="right", fill="y", pady=10)
+        tk.Button(bar, text=_("btn_paid_config"), font=F["small_b"],
+                  bg="#7c3aed", fg="white", bd=0, padx=10, pady=4, cursor="hand2",
+                  command=self._open_paid_wizard).pack(side="right", padx=(0, 4), pady=8)
+        tk.Button(bar, text=_("btn_free_config"), font=F["small_b"],
+                  bg=C["hl"], fg="white", bd=0, padx=10, pady=4, cursor="hand2",
+                  command=self._open_wizard).pack(side="right", padx=(0, 4), pady=8)
 
         self._body = tk.Frame(self.root, bg=C["bg"])
         self._body.pack(fill="both", expand=True)
@@ -666,24 +674,6 @@ class App:
             fg="#a78bfa" if paid_count else C["sub"],
         )
 
-        # ── 侧边栏详细状态 ────────────────────────────────────
-        if sf:
-            self.content.hf_status_lbl.config(text="🆓 硅基流动: 已配置 ✓", fg=C["ok"])
-        elif hf:
-            self.content.hf_status_lbl.config(text="🆓 HF: 已配置 ✓（建议配置硅基流动）", fg=C["warn"])
-        else:
-            self.content.hf_status_lbl.config(text="⚠ " + _("status_no_records"), fg=C["hl"])
-        paid_parts = []
-        if oai: paid_parts.append("DALL-E ✅")
-        if stb: paid_parts.append("Stability ✅")
-        if rep: paid_parts.append("Replicate ✅")
-        if xai: paid_parts.append("xAI ✅")
-        if paid_parts:
-            self.content.sh_status_lbl.config(text="💎 " + " | ".join(paid_parts), fg="#a78bfa")
-        elif sh:
-            self.content.sh_status_lbl.config(text="🆓 StableHorde: 已配置 ✓", fg=C["ok"])
-        else:
-            self.content.sh_status_lbl.config(text="ℹ StableHorde: 匿名兜底 | 无付费接口", fg=C["sub"])
 
     # ══════════════════════════════════════════════════════════
     #   日志
