@@ -227,6 +227,7 @@ class QueuePanel(tk.Frame):
         _btn(_("btn_add_queue"), self._add_from_app, "#065f46")
         self._start_btn = _btn(_("queue_btn_start"), self._start, "#1e40af")
         self._pause_btn = _btn(_("queue_btn_pause"), self._toggle_pause, "#7c3aed")
+        _btn("⏹ 停止", self._stop, "#7f1d1d")
         _btn(_("queue_btn_clear_done"), self._clear_done, "#7c2d12")
 
         # ── 状态信息条 ────────────────────────────────────────
@@ -345,6 +346,13 @@ class QueuePanel(tk.Frame):
             "⏸ 已暂停 — 当前任务完成后停止" if self._paused
             else "▶ 已继续运行…")
 
+    def _stop(self):
+        """发出停止信号；_run_loop 在当前任务完成后退出循环。"""
+        if not self._running:
+            return
+        self._stop_flag = True
+        self._set_prog("⏹ 停止中 — 当前任务完成后退出…")
+
     def _clear_done(self):
         done_s = {"done", "cancelled", "failed"}
         dead   = [w for w in self._widgets
@@ -359,6 +367,8 @@ class QueuePanel(tk.Frame):
     def _remove(self, widget: _ItemWidget):
         if widget._item.status == "running":
             return   # 正在跑的不让删
+        # 先标记 cancelled，防止 _run_loop 在销毁后仍尝试处理该条目
+        widget._item.status = "cancelled"
         widget.destroy()
         if widget in self._widgets:
             self._widgets.remove(widget)
@@ -376,44 +386,54 @@ class QueuePanel(tk.Frame):
     #   队列执行（后台线程）
     # ══════════════════════════════════════════════════════════
     def _run_loop(self):
+        """
+        队列执行循环。
+
+        修复 #2/#7：改为 while 循环从 live 列表中取任务，而非一次性快照：
+          · 运行中途新加入的任务也会被处理（修复 #4：快照截断问题）
+          · 处理前检查 winfo_exists()，防止 _remove 销毁控件后的 TclError
+          · waiting_total 改为实时计算，进度分母始终准确（修复 #7）
+        """
         from services.image_service import generate_image, save_image_file
         from services.translation  import has_chinese, translate_zh_to_en
         from data.repository       import add_entry
 
-        waiting_total = len([w for w in self._widgets
-                             if w._item.status == "waiting"])
-        done_cnt      = 0
+        done_cnt = 0
 
-        for widget in list(self._widgets):
-            if self._stop_flag:
-                break
-            if widget._item.status != "waiting":
-                continue
-
+        while not self._stop_flag:
             # 等待暂停解除
             while self._paused and not self._stop_flag:
                 time.sleep(0.4)
             if self._stop_flag:
                 break
 
-            item    = widget._item
-            t0      = time.time()
-            idx     = done_cnt + 1
+            # 从 live 列表取下一个 waiting 条目（自动含运行中途新加入的任务）
+            next_widget = None
+            for w in self._widgets:
+                if w._item.status == "waiting":
+                    next_widget = w
+                    break
+            if next_widget is None:
+                break   # 无待处理任务，正常退出
 
-            # 标记运行中
+            item = next_widget._item
+            t0   = time.time()
+
+            # 实时计算剩余任务数（修复 #7）
+            remaining_now = sum(1 for w in self._widgets
+                                if w._item.status in ("waiting", "running"))
             self.app.root.after(
-                0, lambda w=widget: w.update_status("running"))
+                0, lambda w=next_widget:
+                    w.update_status("running") if w.winfo_exists() else None)
             self.app.root.after(
-                0, lambda i=idx, t=waiting_total, p=item.prompt:
-                self._set_prog(
-                    f"🔄  [{i}/{t}]  {p[:40]}…"))
+                0, lambda i=done_cnt + 1, t=remaining_now, p=item.prompt:
+                self._set_prog(f"🔄  [{i}/{t}]  {p[:40]}…"))
 
             try:
                 prompt     = item.prompt
                 w_n, h_n   = [int(x) for x in
-                               item.size.replace("×","x").split("x")]
+                               item.size.replace("×", "x").split("x")]
                 translated = prompt
-
                 if has_chinese(prompt):
                     translated = translate_zh_to_en(
                         prompt, log_cb=self.app._log)
@@ -429,13 +449,13 @@ class QueuePanel(tk.Frame):
                 elapsed = time.time() - t0
                 done_cnt += 1
 
-                # 主线程回调：更新 UI + 刷新历史
-                def _on_done(w=widget, d=data, p=path,
+                def _on_done(w=next_widget, d=data, p=path,
                              u=used, el=elapsed):
+                    if not w.winfo_exists():   # 修复 #2：控件已销毁则跳过
+                        return
                     w.update_status("done",
                                     result_path=p, result_data=d,
                                     provider=u, elapsed=el)
-                    # 主线程创建 PhotoImage，不在子线程中！
                     try:
                         img = Image.open(io.BytesIO(d))
                         w.set_thumb(img)
@@ -443,8 +463,7 @@ class QueuePanel(tk.Frame):
                         pass
                     self.app._refresh_hist()
                     self.app._refresh_tag_stats()
-                    self.app._st(
-                        f"✅ 队列完成一张  {u[:30]}", "ok")
+                    self.app._st(f"✅ 队列完成一张  {u[:30]}", "ok")
 
                 self.app.root.after(0, _on_done)
 
@@ -453,27 +472,28 @@ class QueuePanel(tk.Frame):
                 emsg    = str(ex)[:120]
                 self.app._log(f"❌ 队列任务失败: {emsg}")
 
-                def _on_fail(w=widget, e=emsg, el=elapsed):
+                def _on_fail(w=next_widget, e=emsg, el=elapsed):
+                    if not w.winfo_exists():
+                        return
                     w.update_status("failed", error=e, elapsed=el)
 
                 self.app.root.after(0, _on_fail)
 
-        # 全部循环结束
+        # 循环结束（正常完成或收到停止信号）
         def _finish():
             self._running   = False
             self._stop_flag = False
             self._start_btn.config(state="normal", text=_("queue_btn_start"))
             self._pause_btn.config(text=_("queue_btn_pause"))
             self._paused = False
-            remaining = len([w for w in self._widgets
-                             if w._item.status == "waiting"])
+            remaining = sum(1 for w in self._widgets
+                            if w._item.status == "waiting")
             if remaining:
                 self._set_prog(
-                    f"⏹ 已完成  ·  本轮生成 {done_cnt} 张"
+                    f"⏹ 已停止  ·  本轮完成 {done_cnt} 张"
                     f"  ·  还有 {remaining} 个等待中（可再次点「▶ 开始」）")
             else:
-                self._set_prog(
-                    f"🎉 全部完成！  共生成 {done_cnt} 张图片")
+                self._set_prog(f"🎉 全部完成！  共生成 {done_cnt} 张图片")
             self._update_counts()
 
         self.app.root.after(0, _finish)

@@ -199,6 +199,8 @@ class BatchPanel(tk.Frame):
         self._cells    = []
         self._n        = 0
         self._done_cnt = 0
+        self._running   = False     # 防止并发 start_batch
+        self._batch_gen = 0         # 版本号：旧批次 stale after() 回调通过对比自动失效
         self._cmp_a    = None
         self._cmp_b    = None
         self._cmp_mode = False
@@ -314,6 +316,11 @@ class BatchPanel(tk.Frame):
     def start_batch(self, n: int, params: dict,
                     translate_fn, generate_fn, save_fn,
                     log_fn, on_keep_fn):
+        if self._running:
+            log_fn("⚠ 批量生成正在进行中，请等待完成后再次触发")
+            return
+        self._running   = True
+        self._batch_gen += 1   # 让所有旧批次挂起的 after() 回调失效
         self._n        = min(max(1, n), MAX_CELLS)
         self._done_cnt = 0
         self._on_keep  = on_keep_fn
@@ -387,8 +394,10 @@ class BatchPanel(tk.Frame):
                 log_fn(f"  ⚠ 翻译失败，使用原文: {te}")
                 translated = params["prompt"]
 
+            gen  = self._batch_gen   # 捕获版本号，stale-callback 检测用
             cell = self._cells[cell_idx]
-            self.after(0, cell.set_loading)
+            self.after(0, lambda c=cell, g=gen:
+                       c.set_loading() if g == self._batch_gen else None)
 
             try:
                 data, used = generate_fn(
@@ -401,26 +410,48 @@ class BatchPanel(tk.Frame):
                     log_cb=log_fn,
                 )
                 path = save_fn(data, params["prompt"])
-                self.after(0, lambda c=cell, d=data, p=path, u=used:
-                           self._on_cell_done(c, d, p, u))
+                self.after(0, lambda c=cell, d=data, p=path, u=used, g=gen:
+                           self._on_cell_done(c, d, p, u, g))
             except Exception as ex:
-                self.after(0, lambda c=cell, e=str(ex): c.set_error(e))
+                self.after(0, lambda c=cell, e=str(ex), g=gen:
+                           self._on_cell_error(c, e, g))
 
         for i in range(self._n):
             threading.Thread(target=_gen_one, args=(i,), daemon=True).start()
 
-    def _on_cell_done(self, cell, data, path, used):
+    def _on_cell_done(self, cell, data, path, used, gen=None):
+        if gen is not None and gen != self._batch_gen:
+            return   # 旧批次的 stale 回调，直接忽略
         cell.set_done(data, path, used)
         self._done_cnt += 1
+        self._check_batch_progress()
+
+    def _on_cell_error(self, cell, msg, gen=None):
+        """出错也计入完成数，确保 _running 能正确重置。"""
+        if gen is not None and gen != self._batch_gen:
+            return
+        cell.set_error(msg)
+        self._done_cnt += 1
+        self._check_batch_progress()
+
+    def _check_batch_progress(self):
         if self._done_cnt < self._n:
-            self._progress_lbl.config(text=f"{self._done_cnt} / {self._n}  生成中…")
-        else:
             self._progress_lbl.config(
-                text=f"✅ 全部 {self._n} 张生成完成  · 请选择保留或丢弃")
+                text=f"{self._done_cnt} / {self._n}  生成中…")
+        else:
+            self._running = False
+            err_cnt  = sum(1 for c in self._cells[:self._n] if c.state == "error")
+            if err_cnt:
+                self._progress_lbl.config(
+                    text=f"⚠ {self._n - err_cnt} 张成功 / {err_cnt} 张失败  · 请检查状态")
+            else:
+                self._progress_lbl.config(
+                    text=f"✅ 全部 {self._n} 张生成完成  · 请选择保留或丢弃")
 
     def reset(self):
         """完全重置面板（Fix-4: 先 hide_compare 恢复布局）。"""
         self._hide_compare()   # 确保 ctrl+grid_host 可见
+        self._running = False  # 允许新批次启动
         self._cmp_a = self._cmp_b = None
         self._progress_lbl.config(text="")
         for cell in self._cells:
@@ -486,10 +517,16 @@ class BatchPanel(tk.Frame):
             self._on_keep(entry)
 
     def _discard_cell(self, cell):
-        import os
-        if cell.path and os.path.exists(cell.path):
-            try: os.remove(cell.path)
-            except Exception: pass
+        # 修复 #5：从对比槽移除，防止对比模式展示已丢弃的图片
+        if self._cmp_a is cell: self._cmp_a = None
+        if self._cmp_b is cell: self._cmp_b = None
+        # 修复 #8：后台线程删除文件，避免主线程同步 I/O 阻塞
+        if cell.path:
+            import os, threading as _th
+            _th.Thread(
+                target=lambda p=cell.path:
+                    os.remove(p) if os.path.exists(p) else None,
+                daemon=True).start()
         self.app._log(f"✕ 丢弃变体 #{cell.idx + 1}")
 
     def _keep_all(self):
