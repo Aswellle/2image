@@ -258,7 +258,7 @@ class MainContent:
         self.pt.pack(fill="x")
         self.pt.bind("<Control-Return>", lambda e: (self.app._gen(), "break")[1])
 
-        # ── 输入框底部辅助条：字数统计 + 快捷加入队列 ─────────
+        # ── 输入框底部辅助条：字数统计 + 一键复制 ─────────────
         _pt_foot = tk.Frame(R, bg="#0d1a30")
         _pt_foot.pack(fill="x", padx=14)
 
@@ -268,11 +268,10 @@ class MainContent:
         self._char_lbl.pack(side="left", padx=6, pady=2)
 
         tk.Button(
-            _pt_foot, text=_("btn_add_queue"),
+            _pt_foot, text="📋 复制提示词",
             font=F["tiny"], bg="#1e3060", fg="#93c5fd",
             bd=0, padx=8, pady=2, cursor="hand2",
-            command=lambda: (self.app._switch_to_queue_tab(),
-                             self._queue_panel._add_from_app())
+            command=self._copy_prompt
         ).pack(side="right", padx=4, pady=2)
 
         # Bug3 修复：
@@ -394,9 +393,15 @@ class MainContent:
         self.stl.pack(fill="x", padx=14, pady=(0, 4))
         self.pb = ttk.Progressbar(R, mode="indeterminate")
 
-        # ── Notebook ──────────────────────────────────────────
-        self._nb = ttk.Notebook(R)
-        self._nb.pack(fill="both", expand=True, padx=14, pady=(4, 8))
+        # ── Notebook（外围加强调色线框，便于视觉定位边界）────────
+        _nb_border = tk.Frame(R, bg=C["bg"],
+                              highlightbackground=C["sash"],
+                              highlightcolor=C["sash_hl"],
+                              highlightthickness=2)
+        _nb_border.pack(fill="both", expand=True, padx=12, pady=(4, 8))
+
+        self._nb = ttk.Notebook(_nb_border)
+        self._nb.pack(fill="both", expand=True, padx=1, pady=1)
 
         self.imf = tk.Frame(self._nb, bg=C["panel"])
         self._nb.add(self.imf, text=_("tab_preview"))
@@ -769,6 +774,20 @@ class MainContent:
                      else C["warn"] if n < 400
                      else C["hl"])
             self._char_lbl.config(text=_("lbl_chars", n=n), fg=color)
+        except Exception:
+            pass
+
+    def _copy_prompt(self):
+        """将提示词文本框内容复制到系统剪贴板，并在字数标签短暂显示反馈。"""
+        try:
+            text = self.pt.get("1.0", "end-1c").strip()
+            if not text:
+                return
+            self.app.root.clipboard_clear()
+            self.app.root.clipboard_append(text)
+            # 短暂显示 "✓ 已复制"，1.5s 后恢复字数统计
+            self._char_lbl.config(text="✓ 已复制", fg=C["ok"])
+            self.app.root.after(1500, self._update_char_count)
         except Exception:
             pass
 
