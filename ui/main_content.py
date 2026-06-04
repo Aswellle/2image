@@ -374,15 +374,19 @@ class MainContent:
         tk.Label(mode_row, text="图生图支持: Stability AI · fal.ai",
                  font=F["small"], bg=C["bg"], fg="#3a5a7a").pack(side="right")
 
-        # ── 模式面板（固定高度容器：t2i/i2i 均保持相同高度，预览区不位移）──
-        self._mode_panel = tk.Frame(R, bg=C["bg"], height=76)
+        # ── 模式面板：占位符（t2i）与图生图面板（i2i）等高互换 ────────
+        # 首次切换至 i2i 时动态测量并同步高度，消除 pack_propagate 溢出
+        # 问题，预览区在两种模式下高度始终保持一致。
+        self._mode_panel = tk.Frame(R, bg=C["bg"])
         self._mode_panel.pack(fill="x", padx=14, pady=(0, 4))
-        self._mode_panel.pack_propagate(False)
 
-        self._i2i_panel = tk.Frame(self._mode_panel, bg="#0a1628",
-            highlightbackground="#1d3560", highlightthickness=1)
+        self._mode_spacer = tk.Frame(self._mode_panel, bg=C["bg"])
+        self._mode_spacer.pack(fill="x")   # t2i 模式：不可见等高占位
+
+        self._i2i_panel = tk.Frame(self._mode_panel, bg="#0d1d35",
+            highlightbackground="#1e3a5f", highlightthickness=1)
         self._build_i2i_panel()
-        # 初始 t2i 模式：容器高度固定 76px，i2i 面板未显示
+        self._mode_spacer_synced = False   # 首次进入 i2i 时测量
 
         # 状态栏
         self.stv = tk.StringVar(value=_("status_ready"))
@@ -773,55 +777,73 @@ class MainContent:
     #   生成模式切换 + 图生图面板
     # ══════════════════════════════════════════════════════════
     def _build_i2i_panel(self):
-        """构建图生图面板内容（紧凑双行布局，约 70px 高度）。"""
+        """构建图生图面板（紧凑双行布局）。"""
         p = self._i2i_panel
-        inner = tk.Frame(p, bg="#0a1628")
+        _BG = "#0d1d35"   # 面板背景色，与 p 一致
+        inner = tk.Frame(p, bg=_BG)
         inner.pack(fill="x", padx=12, pady=(8, 6))
         inner.columnconfigure(1, weight=1)
 
-        # ── 左：48×48 参考图预览 Canvas ──────────────────────────
+        # ── 左：48×48 参考图缩略图 ──────────────────────────────
         self._ref_prev_cv = tk.Canvas(inner, width=48, height=48,
-            bg="#0d1a2e", bd=0, highlightthickness=1,
-            highlightbackground="#1d3560", cursor="hand2")
-        self._ref_prev_cv.grid(row=0, column=0, rowspan=2, sticky="nw", padx=(0, 10))
+            bg="#0a1525", bd=0, highlightthickness=1,
+            highlightbackground="#1e3a5f", cursor="hand2")
+        self._ref_prev_cv.grid(row=0, column=0, rowspan=2, sticky="nw", padx=(0, 12))
         self._ref_prev_cv.bind("<Button-1>", lambda _: self._pick_ref_image())
         self._draw_ref_placeholder()
 
-        # ── 右 row 0：文件名 + 选取 + 清除 ─────────────────────
-        btn_row = tk.Frame(inner, bg="#0a1628")
-        btn_row.grid(row=0, column=1, sticky="ew", pady=(0, 4))
-        self._ref_file_lbl = tk.Label(btn_row, text="未选取参考图",
-            font=F["small"], bg="#0a1628", fg="#4a6a8a", anchor="w")
+        # ── 右 row 0：文件名 + 选取 + 清除 ──────────────────────
+        btn_row = tk.Frame(inner, bg=_BG)
+        btn_row.grid(row=0, column=1, sticky="ew", pady=(2, 4))
+        self._ref_file_lbl = tk.Label(btn_row, text="点击缩略图或「选取图片」加载参考图",
+            font=F["small"], bg=_BG, fg="#5a7a9a", anchor="w")
         self._ref_file_lbl.pack(side="left", fill="x", expand=True)
-        self._ref_clear_btn = tk.Button(btn_row, text="✕", font=F["small"],
-            bg="#2a1018", fg=C["hl"], bd=0, padx=6, pady=3, cursor="hand2",
+        self._ref_clear_btn = tk.Button(btn_row, text="✕ 清除", font=F["small"],
+            bg="#2a1018", fg="#f87171", bd=0, padx=7, pady=3, cursor="hand2",
             state="disabled", command=self._clear_ref_image)
-        self._ref_clear_btn.pack(side="right", padx=(4, 0))
+        self._ref_clear_btn.pack(side="right", padx=(6, 0))
         self._ref_pick_btn = tk.Button(btn_row, text="选取图片", font=F["small"],
-            bg="#1d4ed8", fg="white", bd=0, padx=8, pady=3, cursor="hand2",
-            command=self._pick_ref_image)
+            bg="#1d4ed8", fg="white", bd=0, padx=10, pady=3, cursor="hand2",
+            activebackground="#2563eb", command=self._pick_ref_image)
         self._ref_pick_btn.pack(side="right")
 
-        # ── 右 row 1：强度标签 + 紧凑滑块（w=200, h=30, 无刻度文字）─
-        str_row = tk.Frame(inner, bg="#0a1628")
+        # ── 右 row 1：变化强度 + 紧凑滑块 + 实时数值 ──────────────
+        str_row = tk.Frame(inner, bg=_BG)
         str_row.grid(row=1, column=1, sticky="ew")
         tk.Label(str_row, text="变化强度", font=F["small"],
-                 bg="#0a1628", fg=C["sub"]).pack(side="left", padx=(0, 6))
+                 bg=_BG, fg=C["sub"]).pack(side="left", padx=(0, 6))
         self._strength_slider = _StrengthSlider(str_row, self._ref_strength,
-                                                 w=200, h=30, marks=False)
+                                                 w=190, h=30, marks=False)
         self._strength_slider.pack(side="left")
+        # 实时数值标签（大字号，方便快速读取当前强度）
+        self._strength_val_lbl = tk.Label(str_row,
+            text=f"{self._ref_strength.get():.1f}",
+            font=F["small_b"], bg=_BG, fg=C["ok"], width=3, anchor="w")
+        self._strength_val_lbl.pack(side="left", padx=(6, 0))
+        self._ref_strength.trace("w", lambda *_: self._strength_val_lbl.config(
+            text=f"{self._ref_strength.get():.1f}"))
 
     def _switch_mode(self, mode: str):
-        """切换文生图/图生图模式。_mode_panel 高度固定，i2i 面板在容器内显隐。"""
+        """切换文生图/图生图。占位符与面板等高互换，预览区高度始终一致。"""
         self._gen_mode = mode
         if mode == "t2i":
             self._mode_t2i_btn.config(bg=C["hl"],    fg="white")
             self._mode_i2i_btn.config(bg=C["panel"], fg=C["sub"])
             self._i2i_panel.pack_forget()
+            self._mode_spacer.pack(fill="x")
         else:
             self._mode_t2i_btn.config(bg=C["panel"], fg=C["sub"])
             self._mode_i2i_btn.config(bg="#1d4ed8",  fg="white")
-            self._i2i_panel.pack(fill="both", expand=True)
+            self._mode_spacer.pack_forget()
+            self._i2i_panel.pack(fill="x")
+            # 首次进入 i2i：测量实际渲染高度，同步到占位符
+            if not self._mode_spacer_synced:
+                self.app.root.update_idletasks()
+                h = self._i2i_panel.winfo_height()
+                if h > 8:
+                    self._mode_spacer.configure(height=h)
+                    self._mode_spacer.pack_propagate(False)
+                    self._mode_spacer_synced = True
 
     def _draw_ref_placeholder(self):
         """在参考图预览 Canvas 上绘制占位符（48×48）。"""
@@ -867,7 +889,8 @@ class MainContent:
         """清除参考图，恢复占位符。"""
         self._ref_image = None
         self._ref_thumb_photo = None
-        self._ref_file_lbl.config(text="未选取参考图", fg="#4a6a8a")
+        self._ref_file_lbl.config(
+            text="点击缩略图或「选取图片」加载参考图", fg="#5a7a9a")
         self._ref_clear_btn.config(state="disabled")
         self._ref_pick_btn.config(text="选取图片")
         self._draw_ref_placeholder()
