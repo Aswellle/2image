@@ -363,6 +363,7 @@ class MainContent:
 
         # ── 生成模式切换行 ─────────────────────────────────────────
         mode_row = tk.Frame(R, bg=C["bg"]); mode_row.pack(fill="x", padx=14, pady=(0, 3))
+        self._mode_row = mode_row   # pack(after=) 定位用
         self._mode_t2i_btn = tk.Button(mode_row, text="📝 文生图", font=F["small_b"],
             bg=C["hl"], fg="white", bd=0, padx=14, pady=5, cursor="hand2", relief="flat",
             command=lambda: self._switch_mode("t2i"))
@@ -374,19 +375,17 @@ class MainContent:
         tk.Label(mode_row, text="图生图支持: Stability AI · fal.ai",
                  font=F["small"], bg=C["bg"], fg="#3a5a7a").pack(side="right")
 
-        # ── 模式面板：占位符（t2i）与图生图面板（i2i）等高互换 ────────
-        # 首次切换至 i2i 时动态测量并同步高度，消除 pack_propagate 溢出
-        # 问题，预览区在两种模式下高度始终保持一致。
+        # ── 图生图面板（按需插入 pack 流）────────────────────────────
+        # t2i 模式：面板不在 pack 列表中，零空白残留，下方控件紧贴 mode_row
+        # i2i 模式：pack(after=_mode_row) 将面板插入正确位置，
+        #           下方状态栏和 Notebook 整体下移为面板腾出空间
         self._mode_panel = tk.Frame(R, bg=C["bg"])
-        self._mode_panel.pack(fill="x", padx=14, pady=(0, 4))
-
-        self._mode_spacer = tk.Frame(self._mode_panel, bg=C["bg"])
-        self._mode_spacer.pack(fill="x")   # t2i 模式：不可见等高占位
+        # 注意：此处故意不 pack，由 _switch_mode 按需插入
 
         self._i2i_panel = tk.Frame(self._mode_panel, bg="#0d1d35",
             highlightbackground="#1e3a5f", highlightthickness=1)
         self._build_i2i_panel()
-        self._mode_spacer_synced = False   # 首次进入 i2i 时测量
+        self._i2i_panel.pack(fill="x")   # 永久 pack 在 _mode_panel 内
 
         # 状态栏
         self.stv = tk.StringVar(value=_("status_ready"))
@@ -824,26 +823,20 @@ class MainContent:
             text=f"{self._ref_strength.get():.1f}"))
 
     def _switch_mode(self, mode: str):
-        """切换文生图/图生图。占位符与面板等高互换，预览区高度始终一致。"""
+        """切换文生图/图生图。
+        t2i：_mode_panel 移出 pack 流，无空白残留，状态栏和 Notebook 上移。
+        i2i：_mode_panel 插入 mode_row 正下方，下方控件整体下移腾空间。
+        """
         self._gen_mode = mode
         if mode == "t2i":
             self._mode_t2i_btn.config(bg=C["hl"],    fg="white")
             self._mode_i2i_btn.config(bg=C["panel"], fg=C["sub"])
-            self._i2i_panel.pack_forget()
-            self._mode_spacer.pack(fill="x")
+            self._mode_panel.pack_forget()
         else:
             self._mode_t2i_btn.config(bg=C["panel"], fg=C["sub"])
             self._mode_i2i_btn.config(bg="#1d4ed8",  fg="white")
-            self._mode_spacer.pack_forget()
-            self._i2i_panel.pack(fill="x")
-            # 首次进入 i2i：测量实际渲染高度，同步到占位符
-            if not self._mode_spacer_synced:
-                self.app.root.update_idletasks()
-                h = self._i2i_panel.winfo_height()
-                if h > 8:
-                    self._mode_spacer.configure(height=h)
-                    self._mode_spacer.pack_propagate(False)
-                    self._mode_spacer_synced = True
+            self._mode_panel.pack(fill="x", padx=14, pady=(0, 4),
+                                  after=self._mode_row)
 
     def _draw_ref_placeholder(self):
         """在参考图预览 Canvas 上绘制占位符（48×48）。"""
