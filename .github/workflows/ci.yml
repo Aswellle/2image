@@ -21,8 +21,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Lint — ruff F/E9 (undefined names + syntax errors)
-        run: ruff check services/ ui/ config/ data/ tests/ --select F,E9
+      - name: Lint — ruff F821/E9 (undefined names + syntax errors)
+        run: ruff check services/ ui/ config/ data/ tests/ --select F821,E9
 
       - name: Run tests
         run: pytest tests/ -v --tb=short

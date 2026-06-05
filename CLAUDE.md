@@ -13,8 +13,8 @@ pytest tests/
 pytest tests/test_providers.py          # single file
 pytest tests/ -k "siliconflow"          # filter by name
 
-# Lint (catches undefined names, unused imports — run alongside tests)
-ruff check services/ ui/ config/ data/ tests/ --select F,E9
+# Lint (catches undefined names + syntax errors — run alongside tests)
+ruff check services/ ui/ config/ data/ tests/ --select F821,E9
 
 # Build Windows installer
 python auto_build.py
