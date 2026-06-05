@@ -19,18 +19,43 @@ env/
 *.log
 config.json
 
-# IDE / tools
+# Environment variables — may contain API keys
+.env
+.env.*
+.env.local
+.env.*.local
+
+# IDE / editor
 .history/
 .omc/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.idea/
+.vscode/
+*.suo
+*.user
+*.vs/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
 
 # Installer output
 installer/*.exe
 installer/Output/
 installer/auto_*.iss
 installer/*.iss.bak
+
+# AI code-review session artifacts (Claude Code)
+.full-review/
+.full-review-archive-*/
+
+# Redundant / local-only files
+版本.txt
 
 # Misc
 *.bak
