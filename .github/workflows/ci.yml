@@ -57,6 +57,8 @@ jobs:
           Write-Host "Building version $v"
 
       - name: Build EXE + Installer
+        env:
+          PYTHONUTF8: "1"      # force UTF-8 I/O on Windows to avoid cp1252 charmap errors
         run: python auto_build.py
 
       - name: List build artifacts

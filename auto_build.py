@@ -44,10 +44,14 @@ def pyinstaller_build():
         spec_file          # spec 文件已定义 name/icon/console 等，不再重复传参
     ]
     print("运行 PyInstaller:", " ".join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    print(result.stdout)
+    result = subprocess.run(cmd, capture_output=True, text=True,
+                            encoding="utf-8", errors="replace")
+    if result.stdout:
+        sys.stdout.buffer.write(result.stdout.encode("utf-8", errors="replace"))
+        sys.stdout.flush()
     if result.stderr:
-        print(result.stderr, file=sys.stderr)
+        sys.stderr.buffer.write(result.stderr.encode("utf-8", errors="replace"))
+        sys.stderr.flush()
     if result.returncode != 0:
         print("PyInstaller 打包失败！", file=sys.stderr)
         sys.exit(result.returncode)
@@ -72,10 +76,14 @@ def inno_setup_build(app_name, version):
         f.write(tpl)
     cmd = [ISCC_PATH, iss_path]
     print("运行 Inno Setup:", " ".join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    print(result.stdout)
+    result = subprocess.run(cmd, capture_output=True, text=True,
+                            encoding="utf-8", errors="replace")
+    if result.stdout:
+        sys.stdout.buffer.write(result.stdout.encode("utf-8", errors="replace"))
+        sys.stdout.flush()
     if result.stderr:
-        print(result.stderr, file=sys.stderr)
+        sys.stderr.buffer.write(result.stderr.encode("utf-8", errors="replace"))
+        sys.stderr.flush()
     if result.returncode != 0:
         print("Inno Setup 打包失败！", file=sys.stderr)
         sys.exit(result.returncode)
