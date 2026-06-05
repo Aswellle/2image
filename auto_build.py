@@ -33,15 +33,15 @@ def update_version(version):
         json.dump({"version": version}, f, ensure_ascii=False, indent=2)
     print(f"已记录新版本号: {version}")
 
-# 1. PyInstaller 打包
+# 1. PyInstaller 打包（使用 main.spec，输出名称固定为 text2image_pro.exe）
 def pyinstaller_build():
+    spec_file = str(PROJECT_DIR / "main.spec")
     cmd = [
         sys.executable, "-m", "PyInstaller",
-        "--noconfirm", "--onefile",
-        f"--icon={ICON}",
+        "--noconfirm",
         f"--distpath={DIST_DIR}",
         f"--workpath={BUILD_DIR}",
-        MAIN_PY
+        spec_file          # spec 文件已定义 name/icon/console 等，不再重复传参
     ]
     print("运行 PyInstaller:", " ".join(cmd))
     result = subprocess.run(cmd, capture_output=True, text=True)
