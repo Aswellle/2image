@@ -13,7 +13,7 @@ import time
 import requests
 from typing import Callable, Tuple
 from urllib.parse import urlparse
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text
+from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 
 PROVIDER_INFO = {
