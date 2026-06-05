@@ -50,9 +50,35 @@ installer/Output/
 installer/auto_*.iss
 installer/*.iss.bak
 
-# AI code-review session artifacts (Claude Code)
+# AI coding assistant config & review artifacts
+CLAUDE.md
+AGENTS.md
 .full-review/
 .full-review-archive-*/
+
+# Developer-local context / session notes
+project_context.md
+docs/
+开发日志/
+
+# Test / coverage output
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.tox/
+nosetests.xml
+junit*.xml
+
+# pip / packaging
+pip-log.txt
+pip-delete-this-directory.txt
+wheels/
+.python-version
+
+# PyInstaller runtime temp
+*.manifest
 
 # Redundant / local-only files
 版本.txt
@@ -60,4 +86,5 @@ installer/*.iss.bak
 # Misc
 *.bak
 Thumbs.db
+ehthumbs.db
 desktop.ini
