@@ -35,6 +35,7 @@ from services.prompt_assistant import (
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from ui.wizard_llm import LLMWizard
 
 
 # ══════════════════════════════════════════════════════════════
@@ -289,6 +290,15 @@ class PromptWizard(tk.Toplevel):
             bd=0, padx=22, cursor="hand2",
             command=self._show_tmpl_tab)
         self._tab_tmpl_btn.pack(side="left", fill="y")
+
+        # 右侧：密钥配置按钮 + 状态指示
+        self._key_status_btn = tk.Button(
+            tab_bar, text="",
+            font=F["small_b"],
+            bd=0, padx=14, cursor="hand2",
+            command=self._open_llm_wizard)
+        self._key_status_btn.pack(side="right", fill="y", padx=(0, 6))
+        self._update_key_status_btn()
 
         # ── 主体：PanedWindow（左右可拖动分隔）─────────────────
         self._paned = tk.PanedWindow(
@@ -909,6 +919,9 @@ class PromptWizard(tk.Toplevel):
         self._param_status.config(text="❌ 失败", fg=C["hl"])
         self._status_lbl.config(text=f"❌ {err[:100]}", fg=C["hl"])
         self.app._log(f"✗ 提示词助手: {err}")
+        # 缺少密钥时自动弹出配置向导
+        if "需要配置 API Key" in err or "API Key" in err:
+            self.after(200, self._open_llm_wizard)
 
     def _set_result(self, pos: str, neg: str):
         self._pos_box.delete("1.0", "end")
@@ -1080,3 +1093,29 @@ class PromptWizard(tk.Toplevel):
         except Exception: pass
         self.app._prompt_wizard = None
         self.destroy()
+
+    # ══════════════════════════════════════════════════════════
+    #   LLM 密钥配置入口
+    # ══════════════════════════════════════════════════════════
+    def _open_llm_wizard(self):
+        """打开 AI 提示词助手模型密钥配置向导。"""
+        def _on_save(new_cfg):
+            self.app.cfg.update(new_cfg)
+            self._update_key_status_btn()
+        LLMWizard(self, self.app.cfg, on_save=_on_save)
+
+    def _update_key_status_btn(self):
+        """根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"""
+        sf_ok = bool(self.app.cfg.get("sf_key", "").strip())
+        hf_ok = bool(self.app.cfg.get("hf_token", "").strip())
+        if sf_ok:
+            text, bg, fg = "✅ 模型已配置", "#064e3b", "#6ee7b7"
+        elif hf_ok:
+            text, bg, fg = "⚠️ 仅备用通道", "#1e3a5f", "#93c5fd"
+        else:
+            text, bg, fg = "🔑 配置模型密钥", "#7c1d1d", "#fca5a5"
+        try:
+            self._key_status_btn.config(text=text, bg=bg, fg=fg,
+                                         activebackground=bg, activeforeground=fg)
+        except Exception:
+            pass
