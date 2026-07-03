@@ -14,15 +14,15 @@ SolidCompression=yes
 Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; Flags: unchecked
 
 [Files]
-; 使用绝对路径引用源目录的所有文件（包含子目录）
-Source: "{SRC_DIR}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
+; 仅包含主程序可执行文件（禁止通配符递归打包，防止 dist/ 中泄露敏感数据）
+Source: "{SRC_DIR}\{APP_EXE_NAME}.exe"; DestDir: "{app}"
 
 ; 将应用程序图标单独包含并安装到程序目录（以便快捷方式使用该图标）
 Source: "{ICON_PATH}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{APP_NAME}"; Filename: "{app}\{APP_NAME}.exe"; IconFilename: "{app}\{ICON_BASENAME}"
+Name: "{group}\{APP_NAME}"; Filename: "{app}\{APP_EXE_NAME}.exe"; IconFilename: "{app}\{ICON_BASENAME}"
 
 [Run]
 ; 可选：安装后运行主程序，若没有主程序可移除下一行
-Filename: "{app}\{APP_NAME}.exe"; Description: "Launch {APP_NAME}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{APP_EXE_NAME}.exe"; Description: "Launch {APP_NAME}"; Flags: nowait postinstall skipifsilent

@@ -15,9 +15,20 @@ venv/
 env/
 
 # App data (stored in ~/.text_to_image_app/)
+# 严禁将用户数据、密钥、历史记录提交到仓库
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
 *.log
-config.json
+**/config.json
+**/history.json
+**/history.json.migrated
+**/.last_token
+# 图片（防止本地生成图片被提交）
+**/images/*.png
+**/images/*.jpg
+**/images/*.webp
 
 # Environment variables — may contain API keys
 .env

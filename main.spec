@@ -13,7 +13,14 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        # 防止用户数据文件被误打包进 exe
+        'config.json',
+        'history.db',
+        'history.json',
+        'debug.log',
+        '.env',
+    ],
     noarchive=False,
     optimize=0,
 )

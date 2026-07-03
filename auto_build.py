@@ -20,6 +20,7 @@ BUILD_DIR    = str(PROJECT_DIR / "build")
 VERSION_FILE = str(PROJECT_DIR / "version.json")
 INNO_TEMPLATE = str(PROJECT_DIR / "installer" / "template.iss")
 ISCC_PATH = "ISCC"  # 或 Inno Setup 的完整路径
+APP_EXE_NAME = "text2image_pro"
 
 # 读取版本号
 def get_version():
@@ -33,12 +34,23 @@ def update_version(version):
         json.dump({"version": version}, f, ensure_ascii=False, indent=2)
     print(f"已记录新版本号: {version}")
 
+
+def _clean_build_dirs():
+    """Clean dist/ and build/ directories to prevent stale data from leaking into releases."""
+    import shutil
+    for d in [DIST_DIR, BUILD_DIR]:
+        if os.path.exists(d):
+            shutil.rmtree(d, ignore_errors=True)
+            print(f"已清除: {d}")
+
 # 1. PyInstaller 打包（使用 main.spec，输出名称固定为 text2image_pro.exe）
 def pyinstaller_build():
+    _clean_build_dirs()
     spec_file = str(PROJECT_DIR / "main.spec")
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
+        "--clean",            # 清除 PyInstaller 缓存，防止旧数据残留
         f"--distpath={DIST_DIR}",
         f"--workpath={BUILD_DIR}",
         spec_file          # spec 文件已定义 name/icon/console 等，不再重复传参
@@ -64,6 +76,7 @@ def inno_setup_build(app_name, version):
     ctx = {
         "APP_NAME": app_name,
         "APP_VERSION": version,
+        "APP_EXE_NAME": APP_EXE_NAME,
         "OUTPUT_BASE": f"{app_name}_v{version}",
         "SRC_DIR": DIST_DIR.replace('\\', '\\\\'),
         "ICON_PATH": ICON.replace('\\', '\\\\'),
