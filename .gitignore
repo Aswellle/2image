@@ -1,13 +1,60 @@
+# ─── Python bytecode & cache ───────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-*.db
-.history/
+*.egg-info/
+*.egg
+
+# ─── Virtual environments ──────────────────────────────────
 venv/
 env/
 .venv/
-*.egg-info/
+venv_*/
+
+# ─── Build artifacts ───────────────────────────────────────
 dist/
 build/
+*.spec
+installer/Output/
+installer/*.iss
+
+# ─── Sensitive local data (MUST NEVER be committed) ────────
+# App runtime data (stored under ~/.text_to_image_app/)
+*.db
+*.sqlite
+*.sqlite3
+config.json
+history.json
+history.json.migrated
+phrase_library.json
+debug.log
 *.log
+images/
+
+# ─── IDE & editor files ────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
+Thumbs.db
+Desktop.ini
+
+# ─── OS generated files ────────────────────────────────────
+$RECYCLE.BIN/
+System Volume Information/
+
+# ─── Project tools & history ───────────────────────────────
+.history/
+CLAUDE.md
+project_context.md
+
+# ─── Environment & secrets ─────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+credentials.json
