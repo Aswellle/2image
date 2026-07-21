@@ -87,6 +87,12 @@ Before outputting: count your words. If >72, cut the lowest-priority words from 
 #   ① DeepSeek V3 系列（最优先，写作指令遵循最强）
 #   ② Qwen2.5 系列（第二梯队）
 #   ③ GLM-4（兜底）
+#
+# DeepSeek 官方 API（api.deepseek.com）另有独立的显式预设：
+#   · deepseek-v4-pro   — 质量/推理优先
+#   · deepseek-v4-flash — 速度/成本优先
+# 它们不是 SiliconFlow 的模型 slug，不能混进 _SF_MODELS；由
+# prompt_llm_preset + deepseek_key 在 generate_prompt() 中单独路由。
 # ══════════════════════════════════════════════════════════════
 _SF_MODELS = [
     # ─── 第一梯队：DeepSeek V3 系列 ──────────────────────────
@@ -98,6 +104,12 @@ _SF_MODELS = [
     # ─── 第三梯队：其他开源兜底 ──────────────────────────────
     "THUDM/glm-4-9b-chat",            # GLM-4 轻量兜底
 ]
+
+# ── DeepSeek 官方 API 预设（api.deepseek.com）────────────────────
+_DEEPSEEK_PRESET_MODELS = {
+    "deepseek_pro":   ("deepseek-v4-pro", "DeepSeek Pro"),
+    "deepseek_flash": ("deepseek-v4-flash", "DeepSeek Flash"),
+}
 
 # ── HuggingFace 备用通道（硅基流动完全不可用时）──────────────
 _HF_MODELS = [
@@ -801,9 +813,8 @@ def prompt_budget_info(text: str) -> dict:
         "chars":    int,      字符数
         "status":   str,      "optimal" | "acceptable" | "too_long"
         "label":    str,      UI 展示标签
-        "color":    str,      状态颜色（十六进制）
-        "models_ok": list,    当前长度下兼容的模型列表
-        "trimmed":  str,      如需压缩，给出压缩后的版本；否则同原文
+        "color":     str,      状态颜色（十六进制）
+        "trimmed":   str,      如需压缩，给出压缩后的版本；否则同原文
     }
     """
     w = _count_words(text)
@@ -813,17 +824,14 @@ def prompt_budget_info(text: str) -> dict:
         status = "optimal"
         label  = f"✅ 最优  {w} 词 / {c} 字符"
         color  = "#4ecca3"
-        models_ok = ["FLUX.1-schnell", "SDXL", "SD 2.1", "SD 1.5"]
     elif w <= _WORD_HARD_CAP:           # 73-80 词：可接受
         status = "acceptable"
         label  = f"⚠️ 偏长  {w} 词 / {c} 字符"
         color  = "#f0a500"
-        models_ok = ["FLUX.1-schnell（部分细节略弱）"]
     else:                               # > 80 词：过长
         status = "too_long"
-        label  = f"❌ 过长  {w} 词 / {c} 字符（SDXL/SD 将被截断）"
+        label  = f"❌ 过长  {w} 词 / {c} 字符"
         color  = "#e94560"
-        models_ok = []
 
     trimmed = _trim_to_budget(text, _WORD_HARD_CAP) if w > _WORD_HARD_CAP else text
 
@@ -833,7 +841,6 @@ def prompt_budget_info(text: str) -> dict:
         "status":    status,
         "label":     label,
         "color":     color,
-        "models_ok": models_ok,
         "trimmed":   trimmed,
     }
 
@@ -877,8 +884,19 @@ def generate_prompt(
 
     sf_key = cfg.get("sf_key", "").strip()
     hf_tok = cfg.get("hf_token", "").strip()
+    deepseek_key = cfg.get("deepseek_key", "").strip()
+    preset = cfg.get("prompt_llm_preset", "siliconflow_auto")
 
-    if sf_key:
+    if preset in _DEEPSEEK_PRESET_MODELS:
+        if not deepseek_key:
+            raise ValueError(
+                "当前提示词助手预设需要 DeepSeek 官方 API Key。\n\n"
+                "请在「AI 提示词助手 · 模型密钥配置」中填写 DeepSeek API Key，"
+                "或切换回「硅基流动自动」预设。"
+            )
+        model, label = _DEEPSEEK_PRESET_MODELS[preset]
+        positive = _call_deepseek(deepseek_key, model, label, user_msg, log)
+    elif sf_key:
         positive = _call_siliconflow(sf_key, user_msg, log)
     elif hf_tok:
         positive = _call_huggingface(hf_tok, user_msg, log)
@@ -943,6 +961,50 @@ def apply_template(
 # ══════════════════════════════════════════════════════════════
 #   API 调用实现
 # ══════════════════════════════════════════════════════════════
+def _call_deepseek(api_key: str, model: str, label: str, user_msg: str, log) -> str:
+    """调用 DeepSeek 官方 OpenAI 兼容 Chat Completions API。"""
+    log(f"🤖 提示词助手 › {label}…")
+    try:
+        resp = requests.post(
+            "https://api.deepseek.com/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": _SYSTEM},
+                    {"role": "user", "content": user_msg},
+                ],
+                "temperature": 0.60,
+                "max_tokens": 160,
+                "stream": False,
+            },
+            timeout=40,
+        )
+    except requests.Timeout:
+        raise ValueError(f"{label} 请求超时，请稍后重试")
+    except requests.RequestException as ex:
+        raise ValueError(f"{label} 网络请求失败：{ex}")
+
+    if resp.status_code in (401, 403):
+        raise ValueError(f"{label} API Key 无效、无权限或账户未开通该模型")
+    if resp.status_code == 429:
+        raise ValueError(f"{label} 请求频率超限，请稍后重试")
+    if resp.status_code != 200:
+        raise ValueError(f"{label} 调用失败 (HTTP {resp.status_code}): {resp.text[:200]}")
+
+    try:
+        text = _clean(resp.json()["choices"][0]["message"]["content"].strip())
+    except (KeyError, IndexError, TypeError, ValueError) as ex:
+        raise ValueError(f"{label} 响应格式异常：{ex}")
+    if len(text) < 20:
+        raise ValueError(f"{label} 返回内容过短，请改用其他预设")
+    log(f"✅ {label} 成功（{_count_words(text)} 词 / {len(text)} 字符）")
+    return text
+
+
 def _call_siliconflow(api_key: str, user_msg: str, log) -> str:
     """
     按 _SF_MODELS 顺序逐一尝试，首个成功即返回。

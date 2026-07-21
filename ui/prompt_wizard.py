@@ -3,10 +3,6 @@ ui/prompt_wizard.py  v3
 ──────────────────────────────────────────────────────────────
 重构要点（v3）：
 
-① 全局滚轮滚动
-   非模态窗口用 <Enter>/<Leave> 在 canvas 容器上动态注册 bind_all，
-   鼠标进入左侧参数区即可滚动，离开后还原，不干扰主窗口。
-
 ② 左右分区可拖动分隔条
    改用 tk.PanedWindow（orient=horizontal）替代两个固定宽度 Frame，
    内置 sash 拖动调整左右分区宽度，sash 宽 7px，悬停变双向箭头光标。
@@ -19,7 +15,6 @@ ui/prompt_wizard.py  v3
    · 自定义输入展开时的指导文字：("Arial",10,"italic") fg="#89b4fa"（亮蓝）
      在深色背景上对比度高、清晰可辨。
    · 节标题：12pt bold 白色，行距宽松。
-   · 负面词库说明：10pt 亮黄色，不再是模糊暗色。
    · 窗口默认 1040×860，可缩放，min=780×640。
 """
 import random
@@ -29,7 +24,7 @@ from tkinter import messagebox, ttk
 
 from services.prompt_assistant import (
     generate_prompt, apply_template,
-    NEGATIVE_LIBRARY, TEMPLATES, get_templates_by_category,
+    TEMPLATES, get_templates_by_category,
     prompt_budget_info, _trim_to_budget,
 )
 from config.fonts import F
@@ -118,8 +113,6 @@ QUALITY_P = [
     "无噪点纯净 (Noise-free clean)",
     "自定义…",
 ]
-NEG_KEYS = list(NEGATIVE_LIBRARY.keys())
-
 _RAND_POOLS = {
     "style":       [x for x in STYLE_P   if "自定义" not in x],
     "mood":        [x for x in MOOD_P    if "自定义" not in x],
@@ -147,7 +140,7 @@ class _DimRow:
 
     def __init__(self, canvas_ref, parent: tk.Frame,
                  label: str, presets: list, guide: str = ""):
-        self._canvas    = canvas_ref  # 用于滚轮绑定
+        self._canvas = canvas_ref  # optional scroll target
         self.var        = tk.StringVar(value=presets[0])
         self._custom_v  = tk.StringVar()
         self._presets   = presets
@@ -192,8 +185,9 @@ class _DimRow:
                             padx=(self.LABEL_W * 8 + 8, 0),
                             pady=(3, 0))
 
-        # 绑定滚轮到本行所有子控件（非模态窗口 Enter/Leave 方案）
-        self._bind_scroll(lbl, self._cb)
+        # Bind scrolling only when the row belongs to a scrollable host.
+        if self._canvas is not None:
+            self._bind_scroll(lbl, self._cb)
 
     def _bind_scroll(self, *widgets):
         """把滚动事件从子控件传递到 canvas_ref，使悬停任意控件均可滚动。"""
@@ -232,28 +226,45 @@ class _DimRow:
 #   主窗口
 # ══════════════════════════════════════════════════════════════
 class PromptWizard(tk.Toplevel):
+    _TEMPLATE_IDLE = "idle"
+    _TEMPLATE_PREVIEWING = "previewing"
+    _TEMPLATE_PENDING_FILL = "pending-fill"
+
+    _TEMPLATE_BADGES = {
+        _TEMPLATE_IDLE: ("● 空闲", "#64748b"),
+        _TEMPLATE_PREVIEWING: ("◐ 预览中", "#f0a500"),
+        _TEMPLATE_PENDING_FILL: ("● 待填充", C["ok"]),
+    }
+
 
     def __init__(self, parent_app):
         super().__init__(parent_app.root)
         self.app         = parent_app
-        self._history    = []        # [(label, positive, negative)]
+        self._history    = []        # [(label, positive)]
         self._generating = False
         self._anim_id    = None
         self._sel_tid    = None      # 已选模板 ID
-        self._scroll_cv  = None      # 当前可滚动 canvas 引用
+        self._template_state = self._TEMPLATE_IDLE
 
         self.title(_("wizard_title") + " — 专业版")
-        self.geometry("1040x860")
+        screen_w = self.winfo_screenwidth()
+        screen_h = self.winfo_screenheight()
+        window_w = min(1040, max(780, screen_w - 80))
+        window_h = min(860, max(680, screen_h - 48))
+        self.geometry(f"{window_w}x{window_h}")
         self.configure(bg=C["bg"])
-        self.minsize(780, 640)
+        self.minsize(780, 680)
         self.resizable(True, True)
 
-        # 居中
+        # 居中，并为窗口装饰预留空间，避免底部操作栏落到屏幕外。
         self.update_idletasks()
         rx, ry = parent_app.root.winfo_x(), parent_app.root.winfo_y()
         rw, rh = parent_app.root.winfo_width(), parent_app.root.winfo_height()
-        self.geometry(
-            f"1040x860+{max(0,rx+(rw-1040)//2)}+{max(0,ry+(rh-860)//2)}")
+        max_x = max(0, screen_w - window_w)
+        max_y = max(0, screen_h - window_h - 40)
+        x = min(max(0, rx + (rw - window_w) // 2), max_x)
+        y = min(max(0, ry + (rh - window_h) // 2), max_y)
+        self.geometry(f"{window_w}x{window_h}+{x}+{y}")
 
         self._build()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -318,68 +329,107 @@ class PromptWizard(tk.Toplevel):
         # 在窗口显示后设置初始分隔位置
         self.after(50, lambda: self._paned.sash_place(0, 630, 0))
 
-        # 构建左面板（含两种 Tab）
+        # 构建左面板（参数页固定、模板页可滚动）
         self._build_left(self._left_host)
         # 构建右面板（结果区）
         self._build_right_panel(self._right_host)
 
         # 默认显示参数 Tab
-        self._param_frame.pack(fill="both", expand=True)
+        self._param_host.pack(fill="both", expand=True)
 
     # ══════════════════════════════════════════════════════════
-    #   左面板：滚动宿主 + Tab 内容
+    #   左面板：固定参数页 + 可滚动模板页
     # ══════════════════════════════════════════════════════════
     def _build_left(self, parent):
-        # 可滚动容器
-        scroll_host = tk.Frame(parent, bg=C["bg"])
-        scroll_host.pack(fill="both", expand=True)
+        self._param_host = tk.Frame(parent, bg=C["bg"])
+        self._param_host.rowconfigure(0, weight=1)
+        self._param_host.columnconfigure(0, weight=1)
+        self._param_frame = tk.Frame(self._param_host, bg=C["bg"])
+        self._param_frame.grid(row=0, column=0, sticky="nsew")
+        self._build_param_tab(self._param_frame)
+        self._build_param_floating_action(self._param_host)
 
+        self._tmpl_host = tk.Frame(parent, bg=C["bg"])
         self._left_canvas = tk.Canvas(
-            scroll_host, bg=C["bg"], bd=0, highlightthickness=0)
-        vsb = ttk.Scrollbar(scroll_host, orient="vertical",
+            self._tmpl_host, bg=C["bg"], bd=0, highlightthickness=0)
+        vsb = ttk.Scrollbar(self._tmpl_host, orient="vertical",
                             command=self._left_canvas.yview)
         self._left_canvas.configure(yscrollcommand=vsb.set)
         vsb.pack(side="right", fill="y")
         self._left_canvas.pack(side="left", fill="both", expand=True)
 
-        inner = tk.Frame(self._left_canvas, bg=C["bg"])
-        _win  = self._left_canvas.create_window(
-            (0, 0), window=inner, anchor="nw")
-        inner.bind("<Configure>",
-                   lambda e: self._left_canvas.configure(
-                       scrollregion=self._left_canvas.bbox("all")))
+        self._tmpl_frame = tk.Frame(self._left_canvas, bg=C["bg"])
+        window_id = self._left_canvas.create_window(
+            (0, 0), window=self._tmpl_frame, anchor="nw")
+        self._tmpl_frame.bind(
+            "<Configure>",
+            lambda _event: self._left_canvas.configure(
+                scrollregion=self._left_canvas.bbox("all")))
         self._left_canvas.bind(
             "<Configure>",
-            lambda e: self._left_canvas.itemconfig(_win, width=e.width))
+            lambda event: self._left_canvas.itemconfig(window_id, width=event.width))
 
-        # ── 滚轮：Enter 进入区域时注册 bind_all，Leave 时注销 ──
-        # 非模态窗口的安全做法：只在鼠标进入左侧区域时劫持滚轮
-        cv = self._left_canvas
-        def _enable(e):
-            def _safe_scroll(delta_fn):
-                try: delta_fn()
-                except tk.TclError: pass
-            self.bind_all("<MouseWheel>",
-                lambda e: _safe_scroll(lambda: cv.yview_scroll(int(-1*(e.delta/120)), "units")))
-            self.bind_all("<Button-4>",
-                lambda e: _safe_scroll(lambda: cv.yview_scroll(-1, "units")))
-            self.bind_all("<Button-5>",
-                lambda e: _safe_scroll(lambda: cv.yview_scroll( 1, "units")))
-        def _disable(e):
-            self.unbind_all("<MouseWheel>")
-            self.unbind_all("<Button-4>")
-            self.unbind_all("<Button-5>")
-        scroll_host.bind("<Enter>", _enable)
-        scroll_host.bind("<Leave>", _disable)
-        self._left_canvas.bind("<Enter>", _enable)
-        self._left_canvas.bind("<Leave>", _disable)
+        def _scroll(event):
+            if event.delta:
+                self._left_canvas.yview_scroll(int(-event.delta / 120), "units")
+            elif event.num == 4:
+                self._left_canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                self._left_canvas.yview_scroll(1, "units")
+            return "break"
 
-        # 两个 Tab 内容框
-        self._param_frame = tk.Frame(inner, bg=C["bg"])
-        self._tmpl_frame  = tk.Frame(inner, bg=C["bg"])
-
-        self._build_param_tab(self._param_frame)
+        self._template_scroll = _scroll
+        self._left_canvas.bind("<MouseWheel>", _scroll)
+        self._left_canvas.bind("<Button-4>", _scroll)
+        self._left_canvas.bind("<Button-5>", _scroll)
         self._build_tmpl_tab(self._tmpl_frame)
+        self._build_template_floating_action(parent)
+
+    def _build_param_floating_action(self, parent):
+        bar = tk.Frame(parent, bg="#0d2847", height=58)
+        bar.grid(row=1, column=0, sticky="ew")
+        bar.grid_propagate(False)
+
+        self._gen_btn = tk.Button(
+            bar, text=_("wizard_generate_btn"),
+            font=F["h2"], bg=C["purple"], fg="white",
+            bd=0, padx=22, pady=9, cursor="hand2",
+            activebackground=C["dpurp"],
+            command=self._generate_param)
+        self._gen_btn.pack(side="left", padx=(18, 10), pady=10)
+
+        tk.Button(bar, text="🎲 随机全部维度",
+                  font=F["body"], bg=C["acc"], fg="white",
+                  bd=0, padx=12, pady=9, cursor="hand2",
+                  command=self._random_all
+                  ).pack(side="left", pady=10)
+        tk.Button(bar, text=_("btn_reset"),
+                  font=F["body"], bg=C["panel"], fg=C["sub"],
+                  bd=0, padx=10, pady=9, cursor="hand2",
+                  command=self._reset_params
+                  ).pack(side="left", padx=(8, 0), pady=10)
+
+        self._param_status = tk.Label(
+            bar, text="", font=F["body"], bg="#0d2847", fg=C["warn"])
+        self._param_status.pack(side="left", padx=12)
+
+    def _build_template_floating_action(self, parent):
+        """左栏底部固定的模板应用条，不随模板列表滚动。"""
+        self._tmpl_action_bar = tk.Frame(parent, bg="#0d2847", height=58)
+        self._tmpl_action_bar.pack_propagate(False)
+
+        self._tmpl_apply_btn = tk.Button(
+            self._tmpl_action_bar, text="📋  应用模板",
+            font=F["body_b"], bg="#334155", fg="#94a3b8",
+            bd=0, padx=14, pady=7, cursor="hand2",
+            state="disabled", activebackground="#047857",
+            command=self._apply_template)
+        self._tmpl_apply_btn.pack(side="left", padx=12, pady=10)
+
+        self._tmpl_status = tk.Label(
+            self._tmpl_action_bar, text="",
+            font=F["small_i"], bg="#0d2847", fg="#7aa8d8", anchor="w")
+        self._tmpl_status.pack(side="left", fill="x", expand=True, padx=(0, 12))
 
     # ══════════════════════════════════════════════════════════
     #   参数模式 Tab（全面重设计）
@@ -413,7 +463,7 @@ class PromptWizard(tk.Toplevel):
 
         # ── 7 个维度参数 ───────────────────────────────────────
         self._sec_label(parent, "🎛  可选维度参数", PX)
-        cv_ref = self._left_canvas   # 传给 _DimRow 用于滚轮转发
+        cv_ref = None
 
         dim_host = tk.Frame(parent, bg=C["bg"])
         dim_host.pack(fill="x", padx=PX, pady=(6, 0))
@@ -436,45 +486,6 @@ class PromptWizard(tk.Toplevel):
 
         self._hdivider(parent, PX)
 
-        # ── 负面提示词 ─────────────────────────────────────────
-        self._sec_label(parent, "🚫  负面提示词", PX)
-
-        # 词库选择行
-        neg_sel = tk.Frame(parent, bg=C["bg"])
-        neg_sel.pack(fill="x", padx=PX, pady=(6, 0))
-        tk.Label(neg_sel, text="词库类型：",
-                 font=F["btn"], bg=C["bg"], fg=C["sub"]
-                 ).pack(side="left")
-        self._neg_cat_var = tk.StringVar(value=NEG_KEYS[0])
-        neg_cb = ttk.Combobox(neg_sel, textvariable=self._neg_cat_var,
-                              values=NEG_KEYS, state="readonly",
-                              font=F["input"], width=20)
-        neg_cb.pack(side="left", padx=(6, 0))
-        neg_cb.bind("<<ComboboxSelected>>", self._on_neg_select)
-
-        # 词库内容框（可编辑）
-        neg_box_f = tk.Frame(parent, bg=C["neg_bg"],
-                             highlightbackground="#7f1d1d",
-                             highlightthickness=1)
-        neg_box_f.pack(fill="x", padx=PX, pady=(6, 0))
-        self._neg_var = tk.StringVar()
-        tk.Entry(neg_box_f, textvariable=self._neg_var,
-                 bg=C["neg_bg"], fg=C["neg_fg"],
-                 insertbackground=C["neg_fg"],
-                 font=F["body"], bd=0, relief="flat"
-                 ).pack(fill="x", padx=10, ipady=7)
-
-        # 负面词指导说明
-        tk.Label(parent,
-                 text="  💡  可在框内直接增删词条；选「无负面词」则不附加负面提示词",
-                 font=F["body_i"], bg=C["bg"],
-                 fg=C["guide"], anchor="w"
-                 ).pack(fill="x", padx=PX, pady=(5, 0))
-
-        self._on_neg_select()   # 初始化内容
-
-        self._hdivider(parent, PX)
-
         # ── 额外补充 ───────────────────────────────────────────
         self._sec_label(parent, "📝  额外补充（可选）", PX)
         ef = tk.Frame(parent, bg=C["entry"],
@@ -492,37 +503,6 @@ class PromptWizard(tk.Toplevel):
                  font=F["body_i"], bg=C["bg"],
                  fg=C["guide"], anchor="w"
                  ).pack(fill="x", padx=PX, pady=(5, 0))
-
-        self._hdivider(parent, PX)
-
-        # ── 操作按钮行 ─────────────────────────────────────────
-        btn_row = tk.Frame(parent, bg=C["bg"])
-        btn_row.pack(fill="x", padx=PX, pady=(6, 16))
-
-        self._gen_btn = tk.Button(
-            btn_row, text=_("wizard_generate_btn"),
-            font=F["h2"], bg=C["purple"], fg="white",
-            bd=0, padx=22, pady=9, cursor="hand2",
-            activebackground=C["dpurp"],
-            command=self._generate_param)
-        self._gen_btn.pack(side="left")
-
-        tk.Button(btn_row, text="🎲 随机全部维度",
-                  font=F["body"], bg=C["acc"], fg="white",
-                  bd=0, padx=12, pady=9, cursor="hand2",
-                  command=self._random_all
-                  ).pack(side="left", padx=(10, 0))
-
-        tk.Button(btn_row, text=_("btn_reset"),
-                  font=F["body"], bg=C["panel"], fg=C["sub"],
-                  bd=0, padx=10, pady=9, cursor="hand2",
-                  command=self._reset_params
-                  ).pack(side="left", padx=(8, 0))
-
-        self._param_status = tk.Label(
-            btn_row, text="",
-            font=F["body"], bg=C["bg"], fg=C["warn"])
-        self._param_status.pack(side="left", padx=12)
 
     # ── 节标题 ─────────────────────────────────────────────────
     @staticmethod
@@ -542,11 +522,6 @@ class PromptWizard(tk.Toplevel):
         tk.Frame(parent, bg="#1e2d4a", height=1
                  ).pack(fill="x", pady=4)
 
-    # ── 负面词库切换 ──────────────────────────────────────────
-    def _on_neg_select(self, _=None):
-        cat = self._neg_cat_var.get()
-        self._neg_var.set(NEGATIVE_LIBRARY.get(cat, ""))
-
     # ── 随机 / 重置 ───────────────────────────────────────────
     def _random_all(self):
         for key, dim in [
@@ -559,15 +534,12 @@ class PromptWizard(tk.Toplevel):
             ("quality",     self._dim_qual),
         ]:
             dim.set_random(_RAND_POOLS[key])
-        self._neg_cat_var.set(random.choice(NEG_KEYS))
-        self._on_neg_select()
 
     def _reset_params(self):
         for dim in [self._dim_style, self._dim_mood, self._dim_detail,
                     self._dim_comp, self._dim_light, self._dim_cam,
                     self._dim_qual]:
             dim.reset()
-        self._neg_cat_var.set(NEG_KEYS[0]); self._on_neg_select()
         self.extra_var.set("")
 
     # ══════════════════════════════════════════════════════════
@@ -633,24 +605,15 @@ class PromptWizard(tk.Toplevel):
                          bg=C["card"], fg=C["guide"],
                          anchor="w").pack(anchor="w", padx=10, pady=(0,7))
 
-                for w in [card] + list(card.winfo_children()):
+                # Tk 事件不会从 Label 自动冒泡到父 Frame，需把标题行及其
+                # 子标签一并绑定，确保卡片任何可见位置点击都可以选中。
+                clickable = [card, top] + list(top.winfo_children()) + [
+                    w for w in card.winfo_children() if w is not top]
+                for w in clickable:
                     w.bind("<Button-1>", lambda e, i=tid: self._select_tmpl(i))
-
-        self._hdivider(parent, PX)
-
-        btn2 = tk.Frame(parent, bg=C["bg"])
-        btn2.pack(fill="x", padx=PX, pady=(10, 16))
-        self._tmpl_apply_btn = tk.Button(
-            btn2, text="📋  应用选中模板（无需 AI）",
-            font=F["h2"], bg="#065f46", fg="white",
-            bd=0, padx=20, pady=9, cursor="hand2",
-            activebackground="#047857",
-            command=self._apply_template)
-        self._tmpl_apply_btn.pack(side="left")
-        self._tmpl_status = tk.Label(
-            btn2, text="← 先点击上方模板卡片选中",
-            font=F["body_i"], bg=C["bg"], fg=C["guide"])
-        self._tmpl_status.pack(side="left", padx=14)
+                    w.bind("<MouseWheel>", self._template_scroll, add="+")
+                    w.bind("<Button-4>", self._template_scroll, add="+")
+                    w.bind("<Button-5>", self._template_scroll, add="+")
 
     def _select_tmpl(self, tid: str):
         if self._sel_tid and self._sel_tid in self._tmpl_cards:
@@ -666,21 +629,24 @@ class PromptWizard(tk.Toplevel):
             try: w.config(bg=C["card_hl"])
             except Exception: pass
         t = TEMPLATES[tid]
-        self._tmpl_status.config(
-            text=f"✅  已选：{t['name']}  |  {t['size_hint']}", fg=C["ok"])
+        kw = self.tmpl_kw_var.get().strip() or "a subject"
+        pos, _ = apply_template(tid, kw, log_cb=self.app._log)
+        self._set_result(pos)
+        self._set_template_state(self._TEMPLATE_PREVIEWING)
+        self._tmpl_status.config(text=f"已预览：{t['name']}", fg=C["ok"])
 
     # ── Tab 切换 ──────────────────────────────────────────────
     def _show_param_tab(self):
-        self._tmpl_frame.pack_forget()
-        self._param_frame.pack(fill="both", expand=True)
+        self._param_host.pack(fill="both", expand=True)
+        self._tmpl_host.pack_forget()
+        self._tmpl_action_bar.pack_forget()
         self._tab_param_btn.config(bg=C["hl"], fg="white")
         self._tab_tmpl_btn.config(bg=C["acc"], fg=C["sub"])
-        # 重置滚动到顶部
-        self._left_canvas.yview_moveto(0)
 
     def _show_tmpl_tab(self):
-        self._param_frame.pack_forget()
-        self._tmpl_frame.pack(fill="both", expand=True)
+        self._param_host.pack_forget()
+        self._tmpl_action_bar.pack(side="bottom", fill="x")
+        self._tmpl_host.pack(fill="both", expand=True)
         self._tab_tmpl_btn.config(bg=C["hl"], fg="white")
         self._tab_param_btn.config(bg=C["acc"], fg=C["sub"])
         self._left_canvas.yview_moveto(0)
@@ -696,17 +662,19 @@ class PromptWizard(tk.Toplevel):
             top_bar,
             text=_("wizard_use_btn"),
             font=F["btn"],
-            bg=C["ok"], fg="#0a1a0a",
+            bg="#334155", fg="#94a3b8",
             bd=0, padx=18, pady=7,
             cursor="hand2",
+            state="disabled",
             activebackground="#3aad8a",
             command=self._use_prompt)
         self._fill_btn.pack(side="left", padx=14, pady=8)
-        tk.Label(top_bar,
-                 text="↑ 生成后点此立即填充，或先在文本框手动微调再点",
-                 font=F["small_i"],
-                 bg="#0d2847", fg="#7aa8d8"
-                 ).pack(side="left", padx=6)
+        self._template_badge = tk.Label(
+            top_bar, text="",
+            font=F["small_b"], bg="#0d2847", fg="#64748b",
+            padx=8)
+        self._template_badge.pack(side="right", padx=14)
+        self._set_template_state(self._TEMPLATE_IDLE)
 
         # ── 正面提示词 ─────────────────────────────────────────
         # 标签行：标题 + 实时词数/字符指示器
@@ -723,6 +691,13 @@ class PromptWizard(tk.Toplevel):
             bg=C["panel"], fg=C["sub"],
             padx=8)
         self._budget_lbl.pack(side="right")
+        self._clear_btn = tk.Button(
+            pos_hdr, text="✕ 清除内容",
+            font=F["small_b"], bg="#334155", fg="#94a3b8",
+            bd=0, padx=8, pady=2, cursor="hand2",
+            state="disabled", activebackground="#991b1b",
+            command=self._clear_template_content)
+        self._clear_btn.pack(side="right", padx=(0, 8))
 
         pos_f = tk.Frame(parent, bg=C["entry"])
         pos_f.pack(fill="both", expand=True, padx=14, pady=(4, 0))
@@ -742,14 +717,6 @@ class PromptWizard(tk.Toplevel):
         budget_bar = tk.Frame(parent, bg="#0a1a2e")
         budget_bar.pack(fill="x", padx=14, pady=(2, 0))
 
-        # 左：兼容性说明
-        self._compat_lbl = tk.Label(
-            budget_bar,
-            text="",
-            font=F["small"], bg="#0a1a2e", fg=C["sub"],
-            anchor="w")
-        self._compat_lbl.pack(side="left", padx=4, pady=3)
-
         # 右：智能压缩按钮
         self._trim_btn = tk.Button(
             budget_bar,
@@ -762,31 +729,14 @@ class PromptWizard(tk.Toplevel):
             command=self._smart_trim)
         self._trim_btn.pack(side="right", padx=4, pady=2)
 
-        # ── 负面提示词 ─────────────────────────────────────────
-        tk.Label(parent, text="🚫  负面提示词（可编辑）",
-                 font=F["btn"], bg=C["panel"], fg=C["neg_fg"]
-                 ).pack(anchor="w", padx=14, pady=(12, 4))
-        neg_f = tk.Frame(parent, bg=C["neg_bg"])
-        neg_f.pack(fill="both", expand=True, padx=14)
-        self._out_neg_box = tk.Text(
-            neg_f, font=F["body"],
-            bg=C["neg_bg"], fg=C["neg_fg"],
-            insertbackground=C["neg_fg"],
-            wrap="word", bd=0, padx=10, pady=6, relief="flat")
-        self._out_neg_box.pack(fill="both", expand=True)
-        self._out_neg_box.insert("1.0", "负面提示词将显示在这里…")
-        self._out_neg_box.config(fg="#5a2a2a")
-
-        tk.Frame(parent, bg=C["sep"], height=1
-                 ).pack(fill="x", padx=14, pady=8)
-
         # ── 操作按钮 ───────────────────────────────────────────
         act = tk.Frame(parent, bg=C["panel"])
         act.pack(fill="x", padx=14)
         self._use_btn = tk.Button(
             act, text=_("wizard_use_btn"),
-            font=F["body_b"], bg=C["acc"], fg=C["ok"],
+            font=F["body_b"], bg="#334155", fg="#94a3b8",
             bd=0, padx=12, pady=6, cursor="hand2",
+            state="disabled",
             activebackground="#1a4a7a",
             command=self._use_prompt)
         self._use_btn.pack(side="left")
@@ -795,19 +745,6 @@ class PromptWizard(tk.Toplevel):
                   bd=0, padx=8, pady=8, cursor="hand2",
                   command=lambda: self._copy_box(self._pos_box)
                   ).pack(side="left", padx=(8, 0))
-        tk.Button(act, text="📋 复制负面",
-                  font=F["body"], bg="#7f1d1d", fg="white",
-                  bd=0, padx=8, pady=8, cursor="hand2",
-                  command=lambda: self._copy_box(self._out_neg_box)
-                  ).pack(side="left", padx=(6, 0))
-
-        act2 = tk.Frame(parent, bg=C["panel"])
-        act2.pack(fill="x", padx=14, pady=(8, 0))
-        tk.Button(act2, text="🗑 清空结果",
-                  font=F["body"], bg=C["panel"], fg=C["sub"],
-                  bd=0, padx=10, pady=6, cursor="hand2",
-                  command=self._clear_result
-                  ).pack(side="left")
 
         # 状态标签
         self._status_lbl = tk.Label(
@@ -847,7 +784,6 @@ class PromptWizard(tk.Toplevel):
         light    = self._dim_light.get_value()
         camera   = self._dim_cam.get_value()
         quality  = self._dim_qual.get_value()
-        negative = self._neg_var.get().strip()
         extra    = self.extra_var.get().strip()
 
         self._set_generating(True)
@@ -855,30 +791,68 @@ class PromptWizard(tk.Toplevel):
 
         def _run():
             try:
-                pos, neg = generate_prompt(
+                pos, _ = generate_prompt(
                     keywords=kw, cfg=self.app.cfg,
                     style=style, mood=mood,
                     detail=detail, composition=comp,
                     lighting=light, camera=camera,
-                    quality=quality, negative=negative,
-                    extra=extra, log_cb=self.app._log,
+                    quality=quality, extra=extra,
+                    log_cb=self.app._log,
                 )
-                self.after(0, lambda: self._on_done(pos, negative, label))
+                self.after(0, lambda: self._on_done(pos, label))
             except Exception as ex:
                 self.after(0, lambda e=str(ex): self._on_error(e))
 
         threading.Thread(target=_run, daemon=True).start()
 
     def _apply_template(self):
-        if not self._sel_tid:
-            messagebox.showinfo("提示", "请先点击选中一个模板！", parent=self)
+        if self._template_state != self._TEMPLATE_PREVIEWING or not self._sel_tid:
             return
-        kw  = self.tmpl_kw_var.get().strip() or "a subject"
-        t   = TEMPLATES[self._sel_tid]
-        pos, neg = apply_template(self._sel_tid, kw, log_cb=self.app._log)
-        self._on_done(pos, neg, f"[模板] {t['name']}")
-        self._tmpl_status.config(
-            text=f"✅  已生成！推荐：{t['size_hint']}", fg=C["ok"])
+        kw = self.tmpl_kw_var.get().strip() or "a subject"
+        t = TEMPLATES[self._sel_tid]
+        pos, _ = apply_template(self._sel_tid, kw, log_cb=self.app._log)
+        self._on_done(pos, f"[模板] {t['name']}")
+        self._set_template_state(self._TEMPLATE_PENDING_FILL)
+        self._tmpl_status.config(text=f"已应用：{t['name']}", fg=C["ok"])
+
+    def _set_template_state(self, state: str):
+        self._template_state = state
+        badge_text, badge_fg = self._TEMPLATE_BADGES[state]
+        is_previewing = state == self._TEMPLATE_PREVIEWING
+        is_pending_fill = state == self._TEMPLATE_PENDING_FILL
+
+        for widget_name in ("_template_badge",):
+            widget = getattr(self, widget_name, None)
+            if widget is not None:
+                widget.config(text=badge_text, fg=badge_fg)
+
+        if state == self._TEMPLATE_IDLE:
+            status = getattr(self, "_tmpl_status", None)
+            if status is not None:
+                status.config(text="")
+
+        apply_btn = getattr(self, "_tmpl_apply_btn", None)
+        if apply_btn is not None:
+            apply_btn.config(
+                state="normal" if is_previewing else "disabled",
+                bg="#065f46" if is_previewing else "#334155",
+                fg="white" if is_previewing else "#94a3b8")
+
+        for widget_name in ("_fill_btn", "_use_btn"):
+            widget = getattr(self, widget_name, None)
+            if widget is not None:
+                widget.config(
+                    state="normal" if is_pending_fill else "disabled",
+                    bg=C["ok"] if is_pending_fill else "#334155",
+                    fg="#0a1a0a" if is_pending_fill else "#94a3b8")
+
+        for widget_name in ("_clear_btn",):
+            widget = getattr(self, widget_name, None)
+            if widget is not None:
+                widget.config(
+                    state="normal" if is_pending_fill else "disabled",
+                    bg="#7f1d1d" if is_pending_fill else "#334155",
+                    fg="#fecaca" if is_pending_fill else "#94a3b8")
 
     # ── 状态管理 ──────────────────────────────────────────────
     def _set_generating(self, on: bool):
@@ -892,7 +866,7 @@ class PromptWizard(tk.Toplevel):
                                   text=_("wizard_generate_btn"), bg=C["purple"])
             self._stop_anim()
 
-    def _on_done(self, positive: str, negative: str, label: str):
+    def _on_done(self, positive: str, label: str):
         self._stop_anim()
         self._generating = False
         try:
@@ -903,8 +877,9 @@ class PromptWizard(tk.Toplevel):
         self._status_lbl.config(text="✅ 生成完成", fg=C["ok"])
         self.after(3000, lambda: self._param_status.config(text=""))
         self.after(3000, lambda: self._status_lbl.config(text=""))
-        self._set_result(positive, negative)
-        self._history.insert(0, (label, positive, negative))
+        self._set_result(positive)
+        self._set_template_state(self._TEMPLATE_IDLE)
+        self._history.insert(0, (label, positive))
         self._history = self._history[:8]
         self._hist_cb.config(values=[h[0] for h in self._history])
         self.app._log(f"✨ 提示词助手: {positive[:60]}…")
@@ -923,15 +898,21 @@ class PromptWizard(tk.Toplevel):
         if "需要配置 API Key" in err or "API Key" in err:
             self.after(200, self._open_llm_wizard)
 
-    def _set_result(self, pos: str, neg: str):
+    def _set_result(self, pos: str):
         self._pos_box.delete("1.0", "end")
         self._pos_box.insert("1.0", pos)
         self._pos_box.config(fg=C["ok"])
-        self._out_neg_box.delete("1.0", "end")
-        self._out_neg_box.insert("1.0", neg if neg else "（无负面提示词）")
-        self._out_neg_box.config(fg=C["neg_fg"] if neg else C["guide"])
         # 触发词数指示器更新
         self._update_budget_display()
+
+    def _clear_template_content(self):
+        self._pos_box.delete("1.0", "end")
+        self._pos_box.insert("1.0", "AI 生成或选中模板后\n正面提示词显示在这里…")
+        self._pos_box.config(fg="#3a5a4a")
+        self._set_template_state(self._TEMPLATE_IDLE)
+        self._update_budget_display()
+        self._status_lbl.config(text="已清除模板内容", fg=C["sub"])
+        self.after(2000, lambda: self._status_lbl.config(text=""))
 
     def _on_pos_modified(self, _event=None):
         """正面提示词文本框内容变更时触发词数指示器刷新。"""
@@ -944,8 +925,7 @@ class PromptWizard(tk.Toplevel):
     def _update_budget_display(self):
         """
         实时更新 Token 预算指示器：
-        · 右上角标签：词数/字符数 + 颜色编码
-        · 预算条：模型兼容性说明
+        · 右上角标签：词数/字符数
         · 智能压缩按钮：仅在 >80 词时激活
         """
         try:
@@ -956,7 +936,6 @@ class PromptWizard(tk.Toplevel):
         # 占位文本时不显示计数
         if not pos or "显示在这里" in pos or "AI 生成" in pos:
             self._budget_lbl.config(text="", fg=C["sub"])
-            self._compat_lbl.config(text="")
             self._trim_btn.config(state="disabled")
             return
 
@@ -967,19 +946,6 @@ class PromptWizard(tk.Toplevel):
             text=info["label"],
             fg=info["color"]
         )
-
-        # ── 兼容性说明 ──────────────────────────────────────────
-        if info["status"] == "optimal":
-            compat_text = "兼容: FLUX.1-schnell  SDXL  SD 2.1  SD 1.5  ✅ 全兼容"
-            compat_color = "#4a7a4a"
-        elif info["status"] == "acceptable":
-            compat_text = "兼容: FLUX.1-schnell ✅   SDXL/SD ⚠️ 末尾可能被截断"
-            compat_color = "#7a6a20"
-        else:
-            compat_text = "❌ 过长 — SDXL/SD 超出77 token硬限制，末尾内容将被丢弃"
-            compat_color = "#7a2020"
-
-        self._compat_lbl.config(text=compat_text, fg=compat_color)
 
         # ── 智能压缩按钮 ────────────────────────────────────────
         if info["status"] == "too_long":
@@ -1014,7 +980,7 @@ class PromptWizard(tk.Toplevel):
         self._pos_box.config(fg=C["ok"])
         self._update_budget_display()
         self._status_lbl.config(
-            text=f"✂️ 已压缩：{w_before} 词 → {w_after} 词（全模型兼容）",
+            text=f"✂️ 已压缩：{w_before} 词 → {w_after} 词",
             fg=C["ok"])
         self.after(4000, lambda: self._status_lbl.config(text=""))
 
@@ -1040,27 +1006,24 @@ class PromptWizard(tk.Toplevel):
 
     # ── 结果操作 ──────────────────────────────────────────────
     def _use_prompt(self):
+        if self._template_state != self._TEMPLATE_PENDING_FILL:
+            return
         pos = self._pos_box.get("1.0", "end").strip()
         if not pos or "显示在这里" in pos:
-            messagebox.showinfo("提示", "请先生成或选择模板！", parent=self)
             return
         self.app.pt.delete("1.0", "end")
         self.app.pt.insert("1.0", pos)
         self.app._log(f"✨ 使用助手提示词: {pos[:60]}…")
+        self._set_template_state(self._TEMPLATE_IDLE)
         self._status_lbl.config(text="✅ 已填入主输入框！可切回主界面微调后生成", fg=C["ok"])
         self.after(3000, lambda: self._status_lbl.config(text=""))
-        # 顶部一键填充按钮短暂高亮反馈
-        try:
-            self._fill_btn.config(bg="#3aad8a", text="✅ 已填充！")
-            self.after(1200, lambda: self._fill_btn.config(
-                bg=C["ok"], text=_("wizard_use_btn")))
-        except Exception: pass
         # 主输入框背景短暂闪绿
         try:
             orig = self.app.pt.cget("bg")
             self.app.pt.config(bg="#1a3a2a")
             self.app.root.after(300, lambda: self.app.pt.config(bg=orig))
-        except Exception: pass
+        except Exception:
+            pass
 
     def _copy_box(self, box: tk.Text):
         text = box.get("1.0", "end").strip()
@@ -1069,28 +1032,15 @@ class PromptWizard(tk.Toplevel):
             self._status_lbl.config(text="📋 已复制！", fg=C["ok"])
             self.after(2000, lambda: self._status_lbl.config(text=""))
 
-    def _clear_result(self):
-        self._pos_box.delete("1.0", "end")
-        self._pos_box.insert("1.0", "AI 生成或选中模板后\n正面提示词显示在这里…")
-        self._pos_box.config(fg="#3a5a4a")
-        self._out_neg_box.delete("1.0", "end")
-        self._out_neg_box.insert("1.0", "负面提示词将显示在这里…")
-        self._out_neg_box.config(fg="#5a2a2a")
-        self._status_lbl.config(text="")
-
     def _load_history(self, _=None):
         idx = self._hist_cb.current()
         if 0 <= idx < len(self._history):
-            _, pos, neg = self._history[idx]
-            self._set_result(pos, neg)
+            _, pos = self._history[idx]
+            self._set_result(pos)
+            self._set_template_state(self._TEMPLATE_IDLE)
 
     def _on_close(self):
         self._stop_anim()
-        try:
-            self.unbind_all("<MouseWheel>")
-            self.unbind_all("<Button-4>")
-            self.unbind_all("<Button-5>")
-        except Exception: pass
         self.app._prompt_wizard = None
         self.destroy()
 

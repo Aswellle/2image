@@ -6,10 +6,12 @@ AI 提示词助手 · 推理模型密钥配置向导
 用于生成生图提示词的 LLM 推理模型 API Key。
 
 支持的通道（按推荐顺序）：
-  1. 硅基流动 SiliconFlow  →  sf_key   （首选：DeepSeek V3 / Qwen2.5-72B）
-  2. HuggingFace            →  hf_token （免费兜底：Mixtral / Zephyr）
+  1. 硅基流动 SiliconFlow  →  sf_key（自动候选：DeepSeek V3 / Qwen2.5-72B）
+  2. DeepSeek 官方 API      →  deepseek_key（显式 Pro / Flash 预设）
+  3. HuggingFace            →  hf_token（免费兜底：Mixtral / Zephyr）
 
-注：以上两个 key 与生图配置共用，已在 wizard_free 中配置过则此处自动预填。
+硅基流动与 HuggingFace 的 Key 与生图配置共用；DeepSeek 官方 Key 专供
+AI 提示词助手的 Pro / Flash 预设。
 """
 import tkinter as tk
 from tkinter import ttk
@@ -23,11 +25,16 @@ from config.settings import save_config
 
 # ── 每个模型通道的展示信息 ────────────────────────────────────────
 _SF_MODELS_INFO = [
-    ("🥇 DeepSeek V3-0324",  "指令遵循最强，提示词生成首选"),
-    ("   DeepSeek V3",        "稳定可靠，与 V3-0324 效果接近"),
+    ("🥇 DeepSeek V3-0324",  "硅基流动自动预设的首选候选"),
+    ("   DeepSeek V3",        "硅基流动自动预设的稳定备用"),
     ("   Qwen2.5-72B-Instruct", "千问旗舰，英文创作能力强"),
     ("   Qwen2.5-32B-Instruct", "速度与质量均衡"),
     ("   GLM-4-9B-chat",       "轻量兜底，保证最低可用性"),
+]
+
+_DEEPSEEK_PRESETS_INFO = [
+    ("deepseek_pro", "DeepSeek Pro", "质量优先 · 更强推理/指令遵循 · 官方 API 按量计费"),
+    ("deepseek_flash", "DeepSeek Flash", "速度优先 · 低延迟/低成本 · 官方 API 按量计费"),
 ]
 
 _HF_MODELS_INFO = [
@@ -61,7 +68,7 @@ class LLMWizard(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
         self._build()
-        for v in (self.sf_var, self.hf_var):
+        for v in (self.sf_var, self.deepseek_var, self.hf_var, self.preset_var):
             v.trace("w", lambda *_: setattr(self, "_dirty", True))
 
     # ──────────────────────────────────────────────────────────────
@@ -148,6 +155,95 @@ class LLMWizard(tk.Toplevel):
         #   顶部：已配置状态提示
         # ══════════════════════════════════════════════════════════
         self._build_status_banner(inner, PX)
+
+        # ══════════════════════════════════════════════════════════
+        #   模型预设：自动 / DeepSeek Pro / DeepSeek Flash
+        # ══════════════════════════════════════════════════════════
+        self._section(inner, "0", "提示词模型预设",
+                      "选择质量优先或速度优先的调用路径", "#c084fc", PX)
+        preset_card = tk.Frame(inner, bg="#17233d",
+                               highlightbackground=C["purple"], highlightthickness=1)
+        preset_card.pack(fill="x", padx=PX, pady=(4, 0))
+        self.preset_var = tk.StringVar(
+            value=self.cfg.get("prompt_llm_preset", "siliconflow_auto"))
+        self._preset_cards = {}
+
+        preset_header = tk.Frame(preset_card, bg="#17233d")
+        preset_header.pack(fill="x", padx=14, pady=(10, 5))
+        tk.Label(preset_header, text="单选模型预设",
+                 font=F["body_b"], bg="#17233d", fg="#e9d5ff"
+                 ).pack(side="left")
+        tk.Label(preset_header,
+                 text="请选择 1 个模型作为 AI 提示词助手的调用路径",
+                 font=F["small"], bg="#17233d", fg="#94a3b8"
+                 ).pack(side="left", padx=(10, 0))
+        tk.Label(preset_header, text="◉ 当前使用", font=F["small_b"],
+                 bg="#17233d", fg="#c084fc"
+                 ).pack(side="right")
+
+        presets = [
+            ("siliconflow_auto", "硅基流动自动（推荐）",
+             "按 DeepSeek V3 → Qwen → GLM 自动降级；复用 sf_key，适合免费/稳妥使用", C["ok"]),
+            *[(key, name, desc, "#c084fc")
+              for key, name, desc in _DEEPSEEK_PRESETS_INFO],
+        ]
+
+        def _select_preset(key):
+            self.preset_var.set(key)
+
+        for key, title, desc, accent in presets:
+            card = tk.Frame(preset_card, bg="#1a2238",
+                            highlightbackground="#2a3a5a", highlightthickness=1,
+                            cursor="hand2")
+            card.pack(fill="x", padx=12, pady=4)
+            indicator = tk.Label(card, text="○", font=F["h2"],
+                                 bg="#1a2238", fg="#64748b", cursor="hand2")
+            indicator.pack(side="left", padx=(12, 8), pady=9)
+            text_f = tk.Frame(card, bg="#1a2238", cursor="hand2")
+            text_f.pack(side="left", fill="x", expand=True, pady=7)
+            title_lbl = tk.Label(text_f, text=title, font=F["body_b"],
+                                 bg="#1a2238", fg=accent, anchor="w", cursor="hand2")
+            title_lbl.pack(fill="x")
+            desc_lbl = tk.Label(text_f, text=desc, font=F["small"],
+                                bg="#1a2238", fg=C["sub"], anchor="w", cursor="hand2")
+            desc_lbl.pack(fill="x", pady=(2, 0))
+            badge = tk.Label(card, text="点击选择", font=F["small_b"],
+                             bg="#1a2238", fg="#64748b", cursor="hand2")
+            badge.pack(side="right", padx=12)
+            self._preset_cards[key] = (card, indicator, text_f, title_lbl, desc_lbl, badge, accent)
+            for widget in (card, indicator, text_f, title_lbl, desc_lbl, badge):
+                widget.bind("<Button-1>", lambda _e, k=key: _select_preset(k))
+
+        self.preset_var.trace_add("write", lambda *_: self._refresh_preset_cards())
+        self._refresh_preset_cards()
+        tk.Label(preset_card, text="", bg="#17233d").pack(pady=4)
+
+        deepseek_row = tk.Frame(inner, bg=C["bg"])
+        deepseek_row.pack(fill="x", padx=PX, pady=(10, 0))
+        tk.Label(deepseek_row, text="DeepSeek 官方 API Key（Pro / Flash 预设专用）:",
+                 font=F["btn"], bg=C["bg"], fg=C["text"]).pack(anchor="w")
+        ef_ds = tk.Frame(deepseek_row, bg=C["entry"])
+        ef_ds.pack(fill="x", pady=(4, 0))
+        self.deepseek_var = tk.StringVar(value=self.cfg.get("deepseek_key", ""))
+        self.deepseek_entry = tk.Entry(
+            ef_ds, textvariable=self.deepseek_var, show="*",
+            bg=C["entry"], fg=C["text"], insertbackground="white",
+            font=F["input"], bd=0, relief="flat")
+        self.deepseek_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._eye_btn(ef_ds, self.deepseek_entry)
+
+        ds_btns = tk.Frame(inner, bg=C["bg"])
+        ds_btns.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Button(
+            ds_btns, text="🌐 DeepSeek 官方平台",
+            font=F["body"], bg="#2563eb", fg="white",
+            bd=0, padx=12, pady=5, cursor="hand2",
+            command=lambda: webbrowser.open("https://platform.deepseek.com"),
+        ).pack(side="left")
+        self._hint(inner,
+                   "提示：Pro / Flash 使用 DeepSeek 官方 API（api.deepseek.com），"
+                   "不能复用硅基流动 sf_key；未填 Key 时请选回「硅基流动自动」。",
+                   PX)
 
         # ══════════════════════════════════════════════════════════
         #   Section 1：硅基流动（强烈推荐）
@@ -288,13 +384,22 @@ class LLMWizard(tk.Toplevel):
     def _build_status_banner(self, parent, px):
         sf_ok = bool(self.cfg.get("sf_key", "").strip())
         hf_ok = bool(self.cfg.get("hf_token", "").strip())
+        deepseek_ok = bool(self.cfg.get("deepseek_key", "").strip())
+        preset = self.cfg.get("prompt_llm_preset", "siliconflow_auto")
 
-        if sf_ok:
+        if preset in {"deepseek_pro", "deepseek_flash"} and deepseek_ok:
+            label = "DeepSeek Pro" if preset == "deepseek_pro" else "DeepSeek Flash"
+            bg, fg = "#312e81", "#c4b5fd"
+            msg = f"✅  检测到 DeepSeek 官方 Key，{label} 预设可立即使用"
+        elif sf_ok:
             bg, fg = "#064e3b", "#6ee7b7"
             msg = "✅  检测到已配置硅基流动 Key，AI 提示词助手可立即使用"
+        elif deepseek_ok:
+            bg, fg = "#312e81", "#c4b5fd"
+            msg = "✅  检测到 DeepSeek 官方 Key；请选择 DeepSeek Pro 或 Flash 预设后使用"
         elif hf_ok:
             bg, fg = "#1e3a5f", "#93c5fd"
-            msg = "⚠️  仅配置了 HuggingFace Token（兜底通道），建议同时配置硅基流动以获得更好效果"
+            msg = "⚠️  仅配置了 HuggingFace Token（兜底通道），建议同时配置硅基流动或 DeepSeek"
         else:
             bg, fg = "#3b1515", "#fca5a5"
             msg = "❌  尚未配置任何推理模型密钥，AI 提示词助手暂时无法使用，请至少配置一项"
@@ -317,6 +422,22 @@ class LLMWizard(tk.Toplevel):
                  bg=C["bg"], fg=C["text"]).pack(side="left")
         tk.Label(f, text=f"  {tag}", font=F["body"],
                  bg=C["bg"], fg=tag_color).pack(side="left")
+
+    def _refresh_preset_cards(self):
+        """把当前 preset_var 的值投射为整行卡片的明确选中态。"""
+        selected = self.preset_var.get()
+        for key, (card, indicator, text_f, title_lbl, desc_lbl, badge, accent) in self._preset_cards.items():
+            is_selected = key == selected
+            bg = "#2e1f5c" if is_selected else "#1a2238"
+            border = accent if is_selected else "#2a3a5a"
+            card.config(bg=bg, highlightbackground=border)
+            indicator.config(text="●" if is_selected else "○",
+                             bg=bg, fg=accent if is_selected else "#64748b")
+            text_f.config(bg=bg)
+            title_lbl.config(bg=bg)
+            desc_lbl.config(bg=bg, fg="#ddd6fe" if is_selected else C["sub"])
+            badge.config(text="✓ 已选择" if is_selected else "点击选择",
+                         bg=bg, fg=accent if is_selected else "#64748b")
 
     def _info_card(self, parent, lines, px=24):
         card = tk.Frame(parent, bg=C["card"],
@@ -358,16 +479,24 @@ class LLMWizard(tk.Toplevel):
     # ──────────────────────────────────────────────────────────────
     def _save(self):
         self._dirty = False
-        sf  = self.sf_var.get().strip()
-        hf  = self.hf_var.get().strip()
+        sf       = self.sf_var.get().strip()
+        hf       = self.hf_var.get().strip()
+        deepseek = self.deepseek_var.get().strip()
+        preset   = self.preset_var.get()
 
-        if not sf and not hf:
+        if preset in {"deepseek_pro", "deepseek_flash"} and not deepseek:
             self._status_lbl.config(
-                text="⚠️  请至少填写一项密钥再保存", fg=C["warn"])
+                text="⚠️  Pro / Flash 预设需要填写 DeepSeek 官方 API Key", fg=C["warn"])
+            return
+        if preset == "siliconflow_auto" and not sf and not hf:
+            self._status_lbl.config(
+                text="⚠️  自动预设请至少填写硅基流动或 HuggingFace Key", fg=C["warn"])
             return
 
-        self.cfg["sf_key"]   = sf
-        self.cfg["hf_token"] = hf
+        self.cfg["sf_key"]            = sf
+        self.cfg["hf_token"]          = hf
+        self.cfg["deepseek_key"]      = deepseek
+        self.cfg["prompt_llm_preset"] = preset
         save_config(self.cfg)
         self.on_save(self.cfg)
         self._on_close()
