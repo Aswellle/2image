@@ -29,6 +29,7 @@ DEFAULT_CONFIG: dict = {
     "stablehorde_key":      "",   # StableHorde Key（空=匿名）
     "segmind_key":          "",   # Segmind API Key（注册送 $5）
     "pollinations_enabled": True, # Pollinations.AI（无需 Key）
+    "pollinations_key":     "",   # 可选：新平台若要求鉴权可在此填写
     # ── 免费接口（v3 新增）────────────────────────────────────
     "cf_account_id":        "",   # Cloudflare Account ID
     "cf_api_token":         "",   # Cloudflare API Token
@@ -36,8 +37,8 @@ DEFAULT_CONFIG: dict = {
     # ── 免费接口（v5 新增）────────────────────────────────────
     "together_key":         "",   # Together AI（FLUX.1 Free 免费端点）
     "gemini_key":           "",   # Google Gemini API（免费 500次/天）
-    "openrouter_key":       "",   # OpenRouter（部分模型免费）
-    "openrouter_model":     "black-forest-labs/FLUX.1-schnell:free",
+    "openrouter_key":       "",   # OpenRouter（统一 Image API，免费可用性请自行核实）
+    "openrouter_model":     "bytedance-seed/seedream-4.5",
     # ── 付费接口 ──────────────────────────────────────────────
     "openai_key":           "",
     "stability_key":        "",
@@ -49,9 +50,18 @@ DEFAULT_CONFIG: dict = {
     "fal_key":              "",   # fal.ai FLUX Ultra（4MP高清，最高写实质量）
     "recraft_key":          "",   # Recraft v3（设计/插画/品牌VI）
     "recraft_style":        "realistic_image",  # realistic_image | digital_illustration | vector_illustration
+    "recraft_model":        "recraftv3",   # recraftv3（默认，稳） | recraftv4_1（更高画质，样式兼容性未完全验证）
+    # ── 新增接口（v7：GPT-Image / Nano Banana / 国内外新增供应商）──
+    "dashscope_key":        "",   # 阿里云 DashScope（通义万相 / Qwen-Image，免费额度）
+    "minimax_key":          "",   # MiniMax image-01（注册送试用额度）
+    "bfl_key":              "",   # Black Forest Labs 官方 FLUX API
+    "bria_key":             "",   # Bria AI（注册送 1000 次免费调用）
+    # ── AI 提示词助手模型预设 ───────────────────────────────────
+    "prompt_llm_preset":    "siliconflow_auto",  # siliconflow_auto | deepseek_pro | deepseek_flash
+    "deepseek_key":         "",   # DeepSeek 官方 API Key（Pro / Flash 预设）
     # ── 付费模型偏好 ───────────────────────────────────────────
-    "dalle_model":          "dall-e-3",
-    "dalle_quality":        "standard",
+    "gpt_image_model":      "gpt-image-1",   # gpt-image-1 | gpt-image-1-mini
+    "gpt_image_quality":    "auto",          # low | medium | high | auto
     "stability_model":      "core",
     "replicate_model":      "flux-1.1-pro",
     # ── 通用设置 ───────────────────────────────────────────────

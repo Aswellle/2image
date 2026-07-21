@@ -55,13 +55,13 @@ def test_all_template_ids_map_to_valid_scenes():
 # ── Key filtering ─────────────────────────────────────────────────────────────
 
 def test_paid_provider_excluded_without_key():
-    # "banner" → text_overlay route which includes "💎 OpenAI DALL-E 3" (paid)
+    # "banner" → text_overlay route which includes "💎 OpenAI GPT-Image" (paid)
     order = get_provider_order("banner design", {})
-    assert "💎 OpenAI DALL-E 3" not in order
+    assert "💎 OpenAI GPT-Image" not in order
 
 def test_paid_provider_included_with_key():
     order = get_provider_order("banner design", {"openai_key": "sk-test"})
-    assert "💎 OpenAI DALL-E 3" in order
+    assert "💎 OpenAI GPT-Image" in order
 
 def test_commercial_provider_excluded_without_key():
     # brand_product_launch → brand_tech route which includes fal.ai (commercial)

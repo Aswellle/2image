@@ -1,5 +1,5 @@
 """
-services/providers/recraft.py — Recraft v3
+services/providers/recraft.py — Recraft v3 / v4.1
 设计/插画/品牌VI首选，OpenAI 兼容接口，支持写实/插画/矢量多风格。
 API: POST https://external.api.recraft.ai/v1/images/generations
 Key: Header  Authorization: Bearer <key>
@@ -8,6 +8,12 @@ Key: Header  Authorization: Bearer <key>
   realistic_image      — 写实摄影（默认，适合商业图）
   digital_illustration — 数字插画（适合小红书/封面）
   vector_illustration  — 矢量插画（适合品牌/图标）
+
+UPGRADE 2026-07：Recraft 已发布 v4/v4.1（官方 API 默认 model 现为
+recraftv4_1），但 v3 仍未弃用，且官方文档说明 inpainting/outpainting
+/replace-background 等操作仍要求 v3。由于未能核实 v4.1 下 style 参数
+枚举是否与 v3 完全兼容，这里改为可通过 cfg["recraft_model"] 切换
+（默认仍是经过验证的 recraftv3），想用更高画质可自行设为 recraftv4_1。
 """
 import base64
 import threading
@@ -53,7 +59,8 @@ def try_recraft(prompt: str, w: int, h: int, seed: int,
 
     size  = _best_size(w, h)
     style = cfg.get("recraft_style", "realistic_image")
-    log(f"► Recraft v3  尺寸={size}  风格={style}")
+    model = cfg.get("recraft_model", "recraftv3")
+    log(f"► Recraft {model}  尺寸={size}  风格={style}")
 
     with _LOCK:
         gap = time.time() - _LAST_DONE[0]
@@ -71,7 +78,7 @@ def try_recraft(prompt: str, w: int, h: int, seed: int,
                     "style":  style,
                     "n":      1,
                     "size":   size,
-                    "model":  "recraftv3",
+                    "model":  model,
                 },
                 timeout=120,
             )
@@ -95,13 +102,13 @@ def try_recraft(prompt: str, w: int, h: int, seed: int,
     img_url = data[0].get("url", "")
     if img_url:
         data = _safe_get_image(img_url, timeout=60)
-        log(f"  ✓ Recraft v3 成功（URL）{len(data) // 1024}KB")
-        return data, f"Recraft/v3-{style}"
+        log(f"  ✓ Recraft {model} 成功（URL）{len(data) // 1024}KB")
+        return data, f"Recraft/{model}-{style}"
 
     b64 = data[0].get("b64_json", "")
     if b64:
         img = base64.b64decode(b64)
-        log(f"  ✓ Recraft v3 成功（base64）{len(img) // 1024}KB")
-        return img, f"Recraft/v3-{style}"
+        log(f"  ✓ Recraft {model} 成功（base64）{len(img) // 1024}KB")
+        return img, f"Recraft/{model}-{style}"
 
     raise ValueError("Recraft 响应中无图片数据")

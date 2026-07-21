@@ -1,18 +1,26 @@
 """
-services/providers/xai_grok.py  v2
+services/providers/xai_grok.py  v3
 ────────────────────────────────────────────────────────────────
-xAI Grok Imagine — Aurora 图像模型
+xAI Grok Imagine 图像模型
   端点: POST https://api.x.ai/v1/images/generations
   认证: Bearer Token
-  模型: grok-2-image-1212（OpenAI 兼容格式）
+  模型: grok-imagine-image-quality（OpenAI 兼容格式）
   响应: {data:[{url: "..."}]}
+
+v3 修复（2026-07）：
+  · grok-2-image-1212 已于 2026-02-28 弃用，2026-05-15 退休波次进一步
+    整合到 grok-imagine-image-quality —— 旧模型 id 请求会直接失败
+  · 新模型据官方文档已支持图像编辑（图生图）和 aspect_ratio/分辨率
+    参数，但具体请求字段尚未逐一核实，此处暂不贸然加入未验证的参数
+    （避免猜测导致的 400），仍保持"不传 size"的保守请求体；
+    如需图生图/宽高比控制，请对照 https://docs.x.ai 最新文档补充。
 
 v2 修复（2026-03）：
   · 移除 "size" 参数 —— xAI 官方文档明确说明 grok-2-image-1212
     当前版本不支持调整尺寸、质量或风格（传入 size 会返回 HTTP 400）
   · 图片固定输出 1024×1024 JPEG，由 API 自动决定
 
-额度说明（2026-03 现状）：
+额度说明（2026-03 现状，可能已变化）：
   · 新用户注册赠送 $25 免费额度（无需消费即可使用）
   · 消费满 $5 后可激活数据共享计划，额外获得 $150/月额度
   · 按量计费：$0.07/张
@@ -43,7 +51,7 @@ _LAST_DONE = [0.0]
 _MIN_INTV = 2.0
 
 _ENDPOINT = "https://api.x.ai/v1/images/generations"
-_MODEL    = "grok-2-image-1212"
+_MODEL    = "grok-imagine-image-quality"
 _TIMEOUT  = 120
 _MAX_RETRIES = 3
 

@@ -1,9 +1,16 @@
 """
 services/providers/together_ai.py
-Together AI — FLUX.1-schnell-Free 免费端点
+Together AI — FLUX.1-schnell
 端点: POST https://api.together.xyz/v1/images/generations
 认证: Bearer Token
 响应: {data:[{url: "..."}]}
+
+FIX 2026-07: 官方模型页明确写着 "FLUX.1 [schnell] Free" 已不再挂在
+Together 的 Serverless API 上（"This model is not available on
+Together's Serverless API"）——旧的 "...-Free" 模型 id 大概率直接
+404。改回不带 -Free 后缀的普通 black-forest-labs/FLUX.1-schnell，
+但该模型当前是否仍对无付费账户免费尚未最终确认；若持续失败，
+调度器会按现有逻辑自动跳到下一个接口，不影响整体生成流程。
 """
 import threading
 import time
@@ -25,7 +32,7 @@ _LAST_DONE = [0.0]
 _MIN_INTV  = 2.0   # Together AI 建议最小请求间隔（秒）
 
 _ENDPOINT  = "https://api.together.xyz/v1/images/generations"
-_MODEL     = "black-forest-labs/FLUX.1-schnell-Free"
+_MODEL     = "black-forest-labs/FLUX.1-schnell"
 _TIMEOUT   = 120
 _MAX_RETRIES = 3
 
@@ -75,6 +82,11 @@ def try_together_ai(
                     continue
                 if resp.status_code == 402:
                     raise ValueError("Together AI 余额不足，请前往 https://api.together.ai/ 充值。")
+                if resp.status_code == 404:
+                    raise ValueError(
+                        "Together AI 模型不可用（FLUX.1-schnell 可能已从免费 "
+                        "Serverless API 下线），请前往 https://api.together.ai/ 确认当前可用模型。"
+                    )
                 if resp.status_code != 200:
                     raise RuntimeError(
                         f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
@@ -84,7 +96,7 @@ def try_together_ai(
                 image_bytes = _extract_image(data, log)
                 _LAST_DONE[0] = time.time()
                 log("[Together AI] 生成成功 ✓")
-                return (image_bytes, "TogetherAI/FLUX.1-schnell-Free")
+                return (image_bytes, "TogetherAI/FLUX.1-schnell")
 
             except (ValueError, RuntimeError) as e:
                 last_err = e

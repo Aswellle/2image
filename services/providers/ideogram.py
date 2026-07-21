@@ -1,18 +1,25 @@
 """
-services/providers/ideogram.py — Ideogram v2
+services/providers/ideogram.py — Ideogram v3
 文字入图首选接口，可靠渲染 Banner、海报、标签、LOGO 中的文字。
-API: POST https://api.ideogram.ai/generate
+API: POST https://api.ideogram.ai/v1/ideogram-v3/generate
 Key: Header  Api-Key: <key>
+Body: multipart/form-data（v3 与 v1/v2 的 JSON body 不同）
+
+FIX 2026-07: 旧版端点 POST https://api.ideogram.ai/generate + "model": "V_2"
+在当前官方文档中已找不到任何踪迹（v1/v2 完全被 v3 取代），迁移到
+v1/ideogram-v3/generate，改用 multipart/form-data，参数名和取值也
+不同：aspect_ratio 从 "ASPECT_16_9" 这类写法变成 "16x9"，新增
+rendering_speed（FLASH/TURBO/DEFAULT/QUALITY）控制速度与质量的取舍。
 """
 import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "ideogram",
-    "name": "Ideogram v2 (文字入图)",
+    "name": "Ideogram v3 (文字入图)",
     "category": "commercial",
     "config_key": "ideogram_key",
 }
@@ -22,23 +29,24 @@ _LOCK      = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV  = 2.0   # Ideogram 免费层建议间隔
 
-# 宽高比选择表（w/h 比值越接近越优先）
+_ENDPOINT = "https://api.ideogram.ai/v1/ideogram-v3/generate"
+
+# v3 aspect_ratio 枚举值（官方 API 参考：generate-v3），格式为 "宽x高"
 _ASPECTS = [
-    ((1024, 1024), "ASPECT_1_1"),
-    ((1344,  768), "ASPECT_16_9"),
-    (( 768, 1344), "ASPECT_9_16"),
-    ((1280,  800), "ASPECT_16_10"),
-    (( 800, 1280), "ASPECT_10_16"),
-    ((1024,  768), "ASPECT_4_3"),
-    (( 768, 1024), "ASPECT_3_4"),
-    ((1024,  682), "ASPECT_3_2"),
-    (( 682, 1024), "ASPECT_2_3"),
+    (1/3,   "1x3"), (3,     "3x1"),
+    (1/2,   "1x2"), (2,     "2x1"),
+    (9/16,  "9x16"), (16/9,  "16x9"),
+    (10/16, "10x16"), (16/10, "16x10"),
+    (2/3,   "2x3"), (3/2,   "3x2"),
+    (3/4,   "3x4"), (4/3,   "4x3"),
+    (4/5,   "4x5"), (5/4,   "5x4"),
+    (1,     "1x1"),
 ]
 
 
 def _best_aspect(w: int, h: int) -> str:
     r = w / max(h, 1)
-    return min(_ASPECTS, key=lambda x: abs(x[0][0] / x[0][1] - r))[1]
+    return min(_ASPECTS, key=lambda x: abs(x[0] - r))[1]
 
 
 def try_ideogram(prompt: str, w: int, h: int, seed: int,
@@ -48,16 +56,15 @@ def try_ideogram(prompt: str, w: int, h: int, seed: int,
         raise ValueError("需要 Ideogram API Key！注册：https://ideogram.ai/")
 
     aspect = _best_aspect(w, h)
-    log(f"► Ideogram v2  宽高比={aspect}")
+    rendering_speed = cfg.get("ideogram_rendering_speed", "DEFAULT")
+    log(f"► Ideogram v3  宽高比={aspect}  速度={rendering_speed}")
 
-    payload = {
-        "image_request": {
-            "prompt":              prompt,
-            "aspect_ratio":        aspect,
-            "model":               "V_2",
-            "magic_prompt_option": "OFF",   # 关闭自动改写，保持用户原意
-            "seed":                seed % 2_147_483_647,
-        }
+    # v3 使用 multipart/form-data，而非 v1/v2 的嵌套 JSON body
+    files = {
+        "prompt":          (None, prompt),
+        "aspect_ratio":    (None, aspect),
+        "rendering_speed": (None, rendering_speed),
+        "seed":            (None, str(seed % 2_147_483_647)),
     }
 
     with _LOCK:
@@ -66,9 +73,9 @@ def try_ideogram(prompt: str, w: int, h: int, seed: int,
             time.sleep(_MIN_INTV - gap)
         try:
             resp = _session.post(
-                "https://api.ideogram.ai/generate",
-                headers={"Api-Key": key, "Content-Type": "application/json"},
-                json=payload,
+                _ENDPOINT,
+                headers={"Api-Key": key},
+                files=files,
                 timeout=120,
             )
         except requests.exceptions.ConnectionError as e:
@@ -89,11 +96,14 @@ def try_ideogram(prompt: str, w: int, h: int, seed: int,
     data = resp.json().get("data", [])
     if not data:
         raise ValueError("Ideogram 返回数据为空")
-    img_url = data[0].get("url", "")
+    item = data[0]
+    if not item.get("is_image_safe", True):
+        raise ValueError("Ideogram 安全过滤：该提示词未通过审核，无图片返回")
+    img_url = item.get("url", "")
     if not img_url:
         raise ValueError("Ideogram 响应中无图片 URL")
 
     log("  下载图片中…")
     data = _safe_get_image(img_url, timeout=60)
-    log(f"  ✓ Ideogram v2 成功  {len(data) // 1024}KB")
-    return data, "Ideogram/v2"
+    log(f"  ✓ Ideogram v3 成功  {len(data) // 1024}KB")
+    return data, "Ideogram/v3"

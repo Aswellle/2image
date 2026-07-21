@@ -40,7 +40,8 @@ class ConfigWizard(tk.Toplevel):
         self._build()
         for _var in [self.sf_var, self.cf_id_var, self.cf_tok_var, self.ml_var,
                      self.sg_var, self.hf_var, self.sh_var, self.ta_var,
-                     self.gm_var, self.qual_var]:
+                     self.gm_var, self.qual_var,
+                     self.pk_var, self.ds_var, self.br_var]:
             _var.trace("w", lambda *_: setattr(self, '_dirty', True))
 
     # ── 滚轮清理：销毁前必须解绑，否则 bind_all 残留在根 Tk 上 ──────
@@ -183,6 +184,18 @@ class ConfigWizard(tk.Toplevel):
                   bd=0, padx=12, pady=5, cursor="hand2",
                   command=lambda: webbrowser.open("https://pollinations.ai")
                   ).pack(side="left")
+
+        # v7：Pollinations 新平台可能已要求鉴权，留一个可选 Key 输入框
+        poll_key_row = tk.Frame(inner, bg=C["bg"]); poll_key_row.pack(fill="x", padx=PX, pady=(10, 0))
+        tk.Label(poll_key_row, text="Pollinations Key（可选，遇 401 再填）:",
+                 font=F["body"], bg=C["bg"], fg=C["sub"]).pack(anchor="w")
+        ef_pk = tk.Frame(poll_key_row, bg=C["entry"]); ef_pk.pack(fill="x", pady=(4, 0))
+        self.pk_var = tk.StringVar(value=self.cfg.get("pollinations_key", ""))
+        self.pk_entry = tk.Entry(ef_pk, textvariable=self.pk_var, show="*",
+                                  bg=C["entry"], fg=C["text"], insertbackground="white",
+                                  font=F["input"], bd=0, relief="flat")
+        self.pk_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._eye_btn(ef_pk, self.pk_entry)
 
         # ══════════════════════════════════════════════════════
         #   3. Cloudflare Workers AI
@@ -411,15 +424,16 @@ class ConfigWizard(tk.Toplevel):
                    PX)
 
         # ══════════════════════════════════════════════════════
-        #   9. Google Gemini API（v5 新增）
+        #   9. Google Gemini Nano Banana（v5 新增，v7 更新）
         # ══════════════════════════════════════════════════════
         self._divider(inner)
-        self._section(inner, "9", "Google Gemini API",
-                      "🆓 免费 500次/天 · 无需绑卡 · Gemini 2.5 Flash Image", "#34d399", PX)
+        self._section(inner, "9", "Google Gemini  Nano Banana",
+                      "🆓 免费额度 · 无需绑卡 · 支持图生图", "#34d399", PX)
         self._info_card(inner, [
-            "• Google Gemini 2.5 Flash 图像生成，免费层每天 500 次，无需绑定支付方式",
+            "• Google 图像模型 \"Nano Banana\"（Gemini 2.5 Flash Image），免费额度",
             "• 通过 Google AI Studio 获取 API Key，登录 Google 账号即可，全程免费",
-            "• 响应为 base64 PNG，支持标准分辨率，适合日常使用",
+            "• 支持图生图（切到「图生图」模式后自动传入参考图）",
+            "• 同一个 Key 也用于「💎 付费接口配置」里更高画质的 Nano Banana Pro",
         ], PX)
         gm_row = tk.Frame(inner, bg=C["bg"]); gm_row.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(gm_row, text="Gemini API Key:",
@@ -445,6 +459,68 @@ class ConfigWizard(tk.Toplevel):
         self._hint(inner,
                    "📋 步骤：用 Google 账号登录 AI Studio → Get API Key → Create API Key → 复制",
                    PX)
+
+        # ══════════════════════════════════════════════════════
+        #   10. 阿里云 DashScope 通义万相 Qwen-Image（v7 新增）
+        # ══════════════════════════════════════════════════════
+        self._divider(inner)
+        self._section(inner, "10", "阿里云 通义万相 / Qwen-Image",
+                      "🆓 新用户免费额度 · 国内直连速度快", "#ff6a00", PX)
+        self._info_card(inner, [
+            "• 阿里云 DashScope 平台，wanx2.1-t2i-turbo 模型，新用户有免费调用额度",
+            "• 国内网络直连，无需代理，速度稳定",
+            "• 提交任务后异步轮询，出图通常在 10~30 秒内完成",
+        ], PX)
+        ds_row = tk.Frame(inner, bg=C["bg"]); ds_row.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(ds_row, text="DashScope API Key:",
+                 font=F["btn"], bg=C["bg"], fg=C["text"]).pack(anchor="w")
+        ef_ds = tk.Frame(ds_row, bg=C["entry"]); ef_ds.pack(fill="x", pady=(4, 0))
+        self.ds_var = tk.StringVar(value=self.cfg.get("dashscope_key", ""))
+        self.ds_entry = tk.Entry(ef_ds, textvariable=self.ds_var, show="*",
+                                  bg=C["entry"], fg=C["text"], insertbackground="white",
+                                  font=F["input"], bd=0, relief="flat")
+        self.ds_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._eye_btn(ef_ds, self.ds_entry)
+        ds_btns = tk.Frame(inner, bg=C["bg"]); ds_btns.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Button(ds_btns, text="🌐 注册阿里云 DashScope",
+                  font=F["body"], bg="#ff6a00", fg="white",
+                  bd=0, padx=12, pady=5, cursor="hand2",
+                  command=lambda: webbrowser.open("https://dashscope.console.aliyun.com/")
+                  ).pack(side="left")
+        tk.Button(ds_btns, text="🔑 获取 API Key",
+                  font=F["body"], bg=C["acc"], fg="white",
+                  bd=0, padx=12, pady=5, cursor="hand2",
+                  command=lambda: webbrowser.open(
+                      "https://dashscope.console.aliyun.com/apiKey")
+                  ).pack(side="left", padx=(8, 0))
+
+        # ══════════════════════════════════════════════════════
+        #   11. Bria AI（v7 新增）
+        # ══════════════════════════════════════════════════════
+        self._divider(inner)
+        self._section(inner, "11", "Bria AI  Fibo",
+                      "🆓 注册送 1000 次免费调用 · 商业合规定位", "#8b5cf6", PX)
+        self._info_card(inner, [
+            "• Fibo 模型，训练数据经授权，主打商业可用/版权合规场景",
+            "• 新用户注册即送 1000 次免费 API 调用",
+            "• 同步返回（sync=true），无需等待轮询",
+        ], PX)
+        br_row = tk.Frame(inner, bg=C["bg"]); br_row.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(br_row, text="Bria AI API Key:",
+                 font=F["btn"], bg=C["bg"], fg=C["text"]).pack(anchor="w")
+        ef_br = tk.Frame(br_row, bg=C["entry"]); ef_br.pack(fill="x", pady=(4, 0))
+        self.br_var = tk.StringVar(value=self.cfg.get("bria_key", ""))
+        self.br_entry = tk.Entry(ef_br, textvariable=self.br_var, show="*",
+                                  bg=C["entry"], fg=C["text"], insertbackground="white",
+                                  font=F["input"], bd=0, relief="flat")
+        self.br_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._eye_btn(ef_br, self.br_entry)
+        br_btns = tk.Frame(inner, bg=C["bg"]); br_btns.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Button(br_btns, text="🌐 注册 Bria AI（送 1000 次）",
+                  font=F["body"], bg="#7c3aed", fg="white",
+                  bd=0, padx=12, pady=5, cursor="hand2",
+                  command=lambda: webbrowser.open("https://platform.bria.ai/")
+                  ).pack(side="left")
 
         # ══════════════════════════════════════════════════════
         #   变体质量模式
@@ -563,6 +639,9 @@ class ConfigWizard(tk.Toplevel):
         self.cfg["modelslab_key"]        = self.ml_var.get().strip()
         self.cfg["together_key"]         = self.ta_var.get().strip()   # v5 新增
         self.cfg["gemini_key"]           = self.gm_var.get().strip()   # v5 新增
+        self.cfg["pollinations_key"]     = self.pk_var.get().strip()   # v7 新增
+        self.cfg["dashscope_key"]        = self.ds_var.get().strip()   # v7 新增
+        self.cfg["bria_key"]             = self.br_var.get().strip()   # v7 新增
         self.cfg["variant_quality"]      = self.qual_var.get()
         self.cfg["show_wizard_on_start"] = not self.show_wiz_var.get()
         from config.settings import save_config

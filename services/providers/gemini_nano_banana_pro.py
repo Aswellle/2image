@@ -1,15 +1,14 @@
 """
-services/providers/gemini.py
-Google Gemini 2.5 Flash Image ("Nano Banana") — 图生图见 _ref_image
-端点: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent
-认证: Header x-goog-api-key
+services/providers/gemini_nano_banana_pro.py
+Google Gemini 3 Pro Image ("Nano Banana Pro") — 旗舰级图像模型
+端点: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent
+认证: Header x-goog-api-key（与 gemini.py 共用同一个 Google AI Studio Key）
 响应: candidates[0].content.parts[].inlineData.data  (base64)
 
-FIX 2026-07: 此前 _MODEL 误写成一个 2025 年的纯文本 Gemini 2.5 Flash
-预览模型 id（"gemini-2.5-flash-preview-04-17"），与文件顶部文档字符串
-描述的图像模型完全对不上——这个模型根本不支持图像输出，请求大概率
-一直静默失败/走重试再报错。同时 responseModalities 只传 ["IMAGE"]
-官方文档要求必须同时包含 "TEXT"，否则请求会被拒绝。这两处已修复。
+与 gemini.py（Nano Banana / gemini-2.5-flash-image）的区别：
+  · 画质更高、支持原生 1K 输出并可放大到 2K/4K，推理式生成
+  · 官方定价无免费额度（付费按量计费），因此归类为 paid
+  · 复用同一个 gemini_key，只是调用更贵的模型，无需单独申请 Key
 """
 
 import base64
@@ -21,26 +20,24 @@ from services.providers._net import SESSION as _session, safe_error_text as _saf
 
 
 PROVIDER_INFO = {
-    "id": "gemini",
-    "name": "Google Gemini Nano Banana (免费额度)",
-    "category": "free",
+    "id": "gemini_nano_banana_pro",
+    "name": "💎 Nano Banana Pro (Gemini 3 Pro Image)",
+    "category": "paid",
     "config_key": "gemini_key",
     "supports_img2img": True,
 }
 
 
-
-# ── 串行锁（防批量变体并发触发速率限制）──────────────────────────────
 _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
-_MIN_INTV = 2.0  # Gemini 免费层建议间隔
+_MIN_INTV = 2.0
 
-_MODEL = "gemini-2.5-flash-image"
+_MODEL = "gemini-3-pro-image"
 _ENDPOINT = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
     f"{_MODEL}:generateContent"
 )
-_TIMEOUT = 90
+_TIMEOUT = 120
 _MAX_RETRIES = 3
 
 
@@ -55,7 +52,7 @@ def _guess_mime(image_bytes: bytes) -> str:
     return "image/png"
 
 
-def try_gemini(
+def try_gemini_nano_banana_pro(
     prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
 ) -> Tuple[bytes, str]:
     key = cfg.get("gemini_key", "").strip()
@@ -76,20 +73,12 @@ def try_gemini(
                 "data": base64.b64encode(ref_image).decode("ascii"),
             }
         })
-        log(f"[Gemini] 图生图模式，参考图 {len(ref_image)//1024}KB")
+        log(f"[Nano Banana Pro] 图生图模式，参考图 {len(ref_image)//1024}KB")
 
-    # Gemini generateContent 图像生成请求体
-    # 注意：responseModalities 必须同时包含 TEXT 和 IMAGE，
-    # 只传 IMAGE 会被官方 API 拒绝（哪怕文本部分被忽略不用）。
     payload = {
-        "contents": [
-            {
-                "parts": parts
-            }
-        ],
-        "generationConfig": {
-            "responseModalities": ["TEXT", "IMAGE"],
-        },
+        "contents": [{"parts": parts}],
+        # responseModalities 必须同时包含 TEXT 和 IMAGE，纯 IMAGE 会被拒绝
+        "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
     }
 
     with _LOCK:
@@ -100,15 +89,12 @@ def try_gemini(
         last_err = None
         for attempt in range(1, _MAX_RETRIES + 1):
             try:
-                log(f"[Gemini] 尝试 {attempt}/{_MAX_RETRIES}…")
+                log(f"[Nano Banana Pro] 尝试 {attempt}/{_MAX_RETRIES}…")
                 resp = _session.post(
-                    _ENDPOINT,
-                    headers=headers,
-                    json=payload,
-                    timeout=_TIMEOUT,
+                    _ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT,
                 )
                 if resp.status_code == 429:
-                    log("[Gemini] 触发速率限制，等待 30s…")
+                    log("[Nano Banana Pro] 触发速率限制，等待 30s…")
                     time.sleep(30)
                     continue
                 if resp.status_code != 200:
@@ -117,32 +103,31 @@ def try_gemini(
                     )
 
                 data = resp.json()
-                # 解析 base64 图片数据
-                image_bytes = _extract_image(data, log)
+                image_bytes = _extract_image(data)
                 _LAST_DONE[0] = time.time()
-                log("[Gemini] 生成成功 ✓")
-                return (image_bytes, "Gemini/Nano-Banana")
+                log("[Nano Banana Pro] 生成成功 ✓")
+                return (image_bytes, "Gemini/Nano-Banana-Pro")
 
             except (ValueError, RuntimeError) as e:
                 last_err = e
-                log(f"[Gemini] 错误：{e}")
+                log(f"[Nano Banana Pro] 错误：{e}")
                 if attempt < _MAX_RETRIES:
                     time.sleep(3 * attempt)
             except requests.RequestException as e:
                 last_err = RuntimeError(str(e))
-                log(f"[Gemini] 网络错误：{e}")
+                log(f"[Nano Banana Pro] 网络错误：{e}")
                 if attempt < _MAX_RETRIES:
                     time.sleep(3 * attempt)
 
         _LAST_DONE[0] = time.time()
-        raise RuntimeError(f"Gemini 全部重试失败：{last_err}")
+        raise RuntimeError(f"Nano Banana Pro 全部重试失败：{last_err}")
 
 
-def _extract_image(data: dict, log: Callable) -> bytes:
+def _extract_image(data: dict) -> bytes:
     """从 Gemini 响应中提取 base64 图片数据并解码。"""
     candidates = data.get("candidates", [])
     if not candidates:
-        raise ValueError("Gemini 响应无 candidates（格式异常）")
+        raise ValueError("Nano Banana Pro 响应无 candidates（格式异常）")
 
     parts = candidates[0].get("content", {}).get("parts", [])
     for part in parts:
@@ -154,4 +139,4 @@ def _extract_image(data: dict, log: Callable) -> bytes:
             except Exception as e:
                 raise ValueError(f"base64 解码失败：{e}")
 
-    raise ValueError("Gemini 响应中未找到图片数据")
+    raise ValueError("Nano Banana Pro 响应中未找到图片数据")

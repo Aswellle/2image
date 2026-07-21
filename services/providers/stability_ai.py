@@ -7,6 +7,7 @@ PROVIDER_INFO = {
     "name": "💎 Stability AI",
     "category": "paid",
     "config_key": "stability_key",
+    "supports_img2img": True,
 }
 
 

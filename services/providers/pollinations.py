@@ -1,5 +1,5 @@
 """
-services/providers/pollinations.py — Pollinations.AI 接口  v4
+services/providers/pollinations.py — Pollinations.AI 接口  v5
 ──────────────────────────────────────────────────────────────
 批量变体失败根因（v3 残留 bug）：
   · _LAST_REQ_TIME 在请求发出前就更新，导致计时从"请求开始"算起
@@ -11,6 +11,15 @@ v4 修复：
   · 官方匿名限速：每 15s 一次；锁内等待保证严格串行
   · 500/503 指数退避重试（最多 3 次）
   · 超时提升至 180s，兼顾高负载场景
+
+v5 修复（2026-07）：
+  · Pollinations 已上线新平台 gen.pollinations.ai（"Pollen credits"），
+    新文档要求大多数接口带 Bearer/?key= 鉴权；旧版 image.pollinations.ai
+    /prompt/{prompt} 端点是否仍完全支持匿名调用未被官方文档确认。
+  · 保留旧端点作为主路径（大概率仍可用，无需 Key），但新增可选的
+    pollinations_key 配置——填了就以 ?key= 形式带上，两不误；
+    同时对 401 给出明确指向 enter.pollinations.ai 的错误提示，
+    不再和其它失败原因混在一起变成一句模糊的"所有模型均失败"。
 """
 import threading
 import time
@@ -52,6 +61,7 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int,
     sh  = _snap(h)
     enc = urllib.parse.quote(prompt, safe="")
     model_list = _POLL_MODELS_HQ if hq_mode else _POLL_MODELS_STD
+    api_key = cfg.get("pollinations_key", "").strip()   # 可选，新平台可能需要
 
     for model in model_list:
         log(f"  模型: {model}  {sw}×{sh}"
@@ -64,6 +74,8 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int,
             "nologo":  "true",
             "enhance": "true" if hq_mode else "false",
         }
+        if api_key:
+            params["key"] = api_key
 
         result = None
 
@@ -97,6 +109,13 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int,
             sc = resp.status_code
             ct = resp.headers.get("Content-Type", "")
             log(f"    [{attempt}] 状态:{sc}  ct:{ct}")
+
+            if sc == 401:
+                raise ValueError(
+                    "Pollinations.AI 返回 401（新平台可能已要求鉴权）\n"
+                    "请前往 https://enter.pollinations.ai 获取 Key，"
+                    "填入「免费接口配置」的 Pollinations Key 后重试"
+                )
 
             if sc in (429, 503):
                 ra = resp.headers.get("Retry-After", "")

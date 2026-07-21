@@ -26,6 +26,11 @@ COMMERCIAL_PROVIDERS = {}
 # own maps from this dict rather than maintaining separate hardcoded copies.
 PROVIDER_KEYS: dict = {}
 
+# Providers that actually read `_ref_image`/`_ref_strength` (img2img mode).
+# Single source of truth for which providers the UI may offer while in
+# 图生图 mode — don't hardcode a separate name list elsewhere.
+IMG2IMG_PROVIDERS: dict = {}
+
 _for_loop_registry = {
     "free": FREE_PROVIDERS,
     "paid": PAID_PROVIDERS,
@@ -57,6 +62,9 @@ for loader, module_name, is_pkg in pkgutil.iter_modules(__path__):
 
     # Single source of truth for config keys
     PROVIDER_KEYS[info["name"]] = info.get("config_key")
+
+    if info.get("supports_img2img"):
+        IMG2IMG_PROVIDERS[info["name"]] = try_fn
 
 ALL_PROVIDERS = {**FREE_PROVIDERS, **PAID_PROVIDERS, **COMMERCIAL_PROVIDERS}
 DEFAULT_ORDER = list(FREE_PROVIDERS.keys())

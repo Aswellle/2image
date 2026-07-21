@@ -16,6 +16,7 @@ PROVIDER_INFO = {
     "name": "fal.ai FLUX Ultra (高质量)",
     "category": "commercial",
     "config_key": "fal_key",
+    "supports_img2img": True,
 }
 
 

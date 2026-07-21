@@ -8,10 +8,10 @@ def test_gemini_missing_key_raises_valueerror():
         try_gemini("test prompt", 512, 512, 42, {"gemini_key": ""}, print)
 
 
-def test_openai_dalle_missing_key_raises_valueerror():
-    from services.providers.openai_dalle import try_openai_dalle
+def test_openai_image_missing_key_raises_valueerror():
+    from services.providers.openai_image import try_openai_image
     with pytest.raises(ValueError, match="API Key"):
-        try_openai_dalle("test prompt", 1024, 1024, 42, {"openai_key": ""}, print)
+        try_openai_image("test prompt", 1024, 1024, 42, {"openai_key": ""}, print)
 
 
 def test_siliconflow_missing_key_raises_valueerror():
@@ -38,6 +38,11 @@ _PROVIDER_KEY_CASES = [
     ("services.providers.ideogram",      "try_ideogram",      {"ideogram_key": ""}),
     ("services.providers.recraft",       "try_recraft",       {"recraft_key": ""}),
     ("services.providers.modelslab",     "try_modelslab",     {"modelslab_key": ""}),
+    ("services.providers.gemini_nano_banana_pro", "try_gemini_nano_banana_pro", {"gemini_key": ""}),
+    ("services.providers.minimax_image", "try_minimax_image", {"minimax_key": ""}),
+    ("services.providers.dashscope_qwen","try_dashscope_qwen",{"dashscope_key": ""}),
+    ("services.providers.bfl_flux",      "try_bfl_flux",      {"bfl_key": ""}),
+    ("services.providers.bria_ai",       "try_bria_ai",       {"bria_key": ""}),
 ]
 
 @pytest.mark.parametrize("module,fn,cfg", _PROVIDER_KEY_CASES,

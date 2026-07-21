@@ -41,11 +41,12 @@ class PaidWizard(tk.Toplevel):
         self.geometry(f"860x900+{max(0,x)}+{max(0,y)}")
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._build()
-        for _var in [self.oai_var, self.dalle_model_var, self.dalle_q_var,
+        for _var in [self.oai_var, self.gpt_image_model_var, self.gpt_image_quality_var,
                      self.stab_var, self.stab_model_var,
                      self.rep_var, self.rep_model_var,
                      self.or_var, self.or_model_var,
-                     self.xai_var]:
+                     self.xai_var,
+                     self.minimax_var, self.bfl_var]:
             _var.trace("w", lambda *_: setattr(self, '_dirty', True))
 
     # ── 滚轮清理：销毁前必须解绑，否则 bind_all 残留在根 Tk 上 ──────
@@ -117,14 +118,16 @@ class PaidWizard(tk.Toplevel):
         self.bind_all("<Button-5>",   _scroll_dn)
 
         # ══════════════════════════════════════════════════════
-        #   1. OpenAI DALL-E 3
+        #   1. OpenAI GPT-Image（原 DALL-E 3，已于 2026-05-12 下线）
         # ══════════════════════════════════════════════════════
-        self._section(inner, "💡", "OpenAI DALL-E 3",
-                      "最强文字理解力  |  Standard ~¥0.28/张  |  HD ~¥0.57/张", PX)
+        self._section(inner, "💡", "OpenAI GPT-Image",
+                      "支持文生图+图生图  |  quality=low/medium/high/auto 按量计费", PX)
         self._info_card(inner, [
-            "• 全球最强的文生图接口之一，对提示词理解最精准",
-            "• 支持 1024×1024 / 1792×1024 / 1024×1792 三种尺寸",
-            "• 需要信用卡绑定，按月账单结算（最低充值 $5）",
+            "• DALL-E 3 已于 2026-05-12 正式下线，现使用 GPT-Image 系列接口",
+            "• 支持 1024×1024 / 1536×1024 / 1024×1536 三种尺寸",
+            "• 支持图生图（切到「图生图」模式后自动改走图片编辑接口）",
+            "• 首次使用可能需要在 OpenAI 后台完成 Organization Verification",
+            "• 需要信用卡绑定，按用量计费（最低充值 $5）",
         ], PX)
         row1 = tk.Frame(inner, bg=C["bg"]); row1.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(row1, text="OpenAI API Key:", font=F["btn"],
@@ -140,14 +143,16 @@ class PaidWizard(tk.Toplevel):
         opt1 = tk.Frame(inner, bg=C["bg"]); opt1.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(opt1, text="模型版本:", font=F["body"],
                  bg=C["bg"], fg=C["sub"]).pack(side="left")
-        self.dalle_model_var = tk.StringVar(value=self.cfg.get("dalle_model", "dall-e-3"))
-        ttk.Combobox(opt1, textvariable=self.dalle_model_var, width=12, state="readonly",
-                     values=["dall-e-3", "dall-e-2"]).pack(side="left", padx=(6, 20))
+        self.gpt_image_model_var = tk.StringVar(
+            value=self.cfg.get("gpt_image_model", "gpt-image-1"))
+        ttk.Combobox(opt1, textvariable=self.gpt_image_model_var, width=16, state="readonly",
+                     values=["gpt-image-1", "gpt-image-1-mini"]).pack(side="left", padx=(6, 20))
         tk.Label(opt1, text="画质:", font=F["body"],
                  bg=C["bg"], fg=C["sub"]).pack(side="left")
-        self.dalle_q_var = tk.StringVar(value=self.cfg.get("dalle_quality", "standard"))
-        ttk.Combobox(opt1, textvariable=self.dalle_q_var, width=12, state="readonly",
-                     values=["standard", "hd"]).pack(side="left", padx=(6, 20))
+        self.gpt_image_quality_var = tk.StringVar(
+            value=self.cfg.get("gpt_image_quality", "auto"))
+        ttk.Combobox(opt1, textvariable=self.gpt_image_quality_var, width=12, state="readonly",
+                     values=["auto", "low", "medium", "high"]).pack(side="left", padx=(6, 20))
 
         btns1 = tk.Frame(inner, bg=C["bg"]); btns1.pack(fill="x", padx=PX, pady=(8, 0))
         self._link_btn(btns1, "🌐 OpenAI 注册 / 充值",
@@ -229,15 +234,15 @@ class PaidWizard(tk.Toplevel):
         self._divider(inner)
 
         # ══════════════════════════════════════════════════════
-        #   4. OpenRouter（v2 新增）
+        #   4. OpenRouter（v2 新增，v7 迁移到统一 Image API）
         # ══════════════════════════════════════════════════════
-        self._section(inner, "🔀", "OpenRouter  (AI 路由聚合)",
-                      "部分模型免费 · 统一接入数十家供应商 · 单 Key 搞定", PX)
+        self._section(inner, "🔀", "OpenRouter  (统一 Image API)",
+                      "统一接入数十家图像模型 · 单 Key 搞定 · 按模型计费", PX)
         self._info_card(inner, [
-            "• 统一接入 OpenAI / Anthropic / Meta / 开源模型等数十家供应商",
-            "• 部分图像模型完全免费（如 FLUX.1-schnell:free / FLUX.1-dev:free）",
-            "• 付费模型通常比直连便宜，计费清晰，适合探索不同风格",
-            "• 默认使用 FLUX.1-schnell:free（免费），可在下方修改为其他模型",
+            "• 2026 年中上线专用 Image API，统一接入 FLUX / Seedream / gpt-image 等模型",
+            "• ⚠️ 此前 \":free\" 后缀的免费图像模型（如 FLUX.1-schnell:free）在新",
+            "  Image API 里未再出现，免费可用性请自行核实，不保证仍有免费额度",
+            "• 下方「图像模型」栏可自由填写任意 openrouter.ai/models 列出的图像模型 slug",
         ], PX)
         row4 = tk.Frame(inner, bg=C["bg"]); row4.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(row4, text="OpenRouter API Key:", font=F["btn"],
@@ -256,7 +261,7 @@ class PaidWizard(tk.Toplevel):
         ef4m = tk.Frame(row4m, bg=C["entry"]); ef4m.pack(fill="x", pady=(4, 0))
         self.or_model_var = tk.StringVar(
             value=self.cfg.get("openrouter_model",
-                               "black-forest-labs/FLUX.1-schnell:free"))
+                               "bytedance-seed/seedream-4.5"))
         or_model_ent = tk.Entry(ef4m, textvariable=self.or_model_var,
                                  bg=C["entry"], fg=C["text"], insertbackground="white",
                                  font=F["input"], bd=0, relief="flat")
@@ -266,7 +271,7 @@ class PaidWizard(tk.Toplevel):
         btns4 = tk.Frame(inner, bg=C["bg"]); btns4.pack(fill="x", padx=PX, pady=(8, 0))
         self._link_btn(btns4, "🌐 注册 OpenRouter（免费）",
                        "https://openrouter.ai/keys")
-        self._link_btn(btns4, "📋 查看免费图像模型列表",
+        self._link_btn(btns4, "📋 查看当前图像模型与定价",
                        "https://openrouter.ai/models?modality=image")
 
         # 推荐模型提示
@@ -274,9 +279,9 @@ class PaidWizard(tk.Toplevel):
                              highlightbackground="#2a3a5a", highlightthickness=1)
         or_hint_f.pack(fill="x", padx=PX, pady=(8, 0))
         for tip in [
-            "💡 免费模型推荐（直接粘贴到「图像模型」栏）：",
-            "  • black-forest-labs/FLUX.1-schnell:free  （速度最快，质量好）",
-            "  • black-forest-labs/FLUX.1-dev:free      （质量更高，稍慢）",
+            "💡 模型 slug 请从上方「查看当前图像模型与定价」页面复制粘贴：",
+            "  • bytedance-seed/seedream-4.5   （默认，官方文档示例模型）",
+            "  • 免费模型是否存在请以该页面实时价格为准，不再写死推荐",
         ]:
             tk.Label(or_hint_f, text=tip, font=F["small"],
                      bg=C["card"], fg=C["ok"] if tip.startswith("💡") else C["sub"],
@@ -308,13 +313,82 @@ class PaidWizard(tk.Toplevel):
         self.xai_ent.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
         self._eye_btn(ef5, self.xai_ent)
 
-        btns5 = tk.Frame(inner, bg=C["bg"]); btns5.pack(fill="x", padx=PX, pady=(8, 24))
+        btns5 = tk.Frame(inner, bg=C["bg"]); btns5.pack(fill="x", padx=PX, pady=(8, 0))
         self._link_btn(btns5, "🌐 注册 xAI 账号",
                        "https://console.x.ai")
         self._link_btn(btns5, "🔑 获取 API Key",
                        "https://console.x.ai/")
         self._link_btn(btns5, "📖 查看定价",
                        "https://docs.x.ai/developers/models")
+        self._divider(inner)
+
+        # ══════════════════════════════════════════════════════
+        #   6. Nano Banana Pro（Gemini 3 Pro Image，v7 新增）
+        # ══════════════════════════════════════════════════════
+        self._section(inner, "🍌", "Nano Banana Pro  (Gemini 3 Pro Image)",
+                      "Google 旗舰图像模型 · 支持图生图 · 复用 Gemini Key", PX)
+        self._info_card(inner, [
+            "• Google 最新旗舰图像模型，原生 1K 输出可放大到 2K/4K",
+            "• 支持图生图（切到「图生图」模式后自动传入参考图）",
+            "• 与「免费接口配置」里的 Google Gemini Key 是同一个 Key，无需重复填写",
+            "• 官方定价无免费额度，按量计费——先在下方「免费接口配置」填好 Key 即可使用",
+        ], PX)
+        btns6 = tk.Frame(inner, bg=C["bg"]); btns6.pack(fill="x", padx=PX, pady=(8, 0))
+        self._link_btn(btns6, "🌐 前往 Google AI Studio 获取 Key",
+                       "https://aistudio.google.com/")
+        self._divider(inner)
+
+        # ══════════════════════════════════════════════════════
+        #   7. MiniMax image-01（v7 新增）
+        # ══════════════════════════════════════════════════════
+        self._section(inner, "🌀", "MiniMax  (image-01)",
+                      "注册送试用额度 · 支持图生图（主体参考图）", PX)
+        self._info_card(inner, [
+            "• 简洁 REST 接口，响应稳定；支持「主体参考图」模式的图生图",
+            "• 单次最多可生成 9 张图，支持 8 种画幅比例",
+            "• 新用户有试用额度，用完后按量计费",
+        ], PX)
+        row6 = tk.Frame(inner, bg=C["bg"]); row6.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(row6, text="MiniMax API Key:", font=F["btn"],
+                 bg=C["bg"], fg=C["text"]).pack(anchor="w")
+        ef6 = tk.Frame(row6, bg=C["entry"]); ef6.pack(fill="x", pady=(4, 0))
+        self.minimax_var = tk.StringVar(value=self.cfg.get("minimax_key", ""))
+        self.minimax_ent = tk.Entry(ef6, textvariable=self.minimax_var, show="*",
+                                     bg=C["entry"], fg=C["text"], insertbackground="white",
+                                     font=F["input"], bd=0, relief="flat")
+        self.minimax_ent.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._eye_btn(ef6, self.minimax_ent)
+
+        btns7 = tk.Frame(inner, bg=C["bg"]); btns7.pack(fill="x", padx=PX, pady=(8, 0))
+        self._link_btn(btns7, "🌐 注册 MiniMax", "https://platform.minimax.io/")
+        self._link_btn(btns7, "🔑 获取 API Key",
+                       "https://platform.minimax.io/user-center/basic-information/interface-key")
+        self._divider(inner)
+
+        # ══════════════════════════════════════════════════════
+        #   8. Black Forest Labs 官方 FLUX API（v7 新增）
+        # ══════════════════════════════════════════════════════
+        self._section(inner, "⚫", "Black Forest Labs  (FLUX 官方直连)",
+                      "FLUX 原厂 API，无中间商加价 · Kontext 支持图生图编辑", PX)
+        self._info_card(inner, [
+            "• FLUX 模型作者官方 API，比经 Replicate/fal.ai 转售更便宜、延迟更低",
+            "• flux-kontext-pro 支持自然语言图生图编辑（切到图生图模式自动使用）",
+            "• 按量计费，无固定免费额度",
+        ], PX)
+        row7 = tk.Frame(inner, bg=C["bg"]); row7.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(row7, text="Black Forest Labs API Key:", font=F["btn"],
+                 bg=C["bg"], fg=C["text"]).pack(anchor="w")
+        ef7 = tk.Frame(row7, bg=C["entry"]); ef7.pack(fill="x", pady=(4, 0))
+        self.bfl_var = tk.StringVar(value=self.cfg.get("bfl_key", ""))
+        self.bfl_ent = tk.Entry(ef7, textvariable=self.bfl_var, show="*",
+                                 bg=C["entry"], fg=C["text"], insertbackground="white",
+                                 font=F["input"], bd=0, relief="flat")
+        self.bfl_ent.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._eye_btn(ef7, self.bfl_ent)
+
+        btns8 = tk.Frame(inner, bg=C["bg"]); btns8.pack(fill="x", padx=PX, pady=(8, 24))
+        self._link_btn(btns8, "🌐 注册 Black Forest Labs", "https://bfl.ai/")
+        self._link_btn(btns8, "🔑 获取 API Key", "https://api.bfl.ai/")
 
     # ── 辅助控件 ───────────────────────────────────────────────
     def _section(self, parent, icon, title, sub, px=24):
@@ -370,16 +444,18 @@ class PaidWizard(tk.Toplevel):
     def _save(self):
         self._dirty = False
         self.cfg["openai_key"]        = self.oai_var.get().strip()
-        self.cfg["dalle_model"]       = self.dalle_model_var.get()
-        self.cfg["dalle_quality"]     = self.dalle_q_var.get()
+        self.cfg["gpt_image_model"]   = self.gpt_image_model_var.get()
+        self.cfg["gpt_image_quality"] = self.gpt_image_quality_var.get()
         self.cfg["stability_key"]     = self.stab_var.get().strip()
         self.cfg["stability_model"]   = self.stab_model_var.get()
         self.cfg["replicate_key"]     = self.rep_var.get().strip()
         self.cfg["replicate_model"]   = self.rep_model_var.get()
         self.cfg["openrouter_key"]    = self.or_var.get().strip()     # v2 新增
         self.cfg["openrouter_model"]  = self.or_model_var.get().strip() or \
-                                        "black-forest-labs/FLUX.1-schnell:free"
+                                        "bytedance-seed/seedream-4.5"
         self.cfg["xai_key"]           = self.xai_var.get().strip()    # v2 新增
+        self.cfg["minimax_key"]       = self.minimax_var.get().strip()  # v7 新增
+        self.cfg["bfl_key"]           = self.bfl_var.get().strip()      # v7 新增
         from config.settings import save_config
         save_config(self.cfg)
         self.on_save(self.cfg)

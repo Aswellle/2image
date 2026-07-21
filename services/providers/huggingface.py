@@ -14,6 +14,14 @@ v2 修复：
      同时兼容不同 router 路由的响应格式
   4. 超时提升至 300s（HF 免费推理队列较长）
   5. 移除 sdxl-turbo（HF router 对其限制严，经常 503）
+
+v3 修复（2026-07）：
+  · HF 官方文档确认 hf-inference provider "as of July 2025 主要面向
+    CPU 推理"（embedding/分类/小模型），按 pipeline_tag=text-to-image
+    过滤 hf-inference 只稳定列出 FLUX.1-schnell 与 SD3-medium；
+    stabilityai/stable-diffusion-xl-base-1.0 / stable-diffusion-2-1
+    不再确认由 hf-inference 托管（社区反馈频繁 404）。移除这两个，
+    换成 stabilityai/stable-diffusion-3-medium-diffusers。
 """
 import base64
 import threading
@@ -36,16 +44,16 @@ _HF_LOCK      = threading.Lock()
 _LAST_DONE_TS = [0.0]
 _MIN_INTERVAL = 2.0       # HF 每次请求之间最少等 2s（宽松，主要靠锁串行）
 
-# 模型列表（已移除 sdxl-turbo 和 sd-v1-5，均在 HF router 上不稳定）
+# 模型列表（已移除 sdxl-turbo/sd-v1-5/sdxl-base-1.0/sd-2.1，
+# 均已确认不再稳定挂在 HF hf-inference provider 上）
 HF_MODELS = [
-    # (model_id,                                  steps, guidance, max_w, max_h)
-    ("black-forest-labs/FLUX.1-schnell",            4,   0.0,  1024, 1024),
-    ("stabilityai/stable-diffusion-xl-base-1.0",   20,   7.5,  1024, 1024),
-    ("stabilityai/stable-diffusion-2-1",           20,   7.5,   768,  768),
+    # (model_id,                                            steps, guidance, max_w, max_h)
+    ("black-forest-labs/FLUX.1-schnell",                      4,   0.0,  1024, 1024),
+    ("stabilityai/stable-diffusion-3-medium-diffusers",      20,   7.0,  1024, 1024),
 ]
 HF_HQ_MODELS = [
-    ("black-forest-labs/FLUX.1-schnell",            8,   0.0,  1024, 1024),
-    ("stabilityai/stable-diffusion-xl-base-1.0",   30,   8.0,  1024, 1024),
+    ("black-forest-labs/FLUX.1-schnell",                      8,   0.0,  1024, 1024),
+    ("stabilityai/stable-diffusion-3-medium-diffusers",      28,   7.5,  1024, 1024),
 ]
 
 _TIMEOUT = 300     # HF 免费推理队列长，需要足够的超时
