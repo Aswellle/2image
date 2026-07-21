@@ -9,8 +9,28 @@ import tkinter as tk
 import sys
 import os
 
+_APP_USER_MODEL_ID = "Aswellle.2image"
+_ICON_FILE = "ICON_256x256.ico"
+
 # 将项目根目录加入 Python 路径，确保包导入正常
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+
+def _resource_path(filename: str) -> str:
+    return os.path.join(
+        getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__))),
+        filename,
+    )
+
+
+def _set_windows_app_user_model_id():
+    if sys.platform == "win32":
+        from ctypes import windll
+        windll.shell32.SetCurrentProcessExplicitAppUserModelID(_APP_USER_MODEL_ID)
+
+
+def _configure_window_icon(root: tk.Tk):
+    root.iconbitmap(_resource_path(_ICON_FILE))
 
 
 def _enable_dpi_awareness():
@@ -23,6 +43,7 @@ def _enable_dpi_awareness():
 
 
 def main():
+    _set_windows_app_user_model_id()
     _enable_dpi_awareness()
 
     from PIL import Image
@@ -44,6 +65,7 @@ def main():
     # ── 启动 UI ─────────────────────────────────────────────────
     from ui.app import App
     root = tk.Tk()
+    _configure_window_icon(root)
     App(root)
     root.mainloop()
 

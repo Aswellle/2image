@@ -8,7 +8,7 @@ a = Analysis(
     [os.path.join(_root, 'main.py')],
     pathex=[_root],
     binaries=[],
-    datas=[],
+    datas=[(os.path.join(_root, 'ICON_256x256.ico'), '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
