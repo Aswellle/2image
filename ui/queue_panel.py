@@ -224,7 +224,8 @@ class QueuePanel(tk.Frame):
             b.pack(side="left", padx=3)
             return b
 
-        _btn(_("btn_add_queue"), self._add_from_app, "#065f46")
+        self._add_btn = _btn(_("btn_add_queue"), self._add_from_app, "#065f46")
+        self._add_btn_bg = "#065f46"   # 恢复用：图生图锁定态会覆盖 bg
         self._start_btn = _btn(_("queue_btn_start"), self._start, "#1e40af")
         self._pause_btn = _btn(_("queue_btn_pause"), self._toggle_pause, "#7c3aed")
         _btn("⏹ 停止", self._stop, "#7f1d1d")
@@ -309,6 +310,13 @@ class QueuePanel(tk.Frame):
     #   控制按钮回调
     # ══════════════════════════════════════════════════════════
     def _add_from_app(self):
+        # 队列生成链路不接收参考图，图生图模式下直接拦下并提示，
+        # 避免任务静默退化成纯文生图（正常情况下按钮已被禁用，这里是兜底）。
+        if getattr(self.app.content, "_gen_mode", "t2i") == "i2i":
+            messagebox.showwarning(
+                "提示", "顺序生成队列暂不支持图生图模式\n请切换到「📝 文生图」后再加入队列",
+                parent=self.app.root)
+            return
         prompt = self.app.pt.get("1.0", "end").strip()
         if not prompt:
             messagebox.showwarning(
@@ -319,6 +327,13 @@ class QueuePanel(tk.Frame):
         psel  = self.app.pv.get()
         pord  = None if psel in ("自动（按优先级）", "") else [psel]
         self.add_task(prompt, sz, pord)
+
+    def set_img2img_lock(self, locked: bool):
+        """图生图模式下锁定「加入队列」入口（见 MainContent._switch_mode）。"""
+        if locked:
+            self._add_btn.config(state="disabled", bg=C["dis_bg"])
+        else:
+            self._add_btn.config(state="normal", bg=self._add_btn_bg)
 
     def _start(self):
         if self._running:

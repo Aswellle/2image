@@ -424,183 +424,65 @@ class StatsDashboard:
         if stats["providers"]:
             max_c = max(p["cnt"] for p in stats["providers"]) or 1
             for i, p in enumerate(stats["providers"]):
-                row = tk.Frame(pf, bg=BG); row.pack(fill="x", pady=3)
+                # 固定四列：名称 → 比例条 → 调用次数徽章 → 百分比。
+                # grid 的固定列宽能确保无论名称长短，每根横条都从同一个 x
+                # 坐标开始；次数与百分比也不再互相挤占。
+                row = tk.Frame(pf, bg=BG, height=46)
+                row.pack(fill="x", pady=3)
+                row.pack_propagate(False)
+                row.grid_columnconfigure(0, minsize=260)
+                row.grid_columnconfigure(1, weight=1)
+                row.grid_columnconfigure(2, minsize=66)
+                row.grid_columnconfigure(3, minsize=58)
+                row.grid_rowconfigure(0, weight=1)
+
                 prov_name = p["provider"]
-                # 接口名拆分：provider/model 两段显示
-                parts     = prov_name.split("/")
-                model_part  = parts[-1] if len(parts) > 1 else prov_name
+                # 接口名拆分：provider/model 两段显示；即使供应商或模型名
+                # 长度不同，也总是占同一块固定名称列。
+                parts = prov_name.split("/")
+                model_part = parts[-1] if len(parts) > 1 else prov_name
                 prefix_part = "/".join(parts[:-1]) if len(parts) > 1 else ""
 
-                # 名称列：固定 260px，允许两行显示避免截断
-                name_fr = tk.Frame(row, bg="#141e30", width=260)
-                name_fr.pack(side="left", fill="y")
-                name_fr.pack_propagate(False)
-                if prefix_part:
-                    tk.Label(name_fr,
-                             text=prefix_part,
-                             font=F["tiny"], bg="#141e30", fg="#4a6a9a",
-                             anchor="e", padx=6
-                             ).pack(fill="x")
+                name_fr = tk.Frame(row, bg="#141e30")
+                name_fr.grid(row=0, column=0, sticky="nsew")
+                name_fr.grid_rowconfigure(0, weight=1)
+                name_fr.grid_rowconfigure(1, weight=1)
+                tk.Label(name_fr,
+                         text=prefix_part,
+                         font=F["tiny"], bg="#141e30", fg="#4a6a9a",
+                         anchor="e", padx=8
+                         ).grid(row=0, column=0, sticky="sew")
                 tk.Label(name_fr,
                          text=model_part,
                          font=F["body_b"], bg="#141e30", fg=TXT,
-                         anchor="e", padx=6, wraplength=250
-                         ).pack(fill="x", expand=True)
+                         anchor="e", padx=8, wraplength=244
+                         ).grid(row=1, column=0, sticky="new")
 
-                bar_host = tk.Frame(row, bg="#1a2540", height=24)
-                bar_host.pack(side="left", fill="x", expand=True, padx=(8, 0))
-                bar_host.pack_propagate(False)
                 ratio = p["cnt"] / max_c
                 bar_color = BAR_COLORS[i % len(BAR_COLORS)]
-                bar_fill = tk.Frame(bar_host, bg=bar_color, height=24)
+                bar_host = tk.Frame(row, bg="#1a2540", height=24)
+                bar_host.grid(row=0, column=1, sticky="ew", padx=(8, 8), pady=11)
+                bar_host.grid_propagate(False)
+                bar_fill = tk.Frame(bar_host, bg=bar_color)
                 bar_fill.place(relx=0, rely=0, relwidth=ratio, relheight=1.0)
-                # 数量标签浮于进度条内
-                tk.Label(bar_host, text=f"  {p['cnt']}",
-                         font=F["badge"],
-                         bg=bar_color, fg="#0a1a0a"
-                         ).place(relx=1.0, rely=0,
-                                 x=-55, y=0, width=55, height=24)
+
+                # 次数是独立的固定宽度徽章，不再浮在进度条末端。
+                count_badge = tk.Label(row, text=f"{p['cnt']} 次",
+                                       font=F["badge"], bg=bar_color,
+                                       fg="#0a1a0a", anchor="center", padx=6)
+                count_badge.grid(row=0, column=2, sticky="ew", padx=(0, 6), pady=9)
 
                 pct = p["cnt"] / max(stats["total"], 1) * 100
                 tk.Label(row, text=f"{pct:.0f}%",
                          font=F["small"], bg=BG, fg=SUB,
-                         width=5, anchor="w"
-                         ).pack(side="left", padx=6)
+                         anchor="w"
+                         ).grid(row=0, column=3, sticky="w")
         else:
             tk.Label(pf, text=_("status_no_records"), font=F["body"],
                      bg=BG, fg=SUB).pack(anchor="w", pady=12)
 
         # ════════════════════════════════════════════════════════
-        #   ④ 近 30 天每日趋势迷你图（折线 + 独立横向滚动）
-        # ════════════════════════════════════════════════════════
-        _sec_title("📈", "近 30 天生成趋势", "迷你时间线")
-        trend_host = tk.Frame(inner, bg=BG,
-                              highlightbackground=BORDER, highlightthickness=1)
-        trend_host.pack(fill="x", padx=PX, pady=(8, 0))
-
-        MINI_H  = 100   # 折线图绘制高度（增高让峰值更直观）
-        MINI_BP = 28    # 底部日期标签区
-        DAY_W   = 30    # 每天宽度（固定值，30天×30px=900px）
-        N_DAYS  = 30
-        TREND_CANVAS_W = N_DAYS * DAY_W + 20   # 完整内容宽度（含右边距）
-        TREND_CANVAS_H = MINI_H + MINI_BP
-
-        # 容器：canvas + 水平滚动条
-        trend_cv_frame = tk.Frame(trend_host, bg=BG)
-        trend_cv_frame.pack(fill="x", padx=0, pady=0)
-
-        trend_cv = tk.Canvas(
-            trend_cv_frame,
-            bg="#0b1628", bd=0,
-            highlightthickness=0,
-            height=TREND_CANVAS_H,
-            scrollregion=(0, 0, TREND_CANVAS_W, TREND_CANVAS_H),
-            xscrollincrement=1)
-        trend_hsb = ttk.Scrollbar(
-            trend_host, orient="horizontal", command=trend_cv.xview)
-        trend_cv.configure(xscrollcommand=trend_hsb.set)
-
-        # 先 pack 滚动条（底部），再 pack canvas（fill="x"）
-        trend_hsb.pack(side="bottom", fill="x", padx=4, pady=(0, 4))
-        trend_cv.pack(fill="x", padx=4, pady=(4, 0))
-
-        # 拿近 30 天数据
-        from datetime import date as _d2
-        cur_yr  = _d2.today().year
-        prev_yr_data = get_year_heatmap(cur_yr - 1)
-        cur_yr_data  = get_year_heatmap(cur_yr)
-        mini_data = []
-        for i in range(N_DAYS - 1, -1, -1):
-            ds = (_d2.today() - _td(days=i)).strftime("%Y-%m-%d")
-            yr = int(ds[:4])
-            cnt = (prev_yr_data if yr < cur_yr else cur_yr_data).get(ds, 0)
-            mini_data.append((ds, cnt))
-
-        def _draw_mini(ev=None):
-            W = TREND_CANVAS_W
-            H = MINI_H
-            n = len(mini_data)
-            if n < 2: return
-            trend_cv.delete("all")
-            max_v = max(c for _, c in mini_data) or 1
-
-            # ── 背景网格 ─────────────────────────────────────────
-            for gv in range(1, 5):
-                gy = H - int(gv / 4 * H * 0.88)
-                trend_cv.create_line(0, gy, W, gy,
-                                     fill="#1a2a3a", width=1, dash=(4, 4))
-                trend_cv.create_text(
-                    4, gy - 2, text=str(round(max_v * gv / 4)),
-                    fill="#2a4060", font=F["tiny"], anchor="sw")
-
-            # ── 计算每个点的坐标 ────────────────────────────────
-            pts = []
-            for i, (_, cnt) in enumerate(mini_data):
-                x = int(i * DAY_W + DAY_W // 2)
-                y = H - int(cnt / max_v * H * 0.88) - 4 if cnt else H - 2
-                pts.append((x, y))
-
-            # ── 面积填充 ─────────────────────────────────────────
-            pts_fill = [0, H]
-            for px_, py_ in pts:
-                pts_fill += [px_, py_]
-            pts_fill += [W, H]
-            if len(pts_fill) >= 6:
-                trend_cv.create_polygon(pts_fill, fill="#0d3a2a", outline="",
-                                        smooth=True)
-
-            # ── 折线 ─────────────────────────────────────────────
-            flat = []
-            for px_, py_ in pts:
-                flat += [px_, py_]
-            if len(flat) >= 4:
-                trend_cv.create_line(flat, fill=OK, width=2.5,
-                                     smooth=True, joinstyle="round")
-
-            # ── 数据点 + 峰值标注 ────────────────────────────────
-            max_val = max(c for _, c in mini_data)
-            for i, ((ds, cnt), (px_, py_)) in enumerate(zip(mini_data, pts)):
-                if cnt == 0:
-                    continue
-                is_last  = (i == len(mini_data) - 1)
-                is_peak  = (cnt == max_val and max_val > 0)
-                r = 4 if (is_last or is_peak) else 2
-                trend_cv.create_oval(px_ - r, py_ - r, px_ + r, py_ + r,
-                                     fill=OK, outline="#0f172a", width=1)
-                # 标注最大值和最后一天的数量
-                if is_last or is_peak:
-                    lbl_y = py_ - r - 8
-                    trend_cv.create_text(
-                        px_, lbl_y, text=str(cnt),
-                        fill="#a7f3d0", font=F["mono_tiny_b"],
-                        anchor="s")
-
-            # ── X 轴日期标签（每 5 天一个 + 最后一天） ────────────
-            label_y = H + 14
-            for i, (ds, _) in enumerate(mini_data):
-                if i % 5 == 0 or i == len(mini_data) - 1:
-                    x = int(i * DAY_W + DAY_W // 2)
-                    anchor_ = "e" if i == len(mini_data) - 1 else "center"
-                    trend_cv.create_text(
-                        x, label_y, text=ds[5:],
-                        fill=SUB, font=F["tiny"], anchor=anchor_)
-                    trend_cv.create_line(x, H, x, H + 5,
-                                         fill="#2a3a5a", width=1)
-
-            # 滚动到最右（最新日期）
-            trend_cv.xview_moveto(1.0)
-
-        # 窗口大小变化时更新 scrollregion 宽度以 fill="x"
-        def _on_trend_resize(ev):
-            _draw_mini()
-            # 调整 canvas 可见宽度，保持 scrollregion 固定
-            trend_cv.configure(scrollregion=(0, 0, TREND_CANVAS_W, TREND_CANVAS_H))
-
-        trend_cv.bind("<Configure>", _on_trend_resize)
-        trend_host.after(100, _draw_mini)
-
-        # ════════════════════════════════════════════════════════
-        #   ⑤ 标签热度 Top-10（精修版）
+        #   ④ 标签热度 Top-10（精修版）
         # ════════════════════════════════════════════════════════
         _sec_title("🏷", "标签热度 Top-10")
         tf = tk.Frame(inner, bg=BG); tf.pack(fill="x", padx=PX, pady=(8, 36))

@@ -31,7 +31,7 @@ from data.repository import (
 from services.image_service import generate_image, save_image_file
 from services.logger import log_to_file
 from services.translation import has_chinese, translate_zh_to_en
-from services.providers import FREE_PROVIDERS, PAID_PROVIDERS
+from services.providers import FREE_PROVIDERS, PAID_PROVIDERS, PROVIDER_KEYS
 
 from ui.viewer import ImageViewerWindow
 from ui.wizard_free import ConfigWizard
@@ -274,7 +274,7 @@ class App:
         # 付费接口注册链接子菜单
         m_paid_links = _menu(m_api)
         m_api.add_cascade(label="  🌐  付费接口注册链接", menu=m_paid_links)
-        m_paid_links.add_command(label="  ·  OpenAI DALL-E 3",
+        m_paid_links.add_command(label="  ·  OpenAI GPT-Image",
             command=_open("https://platform.openai.com/api-keys"))
         m_paid_links.add_command(label="  ·  Stability AI",
             command=_open("https://platform.stability.ai/"))
@@ -464,6 +464,11 @@ class App:
         self.content._nb.select(2)
 
     def _gen_variants(self):
+        # 批量生成链路不接收参考图，图生图模式下直接拦下（按钮正常已禁用，兜底而已）。
+        if getattr(self.content, "_gen_mode", "t2i") == "i2i":
+            messagebox.showwarning(
+                "提示", "批量生成暂不支持图生图模式\n请切换到「📝 文生图」后再批量生成")
+            return
         prompt = self.content.pt.get("1.0", "end").strip()
         if not prompt: messagebox.showwarning("提示", "请先输入描述文字！"); return
         psel = self.content.pv.get()
@@ -637,37 +642,33 @@ class App:
     #   接口状态栏
     # ══════════════════════════════════════════════════════════
     def _update_status_bar_tokens(self):
-        cfg = self.cfg
-        sf  = cfg.get("sf_key",          "").strip()
-        hf  = cfg.get("hf_token",        "").strip()
-        sh  = cfg.get("stablehorde_key", "").strip()
-        oai = cfg.get("openai_key",      "").strip()
-        stb = cfg.get("stability_key",   "").strip()
-        rep = cfg.get("replicate_key",   "").strip()
-        xai = cfg.get("xai_key",         "").strip()
-        gem = cfg.get("gemini_key",      "").strip()
-        cfa = cfg.get("cf_account_id",   "").strip()
-        cft = cfg.get("cf_api_token",    "").strip()
-        mdl = cfg.get("modelslab_key",   "").strip()
-        sgm = cfg.get("segmind_key",     "").strip()
-        ort = cfg.get("openrouter_key",  "").strip()
-        pol = cfg.get("pollinations_enabled", True)
+        """根据当前自动发现的 Provider 注册表实时统计顶栏可用接口数。
 
-        # 免费接口计数（共9个）：Pollinations 和 StableHorde 无需 Key 始终可用
-        free_count = sum([
-            bool(sf), bool(gem), bool(pol),
-            bool(cfa and cft), bool(mdl), bool(sgm),
-            bool(ort), bool(hf),
-            True,  # StableHorde 匿名模式始终可用
-        ])
-        # 付费接口计数（共4个）
-        paid_count = sum([bool(oai), bool(stb), bool(rep), bool(xai)])
+        不再维护易过期的手写 key 列表：新增/移除 provider 或变更 category 后，
+        PROVIDER_KEYS 与 FREE_PROVIDERS/PAID_PROVIDERS 会自动让数量同步更新。
+        config_key 为 None 的接口（如 StableHorde 匿名模式）被视为始终可用；
+        Pollinations 则额外遵从 pollinations_enabled 开关。
+        """
+        cfg = self.cfg
+
+        def _is_available(name: str) -> bool:
+            if name == "Pollinations.AI (免费·无需Key)":
+                return bool(cfg.get("pollinations_enabled", True))
+            if name == "StableHorde (兜底)":
+                return True  # 空 Key 走匿名低优先级模式，仍可正常生成
+            if name == "Cloudflare AI (免费1万次/天)":
+                return bool(cfg.get("cf_account_id", "").strip()
+                            and cfg.get("cf_api_token", "").strip())
+            key_name = PROVIDER_KEYS.get(name)
+            return key_name is None or bool(cfg.get(key_name, "").strip())
+
+        free_count = sum(_is_available(name) for name in FREE_PROVIDERS)
+        paid_count = sum(_is_available(name) for name in PAID_PROVIDERS)
 
         # ── 顶栏计数标签 ──────────────────────────────────────────
-        free_has_key = bool(sf or hf or gem or ort or mdl or sgm or (cfa and cft))
         self._top_free_lbl.config(
             text=_("status_free_count", n=free_count, total=len(FREE_PROVIDERS)),
-            fg=C["ok"] if free_has_key else C["warn"],
+            fg=C["ok"] if free_count else C["warn"],
         )
         self._top_paid_lbl.config(
             text=_("status_paid_count", n=paid_count, total=len(PAID_PROVIDERS)),
@@ -706,12 +707,18 @@ class App:
         if psel.startswith("───"):
             messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。"); return
         checks = {
-            "💎 OpenAI DALL-E 3": ("openai_key",   self._open_paid_wizard,
-                                    "使用 OpenAI DALL-E 3 需要填写 API Key。\n是否现在配置？"),
+            "💎 OpenAI GPT-Image": ("openai_key",   self._open_paid_wizard,
+                                    "使用 OpenAI GPT-Image 需要填写 API Key。\n是否现在配置？"),
             "💎 Stability AI":    ("stability_key", self._open_paid_wizard,
                                     "使用 Stability AI 需要填写 API Key。\n是否现在配置？"),
             "💎 Replicate FLUX":  ("replicate_key", self._open_paid_wizard,
                                     "使用 Replicate 需要填写 API Token。\n是否现在配置？"),
+            "💎 Nano Banana Pro (Gemini 3 Pro Image)": ("gemini_key", self._open_wizard,
+                                    "使用 Nano Banana Pro 需要填写 Google Gemini API Key。\n是否现在配置？"),
+            "💎 MiniMax image-01": ("minimax_key",  self._open_paid_wizard,
+                                    "使用 MiniMax image-01 需要填写 API Key。\n是否现在配置？"),
+            "💎 Black Forest Labs FLUX": ("bfl_key", self._open_paid_wizard,
+                                    "使用 Black Forest Labs 官方 API 需要填写 API Key。\n是否现在配置？"),
             "硅基流动 SiliconFlow (★推荐)": ("sf_key",   self._open_wizard,
                                     "使用硅基流动需要填写 API Key。\n是否现在配置？"),
             "HuggingFace (备用)": ("hf_token",      self._open_wizard,

@@ -17,7 +17,7 @@ from config.fonts import F
 from config.theme import C, TAG_PALETTE, tag_color
 from config.i18n import _
 from data.repository import get_all_entries, get_stats
-from services.providers import FREE_PROVIDERS, PAID_PROVIDERS
+from services.providers import FREE_PROVIDERS, PAID_PROVIDERS, IMG2IMG_PROVIDERS
 from services.image_service import generate_image, save_image_file
 from ui.batch_panel import BatchPanel
 from ui.queue_panel import QueuePanel
@@ -117,9 +117,10 @@ class _StrengthSlider:
         cv.create_oval(hx - HR, cy - HR, hx + HR, cy + HR,
                        fill="white", outline="#4a7adf", width=2)
 
-        # ── 数值标签（手柄上方）─────────────────────────────
-        cv.create_text(hx, TY - 5, text=f"{val:.1f}",
-                       font=F["small_b"], fill=C["ok"], anchor="s")
+        # ── 数值标签（仅完整滑块显示，紧凑模式已在外部显示数值）────
+        if self.marks:
+            cv.create_text(hx, TY - 5, text=f"{val:.1f}",
+                           font=F["small_b"], fill=C["ok"], anchor="s")
 
         # ── 锚点刻度 + 标签（轨道下方，紧凑模式下省略）──────────
         if self.marks:
@@ -157,6 +158,8 @@ class MainContent:
 
         # 生成模式："t2i" 文生图 | "i2i" 图生图
         self._gen_mode = "t2i"
+        # 切入图生图模式前的接口选择（切回文生图时恢复）
+        self._pre_i2i_provider: str | None = None
         # 图生图参考图状态
         self._ref_image: bytes | None = None
         self._ref_strength = tk.DoubleVar(value=0.6)
@@ -165,6 +168,9 @@ class MainContent:
         # Resize timers
         self._prev_resize_timer = None
         self._cmp_resize_timer = None
+        self._ref_resize_timer = None
+        # 图生图侧栏展开/收起动画
+        self._i2i_col_anim_job = None
 
         self._build(parent)
 
@@ -248,6 +254,9 @@ class MainContent:
         self.app.root.option_add("*TCombobox*Listbox.selectForeground", "white")
         self.app.root.option_add("*TCombobox*Listbox.relief",           "flat")
         self.app.root.option_add("*TCombobox*Listbox.borderWidth",      "0")
+        # 增大弹出 Listbox 的行高和字体，让长名称清晰可读
+        self.app.root.option_add("*TCombobox*Listbox.font",             F["body"])
+        self.app.root.option_add("*TCombobox*Listbox.selectBorderWidth","0")
         tk.Label(R, text=_("app_input_label"),
                  font=F["btn"], bg=C["bg"], fg=C["text"]
                  ).pack(anchor="w", pady=(12, 4), padx=14)
@@ -301,12 +310,14 @@ class MainContent:
                      ).pack(side="left", padx=(2, 8))
         tk.Label(opt, text=_("lbl_provider"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
         self.pv = tk.StringVar(value=_("provider_auto"))
-        provider_list = ([_("provider_auto"),_("provider_free_section")]
+        self._t2i_provider_list = ([_("provider_auto"),_("provider_free_section")]
                          + list(FREE_PROVIDERS.keys())
                          + [_("provider_paid_section")]
                          + list(PAID_PROVIDERS.keys()))
-        ttk.Combobox(opt, textvariable=self.pv, width=26, state="readonly",
-                     values=provider_list).pack(side="left", padx=(2, 8))
+        self._provider_cb = ttk.Combobox(opt, textvariable=self.pv, width=40, state="readonly",
+                     values=self._t2i_provider_list,
+                     postcommand=self._expand_provider_popup)
+        self._provider_cb.pack(side="left", padx=(2, 8))
         self.gb = tk.Button(opt, text=_("btn_generate"),
                             font=F["btn"], bg=C["hl"], fg="white",
                             bd=0, padx=16, pady=6, cursor="hand2",
@@ -353,38 +364,39 @@ class MainContent:
                   activebackground="#4ecca3", activeforeground="#0a1a0a",
                   command=_inc_n).pack(side="left")
 
-        tk.Button(opt2, text=_("btn_variant_gen"),
+        self._variant_gen_btn = tk.Button(opt2, text=_("btn_variant_gen"),
                   font=F["body_b"], bg="#4a1d96", fg="white",
                   bd=0, padx=12, pady=5, cursor="hand2",
-                  command=self.app._gen_variants).pack(side="left")
+                  command=self.app._gen_variants)
+        self._variant_gen_btn.pack(side="left")
+        self._variant_gen_btn_bg = "#4a1d96"   # 恢复用：禁用态会覆盖 bg
         tk.Label(opt2, text=_("shortcut_hint"),
                  font=F["small"], bg=C["bg"], fg="#6a7a9a").pack(side="left", padx=6)
 
-        # ── 生成模式切换行 ─────────────────────────────────────────
+        # ── 生成模式切换行（分段控件样式）───────────────────────────
+        # 用一个带描边的容器把两个按钮"焊"在一起，视觉上读作一个控件
+        # 而不是两个各自为政的按钮；两态都复用已有的强调色体系
+        # （t2i=C["hl"] 全局主色，i2i=#1d4ed8，与图生图侧栏/参考图按钮同色系）。
+        # 注意：图生图的参考图控制面板不在这一行下方展开——它固定在
+        # 预览 Tab 内部（_build_preview_tab 的 _prev_host 第 0 列），
+        # 见 _build_i2i_ref_column。这样切换模式不会让下方状态栏 /
+        # Notebook 整体下移，详见 _switch_mode 的说明。
         mode_row = tk.Frame(R, bg=C["bg"]); mode_row.pack(fill="x", padx=14, pady=(0, 3))
-        self._mode_row = mode_row   # pack(after=) 定位用
-        self._mode_t2i_btn = tk.Button(mode_row, text="📝 文生图", font=F["small_b"],
-            bg=C["hl"], fg="white", bd=0, padx=14, pady=5, cursor="hand2", relief="flat",
+        self._mode_row = mode_row
+
+        _seg = tk.Frame(mode_row, bg=C["sep"],
+                         highlightbackground=C["sep"], highlightthickness=1)
+        _seg.pack(side="left")
+        self._mode_t2i_btn = tk.Button(_seg, text="📝 文生图", font=F["small_b"],
+            bg=C["hl"], fg="white", bd=0, padx=16, pady=6, cursor="hand2", relief="flat",
+            activebackground="#c73652", activeforeground="white",
             command=lambda: self._switch_mode("t2i"))
-        self._mode_t2i_btn.pack(side="left")
-        self._mode_i2i_btn = tk.Button(mode_row, text="🖼 图生图", font=F["small_b"],
-            bg=C["panel"], fg=C["sub"], bd=0, padx=14, pady=5, cursor="hand2", relief="flat",
+        self._mode_t2i_btn.pack(side="left", padx=(1, 0), pady=1)
+        self._mode_i2i_btn = tk.Button(_seg, text="🖼 图生图", font=F["small_b"],
+            bg=C["panel"], fg=C["sub"], bd=0, padx=16, pady=6, cursor="hand2", relief="flat",
+            activebackground="#1e3a5f", activeforeground="white",
             command=lambda: self._switch_mode("i2i"))
-        self._mode_i2i_btn.pack(side="left", padx=(3, 0))
-        tk.Label(mode_row, text="图生图支持: Stability AI · fal.ai",
-                 font=F["small"], bg=C["bg"], fg="#3a5a7a").pack(side="right")
-
-        # ── 图生图面板（按需插入 pack 流）────────────────────────────
-        # t2i 模式：面板不在 pack 列表中，零空白残留，下方控件紧贴 mode_row
-        # i2i 模式：pack(after=_mode_row) 将面板插入正确位置，
-        #           下方状态栏和 Notebook 整体下移为面板腾出空间
-        self._mode_panel = tk.Frame(R, bg=C["bg"])
-        # 注意：此处故意不 pack，由 _switch_mode 按需插入
-
-        self._i2i_panel = tk.Frame(self._mode_panel, bg="#0d1d35",
-            highlightbackground="#1e3a5f", highlightthickness=1)
-        self._build_i2i_panel()
-        self._i2i_panel.pack(fill="x")   # 永久 pack 在 _mode_panel 内
+        self._mode_i2i_btn.pack(side="left", padx=(1, 1), pady=1)
 
         # 状态栏
         self.stv = tk.StringVar(value=_("status_ready"))
@@ -467,15 +479,22 @@ class MainContent:
                  font=F["small"], bg="#0d1b2a", fg=C["sub"]).pack(side="right", padx=10)
 
         # ── 预览主体 ──────────────────────────────────────────
+        # 列 0：图生图参考图侧栏（固定宽度，默认收起 minsize=0）
+        # 列 1：主预览画布（一直存在，t2i/i2i 通用）
+        # 列 2/3：对比分隔线 / 对比图（仅"选取对比图"后才 grid）
+        # 切换模式只改变列 0 的宽度，不影响 Notebook/imf 本身的整体尺寸。
         self._prev_host = tk.Frame(self.imf, bg="#111827")
         self._prev_host.pack(fill="both", expand=True)
-        self._prev_host.columnconfigure(0, weight=1)
-        self._prev_host.columnconfigure(2, weight=1)
+        self._prev_host.columnconfigure(0, weight=0, minsize=0)
+        self._prev_host.columnconfigure(1, weight=1)
+        self._prev_host.columnconfigure(3, weight=1)
         self._prev_host.rowconfigure(0, weight=1)
+
+        self._build_i2i_ref_column()   # 列 0，_switch_mode 按需 grid / grid_remove
 
         # 左半（A — 当前图）
         left_wrap = tk.Frame(self._prev_host, bg="#111827")
-        left_wrap.grid(row=0, column=0, sticky="nsew")
+        left_wrap.grid(row=0, column=1, sticky="nsew")
 
         # Fix-2: A 侧横幅（初始隐藏，activate 时 pack）
         self._cmp_label_a = tk.Label(left_wrap, text="A →  " + "当前图",
@@ -697,13 +716,13 @@ class MainContent:
     def _set_compare_image(self, data: bytes):
         self._cmp_orig = Image.open(io.BytesIO(data))
         self._cmp_mode = True
-        self._prev_host.columnconfigure(0, weight=1)
-        self._prev_host.columnconfigure(2, weight=1)
+        self._prev_host.columnconfigure(1, weight=1)
+        self._prev_host.columnconfigure(3, weight=1)
         # 显示 A 侧横幅（pack 在 canvas 上方）
         self._cmp_label_a.pack(fill="x", before=self._prev_cv)
-        # 显示分隔线 & B 侧
-        self._cmp_divider.grid(row=0, column=1, sticky="ns")
-        self._cmp_right_wrap.grid(row=0, column=2, sticky="nsew")
+        # 显示分隔线 & B 侧（列 2 / 3——列 0 留给图生图参考图侧栏）
+        self._cmp_divider.grid(row=0, column=2, sticky="ns")
+        self._cmp_right_wrap.grid(row=0, column=3, sticky="nsew")
         self._cmp_clear_btn.config(state="normal")
         self._render_cmp()
 
@@ -743,6 +762,15 @@ class MainContent:
         if hasattr(self, '_prev_resize_timer') and self._prev_resize_timer:
             self.app.root.after_cancel(self._prev_resize_timer)
         self._prev_resize_timer = self.app.root.after(50, self._render_preview)
+
+    def _on_ref_resize(self, event):
+        """参考图缩略图 Canvas 尺寸随图生图侧栏动画过渡实时变化，
+        用与 _on_prev_resize 相同的防抖节流重绘，避免动画期间抖动。"""
+        if getattr(self, '_ref_resize_timer', None):
+            self.app.root.after_cancel(self._ref_resize_timer)
+        self._ref_resize_timer = self.app.root.after(
+            30, self._update_ref_thumb if self._ref_image is not None
+                else self._draw_ref_placeholder)
 
     def _render_preview(self):
         if self._prev_orig is None: return
@@ -792,87 +820,282 @@ class MainContent:
             pass
 
     # ══════════════════════════════════════════════════════════
-    #   生成模式切换 + 图生图面板
+    #   生成模式切换 + 图生图参考图侧栏
     # ══════════════════════════════════════════════════════════
-    def _build_i2i_panel(self):
-        """构建图生图面板（紧凑双行布局）。"""
-        p = self._i2i_panel
-        _BG = "#0d1d35"   # 面板背景色，与 p 一致
-        inner = tk.Frame(p, bg=_BG)
-        inner.pack(fill="x", padx=12, pady=(8, 6))
-        inner.columnconfigure(1, weight=1)
+    _I2I_COL_W = 260   # 图生图参考图侧栏固定宽度（预览 Tab 第 0 列）
 
-        # ── 左：48×48 参考图缩略图 ──────────────────────────────
-        self._ref_prev_cv = tk.Canvas(inner, width=48, height=48,
+    def _build_i2i_ref_column(self):
+        """构建图生图参考图侧栏——预览 Tab 内 _prev_host 的第 0 列。
+
+        对标 Automatic1111 img2img / ComfyUI 载入图像节点等主流图生图
+        工具"左侧输入图 + 参数，右侧结果预览"的双栏布局。这一列默认不
+        grid（t2i 模式下宽度为 0），由 _switch_mode 按需 grid /
+        grid_remove，因此它的展开/收起只影响预览 Tab 内部的列宽度
+        分配，不会牵动 Notebook 或状态栏的整体尺寸。
+
+        # 图生图侧栏使用网格分配空间：上传、清除、强度和说明占固定行，
+        # 参考图预览与紧凑接口摘要各自使用剩余空间，避免接口列表挤掉控件。
+        """
+        _BG = "#0d1d35"
+        col = tk.Frame(self._prev_host, bg=_BG,
+            highlightbackground="#1e3a5f", highlightthickness=1)
+        self._i2i_ref_col = col
+        # 注意：此处不 grid，由 _switch_mode 控制
+
+        hdr = tk.Frame(col, bg="#122a4d")
+        hdr.pack(side="top", fill="x")
+        tk.Label(hdr, text="🖼 图生图参考图", font=F["small_b"],
+                 bg="#122a4d", fg="white", anchor="w"
+                 ).pack(fill="x", padx=12, pady=8)
+
+        body = tk.Frame(col, bg=_BG)
+        body.pack(fill="both", expand=True, padx=10, pady=4)
+        body.columnconfigure(0, weight=1)
+        body.rowconfigure(0, weight=1, minsize=36)
+        body.rowconfigure(5, weight=1, minsize=42)
+
+        # ── 参考图预览：最高优先级，可随可用高度伸缩 ─────────────
+        self._ref_prev_cv = tk.Canvas(body, width=200, height=76,
             bg="#0a1525", bd=0, highlightthickness=1,
             highlightbackground="#1e3a5f", cursor="hand2")
-        self._ref_prev_cv.grid(row=0, column=0, rowspan=2, sticky="nw", padx=(0, 12))
+        self._ref_prev_cv.grid(row=0, column=0, sticky="nsew", pady=(0, 4))
         self._ref_prev_cv.bind("<Button-1>", lambda _: self._pick_ref_image())
+        self._ref_prev_cv.bind("<Configure>", self._on_ref_resize)
         self._draw_ref_placeholder()
 
-        # ── 右 row 0：文件名 + 选取 + 清除 ──────────────────────
-        btn_row = tk.Frame(inner, bg=_BG)
-        btn_row.grid(row=0, column=1, sticky="ew", pady=(2, 4))
-        self._ref_file_lbl = tk.Label(btn_row, text="点击缩略图或「选取图片」加载参考图",
-            font=F["small"], bg=_BG, fg="#5a7a9a", anchor="w")
-        self._ref_file_lbl.pack(side="left", fill="x", expand=True)
-        self._ref_clear_btn = tk.Button(btn_row, text="✕ 清除", font=F["small"],
-            bg="#2a1018", fg="#f87171", bd=0, padx=7, pady=3, cursor="hand2",
-            state="disabled", command=self._clear_ref_image)
-        self._ref_clear_btn.pack(side="right", padx=(6, 0))
-        self._ref_pick_btn = tk.Button(btn_row, text="选取图片", font=F["small"],
-            bg="#1d4ed8", fg="white", bd=0, padx=10, pady=3, cursor="hand2",
+        btn_row = tk.Frame(body, bg=_BG)
+        btn_row.grid(row=1, column=0, sticky="ew", pady=(0, 4))
+        self._ref_pick_btn = tk.Button(btn_row, text="上传参考图", font=F["small_b"],
+            bg="#1d4ed8", fg="white", bd=0, padx=10, pady=5, cursor="hand2",
             activebackground="#2563eb", command=self._pick_ref_image)
-        self._ref_pick_btn.pack(side="right")
+        self._ref_pick_btn.pack(side="left", fill="x", expand=True)
+        self._ref_clear_btn = tk.Button(btn_row, text="✕ 清除", font=F["small"],
+            bg="#2a1018", fg="#f87171", bd=0, padx=10, pady=5, cursor="hand2",
+            state="disabled", command=self._clear_ref_image)
+        self._ref_clear_btn.pack(side="left", padx=(6, 0))
 
-        # ── 右 row 1：变化强度 + 紧凑滑块 + 实时数值 ──────────────
-        str_row = tk.Frame(inner, bg=_BG)
-        str_row.grid(row=1, column=1, sticky="ew")
-        tk.Label(str_row, text="变化强度", font=F["small"],
-                 bg=_BG, fg=C["sub"]).pack(side="left", padx=(0, 6))
+        str_row = tk.Frame(body, bg=_BG)
+        str_row.grid(row=2, column=0, sticky="ew", pady=(0, 2))
+        tk.Label(str_row, text="变化强度", font=F["small_b"],
+                 bg=_BG, fg="#7dd3fc").pack(side="left", padx=(0, 8))
         self._strength_slider = _StrengthSlider(str_row, self._ref_strength,
-                                                 w=190, h=30, marks=False)
+                                                 w=120, h=30, marks=False)
         self._strength_slider.pack(side="left")
-        # 实时数值标签（大字号，方便快速读取当前强度）
         self._strength_val_lbl = tk.Label(str_row,
             text=f"{self._ref_strength.get():.1f}",
             font=F["small_b"], bg=_BG, fg=C["ok"], width=3, anchor="w")
-        self._strength_val_lbl.pack(side="left", padx=(6, 0))
+        self._strength_val_lbl.pack(side="left", padx=(8, 0))
         self._ref_strength.trace("w", lambda *_: self._strength_val_lbl.config(
             text=f"{self._ref_strength.get():.1f}"))
 
+        tk.Label(
+            body,
+            text="变化强度仅适用于 Stability AI：0.1–0.3 尽量保留原图；0.4–0.6 平衡改动；0.7–0.9 按提示词重绘更多。\n其他接口会使用参考图，但不读取此数值。",
+            font=F["tiny"], bg="#102743", fg="#a8c7e8", anchor="w",
+            padx=7, pady=3, wraplength=220, justify="left",
+            highlightbackground="#1e4a72", highlightthickness=1
+        ).grid(row=3, column=0, sticky="ew", pady=(0, 3))
+
+        # ── 低优先级信息：接口清单只使用预览剩余空间 ───────────
+        self._ref_hint_frame = tk.Frame(body, bg=_BG)
+        self._ref_hint_frame.grid(row=5, column=0, sticky="nsew")
+        self._ref_hint_title = tk.Label(
+            self._ref_hint_frame, text="", font=F["tiny"],
+            bg=_BG, fg="#4a6a8a", anchor="nw", justify="left", wraplength=224)
+        self._ref_hint_title.pack(fill="x")
+        # 图生图接口在紧凑侧栏中只显示为摘要，避免多行列表挤掉上传与强度控件。
+        self._ref_hint_rows: list = []
+
+    def _i2i_selectable_providers(self) -> list:
+        """真正支持图生图、且能在现有下拉框/向导里配置密钥的接口。
+
+        IMG2IMG_PROVIDERS 里还有 fal.ai 这类 commercial 分类接口——但
+        wizard_free.py / wizard_paid.py 目前都没有它的 Key 配置卡片，
+        选中后只会得到一个无从下手的报错，所以图生图下拉框只收窄到
+        同时出现在 FREE_PROVIDERS / PAID_PROVIDERS（即已有配置入口）
+        里的接口，等对应向导补上后它会自动出现，无需再改这里。
+        """
+        return [n for n in IMG2IMG_PROVIDERS
+                if n in FREE_PROVIDERS or n in PAID_PROVIDERS]
+
+    def _update_ref_hint(self, i2i_list: list):
+        """把图生图可用接口名称以竖向分行方式填入侧栏提示区。
+        每次调用先销毁旧行再重建，保证列表长度变化时不会残留旧标签。
+        """
+        _BG = "#0d1d35"
+        for lbl in self._ref_hint_rows:
+            lbl.destroy()
+        self._ref_hint_rows.clear()
+
+        if not i2i_list:
+            self._ref_hint_title.config(
+                text="⚠ 暂无可用图生图接口，请先配置密钥", fg="#f87171")
+            return
+
+        names = [
+            name.replace("💎 ", "").replace("Black Forest Labs FLUX", "BFL FLUX")
+                .replace("Google Gemini Nano Banana (免费额度)", "Gemini Nano Banana")
+                .replace("Nano Banana Pro (Gemini 3 Pro Image)", "Nano Banana Pro")
+                .replace("OpenAI GPT-Image", "GPT-Image")
+                .replace("MiniMax image-01", "MiniMax")
+            for name in i2i_list
+        ]
+        self._ref_hint_title.config(
+            text=(f"✓ 可用接口 ({len(names)})\n"
+                  + " · ".join(names[:3]) + "\n"
+                  + " · ".join(names[3:])),
+            fg="#86efac")
+
+    def _expand_provider_popup(self):
+        """postcommand：让弹出 Listbox 的宽度自动扩展到最长项目的实际像素宽，
+        解决 ttk.Combobox width 只控制输入框字符数、弹出框独立固定的问题。
+        实现方式：在弹出发生前把 Combobox 所有当前 values 里最长的那个塞回
+        一下，Tk 内部会把 Listbox 撑到对应宽度；对用户完全透明。
+        """
+        try:
+            vals = self._provider_cb.cget("values") or []
+            if not vals:
+                return
+            # 找最长项（含 emoji，len 按 code point 计，对中文/emoji 也够用）
+            widest = max(vals, key=len)
+            # 通过临时插入最长项至首位再还原，触发 Tk 重新计算 Listbox 列宽
+            self._provider_cb.config(values=[widest] + [v for v in vals if v != widest])
+            self._provider_cb.config(values=vals)
+        except Exception:
+            pass
+
     def _switch_mode(self, mode: str):
         """切换文生图/图生图。
-        t2i：_mode_panel 移出 pack 流，无空白残留，状态栏和 Notebook 上移。
-        i2i：_mode_panel 插入 mode_row 正下方，下方控件整体下移腾空间。
+
+        图生图的参考图侧栏固定在预览 Tab 内部（_prev_host 第 0 列），
+        而不是插在主布局里的额外一行——切换模式只改变这一列的宽度
+        （0 ↔ _I2I_COL_W，经 _animate_i2i_col 平滑过渡），预览/变体/
+        队列/调试日志几个 Notebook Tab 以及查看器窗口的整体尺寸完全
+        不受影响，不会因为切换模式而整体跳动或改变可用画布区域的
+        高度；列宽本身也不再一帧内瞬间跳变，避免右侧预览图跟着
+        "抖一下"式地瞬间缩放。
+
+        图生图模式下，接口下拉框会被强制收窄为真正支持图生图的接口
+        （见 _i2i_selectable_providers）——此前选中其他接口时参考图会
+        被静默忽略，退化成纯文生图。批量生成 / 加入队列两个入口在
+        图生图模式下被锁定，因为这两条链路目前都不会传递参考图。
         """
+        prev_mode = self._gen_mode
         self._gen_mode = mode
+        if mode == prev_mode:
+            return
+
         if mode == "t2i":
             self._mode_t2i_btn.config(bg=C["hl"],    fg="white")
             self._mode_i2i_btn.config(bg=C["panel"], fg=C["sub"])
-            self._mode_panel.pack_forget()
+
+            self._provider_cb.config(values=self._t2i_provider_list)
+            if self._pre_i2i_provider is not None:
+                self.pv.set(self._pre_i2i_provider)
+                self._pre_i2i_provider = None
+
+            self._set_batch_i2i_lock(False)
+            # 先播放收起动画，动画结束后再彻底 grid_remove，
+            # 这样收起过程本身也是平滑的，而不是瞬间消失。
+            self._animate_i2i_col(0, on_done=self._i2i_ref_col.grid_remove)
         else:
             self._mode_t2i_btn.config(bg=C["panel"], fg=C["sub"])
             self._mode_i2i_btn.config(bg="#1d4ed8",  fg="white")
-            self._mode_panel.pack(fill="x", padx=14, pady=(0, 4),
-                                  after=self._mode_row)
+
+            self._i2i_ref_col.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+
+            i2i_list = self._i2i_selectable_providers()
+            self._update_ref_hint(i2i_list)
+
+            self._pre_i2i_provider = self.pv.get()
+            self._provider_cb.config(values=i2i_list)
+            if self.pv.get() not in i2i_list and i2i_list:
+                self.pv.set(i2i_list[0])
+
+            self._set_batch_i2i_lock(True)
+            self._animate_i2i_col(self._I2I_COL_W)
+
+    def _animate_i2i_col(self, target_w: int, on_done=None):
+        """图生图参考图侧栏的列宽 0 ↔ _I2I_COL_W 平滑过渡（ease-out，
+        约 220ms，14 帧 ≈ 60fps），取代此前一次性 columnconfigure
+        跳变——那样右侧预览画布的 <Configure> 会在同一帧内被迫瞬间
+        缩放，视觉上就是图片"振荡/跳一下"。分帧过渡后每一帧的宽度
+        变化很小，预览图跟着平滑缩放，观感上不再有跳动。"""
+        job = self._i2i_col_anim_job
+        if job is not None:
+            try:
+                self.app.root.after_cancel(job)
+            except Exception:
+                pass
+            self._i2i_col_anim_job = None
+
+        start_w = self._prev_host.grid_columnconfigure(0, "minsize") or 0
+        if start_w == target_w:
+            self._prev_host.columnconfigure(0, minsize=target_w)
+            if on_done:
+                on_done()
+            return
+
+        steps, duration_ms = 14, 220
+        interval = max(1, duration_ms // steps)
+
+        def _ease_out_cubic(t):
+            return 1 - (1 - t) ** 3
+
+        def _step(i):
+            t = min(1.0, i / steps)
+            w = round(start_w + (target_w - start_w) * _ease_out_cubic(t))
+            self._prev_host.columnconfigure(0, minsize=w)
+            if t >= 1.0:
+                self._i2i_col_anim_job = None
+                if on_done:
+                    on_done()
+            else:
+                self._i2i_col_anim_job = self.app.root.after(
+                    interval, lambda: _step(i + 1))
+
+        _step(1)
+
+    def _set_batch_i2i_lock(self, locked: bool):
+        """批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个
+        入口并给出提示，避免用户以为批量结果也套用了参考图。"""
+        if locked:
+            self._variant_gen_btn.config(
+                state="disabled", bg=C["dis_bg"],
+                text=_("btn_variant_gen") + "（图生图暂不支持）")
+        else:
+            self._variant_gen_btn.config(
+                state="normal", bg=self._variant_gen_btn_bg,
+                text=_("btn_variant_gen"))
+        if hasattr(self, "_queue_panel"):
+            self._queue_panel.set_img2img_lock(locked)
 
     def _draw_ref_placeholder(self):
-        """在参考图预览 Canvas 上绘制占位符（48×48）。"""
+        """在参考图预览 Canvas 上绘制占位符（尺寸取实际渲染宽高，
+        侧栏展开动画期间会随每一帧的宽度实时重绘）。"""
         cv = self._ref_prev_cv; cv.delete("all")
-        cv.create_text(24, 16, text="🖼", font=(F["_sans"], 16), fill="#1d3560")
-        cv.create_text(24, 36, text="点击选取", font=F["small"], fill="#2a4a7a")
+        w = cv.winfo_width() or 200; h = cv.winfo_height() or 160
+        if h < 68:
+            cv.create_text(w // 2, h // 2, text="点击上传参考图",
+                           font=F["tiny"], fill="#4a8ac0")
+            return
+        cv.create_text(w // 2, h // 2 - 16, text="🖼",
+                       font=(F["_sans"], 30), fill="#1d3560")
+        cv.create_text(w // 2, h // 2 + 22, text="点击上传参考图",
+                       font=F["small"], fill="#2a4a7a")
 
     def _update_ref_thumb(self):
-        """将参考图字节渲染为预览缩略图。"""
+        """将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"""
         if self._ref_image is None:
             self._draw_ref_placeholder(); return
         try:
+            cv = self._ref_prev_cv
+            w = cv.winfo_width() or 200; h = cv.winfo_height() or 160
             img = Image.open(io.BytesIO(self._ref_image))
-            img.thumbnail((44, 44), Image.LANCZOS)
+            img.thumbnail((max(w - 8, 1), max(h - 8, 1)), Image.LANCZOS)
             self._ref_thumb_photo = ImageTk.PhotoImage(img)
-            cv = self._ref_prev_cv; cv.delete("all")
-            cv.create_image(24, 24, image=self._ref_thumb_photo, anchor="center")
+            cv.delete("all")
+            cv.create_image(w // 2, h // 2, image=self._ref_thumb_photo, anchor="center")
         except Exception:
             self._draw_ref_placeholder()
 
@@ -887,22 +1110,20 @@ class MainContent:
         try:
             with open(path, "rb") as _fh:
                 self._ref_image = _fh.read()
-            name = os.path.basename(path)
-            self._ref_file_lbl.config(
-                text=f"✓  {name[:30]}", fg=C["ok"])
             self._ref_clear_btn.config(state="normal")
-            self._ref_pick_btn.config(text="重新选取")
+            self._ref_pick_btn.config(text="更换参考图")
             self._update_ref_thumb()
+            self.app._cur_bytes = self._ref_image
+            self._set_preview(self._ref_image)
         except Exception as e:
             self._ref_image = None
-            self._ref_file_lbl.config(text=f"读取失败: {e}", fg=C["hl"])
+            self._ref_pick_btn.config(text="读取失败")
+            self.app._st(f"参考图读取失败: {e}", "err")
 
     def _clear_ref_image(self):
         """清除参考图，恢复占位符。"""
         self._ref_image = None
         self._ref_thumb_photo = None
-        self._ref_file_lbl.config(
-            text="点击缩略图或「选取图片」加载参考图", fg="#5a7a9a")
         self._ref_clear_btn.config(state="disabled")
-        self._ref_pick_btn.config(text="选取图片")
+        self._ref_pick_btn.config(text="上传参考图")
         self._draw_ref_placeholder()
