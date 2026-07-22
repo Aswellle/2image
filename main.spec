@@ -1,15 +1,17 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+from PyInstaller.utils.hooks import collect_submodules
 
 # Use SPECPATH so the spec works on any machine
 _root = SPECPATH
+_provider_modules = collect_submodules("services.providers")
 
 a = Analysis(
     [os.path.join(_root, 'main.py')],
     pathex=[_root],
     binaries=[],
     datas=[(os.path.join(_root, 'ICON_256x256.ico'), '.')],
-    hiddenimports=[],
+    hiddenimports=_provider_modules,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

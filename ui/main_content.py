@@ -314,7 +314,7 @@ class MainContent:
                          + list(FREE_PROVIDERS.keys())
                          + [_("provider_paid_section")]
                          + list(PAID_PROVIDERS.keys()))
-        self._provider_cb = ttk.Combobox(opt, textvariable=self.pv, width=40, state="readonly",
+        self._provider_cb = ttk.Combobox(opt, textvariable=self.pv, width=26, state="readonly",
                      values=self._t2i_provider_list,
                      postcommand=self._expand_provider_popup)
         self._provider_cb.pack(side="left", padx=(2, 8))

@@ -1,5 +1,16 @@
 """Tests for provider error handling."""
+import importlib
+from pathlib import Path
+
 import pytest
+
+
+def test_release_spec_collects_dynamic_provider_modules():
+    spec = Path("main.spec").read_text(encoding="utf-8")
+
+    assert "from PyInstaller.utils.hooks import collect_submodules" in spec
+    assert '_provider_modules = collect_submodules("services.providers")' in spec
+    assert "hiddenimports=_provider_modules" in spec
 
 
 def test_gemini_missing_key_raises_valueerror():
@@ -19,8 +30,6 @@ def test_siliconflow_missing_key_raises_valueerror():
     with pytest.raises(ValueError, match="API Key"):
         try_siliconflow("test prompt", 512, 512, 42, {"sf_key": ""}, print)
 
-
-import importlib
 
 # Parametrized: all providers that require a non-empty API key must raise ValueError
 # when that key is absent. This enforces the provider error-contract.

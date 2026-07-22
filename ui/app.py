@@ -57,9 +57,15 @@ class App:
     def __init__(self, root: tk.Tk):
         self.root = root
         root.title(_("app_title"))
-        root.geometry("1380x920")
+        screen_w = root.winfo_screenwidth()
+        screen_h = root.winfo_screenheight()
+        window_w = min(1380, int(screen_w * 0.98))
+        window_h = min(920, int(screen_h * 0.95))
+        root.geometry(f"{window_w}x{window_h}")
         root.configure(bg=C["bg"])
-        root.minsize(1000, 720)
+        root.minsize(min(1000, window_w), min(720, window_h))
+        if screen_w < 1400 or screen_h < 800:
+            root.state("zoomed")
 
         self.cfg            = load_config()
         init_theme(self.cfg)

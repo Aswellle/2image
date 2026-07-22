@@ -1,6 +1,9 @@
 import tkinter as tk
+from tkinter import ttk
 
 from config.fonts import init_fonts
+from config.i18n import _
+from services.providers import FREE_PROVIDERS, PAID_PROVIDERS
 from ui.main_content import _StrengthSlider
 
 
@@ -57,5 +60,30 @@ def test_full_strength_slider_shows_internal_value_and_marks():
     ]
     assert "0.6" in items
     assert {"微调", "融合", "重构"}.issubset(items)
+
+
+
+def test_generation_row_fits_provider_selector_and_generate_button():
+    init_fonts()
+    root = tk.Tk()
+    root.withdraw()
+
+    controls = tk.Frame(root)
+    size_label = tk.Label(controls, text=_("lbl_size"), font=("Microsoft YaHei", 10))
+    size = ttk.Combobox(controls, width=12, state="readonly")
+    provider_label = tk.Label(controls, text=_("lbl_provider"), font=("Microsoft YaHei", 10))
+    provider = ttk.Combobox(
+        controls,
+        width=26,
+        state="readonly",
+        values=[_("provider_auto"), *FREE_PROVIDERS, *PAID_PROVIDERS],
+    )
+    generate = tk.Button(controls, text=_("btn_generate"), font=("Microsoft YaHei", 11, "bold"))
+
+    for widget in (size_label, size, provider_label, provider, generate):
+        widget.pack(side="left")
+    root.update_idletasks()
+
+    assert controls.winfo_reqwidth() <= 840
 
     root.destroy()

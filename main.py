@@ -65,8 +65,10 @@ def main():
     # ── 启动 UI ─────────────────────────────────────────────────
     from ui.app import App
     root = tk.Tk()
+    root.withdraw()
     _configure_window_icon(root)
     App(root)
+    root.deiconify()
     root.mainloop()
 
 
