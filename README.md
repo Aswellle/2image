@@ -1,17 +1,20 @@
 <div align="center">
 
-```
-╔══════════════════════════════════════════════════════╗
-║   ___  _                                             ║
-║  |__ \(_)_ __ ___   __ _  __ _  ___                 ║
-║    / /| | '_ ` _ \ / _` |/ _` |/ _ \                ║
-║   / /_| | | | | | | (_| | (_| |  __/                ║
-║  |____|_|_| |_| |_|\__,_|\__, |\___|  兔 图          ║
-║                           |___/                      ║
-╚══════════════════════════════════════════════════════╝
-```
+<a href="https://github.com/Aswellle/2image">
+  <img src="assets/banner.png" alt="2image · 兔图 — 桌面 AI 图片生成器" width="100%" />
+</a>
 
-**桌面 AI 图片生成器 · 内置 22 个免费、付费及商用生图服务实现**
+<h1>
+  <img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/banner.png" alt="2image" width="48" align="bottom" />
+  &nbsp;2image · 兔图
+</h1>
+
+<p><strong>桌面 AI 图片生成器 · 内置 22 个免费、付费及商用生图服务</strong></p>
+
+<p>
+  一个工具，接入市面上主流的免费与付费生图 API，让创作门槛降到最低。<br/>
+  输入中文描述，一键生成 —— 无需编程，无需搭建，数据完全本地。
+</p>
 
 [![CI](https://github.com/Aswellle/2image/actions/workflows/ci.yml/badge.svg)](https://github.com/Aswellle/2image/actions)
 [![Release](https://img.shields.io/github/v/release/Aswellle/2image)](https://github.com/Aswellle/2image/releases/latest)
@@ -19,7 +22,13 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D4)](https://github.com/Aswellle/2image/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-[📥 立即下载](https://github.com/Aswellle/2image/releases/latest) · [🐛 反馈问题](https://github.com/Aswellle/2image/issues) · [📖 使用文档](#快速上手)
+<p>
+  <a href="https://github.com/Aswellle/2image/releases/latest"><b>📥 立即下载</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/Aswellle/2image/issues">🐛 反馈问题</a>
+  &nbsp;·&nbsp;
+  <a href="#快速上手">📖 使用文档</a>
+</p>
 
 </div>
 
