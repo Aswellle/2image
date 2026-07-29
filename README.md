@@ -1,9 +1,5 @@
 <div align="center">
 
-<a href="https://github.com/Aswellle/2image">
-  <img src="assets/banner.png" alt="2image · 兔图 — 桌面 AI 图片生成器" width="100%" />
-</a>
-
 <h1>
   <img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/banner.png" alt="2image" width="48" align="bottom" />
   &nbsp;2image · 兔图
