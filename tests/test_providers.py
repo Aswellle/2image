@@ -25,6 +25,54 @@ def test_openai_image_missing_key_raises_valueerror():
         try_openai_image("test prompt", 1024, 1024, 42, {"openai_key": ""}, print)
 
 
+# ── gpt-image-2 任意尺寸约束（TC gpt-image-2）───────────────────────────────
+# gpt-image-2 只接受「双 16 倍数 / 长边≤3840 / 宽高比 1:3–3:1 / 0.65–8.3MP」的尺寸。
+# App 提供的小尺寸与 1920x1080 等不满足约束，必须在 provider 内收敛为合法值。
+
+def _assert_gpt2_size(s: str):
+    w, h = [int(x) for x in s.split("x")]
+    assert w % 16 == 0 and h % 16 == 0, f"{s}: never multiple of 16"
+    assert max(w, h) <= 3840, f"{s}: long edge over 3840"
+    assert 1 / 3 <= w / h <= 3, f"{s}: aspect ratio out of 1:3-3:1"
+    assert 655_360 <= w * h <= 8_294_400, f"{s}: pixel count out of 0.65-8.3MP"
+
+
+def test_gpt2_size_square_stays_1024():
+    from services.providers.openai_image import _gpt2_size
+    assert _gpt2_size(1024, 1024) == "1024x1024"
+
+
+@pytest.mark.parametrize("w,h", [(512,512),(768,768),(1024,576),(1280,720),
+                                 (1920,1080),(576,1024),(720,1280),(768,1024)])
+def test_gpt2_size_produces_valid_size(w, h):
+    """Every size offered in the UI must be converged to a valid gpt-image-2 size."""
+    from services.providers.openai_image import _gpt2_size
+    _assert_gpt2_size(_gpt2_size(w, h))
+
+
+def test_gpt2_size_clamps_extreme_edges():
+    from services.providers.openai_image import _gpt2_size
+    _assert_gpt2_size(_gpt2_size(5000, 5000))
+    _assert_gpt2_size(_gpt2_size(200, 4000))
+
+
+def test_size_for_routes_by_model():
+    from services.providers.openai_image import _size_for
+    # gpt-image-2 用任意尺寸，gpt-image-1 家族用预设；同一请求二者不同
+    assert _size_for("gpt-image-2", 512, 512) != _size_for("gpt-image-1", 512, 512)
+    assert _size_for("gpt-image-1", 1024, 1024) == "1024x1024"
+    assert _size_for("gpt-image-1-mini", 512, 512) == "1024x1024"
+
+
+def test_normalize_quality_maps_legacy_values():
+    """DALL-E 时代的 standard/hd 必须映射到 GPT-Image 体系，避免 400。"""
+    from services.providers.openai_image import _normalize_quality
+    assert _normalize_quality("standard") == "medium"
+    assert _normalize_quality("hd") == "high"
+    assert _normalize_quality("auto") == "auto"
+    assert _normalize_quality("low") == "low"
+
+
 def test_siliconflow_missing_key_raises_valueerror():
     from services.providers.siliconflow import try_siliconflow
     with pytest.raises(ValueError, match="API Key"):
