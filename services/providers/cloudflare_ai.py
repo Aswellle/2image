@@ -89,9 +89,10 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int,
             "prompt": prompt,
             "width":  sw,
             "height": sh,
-            "num_steps": steps,
             "seed":   seed % 2_147_483_647,
         }
+        # FLUX.1-schnell 用 steps（1-8），SDXL 系用 num_steps —— 避免 FLUX 步数参数被忽略
+        payload["steps" if "flux" in model_path else "num_steps"] = steps
         if guidance > 0:
             payload["guidance"] = guidance
 

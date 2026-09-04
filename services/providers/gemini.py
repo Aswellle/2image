@@ -35,10 +35,9 @@ _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV = 2.0  # Gemini 免费层建议间隔
 
-_MODEL = "gemini-2.5-flash-image"
-_ENDPOINT = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    f"{_MODEL}:generateContent"
+_DEFAULT_MODEL = "gemini-2.5-flash-image"
+_ENDPOINT_TPL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )
 _TIMEOUT = 90
 _MAX_RETRIES = 3
@@ -66,6 +65,11 @@ def try_gemini(
         "Content-Type": "application/json",
         "x-goog-api-key": key,
     }
+
+    # 可通过 cfg["gemini_model"] 切换图像模型（默认 gemini-2.5-flash-image，
+    # 也可选 gemini-3.1-flash-image 等最新 GA 模型）
+    model    = cfg.get("gemini_model", _DEFAULT_MODEL)
+    endpoint = _ENDPOINT_TPL.format(model=model)
 
     ref_image = cfg.get("_ref_image")   # bytes or None（图生图参考图）
     parts = [{"text": prompt}]
@@ -102,7 +106,7 @@ def try_gemini(
             try:
                 log(f"[Gemini] 尝试 {attempt}/{_MAX_RETRIES}…")
                 resp = _session.post(
-                    _ENDPOINT,
+                    endpoint,
                     headers=headers,
                     json=payload,
                     timeout=_TIMEOUT,
@@ -121,7 +125,7 @@ def try_gemini(
                 image_bytes = _extract_image(data, log)
                 _LAST_DONE[0] = time.time()
                 log("[Gemini] 生成成功 ✓")
-                return (image_bytes, "Gemini/Nano-Banana")
+                return (image_bytes, f"Gemini/{model}")
 
             except (ValueError, RuntimeError) as e:
                 last_err = e

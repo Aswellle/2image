@@ -46,11 +46,11 @@ DEFAULT_CONFIG: dict = {
     # ── 付费接口（v5 新增）────────────────────────────────────
     "xai_key":              "",   # xAI Grok Imagine（注册送 $25）
     # ── 商业变现接口（v6 新增）───────────────────────────────
-    "ideogram_key":         "",   # Ideogram v2（文字入图首选，免费25次/天）
+    "ideogram_key":         "",   # Ideogram v4（文字入图首选，免费25次/天）
     "fal_key":              "",   # fal.ai FLUX Ultra（4MP高清，最高写实质量）
     "recraft_key":          "",   # Recraft v3（设计/插画/品牌VI）
     "recraft_style":        "realistic_image",  # realistic_image | digital_illustration | vector_illustration
-    "recraft_model":        "recraftv3",   # recraftv3（默认，稳） | recraftv4_1（更高画质，样式兼容性未完全验证）
+    "recraft_model":        "recraftv3",   # recraftv3（默认，稳） | recraftv4 | recraftv4_pro | recraftv4_1（更高画质）
     # ── 新增接口（v7：GPT-Image / Nano Banana / 国内外新增供应商）──
     "dashscope_key":        "",   # 阿里云 DashScope（通义万相 / Qwen-Image，免费额度）
     "minimax_key":          "",   # MiniMax image-01（注册送试用额度）
@@ -60,10 +60,12 @@ DEFAULT_CONFIG: dict = {
     "prompt_llm_preset":    "siliconflow_auto",  # siliconflow_auto | deepseek_pro | deepseek_flash
     "deepseek_key":         "",   # DeepSeek 官方 API Key（Pro / Flash 预设）
     # ── 付费模型偏好 ───────────────────────────────────────────
-    "gpt_image_model":      "gpt-image-1",   # gpt-image-1 | gpt-image-1-mini
+    "gpt_image_model":      "gpt-image-1",   # gpt-image-1 | gpt-image-1-mini | gpt-image-2
     "gpt_image_quality":    "auto",          # low | medium | high | auto
     "stability_model":      "core",
     "replicate_model":      "flux-1.1-pro",
+    "gemini_model":         "gemini-2.5-flash-image",  # gemini-2.5-flash-image | gemini-3.1-flash-image
+    "bfl_model":            "flux-pro-1.1",  # flux-pro-1.1 | flux-2-pro | flux-2-flex（文生图）
     # ── 通用设置 ───────────────────────────────────────────────
     "default_provider":     "自动（按优先级）",
     "default_size":         "1024x1024",

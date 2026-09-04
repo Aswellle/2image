@@ -36,9 +36,9 @@ _MIN_INTERVAL = 3.0    # Segmind 建议最小并发间隔
 
 _SEGMIND_MODELS = [
     # (endpoint, steps, guidance, use_neg, max_w, max_h, is_flux)
-    ("sdxl1.0-txt2img", 30, 7.5,  True,  1024, 1024, False),
-    ("flux-schnell",      4, 0.0,  False, 1024, 1024, True),
-    ("sd3",              28, 7.0,  True,  1024, 1024, False),
+    ("sdxl1.0-txt2img",            30, 7.5,  True,  1024, 1024, False),
+    ("flux-schnell",                4, 0.0,  False, 1024, 1024, True),
+    ("stable-diffusion-3-medium-txt2img", 28, 7.0,  True,  1024, 1024, False),
 ]
 
 _API_BASE = "https://api.segmind.com/v1"
@@ -82,21 +82,24 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
 
         payload: dict = {
             "prompt": prompt,
-            "width":  sw,
-            "height": sh,
             "num_inference_steps": use_steps,
             "seed":   seed % 2_147_483_647,
             "img_format": "png",
         }
+        # Segmind 尺寸参数名按端点区分：SDXL/SD3 用 img_width/img_height（512-2048，8 的倍数），
+        # FLUX 用 width/height。此前统一用 width/height 会让 SDXL/SD3 尺寸被忽略。
+        dim_key = ("width", "height") if is_flux else ("img_width", "img_height")
+        payload[dim_key[0]] = sw
+        payload[dim_key[1]] = sh
         if guidance > 0:
             payload["guidance_scale"] = guidance
         if use_neg:
             payload["negative_prompt"] = _NEG_PROMPT
 
-        # SDXL 特有参数（修复：移除 enhance_style="None"，改为正确布尔值）
-        if "sdxl" in endpoint:
-            payload["sampler"]        = "dpmpp_2m"
-            payload["scheduler"]      = "karras"
+        # SDXL/SD3 特有参数：使用文档化的 scheduler 取值（"karras" 不在枚举内），
+        # 未文档化的 sampler 参数一并移除；enhance_prompt 传布尔值。
+        if not is_flux:
+            payload["scheduler"]      = "UniPC"
             payload["enhance_prompt"] = hq_mode   # 布尔值
 
         # FLUX：不传 samples（该端点不支持）

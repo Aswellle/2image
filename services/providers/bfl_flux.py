@@ -69,7 +69,8 @@ def try_bfl_flux(
         }
         log(f"► BFL {model}  图生图")
     else:
-        model = "flux-pro-1.1"
+        # 文生图模型可通过 cfg["bfl_model"] 选择（默认 flux-pro-1.1，可选 FLUX.2 系列）
+        model = cfg.get("bfl_model", "flux-pro-1.1")
         payload = {
             "prompt": prompt,
             "width":  max(256, min(1440, round(w / 32) * 32)),

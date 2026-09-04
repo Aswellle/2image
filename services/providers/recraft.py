@@ -24,7 +24,7 @@ from services.providers._net import SESSION as _session, validate_image_url as _
 
 PROVIDER_INFO = {
     "id": "recraft",
-    "name": "Recraft v3 (设计/插画)",
+    "name": "Recraft v3/v4 (设计/插画)",
     "category": "commercial",
     "config_key": "recraft_key",
 }

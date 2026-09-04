@@ -14,7 +14,7 @@ services/smart_router.py — 意图感知路由器
 _ROUTES: dict = {
     # 文字入图：Banner、海报、标签、LOGO
     "text_overlay": [
-        "Ideogram v3 (文字入图)",
+        "Ideogram v4 (文字入图)",
         "💎 OpenAI GPT-Image",
         "硅基流动 SiliconFlow (★推荐)",
     ],
@@ -28,7 +28,7 @@ _ROUTES: dict = {
     ],
     # 设计/插画/品牌VI
     "illustration": [
-        "Recraft v3 (设计/插画)",
+        "Recraft v3/v4 (设计/插画)",
         "💎 OpenAI GPT-Image",
         "硅基流动 SiliconFlow (★推荐)",
         "Google Gemini Nano Banana (免费额度)",
@@ -52,7 +52,7 @@ _ROUTES: dict = {
         "fal.ai FLUX Ultra (高质量)",
         "💎 OpenAI GPT-Image",
         "硅基流动 SiliconFlow (★推荐)",
-        "Recraft v3 (设计/插画)",
+        "Recraft v3/v4 (设计/插画)",
     ],
 }
 

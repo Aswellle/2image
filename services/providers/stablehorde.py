@@ -63,7 +63,9 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int,
             "sampler_name": "k_dpmpp_2m",
             "n":            1,
         },
-        "models":  ["Dreamshaper 8", "stable_diffusion"],
+        # "Dreamshaper 8" 已从 horde 模型列表下线，改用仍在列表上的 DreamShaper XL；
+        # stable_diffusion 长期可用，作为兜底。
+        "models":  ["DreamShaper XL", "stable_diffusion"],
         "shared":  True,
         "r2":      True,
         "slow_workers": True,    # 允许慢速 worker，增加成功率

@@ -121,16 +121,18 @@ def try_siliconflow(prompt: str, w: int, h: int, seed: int,
             log(f"    {resp.status_code}，换模型…")
             continue
 
-        images = resp.json().get("images", [])
-        if not images:
+        j = resp.json()
+        # 官方当前响应容器为 data[].url；images[] 为历史字段，留作兼容后备
+        items = j.get("data") or j.get("images") or []
+        if not items:
             log("    无图片，换模型…")
             continue
-        img_url = images[0].get("url", "")
+        img_url = items[0].get("url", "")
         if not img_url:
             log("    无 URL，换模型…")
             continue
 
-        inf_time = resp.json().get("timings", {}).get("inference", "?")
+        inf_time = j.get("timings", {}).get("inference", "?")
         log(f"  ✓ 成功，推理耗时 {inf_time}s，下载中…")
         data = _safe_get_image(img_url, timeout=60)
         return data, f"硅基流动/{model_id.split('/')[-1]}"
