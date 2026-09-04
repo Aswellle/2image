@@ -17,6 +17,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from config.model_catalog import GEMINI_IMAGE_DEFAULT
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 
@@ -35,7 +36,7 @@ _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV = 2.0  # Gemini 免费层建议间隔
 
-_DEFAULT_MODEL = "gemini-2.5-flash-image"
+_DEFAULT_MODEL = GEMINI_IMAGE_DEFAULT  # 默认图像模型（可选值见 config.model_catalog）
 _ENDPOINT_TPL = (
     "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )

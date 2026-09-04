@@ -14,6 +14,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from config.model_catalog import BFL_TXT2IMG_DEFAULT
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
@@ -69,8 +70,8 @@ def try_bfl_flux(
         }
         log(f"► BFL {model}  图生图")
     else:
-        # 文生图模型可通过 cfg["bfl_model"] 选择（默认 flux-pro-1.1，可选 FLUX.2 系列）
-        model = cfg.get("bfl_model", "flux-pro-1.1")
+        # 文生图模型可通过 cfg["bfl_model"] 选择（默认与可选值见 config.model_catalog）
+        model = cfg.get("bfl_model", BFL_TXT2IMG_DEFAULT)
         payload = {
             "prompt": prompt,
             "width":  max(256, min(1440, round(w / 32) * 32)),

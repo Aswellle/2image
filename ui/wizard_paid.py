@@ -16,6 +16,9 @@ from typing import Callable
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from config.model_catalog import (
+    BFL_TXT2IMG_DEFAULT, BFL_TXT2IMG_MODELS, GPT_IMAGE_DEFAULT, GPT_IMAGE_MODELS,
+)
 
 
 
@@ -144,9 +147,9 @@ class PaidWizard(tk.Toplevel):
         tk.Label(opt1, text="模型版本:", font=F["body"],
                  bg=C["bg"], fg=C["sub"]).pack(side="left")
         self.gpt_image_model_var = tk.StringVar(
-            value=self.cfg.get("gpt_image_model", "gpt-image-1"))
+            value=self.cfg.get("gpt_image_model", GPT_IMAGE_DEFAULT))
         ttk.Combobox(opt1, textvariable=self.gpt_image_model_var, width=16, state="readonly",
-                     values=["gpt-image-1", "gpt-image-1-mini", "gpt-image-2"]).pack(side="left", padx=(6, 20))
+                     values=GPT_IMAGE_MODELS).pack(side="left", padx=(6, 20))
         tk.Label(opt1, text="画质:", font=F["body"],
                  bg=C["bg"], fg=C["sub"]).pack(side="left")
         self.gpt_image_quality_var = tk.StringVar(
@@ -389,9 +392,9 @@ class PaidWizard(tk.Toplevel):
         tk.Label(bfl_mrow, text="文生图模型:", font=F["body"],
                  bg=C["bg"], fg=C["sub"]).pack(side="left")
         self.bfl_model_var = tk.StringVar(
-            value=self.cfg.get("bfl_model", "flux-pro-1.1"))
+            value=self.cfg.get("bfl_model", BFL_TXT2IMG_DEFAULT))
         ttk.Combobox(bfl_mrow, textvariable=self.bfl_model_var, width=18, state="readonly",
-                     values=["flux-pro-1.1", "flux-2-pro", "flux-2-flex"]
+                     values=BFL_TXT2IMG_MODELS
                      ).pack(side="left", padx=(6, 20))
 
         btns8 = tk.Frame(inner, bg=C["bg"]); btns8.pack(fill="x", padx=PX, pady=(8, 24))

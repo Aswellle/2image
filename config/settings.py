@@ -7,6 +7,9 @@ v5 新增字段：
 """
 import json
 import os
+from config.model_catalog import (
+    BFL_TXT2IMG_DEFAULT, GEMINI_IMAGE_DEFAULT, GPT_IMAGE_DEFAULT,
+)
 
 # ─── 应用路径 ──────────────────────────────────────────────────
 APP_DIR      = os.path.expanduser("~/.text_to_image_app")
@@ -60,12 +63,12 @@ DEFAULT_CONFIG: dict = {
     "prompt_llm_preset":    "siliconflow_auto",  # siliconflow_auto | deepseek_pro | deepseek_flash
     "deepseek_key":         "",   # DeepSeek 官方 API Key（Pro / Flash 预设）
     # ── 付费模型偏好 ───────────────────────────────────────────
-    "gpt_image_model":      "gpt-image-1",   # gpt-image-1 | gpt-image-1-mini | gpt-image-2
-    "gpt_image_quality":    "auto",          # low | medium | high | auto
+    "gpt_image_model":      GPT_IMAGE_DEFAULT,    # 可选值见 config.model_catalog
+    "gpt_image_quality":    "auto",               # low | medium | high | auto
     "stability_model":      "core",
     "replicate_model":      "flux-1.1-pro",
-    "gemini_model":         "gemini-2.5-flash-image",  # gemini-2.5-flash-image | gemini-3.1-flash-image
-    "bfl_model":            "flux-pro-1.1",  # flux-pro-1.1 | flux-2-pro | flux-2-flex（文生图）
+    "gemini_model":         GEMINI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
+    "bfl_model":            BFL_TXT2IMG_DEFAULT,   # 可选值见 config.model_catalog（图生图固定 flux-kontext-pro）
     # ── 通用设置 ───────────────────────────────────────────────
     "default_provider":     "自动（按优先级）",
     "default_size":         "1024x1024",

@@ -19,6 +19,7 @@ gpt-image-2-2026-04-21），首个原生支持任意分辨率（WIDTHxHEIGHT）�
     否则请求会被拒绝——这不是 API Key 本身的问题，遇到 403 需提示用户。
 """
 import base64, math
+from config.model_catalog import GPT_IMAGE_2, GPT_IMAGE_DEFAULT
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
@@ -72,7 +73,7 @@ def _gpt2_size(w: int, h: int) -> str:
 
 def _size_for(model: str, w: int, h: int) -> str:
     """按模型路由尺寸取值：gpt-image-2 家族用任意尺寸，其余用预设。"""
-    if model.startswith("gpt-image-2"):
+    if model.startswith(GPT_IMAGE_2):
         return _gpt2_size(w, h)
     return _best_size(w, h)
 
@@ -87,7 +88,7 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
     if not key:
         raise ValueError("需要 OpenAI API Key，请在「💎 付费接口配置」中填写")
 
-    model    = cfg.get("gpt_image_model", "gpt-image-1")
+    model    = cfg.get("gpt_image_model", GPT_IMAGE_DEFAULT)
     # GPT-Image 系列 quality 只接受 auto/low/medium/high；把 DALL-E 时代的
     # standard/hd 旧配置归一化，避免 400（GPT-Image 不支持这两个值）。
     quality  = _normalize_quality(cfg.get("gpt_image_quality", "auto"))

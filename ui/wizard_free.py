@@ -12,6 +12,7 @@ from typing import Callable
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_MODELS
 
 
 
@@ -40,7 +41,7 @@ class ConfigWizard(tk.Toplevel):
         self._build()
         for _var in [self.sf_var, self.cf_id_var, self.cf_tok_var, self.ml_var,
                      self.sg_var, self.hf_var, self.sh_var, self.ta_var,
-                     self.gm_var, self.qual_var,
+                     self.gm_var, self.gm_model_var, self.qual_var,
                      self.pk_var, self.ds_var, self.br_var]:
             _var.trace("w", lambda *_: setattr(self, '_dirty', True))
 
@@ -463,9 +464,9 @@ class ConfigWizard(tk.Toplevel):
         tk.Label(gm_mrow, text="图像模型:", font=F["body"],
                  bg=C["bg"], fg=C["sub"]).pack(side="left")
         self.gm_model_var = tk.StringVar(
-            value=self.cfg.get("gemini_model", "gemini-2.5-flash-image"))
+            value=self.cfg.get("gemini_model", GEMINI_IMAGE_DEFAULT))
         ttk.Combobox(gm_mrow, textvariable=self.gm_model_var, width=26, state="readonly",
-                     values=["gemini-2.5-flash-image", "gemini-3.1-flash-image"]
+                     values=GEMINI_IMAGE_MODELS
                      ).pack(side="left", padx=(6, 20))
 
         # ══════════════════════════════════════════════════════
