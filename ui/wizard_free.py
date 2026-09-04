@@ -459,6 +459,14 @@ class ConfigWizard(tk.Toplevel):
         self._hint(inner,
                    "📋 步骤：用 Google 账号登录 AI Studio → Get API Key → Create API Key → 复制",
                    PX)
+        gm_mrow = tk.Frame(inner, bg=C["bg"]); gm_mrow.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(gm_mrow, text="图像模型:", font=F["body"],
+                 bg=C["bg"], fg=C["sub"]).pack(side="left")
+        self.gm_model_var = tk.StringVar(
+            value=self.cfg.get("gemini_model", "gemini-2.5-flash-image"))
+        ttk.Combobox(gm_mrow, textvariable=self.gm_model_var, width=26, state="readonly",
+                     values=["gemini-2.5-flash-image", "gemini-3.1-flash-image"]
+                     ).pack(side="left", padx=(6, 20))
 
         # ══════════════════════════════════════════════════════
         #   10. 阿里云 DashScope 通义万相 Qwen-Image（v7 新增）
@@ -639,6 +647,7 @@ class ConfigWizard(tk.Toplevel):
         self.cfg["modelslab_key"]        = self.ml_var.get().strip()
         self.cfg["together_key"]         = self.ta_var.get().strip()   # v5 新增
         self.cfg["gemini_key"]           = self.gm_var.get().strip()   # v5 新增
+        self.cfg["gemini_model"]         = self.gm_model_var.get()     # 添加 Gemini 3.1 图像模型
         self.cfg["pollinations_key"]     = self.pk_var.get().strip()   # v7 新增
         self.cfg["dashscope_key"]        = self.ds_var.get().strip()   # v7 新增
         self.cfg["bria_key"]             = self.br_var.get().strip()   # v7 新增

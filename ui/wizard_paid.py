@@ -46,7 +46,7 @@ class PaidWizard(tk.Toplevel):
                      self.rep_var, self.rep_model_var,
                      self.or_var, self.or_model_var,
                      self.xai_var,
-                     self.minimax_var, self.bfl_var]:
+                     self.minimax_var, self.bfl_var, self.bfl_model_var]:
             _var.trace("w", lambda *_: setattr(self, '_dirty', True))
 
     # ── 滚轮清理：销毁前必须解绑，否则 bind_all 残留在根 Tk 上 ──────
@@ -146,7 +146,7 @@ class PaidWizard(tk.Toplevel):
         self.gpt_image_model_var = tk.StringVar(
             value=self.cfg.get("gpt_image_model", "gpt-image-1"))
         ttk.Combobox(opt1, textvariable=self.gpt_image_model_var, width=16, state="readonly",
-                     values=["gpt-image-1", "gpt-image-1-mini"]).pack(side="left", padx=(6, 20))
+                     values=["gpt-image-1", "gpt-image-1-mini", "gpt-image-2"]).pack(side="left", padx=(6, 20))
         tk.Label(opt1, text="画质:", font=F["body"],
                  bg=C["bg"], fg=C["sub"]).pack(side="left")
         self.gpt_image_quality_var = tk.StringVar(
@@ -385,6 +385,14 @@ class PaidWizard(tk.Toplevel):
                                  font=F["input"], bd=0, relief="flat")
         self.bfl_ent.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
         self._eye_btn(ef7, self.bfl_ent)
+        bfl_mrow = tk.Frame(inner, bg=C["bg"]); bfl_mrow.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(bfl_mrow, text="文生图模型:", font=F["body"],
+                 bg=C["bg"], fg=C["sub"]).pack(side="left")
+        self.bfl_model_var = tk.StringVar(
+            value=self.cfg.get("bfl_model", "flux-pro-1.1"))
+        ttk.Combobox(bfl_mrow, textvariable=self.bfl_model_var, width=18, state="readonly",
+                     values=["flux-pro-1.1", "flux-2-pro", "flux-2-flex"]
+                     ).pack(side="left", padx=(6, 20))
 
         btns8 = tk.Frame(inner, bg=C["bg"]); btns8.pack(fill="x", padx=PX, pady=(8, 24))
         self._link_btn(btns8, "🌐 注册 Black Forest Labs", "https://bfl.ai/")
@@ -456,6 +464,7 @@ class PaidWizard(tk.Toplevel):
         self.cfg["xai_key"]           = self.xai_var.get().strip()    # v2 新增
         self.cfg["minimax_key"]       = self.minimax_var.get().strip()  # v7 新增
         self.cfg["bfl_key"]           = self.bfl_var.get().strip()      # v7 新增
+        self.cfg["bfl_model"]         = self.bfl_model_var.get()        # 添加 FLUX.2 文生图模型
         from config.settings import save_config
         save_config(self.cfg)
         self.on_save(self.cfg)
