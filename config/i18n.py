@@ -621,10 +621,100 @@ STRINGS = {
         "zh-TW": "本週: {n}",
         "en":    "This week: {n}",
     },
+    # ── 生成状态可视化 ──────────────────────────────────────
+    "state_queued": {
+        "zh-CN": "排队中",
+        "zh-TW": "排隊中",
+        "en":    "Queued",
+    },
+    "state_translating": {
+        "zh-CN": "翻译提示词…",
+        "zh-TW": "翻譯提示詞…",
+        "en":    "Translating prompt…",
+    },
+    "state_routing": {
+        "zh-CN": "选择服务商…",
+        "zh-TW": "選擇服務商…",
+        "en":    "Selecting provider…",
+    },
+    "state_submitting": {
+        "zh-CN": "提交中…",
+        "zh-TW": "提交中…",
+        "en":    "Submitting…",
+    },
+    "state_polling": {
+        "zh-CN": "等待生成…",
+        "zh-TW": "等待生成…",
+        "en":    "Waiting for result…",
+    },
+    "state_downloading": {
+        "zh-CN": "下载图片…",
+        "zh-TW": "下載圖片…",
+        "en":    "Downloading image…",
+    },
+    "state_validating": {
+        "zh-CN": "校验图片…",
+        "zh-TW": "校驗圖片…",
+        "en":    "Validating image…",
+    },
+    "state_persisting": {
+        "zh-CN": "保存中…",
+        "zh-TW": "保存中…",
+        "en":    "Saving…",
+    },
+    "state_succeeded": {
+        "zh-CN": "生成完成",
+        "zh-TW": "生成完成",
+        "en":    "Generation complete",
+    },
+    "state_failed": {
+        "zh-CN": "生成失败",
+        "zh-TW": "生成失敗",
+        "en":    "Generation failed",
+    },
+    "state_cancelled": {
+        "zh-CN": "已取消",
+        "zh-TW": "已取消",
+        "en":    "Cancelled",
+    },
+    "state_deadline_exceeded": {
+        "zh-CN": "超时",
+        "zh-TW": "超時",
+        "en":    "Deadline exceeded",
+    },
+    # ── 组件库通用文案 ──────────────────────────────────────
+    "btn_copy_path": {
+        "zh-CN": "📋 复制路径",
+        "zh-TW": "📋 複製路徑",
+        "en":    "📋 Copy path",
+    },
+    "btn_view_result": {
+        "zh-CN": "🔍 查看结果",
+        "zh-TW": "🔍 查看結果",
+        "en":    "🔍 View result",
+    },
+    "btn_stop": {
+        "zh-CN": "⏹ 停止",
+        "zh-TW": "⏹ 停止",
+        "en":    "⏹ Stop",
+    },
+    "btn_refresh": {
+        "zh-CN": "🔄 刷新数据",
+        "zh-TW": "🔄 刷新數據",
+        "en":    "🔄 Refresh",
+    },
+    "empty_no_items": {
+        "zh-CN": "暂无项目",
+        "zh-TW": "暫無項目",
+        "en":    "No items",
+    },
 }
 
 
-# ══════════════════════════════════════════════════════════════
+
+
+
+
 #  查询函数
 # ══════════════════════════════════════════════════════════════
 
