@@ -2,9 +2,25 @@
 testpaths = ["tests"]
 addopts = "--tb=short"
 
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "F821",   # undefined names
+    "F401",   # unused imports
+    "F841",   # unused variables
+    "E402",   # module-level import not at top
+    "I",      # isort
+]
+
 [tool.coverage.run]
 source = ["services", "data", "config"]
 omit = ["tests/*", "ui/*"]
 
 [tool.coverage.report]
-fail_under = 30
+fail_under = 50
+show_missing = true

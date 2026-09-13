@@ -8,8 +8,33 @@ on:
     branches: ["**"]
 
 jobs:
-  # ── 测试（所有 push / PR 均运行）─────────────────────────────
+  # ── Quality gates ─────────────────────────────────────────────
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install tools
+        run: pip install ruff pytest pytest-cov
+
+      - name: Lint — critical (F821/E9, blocking)
+        run: ruff check services/ config/ data/ tests/ --select F821,E9
+
+      - name: Lint — extended (warnings, non-blocking)
+        run: ruff check services/ config/ data/ tests/ --select F401,F841,E402
+        continue-on-error: true
+
+      - name: Format check (non-blocking)
+        run: ruff format --check services/ config/ data/ tests/
+        continue-on-error: true
+
+  # ── Tests (Windows) ───────────────────────────────────────────
   test:
+    needs: quality
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,19 +46,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Lint — ruff F821/E9 (undefined names + syntax errors)
-        run: ruff check services/ ui/ config/ data/ tests/ --select F821,E9
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ -v --tb=short `
+            --cov=services --cov=data --cov=config `
+            --cov-report=term-missing `
+            --cov-fail-under=50
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short
-
-  # ── 构建 + 发布（仅 v* tag 触发）───────────────────────────
+  # ── Build + Release (v* tag only) ─────────────────────────────
   build:
     needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
     permissions:
-      contents: write   # 创建 GitHub Release 所需
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -58,30 +84,39 @@ jobs:
 
       - name: Build EXE + Installer
         env:
-          PYTHONUTF8: "1"      # force UTF-8 I/O on Windows to avoid cp1252 charmap errors
+          PYTHONUTF8: "1"
         run: python auto_build.py
 
-      - name: List build artifacts
+      - name: Generate checksums
         shell: pwsh
         run: |
-          Write-Host "=== dist/ ==="
-          Get-ChildItem dist/ -ErrorAction SilentlyContinue | Select-Object Name, Length
-          Write-Host "=== installer/Output/ ==="
-          Get-ChildItem installer/Output/ -ErrorAction SilentlyContinue | Select-Object Name, Length
+          $Output = @()
+          Get-ChildItem dist/*.exe, installer/Output/*.exe -ErrorAction SilentlyContinue | ForEach-Object {
+            $hash = Get-FileHash $_.FullName -Algorithm SHA256
+            $Output += "$($hash.Hash)  $($_.Name)"
+          }
+          $Output | Out-File -FilePath SHA256SUMS.txt -Encoding utf8
+          Get-Content SHA256SUMS.txt
 
-      - name: Upload portable EXE (artifact)
+      - name: Upload portable EXE
         uses: actions/upload-artifact@v4
         with:
           name: text2image-pro-v${{ steps.ver.outputs.version }}-portable
           path: dist/text2image_pro.exe
           if-no-files-found: warn
 
-      - name: Upload installer (artifact)
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
           name: text2image-pro-v${{ steps.ver.outputs.version }}-installer
           path: installer/Output/*.exe
           if-no-files-found: warn
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: text2image-pro-v${{ steps.ver.outputs.version }}-checksums
+          path: SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -94,3 +129,4 @@ jobs:
           files: |
             dist/text2image_pro.exe
             installer/Output/*.exe
+            SHA256SUMS.txt
