@@ -8,8 +8,10 @@ from __future__ import annotations
 import pytest
 
 from services.translation.cache import TranslationCache, get_translation_cache
-from services.logger.async_logger import AsyncLogger
+from services.logger import AsyncLogger, get_logger
 from data import repository
+
+
 
 
 @pytest.fixture(autouse=True)
@@ -82,7 +84,7 @@ class TestAsyncLogger:
     def test_logger_returns_logger_instance(self, tmp_path):
         log_file = str(tmp_path / "test.log")
         AsyncLogger.setup(log_file=log_file)
-        logger = AsyncLogger.get_logger("test_module")
+        logger = get_logger("test_module")
         assert logger is not None
         AsyncLogger.shutdown()
 

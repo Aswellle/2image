@@ -499,6 +499,7 @@ def migrate_from_json(json_path: str) -> dict:
         logger.error("Migration transaction failed: %s", exc)
         result["failed"] = result["total"] - result["migrated"]
 
+    return result
 
 
 def get_year_heatmap(year: int) -> dict:
