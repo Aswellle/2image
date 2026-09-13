@@ -32,9 +32,11 @@ jobs:
         run: ruff format --check services/ config/ data/ tests/
         continue-on-error: true
 
+
       - name: Security audit — pip-audit (non-blocking)
-        run: pip-audit --strict --dry-run 2>/dev/null || pip-audit || true
+        run: pip-audit || true
         continue-on-error: true
+
 
 
   # ── Tests (Windows) ───────────────────────────────────────────
