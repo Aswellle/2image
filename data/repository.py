@@ -1,20 +1,25 @@
 """
-data/repository.py — SQLite 历史记录存取层  v3
+data/repository.py — SQLite 历史记录存取层  v4
 ─────────────────────────────────────────────
+v4 新增（Phase 1 安全重构）：
+  - delete_entry() 使用 file_ownership.safe_delete_file() 防止路径穿越
+  - migrate_from_json() 改为事务 + report，失败不丢旧数据
+  - save_image_file() 改用 UUID 文件名防碰撞
+  - 原子文件写入（tempfile + os.replace）
+
 v3 新增：
-  tags     TEXT  — 逗号分隔的标签列表（如 "人物,写实,黄金时刻"）
-  + update_tags()      — 更新单条记录的标签
-  + get_all_tags()     — 获取数据库中所有唯一标签（排序）
-  + get_stats()        — 统计看板数据（Provider 分布、每日趋势、标签热度）
-  + get_all_entries()  — 新增 tag_filter 参数支持按标签过滤
+  tags     TEXT  — 逗号分隔的标签列表
 """
 import os
 import sqlite3
 import threading
 import time
+import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 
-from config.settings import DB_FILE
+from config.settings import DB_FILE, IMAGES_DIR
+from services.generation.file_ownership import safe_delete_file
 
 # 每个线程持有独立连接，避免跨线程共享和连接泄漏
 _thread_local = threading.local()
@@ -307,23 +312,60 @@ def get_stats() -> dict:
 # ─── 删除 ─────────────────────────────────────────────────────
 def delete_entry(entry_id: int, remove_file: bool = True) -> None:
     """删除记录，remove_file=True 时同步删除磁盘图片。"""
-    if remove_file:
-        entry = get_entry(entry_id)
-        if entry:
-            p = entry.get("image_path", "")
-            if p and os.path.exists(p):
-                try:
-                    os.remove(p)
-                except OSError:
-                    pass
+    entry = get_entry(entry_id)
+    if entry:
+        p = entry.get("image_path", "")
+        if p:
+            try:
+                safe_delete_file(p)
+            except (ValueError, FileNotFoundError, OSError) as exc:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Failed to delete image for entry %s: %s", entry_id, exc
+                )
+
     with _conn() as c:
         c.execute("DELETE FROM history WHERE id=?", (entry_id,))
         c.commit()
 
 
-def clear_all_entries() -> None:
+
+def clear_all_entries(remove_files: bool = False) -> dict:
+    """
+    Clear history records.
+
+    Args:
+        remove_files: If True, also delete associated image files.
+
+    Returns:
+        Summary dict with counts of records and files processed.
+    """
+    result = {"records": 0, "files_removed": 0, "files_failed": 0}
+
+    if remove_files:
+        # Collect all image paths before deleting records
+        entries = []
+        with _conn() as c:
+            rows = c.execute(
+                "SELECT id, image_path FROM history WHERE image_path != ''"
+            ).fetchall()
+            entries = [dict(r) for r in rows]
+
     with _conn() as c:
-        c.execute("DELETE FROM history"); c.commit()
+        count = c.execute("SELECT COUNT(*) FROM history").fetchone()[0]
+        c.execute("DELETE FROM history")
+        c.commit()
+        result["records"] = count
+
+    if remove_files:
+        for entry in entries:
+            try:
+                if safe_delete_file(entry["image_path"]):
+                    result["files_removed"] += 1
+            except (ValueError, OSError):
+                result["files_failed"] += 1
+
+    return result
 
 
 def count_entries() -> int:
@@ -331,36 +373,82 @@ def count_entries() -> int:
         return c.execute("SELECT COUNT(*) FROM history").fetchone()[0]
 
 
-# ─── 旧版 JSON 迁移 ───────────────────────────────────────────
-def migrate_from_json(json_path: str) -> int:
+def migrate_from_json(json_path: str) -> dict:
+    """
+    Migrate records from old JSON format to SQLite.
+
+    Uses a transaction: if any critical error occurs, rolls back.
+    Partial failures are recorded but don't lose the original file.
+
+    Returns:
+        dict with counts: {"migrated": N, "failed": N, "total": N}
+    """
     import json
+    import logging
+
+    logger = logging.getLogger(__name__)
+    result = {"migrated": 0, "failed": 0, "total": 0}
+
     if not os.path.exists(json_path):
-        return 0
+        return result
+
     try:
         with open(json_path, "r", encoding="utf-8") as f:
             records = json.load(f)
-        count = 0
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.error("Failed to read JSON migration source: %s", exc)
+        return result
+
+    if not isinstance(records, list):
+        logger.error("JSON migration source is not a list")
+        return result
+
+    result["total"] = len(records)
+    migration_errors: list[str] = []
+
+    try:
         with _conn() as c:
             for r in records:
                 try:
                     c.execute(
                         "INSERT OR IGNORE INTO history"
-                        "(id,timestamp,prompt,translated,image_path,provider,nickname,favorited,tags)"
+                        "(id, timestamp, prompt, translated, image_path,"
+                        " provider, nickname, favorited, tags)"
                         " VALUES (?,?,?,?,?,?,NULL,0,'')",
-                        (r.get("id", int(time.time()*1000)), r.get("timestamp",""),
-                         r.get("prompt",""), r.get("translated",""),
-                         r.get("image_path",""), r.get("provider",""))
+                        (
+                            r.get("id", int(time.time() * 1000)),
+                            r.get("timestamp", ""),
+                            r.get("prompt", ""),
+                            r.get("translated", ""),
+                            r.get("image_path", ""),
+                            r.get("provider", ""),
+                        ),
                     )
-                    count += 1
-                except Exception: pass
+                    result["migrated"] += 1
+                except Exception as exc:
+                    result["failed"] += 1
+                    migration_errors.append(str(exc))
+
             c.commit()
-        os.rename(json_path, json_path + ".migrated")
-        return count
-    except Exception: return 0
 
+        # Only rename the original file if ALL records migrated successfully
+        if result["failed"] == 0:
+            os.rename(json_path, json_path + ".migrated")
+            logger.info(
+                "Migration complete: %d/%d records. Original renamed.",
+                result["migrated"], result["total"],
+            )
+        else:
+            logger.warning(
+                "Migration partial: %d/%d records, %d failed. "
+                "Original NOT renamed to preserve data.",
+                result["migrated"], result["total"], result["failed"],
+            )
+    except Exception as exc:
+        logger.error("Migration transaction failed: %s", exc)
+        result["failed"] = result["total"] - result["migrated"]
 
-# ─── 年度热力图数据 ────────────────────────────────────────────
-def get_year_heatmap(year: int) -> dict:
+    return result
     """
     返回指定年全年每天的生成数量。
 

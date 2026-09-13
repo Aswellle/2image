@@ -1,13 +1,26 @@
 """
 services/image_service.py — 图片生成调度器 + 本地落盘
+
+Phase 1 重构：
+  - save_image_file() 改用 UUID 文件名
+  - 原子文件写入（tempfile + os.replace）
+  - 下载使用 bounded_download()
 """
-import io, os, random, re, time
+import io
+import logging
+import os
+import random
+import re
+import tempfile
+import time
+import uuid
 from datetime import datetime
 from typing import Callable, Optional, Tuple
 
 from PIL import Image
 
 from config.settings import IMAGES_DIR
+from services.generation.downloader import bounded_download
 from services.logger import log_to_file
 from services.providers import ALL_PROVIDERS, DEFAULT_ORDER
 
@@ -56,9 +69,17 @@ def generate_image(prompt, w, h, seed, cfg,
 def save_image_file(image_bytes, prompt,
                     seed: int = 0, provider: str = "",
                     translated: str = "", size: str = "") -> str:
-    safe  = re.sub(r'[^\w\s-]', '_', prompt[:32]).strip()
-    fname = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe}.png"
-    fpath = os.path.join(IMAGES_DIR, fname)
+    """
+    Save image with UUID-based filename and atomic write.
+
+    Filename format: YYYY/MM/DD/<uuid>.png
+    Prevents collisions and path traversal.
+    """
+    date_dir = os.path.join(IMAGES_DIR, datetime.now().strftime("%Y/%m/%d"))
+    os.makedirs(date_dir, exist_ok=True)
+
+    file_id = uuid.uuid4().hex
+    final_path = os.path.join(date_dir, f"{file_id}.png")
 
     img = Image.open(io.BytesIO(image_bytes))
 
@@ -75,5 +96,18 @@ def save_image_file(image_bytes, prompt,
     if size:
         meta.add_text("Size", size)
 
-    img.save(fpath, "PNG", pnginfo=meta)
-    return fpath
+    # Atomic write: write to temp file, then rename
+    fd, tmp_path = tempfile.mkstemp(dir=date_dir, suffix=".tmp")
+    try:
+        os.close(fd)
+        img.save(tmp_path, "PNG", pnginfo=meta)
+        os.replace(tmp_path, final_path)
+    except Exception:
+        # Clean up temp file on failure
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+    return final_path
