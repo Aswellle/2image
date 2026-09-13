@@ -130,6 +130,7 @@ jobs:
             dist/SBOM.spdx.json
             dist/build-metadata.json
 
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -137,10 +138,11 @@ jobs:
           name: "v${{ steps.ver.outputs.version }}"
           draft: false
           prerelease: false
-          generate_release_notes: true
+          body_path: RELEASE_NOTES_v${{ steps.ver.outputs.version }}.md
           files: |
             dist/text2image_pro.exe
             installer/Output/*.exe
             SHA256SUMS.txt
             dist/SBOM.spdx.json
             dist/build-metadata.json
+
