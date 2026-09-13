@@ -20,9 +20,13 @@ skip_if_no_tk = pytest.mark.skipif(
 )
 
 
+
+
 @pytest.fixture
 def tk_root():
-    """Create a real Tk root for widget tests."""
+    """Create a real Tk root for widget tests. Skips if tcl/tk unavailable."""
+    if not _tkinter_available():
+        pytest.skip("tcl/tk runtime not available (headless CI)")
     root = tk.Tk()
     root.withdraw()
     yield root
@@ -30,6 +34,7 @@ def tk_root():
         root.destroy()
     except Exception:
         pass
+
 
 
 @pytest.fixture

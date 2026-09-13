@@ -30,10 +30,13 @@ from services.image_service import generate_image, save_image_file
 from services.logger import log_to_file
 from services.translation import has_chinese, translate_zh_to_en
 from services.providers import FREE_PROVIDERS, PAID_PROVIDERS, PROVIDER_KEYS
+
+
 from services.application import GenerationController, MenuController, SettingsController
 
-from ui.viewer import ImageViewerWindow
-from ui.wizard_free import ConfigWizard
+MAX_NICK_LEN = 20  # 昵称/提示符显示截断长度
+
+
 from ui.wizard_paid import PaidWizard
 from ui.prompt_wizard import PromptWizard
 from ui.phrase_panel import PhrasePanel
@@ -98,7 +101,7 @@ class App:
         self._load_entry_job = None
         self._resize_timer = None
 
-        self.menu_controller.build()
+        self._build_menu()
         self._build()
         self._bind_hotkeys()
         self.root.after(50, lambda: self.sidebar._refresh_hist())
