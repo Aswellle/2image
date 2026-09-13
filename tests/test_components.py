@@ -3,10 +3,9 @@ tests/test_components.py — UI component library tests
 """
 from __future__ import annotations
 
-import tkinter as tk
-
 import pytest
 
+from tests.conftest import skip_if_no_tk
 from ui.components import (
     DangerButton,
     EmptyState,
@@ -21,18 +20,7 @@ from ui.components.state_label import GenerationStateLabel
 from services.generation.job_queue import JobState
 
 
-@pytest.fixture
-def tk_root():
-    """Create a real Tk root for widget tests."""
-    root = tk.Tk()
-    root.withdraw()
-    yield root
-    try:
-        root.destroy()
-    except Exception:
-        pass
-
-
+@skip_if_no_tk
 class TestButtons:
     def test_primary_button(self, tk_root):
         btn = PrimaryButton(tk_root, text="Test")
@@ -52,6 +40,7 @@ class TestButtons:
         assert btn.cget("text") == "Ghost"
 
 
+@skip_if_no_tk
 class TestStatusPill:
     def test_info_state(self, tk_root):
         pill = StatusPill(tk_root, state="info", text="INFO")
@@ -61,13 +50,16 @@ class TestStatusPill:
         pill = StatusPill(tk_root, state="success", text="OK")
         assert pill.cget("fg") != ""
 
+
+@skip_if_no_tk
+class TestProviderCard:
     def test_card_creation(self, tk_root):
         card = ProviderCard(tk_root, name="Test", description="Desc", status="info")
         assert card._name_label.cget("text") == "Test"
         assert card._desc_label.cget("text") == "Desc"
 
 
-
+@skip_if_no_tk
 class TestErrorBanner:
     def test_banner_message(self, tk_root):
         banner = ErrorBanner(tk_root, message="Error occurred")
@@ -79,12 +71,14 @@ class TestErrorBanner:
         assert banner._msg.cget("text") == "Updated"
 
 
+@skip_if_no_tk
 class TestEmptyState:
     def test_empty_state(self, tk_root):
         es = EmptyState(tk_root, message="No items")
         assert es._msg.cget("text") == "No items"
 
 
+@skip_if_no_tk
 class TestGenerationStateLabel:
     def test_initial_state(self, tk_root):
         lbl = GenerationStateLabel(tk_root)
@@ -110,5 +104,3 @@ class TestGenerationStateLabel:
         lbl = GenerationStateLabel(tk_root)
         lbl.set_state("failed")
         assert lbl.state == JobState.FAILED
-
-

@@ -1,12 +1,30 @@
-"""Pytest fixtures for text-to-image tests."""
+"""Pytest configuration and fixtures."""
 import pytest
 import tkinter as tk
+
+
+def _tkinter_available() -> bool:
+    """Check if tcl/tk runtime is available (CI environments may not have it)."""
+    try:
+        root = tk.Tk()
+        root.destroy()
+        return True
+    except Exception:
+        return False
+
+
+# Skip marker for tests requiring a display/tcl runtime
+skip_if_no_tk = pytest.mark.skipif(
+    not _tkinter_available(),
+    reason="tcl/tk runtime not available in this environment (headless CI)",
+)
 
 
 @pytest.fixture
 def tk_root():
     """Create a real Tk root for widget tests."""
     root = tk.Tk()
+    root.withdraw()
     yield root
     try:
         root.destroy()
