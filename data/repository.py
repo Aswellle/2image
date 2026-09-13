@@ -171,6 +171,57 @@ def get_all_entries(keyword: str = "",
     return [dict(r) for r in rows]
 
 
+def get_entries_keyset(after_id: int = 0, limit: int = 50,
+                       keyword: str = "", tag_filter: str = "",
+                       only_favorites: bool = False) -> list:
+    """
+    Keyset pagination for history browsing.
+
+    More efficient than OFFSET for deep pagination — O(limit) instead of O(offset+limit).
+
+    Args:
+        after_id: Return entries with id < after_id (0 = from start).
+        limit: Max entries to return.
+        keyword: Optional search filter.
+        tag_filter: Optional tag filter.
+        only_favorites: Only return favorited entries.
+    """
+    clauses, params = [], []
+    if after_id > 0:
+        clauses.append("h.id < ?")
+        params.append(after_id)
+    if only_favorites:
+        clauses.append("favorited = 1")
+    if keyword:
+        clauses.append("(prompt LIKE ? OR nickname LIKE ?)")
+        params += [f"%{keyword}%", f"%{keyword}%"]
+    if tag_filter:
+        clauses.append(
+            "id IN (SELECT et.entry_id FROM entry_tag et "
+            "JOIN tag t ON et.tag_id = t.id WHERE t.name = ?)"
+        )
+        params.append(tag_filter)
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    sql = (
+        "WITH tag_agg AS ("
+        "  SELECT et.entry_id, GROUP_CONCAT(t.name, ',') AS tags"
+        "  FROM entry_tag et JOIN tag t ON et.tag_id = t.id"
+        "  GROUP BY et.entry_id"
+        ") "
+        "SELECT h.id, h.timestamp, h.prompt, h.translated, h.image_path, "
+        "h.provider, h.nickname, h.favorited, COALESCE(ta.tags, '') AS tags "
+        "FROM history h "
+        f"LEFT JOIN tag_agg ta ON ta.entry_id = h.id {where} ORDER BY h.id DESC"
+    )
+    if limit > 0:
+        sql += " LIMIT ?"
+        params.append(limit)
+    with _conn() as c:
+        rows = c.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+
 def get_entry(entry_id: int):
     with _conn() as c:
         row = c.execute("SELECT * FROM history WHERE id=?", (entry_id,)).fetchone()
@@ -448,7 +499,9 @@ def migrate_from_json(json_path: str) -> dict:
         logger.error("Migration transaction failed: %s", exc)
         result["failed"] = result["total"] - result["migrated"]
 
-    return result
+
+
+def get_year_heatmap(year: int) -> dict:
     """
     返回指定年全年每天的生成数量。
 
