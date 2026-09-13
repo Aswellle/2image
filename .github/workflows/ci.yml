@@ -24,7 +24,7 @@ jobs:
       - name: Lint — critical (F821/E9, blocking)
         run: ruff check services/ config/ data/ tests/ --select F821,E9
 
-      - name: Lint — extended (warnings, non-blocking)
+      - name: Lint — extended (non-blocking)
         run: ruff check services/ config/ data/ tests/ --select F401,F841,E402
         continue-on-error: true
 
@@ -87,7 +87,7 @@ jobs:
           PYTHONUTF8: "1"
         run: python auto_build.py
 
-      - name: Generate checksums
+      - name: Generate checksums + SBOM
         shell: pwsh
         run: |
           $Output = @()
@@ -97,6 +97,7 @@ jobs:
           }
           $Output | Out-File -FilePath SHA256SUMS.txt -Encoding utf8
           Get-Content SHA256SUMS.txt
+          python tools/generate_sbom.py
 
       - name: Upload portable EXE
         uses: actions/upload-artifact@v4
@@ -112,11 +113,14 @@ jobs:
           path: installer/Output/*.exe
           if-no-files-found: warn
 
-      - name: Upload checksums
+      - name: Upload checksums + SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: text2image-pro-v${{ steps.ver.outputs.version }}-checksums
-          path: SHA256SUMS.txt
+          name: text2image-pro-v${{ steps.ver.outputs.version }}-artifacts
+          path: |
+            SHA256SUMS.txt
+            dist/SBOM.spdx.json
+            dist/build-metadata.json
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -130,3 +134,5 @@ jobs:
             dist/text2image_pro.exe
             installer/Output/*.exe
             SHA256SUMS.txt
+            dist/SBOM.spdx.json
+            dist/build-metadata.json
