@@ -21,17 +21,16 @@ from PIL import Image, ImageTk
 
 from config.settings import load_config, save_config
 from config.fonts import F
-from data.repository import (
-    add_entry, get_all_entries, delete_entry,
-    clear_all_entries, count_entries,
-    rename_entry, toggle_favorite,
-    update_tags, get_all_tags, get_stats,
-    get_year_heatmap, get_available_years, get_year_stats,
-)
+from data.repository import (add_entry, clear_all_entries, count_entries,
+                             delete_entry, get_all_entries, get_all_tags,
+                             get_entry, get_stats, get_year_heatmap,
+                             get_available_years, get_year_stats,
+                             rename_entry, toggle_favorite, update_tags)
 from services.image_service import generate_image, save_image_file
 from services.logger import log_to_file
 from services.translation import has_chinese, translate_zh_to_en
 from services.providers import FREE_PROVIDERS, PAID_PROVIDERS, PROVIDER_KEYS
+from services.application import GenerationController, MenuController, SettingsController
 
 from ui.viewer import ImageViewerWindow
 from ui.wizard_free import ConfigWizard
@@ -43,7 +42,8 @@ from ui.main_content import MainContent
 
 from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color, init_theme
 from config.i18n import _, init_language
-MAX_NICK_LEN = 20
+
+
 SIDEBAR_DEF  = 360
 SIDEBAR_MIN  = 240
 SIDEBAR_MAX  = 600
@@ -67,37 +67,47 @@ class App:
         if screen_w < 1400 or screen_h < 800:
             root.state("zoomed")
 
-        self.cfg            = load_config()
+        self.cfg = load_config()
         init_theme(self.cfg)
         init_language(self.cfg)
-        self.cur_path       = None
-        self.sel_id         = None
-        self._viewer_win    = None
-        self._prompt_wizard = None
-        self._phrase_panel  = None
-        self._cur_bytes     = None
 
-        # 侧栏宽度
-        self._sidebar_w   = SIDEBAR_DEF
+        # Initialize controllers
+        self.menu_controller = MenuController(self)
+        self.settings_controller = SettingsController(self)
+        self.gen_controller = GenerationController(self)
+
+        self.cur_path = None
+        self.sel_id = None
+        self._viewer_win = None
+        self._prompt_wizard = None
+        self._phrase_panel = None
+        self._cur_bytes = None
+
+        # Sidebar width
+        self._sidebar_w = SIDEBAR_DEF
         self.MAX_NICK_LEN = MAX_NICK_LEN
         self._sash_drag_x = None
         self._sash_drag_w = None
 
-        # 批量（单张 / 旧兼容路径）
-        self._batch_total  = 0
-        self._batch_done   = 0
+        # Batch state
+        self._batch_total = 0
+        self._batch_done = 0
         self._batch_params = None
 
-        # _load_entry 防抖 job
+        # Debounce jobs
         self._load_entry_job = None
         self._resize_timer = None
 
-        self._build_menu()
+        self.menu_controller.build()
         self._build()
         self._bind_hotkeys()
-        # Fix-6: 延迟首次刷新，等待 Canvas <Configure> 事件处理完毕后
-        # self.hc 的 window item (_hw) 才会获得正确的 explicit width，
-        # 否则 self.hi 无宽度约束，卡片布局在 "浮动" 状态下建立，
+        self.root.after(50, lambda: self.sidebar._refresh_hist())
+        self._update_status_bar_tokens()
+
+        if self.cfg.get("show_wizard_on_start", True):
+            root.after(300, self._open_wizard)
+
+
         # 导致 thumb_lbl 字符单位宽度把 right 挤成 0px → 标题/信息不可见。
         self.root.after(50, lambda: self.sidebar._refresh_hist())
         self._update_status_bar_tokens()
@@ -209,107 +219,12 @@ class App:
         r.bind("<Control-o>",        lambda e: self._open_viewer())
         r.bind("<Control-O>",        lambda e: self._open_viewer())
         r.bind("<Control-r>",        lambda e: self._gen())
-        r.bind("<Control-R>",        lambda e: self._gen())
-        r.bind("<Control-p>",        lambda e: self._open_prompt_wizard())
-        r.bind("<Control-P>",        lambda e: self._open_prompt_wizard())
-        r.bind("<Control-l>",        lambda e: self._clr_log())
-        r.bind("<Control-L>",        lambda e: self._clr_log())
-        r.bind("<Control-b>",        lambda e: self._open_phrase_panel())
-        r.bind("<Control-B>",        lambda e: self._open_phrase_panel())
-        r.bind("<Control-q>",        lambda e: self._switch_to_queue_tab())
-        r.bind("<Control-Q>",        lambda e: self._switch_to_queue_tab())
 
-    # ══════════════════════════════════════════════════════════
-    #   菜单
-    # ══════════════════════════════════════════════════════════
-    def _build_menu(self):
-        from config.settings import APP_DIR, LOG_FILE
+    # ── Controllers delegate menu/settings/build ─────────────────────
+    def _build_menu(self) -> None:
+        """Delegated to MenuController."""
+        self.menu_controller.build()
 
-        def _menu(parent):
-            return tk.Menu(parent, tearoff=0,
-                           bg=C["panel"], fg=C["text"],
-                           activebackground=C["acc"], activeforeground="white",
-                           relief="flat", bd=0)
-
-        def _open(url):
-            return lambda: webbrowser.open(url)
-
-        menubar = tk.Menu(self.root, bg=C["panel"], fg=C["text"],
-                          activebackground=C["acc"], activeforeground="white",
-                          relief="flat", bd=0)
-        self.root.config(menu=menubar)
-
-        # ── 🛠 工具 ───────────────────────────────────────────────
-        m_tools = _menu(menubar)
-        menubar.add_cascade(label=_("menu_tools"), menu=m_tools)
-        m_tools.add_command(label=_("wizard_title") + "…        Ctrl+P",
-                            command=self._open_prompt_wizard)
-        m_tools.add_separator()
-        m_tools.add_command(label=_("phrase_title") + "…         Ctrl+B",
-                            command=self._open_phrase_panel)
-        m_tools.add_command(label=_("btn_variant_gen"),
-                            command=self._switch_to_variant_tab)
-        m_tools.add_command(label="  📋  " + _("tab_queue").strip() + "…         Ctrl+Q",
-                            command=self._switch_to_queue_tab)
-
-        # ── 🔑 接口配置 ───────────────────────────────────────────
-        m_api = _menu(menubar)
-        menubar.add_cascade(label=" 🔑  接口配置 ", menu=m_api)
-        m_api.add_command(label="  🆓  免费接口配置…",  command=self._open_wizard)
-        m_api.add_command(label="  💎  付费接口配置…",  command=self._open_paid_wizard)
-        m_api.add_separator()
-
-        # 免费接口注册链接子菜单
-        m_free_links = _menu(m_api)
-        m_api.add_cascade(label="  🌐  免费接口注册链接", menu=m_free_links)
-        m_free_links.add_command(label="  ★  硅基流动（推荐，免费赠额）",
-            command=_open("https://cloud.siliconflow.cn/account/ak"))
-        m_free_links.add_command(label="  ·  Google Gemini（500次/天）",
-            command=_open("https://aistudio.google.com/app/apikey"))
-        m_free_links.add_command(label="  ·  Cloudflare AI（1万次/天）",
-            command=_open("https://dash.cloudflare.com/profile/api-tokens"))
-        m_free_links.add_command(label="  ·  OpenRouter（部分模型免费）",
-            command=_open("https://openrouter.ai/keys"))
-        m_free_links.add_command(label="  ·  ModelsLab（100次/天）",
-            command=_open("https://modelslab.com/dashboard/api"))
-        m_free_links.add_command(label="  ·  Segmind（注册送 $5）",
-            command=_open("https://www.segmind.com/"))
-        m_free_links.add_command(label="  ·  HuggingFace Token",
-            command=_open("https://huggingface.co/settings/tokens/new?tokenType=read"))
-
-        # 付费接口注册链接子菜单
-        m_paid_links = _menu(m_api)
-        m_api.add_cascade(label="  🌐  付费接口注册链接", menu=m_paid_links)
-        m_paid_links.add_command(label="  ·  OpenAI GPT-Image",
-            command=_open("https://platform.openai.com/api-keys"))
-        m_paid_links.add_command(label="  ·  Stability AI",
-            command=_open("https://platform.stability.ai/"))
-        m_paid_links.add_command(label="  ·  Replicate FLUX",
-            command=_open("https://replicate.com/account/api-tokens"))
-        m_paid_links.add_command(label="  ·  xAI Grok（注册送 $25）",
-            command=_open("https://console.x.ai/"))
-
-        # ── 📊 数据 ───────────────────────────────────────────────
-        m_data = _menu(menubar)
-        menubar.add_cascade(label=_("menu_data"), menu=m_data)
-        m_data.add_command(label="  📊  统计看板…",  command=self._show_stats)
-        m_data.add_separator()
-        def _open_path(p):
-            if os.name == "nt":
-                os.startfile(p)
-            else:
-                import subprocess as _sp
-                _sp.Popen(["xdg-open", p])
-        m_data.add_command(label="  📁  数据文件夹",
-            command=lambda: _open_path(APP_DIR))
-        m_data.add_command(label="  📄  调试日志",
-            command=lambda: _open_path(LOG_FILE))
-
-        # ── ⚙ 设置 ───────────────────────────────────────────────
-        m_set = _menu(menubar)
-        menubar.add_cascade(label=_("menu_settings"), menu=m_set)
-        m_set.add_command(label="  🖼  应用偏好设置…",  command=self._open_app_settings)
-        m_set.add_command(label="  ⌨  快捷键说明…",    command=self._show_shortcuts)
 
     # ══════════════════════════════════════════════════════════
     #   主框架
@@ -469,36 +384,11 @@ class App:
     def _switch_to_queue_tab(self):
         self.content._nb.select(2)
 
-    def _gen_variants(self):
-        # 批量生成链路不接收参考图，图生图模式下直接拦下（按钮正常已禁用，兜底而已）。
-        if getattr(self.content, "_gen_mode", "t2i") == "i2i":
-            messagebox.showwarning(
-                "提示", "批量生成暂不支持图生图模式\n请切换到「📝 文生图」后再批量生成")
-            return
-        prompt = self.content.pt.get("1.0", "end").strip()
-        if not prompt: messagebox.showwarning("提示", "请先输入描述文字！"); return
-        psel = self.content.pv.get()
-        if psel.startswith("───"):
-            messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。"); return
-        n      = max(1, min(6, self.content.variant_n_var.get()))
-        sz     = self.content.szv.get()
-        w, h   = [int(x) for x in sz.replace("×", "x").split("x")]
-        if psel == _("provider_auto"):
-            from services.smart_router import get_provider_order
-            porder = get_provider_order(prompt, self.cfg)
-        else:
-            porder = [psel]
-        self._batch_params = {"prompt": prompt, "translated": "", "w": w, "h": h,
-                               "porder": porder, "cfg": self.cfg}
-        self.content._nb.select(1)
-        from services.translation import translate_zh_to_en as _trans
-        self.content._batch_panel.start_batch(
-            n=n, params=self._batch_params,
-            translate_fn=lambda p, cfg, log_cb: _trans(p, log_cb=log_cb),
-            generate_fn=generate_image, save_fn=save_image_file,
-            log_fn=self._log, on_keep_fn=self._on_variant_kept)
-        self._st(_("status_batch_start", n=n), "warn")
-        self._log(f"🎲 变体生成 n={n} size={sz}")
+    def _gen_variants(self) -> None:
+        """Delegated to GenerationController."""
+        self.gen_controller.generate_variants()
+
+
 
     def _on_variant_kept(self, entry: dict):
         """
@@ -569,74 +459,15 @@ class App:
     # ══════════════════════════════════════════════════════════
     #   ⚙ 设置
     # ══════════════════════════════════════════════════════════
-    def _show_shortcuts(self):
-        win = tk.Toplevel(self.root); win.title("⌨ 快捷键说明")
-        win.configure(bg=C["bg"]); win.resizable(False, False); win.grab_set()
-        win.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width()  - 520) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - 460) // 2
-        win.geometry(f"520x460+{max(0,x)}+{max(0,y)}")
-        hdr = tk.Frame(win, bg=C["acc"]); hdr.pack(fill="x")
-        tk.Label(hdr, text="⌨  快捷键说明", font=F["h1"],
-                 bg=C["acc"], fg="white").pack(side="left", padx=16, pady=10)
-        body = tk.Frame(win, bg=C["bg"]); body.pack(fill="both", expand=True, padx=20, pady=16)
-        rows = [
-            ("生成 / 重新生成",    "Ctrl + Enter  /  Ctrl + R"),
-            ("AI 提示词助手",      "Ctrl + P"),
-            ("📚 提示词片段库",    "Ctrl + B"),
-            ("另存为",             "Ctrl + S"),
-            ("导出历史记录",       "Ctrl + E"),
-            ("打开独立查看器",     "Ctrl + O"),
-            ("清空调试日志",       "Ctrl + L"),
-        ]
-        for i, (action, keys) in enumerate(rows):
-            rb = C["panel"] if i % 2 == 0 else C["bg"]
-            row = tk.Frame(body, bg=rb); row.pack(fill="x", pady=1)
-            tk.Label(row, text=action, font=F["input"], bg=rb, fg=C["text"],
-                     width=20, anchor="w").pack(side="left", padx=(10, 0), pady=6)
-            tk.Label(row, text=keys, font=F["mono_lg"],
-                     bg=rb, fg=C["ok"], anchor="w").pack(side="left", padx=12, pady=6)
-        tk.Button(win, text=_("btn_close"), font=F["input"], bg=C["acc"], fg="white",
-                  bd=0, padx=24, pady=6, cursor="hand2", command=win.destroy
-                  ).pack(pady=(8, 16))
+    #   Settings & shortcuts (delegated to SettingsController) ───
+    # ══════════════════════════════════════════════════════════
+    def _show_shortcuts(self) -> None:
+        self.settings_controller.show_shortcuts()
 
-    def _open_app_settings(self):
-        win = tk.Toplevel(self.root); win.title("🖼 应用偏好设置")
-        win.configure(bg=C["bg"]); win.resizable(False, False); win.grab_set()
-        win.update_idletasks()
-        x = self.root.winfo_x() + (self.root.winfo_width()  - 460) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - 360) // 2
-        win.geometry(f"460x360+{max(0,x)}+{max(0,y)}")
-        hdr = tk.Frame(win, bg=C["acc"]); hdr.pack(fill="x")
-        tk.Label(hdr, text="🖼  应用偏好设置", font=F["h1"],
-                 bg=C["acc"], fg="white").pack(side="left", padx=16, pady=10)
-        body = tk.Frame(win, bg=C["bg"]); body.pack(fill="both", expand=True, padx=24, pady=16)
-        tk.Label(body, text="默认生成尺寸", font=F["btn"],
-                 bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
-        sz_var = tk.StringVar(value=self.cfg.get("default_size", "1024x1024").replace("×", "x"))
-        ttk.Combobox(body, textvariable=sz_var, state="readonly", width=20,
-                     values=["512x512","768x768","1024x1024","1024x576","1280x720",
-                             "1920x1080","576x1024","720x1280","768x1024"]
-                     ).pack(anchor="w", pady=(0, 14))
-        tk.Label(body, text="启动行为", font=F["btn"],
-                 bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
-        wiz_var = tk.BooleanVar(value=self.cfg.get("show_wizard_on_start", True))
-        tk.Checkbutton(body, text="启动时显示免费接口配置向导",
-                       variable=wiz_var, font=F["body"], bg=C["bg"], fg=C["text"],
-                       activebackground=C["bg"], selectcolor=C["entry"]).pack(anchor="w")
-        st = tk.Label(body, text="", font=F["body"], bg=C["bg"], fg=C["ok"]); st.pack(anchor="w", pady=(12, 0))
-        def _save():
-            self.cfg["default_size"] = sz_var.get()
-            self.cfg["show_wizard_on_start"] = wiz_var.get()
-            save_config(self.cfg); self.content.szv.set(sz_var.get())
-            st.config(text="✅ 已保存！"); win.after(1200, win.destroy)
-        bot = tk.Frame(win, bg=C["panel"]); bot.pack(fill="x", side="bottom")
-        tk.Button(bot, text=_("btn_save"), font=F["btn"], bg=C["ok"], fg="#0a1a0a",
-                  bd=0, padx=24, pady=8, cursor="hand2", command=_save
-                  ).pack(side="right", padx=16, pady=10)
-        tk.Button(bot, text=_("btn_cancel"), font=F["body"], bg=C["panel"], fg=C["sub"],
-                  bd=0, padx=16, pady=8, cursor="hand2", command=win.destroy
-                  ).pack(side="right", pady=10)
+    def _open_app_settings(self) -> None:
+        self.settings_controller.show_app_settings()
+
+
 
     # ══════════════════════════════════════════════════════════
     #   📊 统计看板  v2  —  GitHub 风格全年热力图 + 完整重设计
@@ -700,124 +531,17 @@ class App:
         self.content.logt.configure(state="disabled")
 
     # ══════════════════════════════════════════════════════════
-    #   单张图片生成
+    #   单张图片生成 (delegated to GenerationController) ─────────
     # ══════════════════════════════════════════════════════════
-    def _gen(self, event=None):
-        prompt = self.content.pt.get("1.0", "end").strip()
-        MAX_PROMPT_CHARS = 2000
-        if len(prompt) > MAX_PROMPT_CHARS:
-            self._st(_("status_prompt_too_long", cur=len(prompt), max=MAX_PROMPT_CHARS), "hl")
-            return
-        if not prompt: messagebox.showwarning("提示", "请先输入描述文字！"); return
-        psel = self.content.pv.get()
-        if psel.startswith("───"):
-            messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。"); return
-        checks = {
-            "💎 OpenAI GPT-Image": ("openai_key",   self._open_paid_wizard,
-                                    "使用 OpenAI GPT-Image 需要填写 API Key。\n是否现在配置？"),
-            "💎 Stability AI":    ("stability_key", self._open_paid_wizard,
-                                    "使用 Stability AI 需要填写 API Key。\n是否现在配置？"),
-            "💎 Replicate FLUX":  ("replicate_key", self._open_paid_wizard,
-                                    "使用 Replicate 需要填写 API Token。\n是否现在配置？"),
-            "💎 Nano Banana Pro (Gemini 3 Pro Image)": ("gemini_key", self._open_wizard,
-                                    "使用 Nano Banana Pro 需要填写 Google Gemini API Key。\n是否现在配置？"),
-            "💎 MiniMax image-01": ("minimax_key",  self._open_paid_wizard,
-                                    "使用 MiniMax image-01 需要填写 API Key。\n是否现在配置？"),
-            "💎 Black Forest Labs FLUX": ("bfl_key", self._open_paid_wizard,
-                                    "使用 Black Forest Labs 官方 API 需要填写 API Key。\n是否现在配置？"),
-            "硅基流动 SiliconFlow (★推荐)": ("sf_key",   self._open_wizard,
-                                    "使用硅基流动需要填写 API Key。\n是否现在配置？"),
-            "HuggingFace (备用)": ("hf_token",      self._open_wizard,
-                                    "使用 HuggingFace 需要填写 Token。\n是否现在配置？"),
-        }
-        if psel in checks:
-            key_name, wizard_fn, msg = checks[psel]
-            if not self.cfg.get(key_name, "").strip():
-                if messagebox.askyesno("需要配置", msg): wizard_fn()
-                return
-        if psel == _("provider_auto"):
-            if not self.cfg.get("sf_key","").strip() and not self.cfg.get("hf_token","").strip():
-                if messagebox.askyesno("建议配置",
-                    "尚未配置任何免费 API Key。\n建议配置「硅基流动」。\n是否现在配置？"):
-                    self._open_wizard(); return
-        sz = self.content.szv.get(); w, h = [int(x) for x in sz.replace("×", "x").split("x")]
-        if psel == _("provider_auto"):
-            from services.smart_router import get_provider_order
-            porder = get_provider_order(prompt, self.cfg)
-        else:
-            porder = [psel]
-        self._batch_total = 1; self._batch_done = 0
-        self._batch_params = {"prompt": prompt, "translated": "", "w": w, "h": h,
-                               "porder": porder, "cfg": self.cfg}
-        self.content.gb.config(state="disabled", text=_("btn_generating"))
-        self.content.pb.pack(fill="x", padx=14, pady=(0, 4)); self.content.pb.start(10)
-        self._st(_("status_translating"), "warn")
-        self.content._prev_cv.delete("prev"); self.content._prev_item = None
-        self.content._prev_cv.update_idletasks()
-        cw = self.content._prev_cv.winfo_width() or 600; ch = self.content._prev_cv.winfo_height() or 400
-        self.content._prev_cv.itemconfig(self.content._prev_ph, text=_("status_generating"))
-        self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
-        self._log(f"── 开始: {prompt[:60]} ──")
-        self.content._nb.select(0)  # 切换到预览 Tab
+    def _gen(self, event=None) -> None:
+        self.gen_controller.generate(event)
 
-        def _make_status_cb(total):
-            cnt = [0]
-            def cb(msg):
-                cnt[0] += 1
-                self.root.after(0, lambda: self._st(f"[{cnt[0]}/{total}] {msg}", "warn"))
-            return cb
-        def _run():
-            seed       = random.randint(0, 2_147_483_647)
-            translated = prompt
-            if has_chinese(prompt):
-                self.root.after(0, lambda: self._st(_("status_translating"), "warn"))
-                translated = translate_zh_to_en(prompt, log_cb=self._log)
-                self._batch_params["translated"] = translated
-            try:
-                # 只在图生图模式且已选取参考图时传入，文生图模式始终为 None
-                _gen_mode = getattr(self.content, '_gen_mode', 't2i')
-                if _gen_mode == 'i2i':
-                    ref_image = getattr(self.content, '_ref_image', None)
-                    strength  = getattr(self.content, '_ref_strength', None)
-                    strength  = strength.get() if strength is not None else 0.6
-                    if ref_image is None:
-                        self.root.after(0, lambda: self._err("图生图模式需要先选取参考图"))
-                        return
-                else:
-                    ref_image = None
-                    strength  = 0.6
-                data, used = generate_image(
-                    translated, w, h, seed, self.cfg,
-                    provider_order=porder,
-                    status_cb=_make_status_cb(len(porder)),
-                    log_cb=self._log,
-                    ref_image=ref_image,
-                    strength=strength)
-                path = save_image_file(data, prompt,
-                                       seed=seed, provider=used,
-                                       translated=translated,
-                                       size=f"{w}x{h}")
-                add_entry(prompt, translated, path, used)
-                self.root.after(0, lambda: self._ok(data, path, used))
-            except Exception as ex:
-                self.root.after(0, lambda e=str(ex): self._err(e))
 
-        threading.Thread(target=_run, daemon=True).start()
-
-    def _ok(self, data: bytes, path: str, prov: str):
-        self.content.pb.stop(); self.content.pb.pack_forget()
+    def _err(self, err: str) -> None:
+        """Handle generation error (kept in App for UI state access)."""
         self.content.gb.config(state="normal", text=_("btn_generate"))
-        self.cur_path = path; self._cur_bytes = data
-        self.content._set_preview(data)
-        self._push_to_viewer(data, path)
-        self._st(_("status_success", prov=prov), "ok")
-        self._log(f"✓ 成功 provider={prov}")
-        self._batch_params = None
-        self.sidebar._refresh_hist(); self.content._refresh_tag_stats()
-
-    def _err(self, err: str):
-        self.content.gb.config(state="normal", text=_("btn_generate"))
-        self.content.pb.stop(); self.content.pb.pack_forget()
+        self.content.pb.stop()
+        self.content.pb.pack_forget()
         self._batch_params = None
 
         friendly = err
@@ -832,62 +556,18 @@ class App:
         elif "ConnectionError" in err or "connection" in err.lower():
             friendly = _("err_connection")
 
-        self._st(f"❌ {friendly}", "hl"); self._log(f"✗ {err}")
-        cw = self.content._prev_cv.winfo_width() or 600; ch = self.content._prev_cv.winfo_height() or 400
+        self._st(f"❌ {friendly}", "hl")
+        self._log(f"✗ {err}")
+        cw = self.content._prev_cv.winfo_width() or 600
+        ch = self.content._prev_cv.winfo_height() or 400
         self.content._prev_cv.itemconfig(self.content._prev_ph, text=_("preview_error"))
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
-        if any(k in err for k in ["API Key","Key","Token","token","401","402","403","额度"]):
+        if any(k in err for k in ["API Key", "Key", "Token", "token", "401", "402", "403", "额度"]):
             self.root.after(100, lambda: messagebox.showwarning(
                 "需要配置 API Key",
                 f"{err[:200]}\n\n点击「🆓 免费配置」配置硅基流动 API Key。"))
 
-    def _update_char_count(self):
-        """更新输入框字符计数标签（公开，供 PhrasePanel 等外部调用）。"""
-        try:
-            txt = self.content.pt.get("1.0", "end-1c")   # end-1c 排除末尾隐式换行
-            n   = len(txt)
-            color = (C["ok"]   if n < 200
-                     else C["warn"] if n < 400
-                     else C["hl"])
-            self.content._char_lbl.config(text=_("lbl_chars", n=n), fg=color)
-        except Exception:
-            pass
 
-    def _st(self, msg: str, k: str = "ok"):
-        m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"]}
-        self.content.stv.set(msg); self.content.stl.config(fg=m.get(k, C["ok"]))
-
-    # ══════════════════════════════════════════════════════════
-    #   重置 / 导出 / 保存
-    # ══════════════════════════════════════════════════════════
-    def _reset_view(self):
-        # ── Bug4 修复：重置全部过滤状态，确保"清空当前显示"能恢复完整列表 ──
-        self.sidebar._tag_filter = ""
-        self.sidebar._fav_only   = False
-        try:
-            self.sidebar._btn_all.config(bg=C["acc"], fg="white")
-            self.sidebar._btn_fav.config(bg=C["panel"], fg=C["star_off"])
-            self.sidebar._refresh_tag_chips()
-        except Exception:
-            pass
-        # ── 清空主界面状态 ──
-        self.sel_id = self.cur_path = None
-        self._cur_bytes = self.content._prev_orig = None
-        self.content.pt.delete("1.0", "end")
-        self.content._prev_cv.delete("prev"); self.content._prev_item = None
-        self.content._clear_compare()
-        self.content._prev_cv.update_idletasks()
-        cw = self.content._prev_cv.winfo_width() or 600; ch = self.content._prev_cv.winfo_height() or 400
-        self.content._prev_cv.itemconfig(self.content._prev_ph,
-            text=_("preview_placeholder"))
-        self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
-        self.sidebar._refresh_hist()
-        self._st(_("status_ready"), "ok")
-
-    def _export(self):
-        items = get_all_entries()
-        if not items: messagebox.showinfo(_("status_no_records"), _("status_no_records")); return
-        d = filedialog.askdirectory(title=_("dlg_select_export_dir"))
         if not d: return
         out = os.path.join(d, f"AI生图_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         os.makedirs(out, exist_ok=True)

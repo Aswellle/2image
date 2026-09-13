@@ -86,6 +86,11 @@ def init_db() -> None:
         c.commit()
         _migrate_tags_from_csv()
 
+        # Setup FTS5 search
+        from data.search import setup_fts5
+        setup_fts5(c)
+
+
 def _migrate_tags_from_csv():
     """Migrate tags from CSV column to junction tables (one-time)."""
     with _conn() as c:

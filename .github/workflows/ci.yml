@@ -19,7 +19,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install tools
-        run: pip install ruff pytest pytest-cov
+        run: pip install ruff pytest pytest-cov pip-audit
 
       - name: Lint — critical (F821/E9, blocking)
         run: ruff check services/ config/ data/ tests/ --select F821,E9
@@ -31,6 +31,11 @@ jobs:
       - name: Format check (non-blocking)
         run: ruff format --check services/ config/ data/ tests/
         continue-on-error: true
+
+      - name: Security audit — pip-audit (non-blocking)
+        run: pip-audit --strict --dry-run 2>/dev/null || pip-audit || true
+        continue-on-error: true
+
 
   # ── Tests (Windows) ───────────────────────────────────────────
   test:

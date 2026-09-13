@@ -1,7 +1,13 @@
 """
-config/theme.py — 统一配色方案
-所有 UI 模块从此处导入，确保全局色彩一致。
+config/theme.py — Unified color scheme and design tokens.
+All UI modules import from here for global color consistency.
+
+Design tokens (semantic names) are provided via config/design_tokens.py
+This module provides backward-compatible DARK_THEME/LIGHT_THEME dicts.
 """
+from config.design_tokens import TOKENS, LIGHT_TOKENS, DesignTokens
+
+
 
 DARK_THEME = {
     # 基础
