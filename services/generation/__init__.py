@@ -1,9 +1,9 @@
 """
 services/generation/__init__.py — Generation core package
 ─────────────────────────────────────────────────────────
+Job orchestration, routing, health tracking, and metrics.
 Holds error taxonomy, retry policy, health tracking,
-orchestrator, and router.  The old ``image_service.py``
-becomes a thin façade that delegates here.
+orchestrator, router, and job queue.
 """
 from services.generation.cancellation import CancellationToken, Deadline
 from services.generation.errors import (
