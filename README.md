@@ -27,7 +27,7 @@
 </p>
 
 <p>
-  <b>语言：</b>
+  <b>language：</b>
   <a href="https://github.com/Aswellle/2image/blob/main/README.en.md">English</a>
   &nbsp;|&nbsp;
   <a href="#中文">中文</a>
