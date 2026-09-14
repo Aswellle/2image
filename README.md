@@ -1,7 +1,7 @@
 <div align="center">
 
 <h1>
-  <img src="https://raw.githubusercontent.com.com/Aswellle/2image/main/assets/banner.png" alt="2image" width="48" align="bottom" />
+  <img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/banner.png" alt="2image" width="48" align="bottom" />
   &nbsp;2image
 </h1>
 
