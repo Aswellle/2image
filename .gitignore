@@ -99,3 +99,7 @@ wheels/
 Thumbs.db
 ehthumbs.db
 desktop.ini
+
+# Internal audit / review artifacts (not for distribution)
+AUDIT_IMPLEMENTATION_GAP.md
+BEHAVIOR_DEVIATION_REPORT.md
