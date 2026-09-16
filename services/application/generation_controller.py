@@ -12,6 +12,8 @@ from tkinter import messagebox
 
 from config.i18n import _
 from data.repository import add_entry
+from services.generation.cancellation import CancellationToken
+from services.generation.errors import DeadlineExceeded, GenerationCancelled
 from services.image_service import generate_image, save_image_file
 from services.smart_router import get_provider_order
 from services.translation import has_chinese, translate_zh_to_en
@@ -26,6 +28,7 @@ class GenerationController:
         self.app = app
         self.root = app.root
         self.cfg = app.cfg
+        self._cancel_token: CancellationToken | None = None
 
     def generate(self, event=None) -> None:
         """Start single-image generation."""
@@ -82,9 +85,20 @@ class GenerationController:
         self.app._log(f"── 开始: {prompt[:60]} ──")
         content._nb.select(0)
 
-        # Start generation thread
-        threading.Thread(target=self._run_generation, args=(prompt, w, h, porder), daemon=True).start()
+        # Create cancellation token for this generation job
+        self._cancel_token = CancellationToken()
 
+        # Start generation thread
+        threading.Thread(
+            target=self._run_generation,
+            args=(prompt, w, h, porder, self._cancel_token),
+            daemon=True,
+        ).start()
+
+    def cancel_generation(self) -> None:
+        """Cancel the currently running generation, if any."""
+        if self._cancel_token is not None:
+            self._cancel_token.cancel()
     def _check_provider_key(self, psel: str) -> bool:
         """Check if selected provider has required API key configured."""
         checks = {
@@ -115,8 +129,14 @@ class GenerationController:
                 wizard_fn()
             return False
         return True
-
-    def _run_generation(self, prompt: str, w: int, h: int, porder: list) -> None:
+    def _run_generation(
+        self,
+        prompt: str,
+        w: int,
+        h: int,
+        porder: list,
+        token: CancellationToken | None = None,
+    ) -> None:
         """Background generation worker."""
         seed = random.randint(0, 2_147_483_647)
         translated = prompt
@@ -147,7 +167,9 @@ class GenerationController:
                 status_cb=self._make_status_cb(len(porder)),
                 log_cb=self.app._log,
                 ref_image=ref_image,
-                strength=strength)
+                strength=strength,
+                token=token,
+            )
 
             path = save_image_file(data, prompt,
                                    seed=seed, provider=used,
@@ -155,6 +177,10 @@ class GenerationController:
                                    size=f"{w}x{h}")
             add_entry(prompt, translated, path, used)
             self.root.after(0, lambda: self.app._ok(data, path, used))
+        except GenerationCancelled:
+            self.root.after(0, lambda: self.app._st(_("status_cancelled"), "warn"))
+        except DeadlineExceeded as ex:
+            self.root.after(0, lambda: self.app._err(f"⏰ 生成超时: {ex}"))
         except Exception as ex:
             self.root.after(0, lambda e=str(ex): self.app._err(e))
 
