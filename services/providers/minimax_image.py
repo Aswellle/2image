@@ -115,7 +115,6 @@ def try_minimax_image(
                     log("[MiniMax] 速率限制，等待 20s…")
                     time.sleep(20)
                     continue
-                return (image_bytes, f"MiniMax/{MINIMAX_IMAGE_NAMES.get(_MODEL, _MODEL)}")
                 if resp.status_code != 200:
                     raise RuntimeError(
                         f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
@@ -125,7 +124,7 @@ def try_minimax_image(
                 image_bytes = _extract_image(data)
                 _LAST_DONE[0] = time.time()
                 log("[MiniMax] 生成成功 ✓")
-                return (image_bytes, "MiniMax/image-01")
+                return (image_bytes, f"MiniMax/{MINIMAX_IMAGE_NAMES.get(_MODEL, _MODEL)}")
 
             except (ValueError, RuntimeError) as e:
                 last_err = e

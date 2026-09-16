@@ -16,6 +16,8 @@ import threading
 import time
 from typing import Callable, Tuple
 
+import requests
+
 from config.model_catalog import (
     GEMINI_IMAGE_MODELS,
     GEMINI_IMAGE_DEFAULT,
