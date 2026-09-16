@@ -75,7 +75,7 @@
 直接输入中文描述，程序自动调用 MyMemory 翻译为英文再送入生图接口——无需手动翻译，无需额外配置。
 
 ### 🔒 数据完全本地
-所有图片、历史记录、配置均保存在你的电脑（`~/.text_to_image_app/`），不上传任何用户数据。
+所有图片、历史记录、配置均保存在你的电脑（`~/2image/`），不上传任何用户数据。分发给他人的安装包内不含任何个人信息和 API 密钥。
 
 ---
 
@@ -200,12 +200,14 @@ CI/CD 已配置 GitHub Actions，推送 `v*` 标签自动触发测试 → 构建
 
 | 路径 | 内容 |
 |---|---|
-| `~/.text_to_image_app/config.json` | API Key 及偏好设置 |
-| `~/.text_to_image_app/history.db` | 生图历史（SQLite） |
-| `~/.text_to_image_app/images/` | 已生成的图片文件 |
-| `~/.text_to_image_app/debug.log` | 调试日志（滚动，最大 5MB） |
+| `~/2image/config.json` | API Key 及偏好设置 |
+| `~/2image/history.db` | 生图历史（SQLite） |
+| `~/2image/images/` | 已生成的图片文件 |
+| `~/2image/debug.log` | 调试日志（滚动，最大 5MB） |
 
 所有数据仅存于本机，卸载程序后手动删除该目录即可完全清除。
+
+> **升级说明**：v8 起数据目录从 `~/.text_to_image_app` 迁移至 `~/2image`。首次启动新版本时，旧目录中的数据会自动复制到新目录，旧目录保留作为备份。
 
 ---
 

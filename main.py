@@ -53,6 +53,11 @@ def main():
     from config.fonts import init_fonts
     init_fonts()
 
+    # ── 数据目录迁移（旧版 ~/.text_to_image_app → 新版 ~/2image）──
+    from config.settings import migrate_legacy_data
+    if migrate_legacy_data():
+        print("[迁移] 旧版数据已成功迁移到 ~/2image 目录")
+
     # ── 数据库初始化（建表 / 迁移旧 JSON）──────────────────────
     from data.repository import init_db, migrate_from_json
     from config.settings import APP_DIR

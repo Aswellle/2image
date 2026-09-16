@@ -5,7 +5,7 @@ config/fonts.py — 字体管理器
 • 主字体：MiSans Medium（小米开源，OFL 授权）→ 微软雅黑（系统兜底）
 • 等宽字体：JetBrains Mono（OFL 授权）→ Consolas（系统兜底）
 
-字体文件缓存在 ~/.text_to_image_app/fonts/。
+字体文件缓存在 ~/2image/fonts/。
 下载源：jsDelivr CDN（国内可正常访问）。
 字体仅注册到当前进程，不修改系统字体配置。
 """

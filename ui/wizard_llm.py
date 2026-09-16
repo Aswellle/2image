@@ -364,8 +364,7 @@ class LLMWizard(tk.Toplevel):
                              highlightbackground="#1a4a1a", highlightthickness=1)
         privacy_f.pack(fill="x", padx=PX, pady=(0, 16))
         for line in [
-            "🔒  密钥安全说明",
-            "• 密钥仅保存在本机 ~/.text_to_image_app/config.json，不上传至任何服务器",
+            "• 密钥仅保存在本机 ~/2image/config.json，不上传至任何服务器",
             "• 开发版本的 .gitignore 已排除 config.json，密钥不会随代码提交到仓库",
             "• 提示词生成请求直接从你的电脑发往 SiliconFlow / HuggingFace，不经过中间服务器",
         ]:

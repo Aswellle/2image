@@ -2,6 +2,10 @@
 config/settings.py
 配置管理：路径常量、默认配置、读写接口
 
+v8 变更：
+  - APP_DIR 从 ~/.text_to_image_app 迁移到 ~/2image
+  - 新增 migrate_legacy_data() 自动迁移旧版数据
+
 v5 新增字段：
   together_key, gemini_key, openrouter_key, openrouter_model, xai_key
 """
@@ -12,15 +16,60 @@ from config.model_catalog import (
 )
 
 # ─── 应用路径 ──────────────────────────────────────────────────
-APP_DIR      = os.path.expanduser("~/.text_to_image_app")
-IMAGES_DIR   = os.path.join(APP_DIR, "images")
-DB_FILE      = os.path.join(APP_DIR, "history.db")
-HISTORY_FILE = os.path.join(APP_DIR, "history.json")   # 旧版，仅用于迁移
-CONFIG_FILE  = os.path.join(APP_DIR, "config.json")
-LOG_FILE     = os.path.join(APP_DIR, "debug.log")
+APP_DIR        = os.path.expanduser("~/2image")
+LEGACY_APP_DIR = os.path.expanduser("~/.text_to_image_app")  # 旧版目录，用于一次性数据迁移
+IMAGES_DIR     = os.path.join(APP_DIR, "images")
+DB_FILE        = os.path.join(APP_DIR, "history.db")
+HISTORY_FILE   = os.path.join(APP_DIR, "history.json")   # 旧版，仅用于迁移
+CONFIG_FILE    = os.path.join(APP_DIR, "config.json")
+LOG_FILE       = os.path.join(APP_DIR, "debug.log")
 
 os.makedirs(APP_DIR, mode=0o700, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
+
+
+def migrate_legacy_data() -> bool:
+    """将旧版 ~/.text_to_image_app 的数据自动迁移到新的 ~/2image 目录。
+
+    触发条件：新目录无 config.json（首次启动）且旧目录存在。
+    迁移策略：将旧目录所有内容复制到新目录，旧目录保留作为备份。
+    幂等安全：已部分迁移时可再次运行，不会覆盖已有文件。
+
+    Returns:
+        True if migration was performed, False otherwise.
+    """
+    import shutil
+
+    # 新目录已有配置 → 非首次启动，不迁移
+    if os.path.exists(CONFIG_FILE):
+        return False
+
+    # 旧目录不存在 → 全新安装，无需迁移
+    if not os.path.isdir(LEGACY_APP_DIR):
+        return False
+
+    migrated = []
+    for item in os.listdir(LEGACY_APP_DIR):
+        src = os.path.join(LEGACY_APP_DIR, item)
+        dst = os.path.join(APP_DIR, item)
+        try:
+            if os.path.isdir(src):
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+            else:
+                shutil.copy2(src, dst)
+            migrated.append(item)
+        except Exception as e:
+            import sys
+            print(f"[迁移警告] 复制 {item} 失败: {e}", file=sys.stderr)
+
+    if migrated:
+        import sys
+        print(
+            f"[迁移] 已从 {LEGACY_APP_DIR} 迁移 {len(migrated)} 个项目到 {APP_DIR}："
+            f"{', '.join(migrated)}",
+            file=sys.stderr,
+        )
+    return bool(migrated)
 
 # ─── 默认配置 ──────────────────────────────────────────────────
 DEFAULT_CONFIG: dict = {

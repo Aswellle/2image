@@ -75,7 +75,7 @@ Built-in prompt optimization wizard turns vague ideas into high-quality English 
 Enter Chinese descriptions directly — the program automatically calls MyMemory to translate to English before sending to image APIs. No manual translation, no extra configuration.
 
 ### 🔒 Fully Local Data
-All images, history, and configuration are saved on your machine (`~/.text_to_image_app/`). No user data is uploaded. Installers distributed to others contain no personal information or API keys.
+All images, history, and configuration are saved on your machine (`~/2image/`). No user data is uploaded. Installers distributed to others contain no personal information or API keys.
 
 ---
 
@@ -200,12 +200,14 @@ CI/CD is configured via GitHub Actions — pushing a `v*` tag automatically trig
 
 | Path | Content |
 |---|---|
-| `~/.text_to_image_app/config.json` | API keys & preferences |
-| `~/.text_to_image_app/history.db` | Generation history (SQLite) |
-| `~/.text_to_image_app/images/` | Generated image files |
-| `~/.text_to_image_app/debug.log` | Debug log (rotating, max 5 MB) |
+| `~/2image/config.json` | API keys & preferences |
+| `~/2image/history.db` | Generation history (SQLite) |
+| `~/2image/images/` | Generated image files |
+| `~/2image/debug.log` | Debug log (rotating, max 5 MB) |
 
 All data stays local. Delete this directory after uninstalling for complete removal.
+
+> **Upgrade note**: Since v8, the data directory has moved from `~/.text_to_image_app` to `~/2image`. On first launch, data from the old directory is automatically copied to the new location; the old directory is kept as a backup.
 
 ---
 
