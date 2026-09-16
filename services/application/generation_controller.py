@@ -180,7 +180,8 @@ class GenerationController:
         except GenerationCancelled:
             self.root.after(0, lambda: self.app._st(_("status_cancelled"), "warn"))
         except DeadlineExceeded as ex:
-            self.root.after(0, lambda: self.app._err(f"⏰ 生成超时: {ex}"))
+            err_msg = str(ex)
+            self.root.after(0, lambda: self.app._err(f"⏰ 生成超时: {err_msg}"))
         except Exception as ex:
             self.root.after(0, lambda e=str(ex): self.app._err(e))
 
