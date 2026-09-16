@@ -12,6 +12,7 @@ v5 新增字段：
 import json
 import os
 from config.model_catalog import (
+    ARK_IMAGE_DEFAULT,
     BFL_TXT2IMG_DEFAULT, GEMINI_IMAGE_DEFAULT, GPT_IMAGE_DEFAULT,
 )
 
@@ -104,12 +105,16 @@ DEFAULT_CONFIG: dict = {
     "recraft_style":        "realistic_image",  # realistic_image | digital_illustration | vector_illustration
     "recraft_model":        "recraftv3",   # recraftv3（默认，稳） | recraftv4 | recraftv4_pro | recraftv4_1（更高画质）
     # ── 新增接口（v7：GPT-Image / Nano Banana / 国内外新增供应商）──
-    "dashscope_key":        "",   # 阿里云 DashScope（通义万相 / Qwen-Image，免费额度）
-    "minimax_key":          "",   # MiniMax image-01（注册送试用额度）
-    "bfl_key":              "",   # Black Forest Labs 官方 FLUX API
-    "bria_key":             "",   # Bria AI（注册送 1000 次免费调用）
-    # ── AI 提示词助手模型预设 ───────────────────────────────────
-    "prompt_llm_preset":    "siliconflow_auto",  # siliconflow_auto | deepseek_pro | deepseek_flash
+    # ── 新增接口（v8：火山豆包）──────────────────────────────────
+    "volcengine_key":        "",   # 火山引擎 Ark API Key（豆包 Seedream 文生图 / SeedEdit 图生图）
+    "ark_model":             ARK_IMAGE_DEFAULT,  # 可选值见 config.model_catalog（豆包系列）
+    # ── 付费模型偏好 ───────────────────────────────────────────
+    "gpt_image_model":      GPT_IMAGE_DEFAULT,    # 可选值见 config.model_catalog
+    "gpt_image_quality":    "auto",               # low | medium | high | auto
+    "stability_model":      "core",
+    "replicate_model":      "flux-1.1-pro",
+    "gemini_model":         GEMINI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
+    "bfl_model":            BFL_TXT2IMG_DEFAULT,   # 可选值见 config.model_catalog（图生图固定 flux-kontext-pro）
     "deepseek_key":         "",   # DeepSeek 官方 API Key（Pro / Flash 预设）
     # ── 付费模型偏好 ───────────────────────────────────────────
     "gpt_image_model":      GPT_IMAGE_DEFAULT,    # 可选值见 config.model_catalog

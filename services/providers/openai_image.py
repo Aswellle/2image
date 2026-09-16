@@ -1,40 +1,44 @@
 """
 services/providers/openai_image.py — OpenAI GPT-Image（文生图 + 图生图）
 
-FIX 2026-07: DALL-E 3 已于 2026-05-12 正式下线（OpenAI 官方弃用公告，
-2025-11-14 发布），旧 openai_dalle.py 的 model="dall-e-3" 调用会直接
-100% 失败。改用 gpt-image-1（可选 gpt-image-1-mini 省成本）。
-
-UPDATE 2026-08: OpenAI 于 2026-04-21 发布 gpt-image-2（别名
-gpt-image-2-2026-04-21），首个原生支持任意分辨率（WIDTHxHEIGHT）的图像模型。
-本文件现同时支持 gpt-image-1 与 gpt-image-2，按 model 路由尺寸策略。
+支持模型族：gpt-image-1 / 1-mini / 1.5 / 2 / 2.5-flare / 2.5-sunburst
+- gpt-image-1 系列：仅支持预设尺寸（1024x1024 / 1536x1024 / 1024x1536）
+- gpt-image-2+ 系列：支持任意 WIDTHxHEIGHT（16 的倍数，长边 ≤3840，宽高比 1:3–3:1）
+- gpt-image-2.5-flare：快速高质量日常生图
+- gpt-image-2.5-sunburst：最强图像生成与编辑
 
 与 DALL-E 3 请求/响应的关键差异：
   · 不再有 response_format 参数——GPT-Image 系列固定返回 b64_json
   · quality 取值变为 low/medium/high/auto（原 standard/hd 已不适用）
-  · size 取值变为 auto/1024x1024/1536x1024/1024x1536（gpt-image-2 额外支持
-    2048x2048 / 2048x1152 / 3840x2160 / 2160x3840 及任意 WIDTHxHEIGHT）
+  · size 取值因模型而异（见上方说明）
   · 新增 /v1/images/edits 端点：传入参考图即可做图生图/局部编辑
-  · 首次使用可能需要在 OpenAI 后台完成 Organization Verification，
-    否则请求会被拒绝——这不是 API Key 本身的问题，遇到 403 需提示用户。
 """
-import base64, math
-from config.model_catalog import GPT_IMAGE_2, GPT_IMAGE_DEFAULT
+import base64
+
+from config.model_catalog import (
+    GPT_IMAGE_1,
+    GPT_IMAGE_2,
+    GPT_IMAGE_25_FLARE,
+    GPT_IMAGE_25_SUNBURST,
+    GPT_IMAGE_MODELS,
+    GPT_IMAGE_DEFAULT,
+    GPT_IMAGE_NAMES,
+    GPT_IMAGE_LEGACY,
+)
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
     "id": "openai_image",
-    "name": "💎 OpenAI GPT-Image",
+    "name": "OpenAI GPT-Image (付费)",
     "category": "paid",
     "config_key": "openai_key",
-    "supports_img2img": True,
+    "description": "GPT-Image 系列：1/1.5/2/2.5-flare/2.5-sunburst",
 }
-
 
 # gpt-image-1 家族仅支持下列预设尺寸（取与请求最接近者）。
 _SIZES = {(1024, 1024): "1024x1024", (1536, 1024): "1536x1024", (1024, 1536): "1024x1536"}
 
-# gpt-image-2 任意尺寸约束（官方）：两边均为 16 的倍数；长边 ≤3840；
+# gpt-image-2+ 任意尺寸约束（官方）：两边均为 16 的倍数；长边 ≤3840；
 # 宽高比 1:3–3:1；总像素 0.65MP–8.3MP。
 _GPT2_MULT = 16
 _GPT2_LONG_MAX = 3840
@@ -47,33 +51,64 @@ def _best_size(w, h) -> str:
 
 
 def _gpt2_size(w: int, h: int) -> str:
-    """把请求的 w×h 映射为 gpt-image-2 接受的 WIDTHxHEIGHT。
+    """把请求的 w×h 映射为 gpt-image-2+ 接受的 WIDTHxHEIGHT。
 
-    gpt-image-2 仅当满足「两边 16 的倍数 / 长边≤3840 / 宽高比 1:3–3:1 /
-    0.65MP–8.3MP」时才接受任意尺寸；App 提供的小尺寸（512×512=0.26MP）与
-    1920×1080（1080 非 16 倍数）必须在此收敛为合法值。保持 long/short 比例
-    恒定，按像素上下限缩放后向 16 倍数取整（向上），保证不越界也不掉档。
+    约束：
+      - 两边均为 16 的倍数
+      - 长边 ≤3840
+      - 宽高比 1:3–3:1
+      - 总像素 0.65MP–8.3MP
     """
-    ratio = min(3, max(w, h) / min(w, h))          # long/short, ≥1, ≤3
-    long_e = min(max(w, h), _GPT2_LONG_MAX)
-    short_e = long_e / ratio
-    W, H = (long_e, short_e) if w >= h else (short_e, long_e)
+    def up16(v):
+        return max(_GPT2_MULT, (v + _GPT2_MULT // 2) // _GPT2_MULT * _GPT2_MULT)
 
-    px = W * H
+    # 先约束宽高比 1:3–3:1
+    if w / h > 3:
+        w = h * 3
+    elif h / w > 3:
+        h = w * 3
+
+    # 先满足最小像素：先放大再取整，确保取整后仍 ≥ min
+    px = w * h
     if px < _GPT2_MIN_PX:
-        s = (_GPT2_MIN_PX / px) ** 0.5
-        W, H = W * s, H * s
-    elif px > _GPT2_MAX_PX:
-        s = (_GPT2_MAX_PX / px) ** 0.5
-        W, H = W * s, H * s
+        # 先向上取整到16的倍数，再验证像素；若仍不足则继续放大短边
+        w, h = up16(w), up16(h)
+        while w * h < _GPT2_MIN_PX:
+            # 放大较短的一边（保持宽高比更接近原始请求）
+            if w <= h:
+                w = up16(w + _GPT2_MULT)
+            else:
+                h = up16(h + _GPT2_MULT)
+            # 安全检查：如果长边超限则停止
+            if max(w, h) > _GPT2_LONG_MAX:
+                w, h = _GPT2_LONG_MAX, up16(_GPT2_LONG_MAX // 3)
+                break
+    else:
+        w, h = up16(w), up16(h)
 
-    def up16(v): return max(_GPT2_MULT, math.ceil(v / _GPT2_MULT) * _GPT2_MULT)
-    return f"{up16(W)}x{up16(H)}"
+    # 约束长边 ≤3840，然后约束像素上限（可能需要多次迭代）
+    for _ in range(5):  # 最多 5 次迭代确保收敛
+        if max(w, h) > _GPT2_LONG_MAX:
+            if w > h:
+                scale = _GPT2_LONG_MAX / w
+                w = _GPT2_LONG_MAX
+                h = up16(int(h * scale))
+            else:
+                scale = _GPT2_LONG_MAX / h
+                h = _GPT2_LONG_MAX
+                w = up16(int(w * scale))
+        if w * h > _GPT2_MAX_PX:
+            scale = (_GPT2_MAX_PX / (w * h)) ** 0.5 * 0.99  # 稍微保守
+            w = up16(int(w * scale))
+            h = up16(int(h * scale))
+        if max(w, h) <= _GPT2_LONG_MAX and w * h <= _GPT2_MAX_PX and w * h >= _GPT2_MIN_PX:
+            break
 
+    return f"{w}x{h}"
 
 def _size_for(model: str, w: int, h: int) -> str:
-    """按模型路由尺寸取值：gpt-image-2 家族用任意尺寸，其余用预设。"""
-    if model.startswith(GPT_IMAGE_2):
+    """按模型路由尺寸取值：gpt-image-2+ 家族用任意尺寸，其余用预设。"""
+    if model in (GPT_IMAGE_2, GPT_IMAGE_25_FLARE, GPT_IMAGE_25_SUNBURST):
         return _gpt2_size(w, h)
     return _best_size(w, h)
 
@@ -88,17 +123,14 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
     if not key:
         raise ValueError("需要 OpenAI API Key，请在「💎 付费接口配置」中填写")
 
-    model    = cfg.get("gpt_image_model", GPT_IMAGE_DEFAULT)
-    # GPT-Image 系列 quality 只接受 auto/low/medium/high；把 DALL-E 时代的
-    # standard/hd 旧配置归一化，避免 400（GPT-Image 不支持这两个值）。
-    quality  = _normalize_quality(cfg.get("gpt_image_quality", "auto"))
+    model = cfg.get("gpt_image_model", GPT_IMAGE_DEFAULT)
+    quality = _normalize_quality(cfg.get("gpt_image_quality", "auto"))
     size_str = _size_for(model, w, h)
-    ref_image = cfg.get("_ref_image")   # bytes or None（图生图参考图）
+    ref_image = cfg.get("_ref_image")
 
     headers = {"Authorization": f"Bearer {key}"}
 
     if ref_image is not None:
-        # ── 图生图：/v1/images/edits，multipart/form-data ──────
         log(f"► OpenAI GPT-Image  图生图  质量={quality}  尺寸={size_str}")
         files = {"image": ("ref.png", ref_image, "image/png")}
         data = {"model": model, "prompt": prompt, "n": "1",
@@ -106,8 +138,7 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
         resp = _session.post("https://api.openai.com/v1/images/edits",
             headers=headers, files=files, data=data, timeout=180)
     else:
-        # ── 文生图：/v1/images/generations，JSON ────────────────
-        log(f"► OpenAI GPT-Image  文生图  质量={quality}  尺寸={size_str}")
+        log(f"► OpenAI GPT-Image  文生图  模型={GPT_IMAGE_NAMES.get(model, model)}  质量={quality}  尺寸={size_str}")
         resp = _session.post("https://api.openai.com/v1/images/generations",
             headers={**headers, "Content-Type": "application/json"},
             json={"model": model, "prompt": prompt, "n": 1,
@@ -133,5 +164,6 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
     b64 = j["data"][0].get("b64_json", "")
     if not b64:
         raise ValueError("GPT-Image 返回数据中无图片")
-    log(f"  ✓ GPT-Image 成功 ({model}/{quality})")
-    return base64.b64decode(b64), f"OpenAI/{model}-{quality}"
+    display_name = GPT_IMAGE_NAMES.get(model, model)
+    log(f"  ✓ GPT-Image 成功 ({display_name}/{quality})")
+    return base64.b64decode(b64), f"OpenAI/{display_name}-{quality}"

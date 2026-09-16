@@ -1,23 +1,27 @@
 """
-services/providers/gemini.py
-Google Gemini 2.5 Flash Image ("Nano Banana") — 图生图见 _ref_image
-端点: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent
-认证: Header x-goog-api-key
-响应: candidates[0].content.parts[].inlineData.data  (base64)
+services/providers/gemini.py — Google Gemini 图像生成（文生图 + 图生图）
 
-FIX 2026-07: 此前 _MODEL 误写成一个 2025 年的纯文本 Gemini 2.5 Flash
-预览模型 id（"gemini-2.5-flash-preview-04-17"），与文件顶部文档字符串
-描述的图像模型完全对不上——这个模型根本不支持图像输出，请求大概率
-一直静默失败/走重试再报错。同时 responseModalities 只传 ["IMAGE"]
-官方文档要求必须同时包含 "TEXT"，否则请求会被拒绝。这两处已修复。
+支持 Nano Banana 系列模型：
+  · gemini-2.5-flash-image      → Nano Banana v1（即将下线，2026-10）
+  · gemini-3.1-flash-image      → Nano Banana 2（当前稳定版，默认）
+  · gemini-3.1-flash-lite-image → Nano Banana 2 Lite（轻量快速）
+  · gemini-3-pro-image          → Nano Banana Pro（最强画质）
+
+端点：POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
+认证：Header x-goog-api-key
+响应：candidates[0].content.parts[].inlineData.data（base64）
 """
-
 import base64
 import threading
 import time
-import requests
 from typing import Callable, Tuple
-from config.model_catalog import GEMINI_IMAGE_DEFAULT
+
+from config.model_catalog import (
+    GEMINI_IMAGE_MODELS,
+    GEMINI_IMAGE_DEFAULT,
+    GEMINI_IMAGE_NAMES,
+    GEMINI_IMAGE_DEPRECATED,
+)
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
 
 
@@ -26,8 +30,28 @@ PROVIDER_INFO = {
     "name": "Google Gemini Nano Banana (免费额度)",
     "category": "free",
     "config_key": "gemini_key",
-    "supports_img2img": True,
+    "description": "Nano Banana 系列：v1/v2/v2 Lite/Pro",
 }
+
+
+
+
+
+
+
+
+
+# ── 串行锁（防批量变体并发触发速率限制）──────────────────────────────
+_LOCK = threading.Lock()
+_LAST_DONE = [0.0]
+_MIN_INTV = 2.0  # Gemini 免费层建议间隔
+
+_DEFAULT_MODEL = GEMINI_IMAGE_DEFAULT  # 默认使用 Nano Banana 2
+_ENDPOINT_TPL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+)
+_TIMEOUT = 90
+_MAX_RETRIES = 3
 
 
 

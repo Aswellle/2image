@@ -1,37 +1,47 @@
 """
-services/providers/minimax_image.py — MiniMax image-01（文生图 + 图生图）
+services/providers/minimax_image.py — MiniMax 图像生成（文生图 + 图生图）
+
+支持模型：
+  · image-01 — MiniMax 图像生成模型（当前唯一可用）
+
 端点: POST https://api.minimax.io/v1/image_generation
 认证: Header Authorization: Bearer <key>
 响应: data.image_base64[]  (base64 数组)
 
-图生图使用 subject_reference（主体参考图）模式，官方示例里
-image_file 传的是图片 URL；本应用只有本地字节，这里改用
-data:image/...;base64,... 形式的 data URI 传入——该写法在同类
-多模态接口里很常见，但官方文档未逐字给出对 base64 输入的确认，
-如遇失败请优先怀疑这里，改为先上传图床换 URL 再传。
+图生图使用 subject_reference（主体参考图）模式。
 """
 import base64
 import threading
 import time
-import requests
 from typing import Callable, Tuple
+
+import requests
+
+from config.model_catalog import MINIMAX_IMAGE_DEFAULT, MINIMAX_IMAGE_NAMES
 from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
+
 
 PROVIDER_INFO = {
     "id": "minimax_image",
-    "name": "💎 MiniMax image-01",
-    "category": "paid",
+    "name": "MiniMax Image 01 (免费试用)",
+    "category": "commercial",
     "config_key": "minimax_key",
-    "supports_img2img": True,
+    "description": "MiniMax image-01 文生图/图生图",
 }
+
+
+
+
+
+
 
 
 _LOCK      = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV  = 2.0
 
+_MODEL = MINIMAX_IMAGE_DEFAULT
 _ENDPOINT = "https://api.minimax.io/v1/image_generation"
-_MODEL    = "image-01"
 _TIMEOUT  = 120
 _MAX_RETRIES = 3
 
@@ -105,8 +115,7 @@ def try_minimax_image(
                     log("[MiniMax] 速率限制，等待 20s…")
                     time.sleep(20)
                     continue
-                if resp.status_code == 401:
-                    raise ValueError("MiniMax API Key 无效或已过期")
+                return (image_bytes, f"MiniMax/{MINIMAX_IMAGE_NAMES.get(_MODEL, _MODEL)}")
                 if resp.status_code != 200:
                     raise RuntimeError(
                         f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
