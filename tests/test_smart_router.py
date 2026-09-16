@@ -55,22 +55,22 @@ def test_all_template_ids_map_to_valid_scenes():
 # ── Key filtering ─────────────────────────────────────────────────────────────
 
 def test_paid_provider_excluded_without_key():
-    # "banner" → text_overlay route which includes "💎 OpenAI GPT-Image" (paid)
+    # "banner" → text_overlay route which includes openai_image (paid)
     order = get_provider_order("banner design", {})
-    assert "💎 OpenAI GPT-Image" not in order
+    assert "openai_image" not in order
 
 def test_paid_provider_included_with_key():
     order = get_provider_order("banner design", {"openai_key": "sk-test"})
-    assert "💎 OpenAI GPT-Image" in order
+    assert "openai_image" in order
 
 def test_commercial_provider_excluded_without_key():
-    # brand_product_launch → brand_tech route which includes fal.ai (commercial)
+    # brand_product_launch → brand_tech route which includes fal_flux (commercial)
     order = get_provider_order("", {}, template_id="brand_product_launch")
-    assert "fal.ai FLUX Ultra (高质量)" not in order
+    assert "fal_flux" not in order
 
 def test_commercial_provider_included_with_key():
     order = get_provider_order("", {"fal_key": "key-test"}, template_id="brand_product_launch")
-    assert "fal.ai FLUX Ultra (高质量)" in order
+    assert "fal_flux" in order
 
 
 # ── Fallback guarantee ────────────────────────────────────────────────────────
@@ -81,7 +81,16 @@ def test_empty_cfg_always_returns_nonempty_list():
 
 def test_empty_cfg_always_contains_pollinations_fallback():
     order = get_provider_order("anything at all", {})
-    assert "Pollinations.AI (免费·无需Key)" in order
+    assert "pollinations" in order
+
+def test_all_free_cfg_always_nonempty():
+    order = get_provider_order("", {})
+    assert len(order) > 0
+
+def test_unknown_providers_in_route_do_not_crash():
+    from services.smart_router import _filter_available
+    result = _filter_available(["nonexistent_id"], {})
+    assert result == []
 
 def test_all_free_cfg_always_nonempty():
     # Even with totally unknown prompt and blank cfg, must return at least one provider

@@ -10,49 +10,49 @@ services/smart_router.py — 意图感知路由器
 """
 
 # ── 场景 → 接口优先序列 ─────────────────────────────────────────
-# 名称必须与 services/providers/__init__.py 中 ALL_PROVIDERS 的键完全一致
+# Values must be stable provider_id (matching ALL_PROVIDERS keys)
 _ROUTES: dict = {
     # 文字入图：Banner、海报、标签、LOGO
     "text_overlay": [
-        "Ideogram v4 (文字入图)",
-        "💎 OpenAI GPT-Image",
-        "硅基流动 SiliconFlow (★推荐)",
+        "ideogram",
+        "openai_image",
+        "siliconflow",
     ],
     # 高端写实摄影：产品图、人像、杂志封面
     "product_photo": [
-        "fal.ai FLUX Ultra (高质量)",
-        "💎 Stability AI",
-        "硅基流动 SiliconFlow (★推荐)",
-        "💎 OpenAI GPT-Image",
-        "Pollinations.AI (免费·无需Key)",
+        "fal_flux",
+        "stability_ai",
+        "siliconflow",
+        "openai_image",
+        "pollinations",
     ],
     # 设计/插画/品牌VI
     "illustration": [
-        "Recraft v3/v4 (设计/插画)",
-        "💎 OpenAI GPT-Image",
-        "硅基流动 SiliconFlow (★推荐)",
-        "Google Gemini Nano Banana (免费额度)",
+        "recraft",
+        "openai_image",
+        "siliconflow",
+        "gemini",
     ],
     # 电商主图（白底/场景）
     "ecommerce": [
-        "fal.ai FLUX Ultra (高质量)",
-        "💎 Stability AI",
-        "硅基流动 SiliconFlow (★推荐)",
-        "Pollinations.AI (免费·无需Key)",
+        "fal_flux",
+        "stability_ai",
+        "siliconflow",
+        "pollinations",
     ],
     # 社媒封面（小红书/公众号/短视频）
     "social_media": [
-        "硅基流动 SiliconFlow (★推荐)",
-        "fal.ai FLUX Ultra (高质量)",
-        "Google Gemini Nano Banana (免费额度)",
-        "Pollinations.AI (免费·无需Key)",
+        "siliconflow",
+        "fal_flux",
+        "gemini",
+        "pollinations",
     ],
     # 科技/品牌宣传
     "brand_tech": [
-        "fal.ai FLUX Ultra (高质量)",
-        "💎 OpenAI GPT-Image",
-        "硅基流动 SiliconFlow (★推荐)",
-        "Recraft v3/v4 (设计/插画)",
+        "fal_flux",
+        "openai_image",
+        "siliconflow",
+        "recraft",
     ],
 }
 
@@ -188,6 +188,6 @@ def get_provider_order(
 
     # 保证最终列表非空
     if not available:
-        available = ["Pollinations.AI (免费·无需Key)"]
+        available = ["pollinations"]
 
     return available
