@@ -67,31 +67,24 @@ def validate_image_url(url: str) -> bool:
 
 def safe_get_image(url: str, timeout: int = 60) -> bytes:
     """
-    安全下载 API 返回的图片 URL，对 URL 本身及所有重定向目标做 SSRF 检查。
+    Securely download an image URL with SSRF protection.
 
-    替代模式（消除各 provider 中的重复 validate+get+raise_for_status）：
-      旧: if not _validate_image_url(url): raise RuntimeError(...)
-          ir = _session.get(url, timeout=T); ir.raise_for_status(); return ir.content
-      新: return _safe_get_image(url, timeout=T)
+    Delegates to bounded_download() which enforces:
+      - Streaming download with 25 MB size cap
+      - Content-Type allowlist validation
+      - Per-chunk connect/read timeouts
+      - SSRF redirect validation at each hop
+      - Cancellation/deadline hooks (when provided)
 
-    仅用于下载 API 响应中返回的外部 URL，不用于调用固定 API 端点。
+    This function retains its original signature for backward
+    compatibility with all 17 provider files that call it.
+    The ``timeout`` parameter is accepted but bounded_download
+    uses its own granular (per-chunk) timeouts instead.
     """
-    if not validate_image_url(url):
-        raise ValueError(f"Blocked unsafe image URL: {url[:100]}")
-
-    resp = SESSION.get(url, timeout=timeout, allow_redirects=False)
-
-    max_hops = 5
-    for _ in range(max_hops):
-        if not (300 <= resp.status_code < 400):
-            break
-        location = resp.headers.get("Location", "")
-        if not validate_image_url(location):
-            raise ValueError(f"Blocked unsafe redirect: {location[:100]}")
-        resp = SESSION.get(location, timeout=timeout, allow_redirects=False)
-
-    resp.raise_for_status()
-    return resp.content
+    # Deferred import avoids circular dependency:
+    # providers._net → generation.downloader → providers._net
+    from services.generation.downloader import bounded_download
+    return bounded_download(url, session=SESSION)
 
 
 def safe_error_text(resp) -> str:

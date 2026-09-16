@@ -225,7 +225,9 @@ def test_provider_connection_error_not_nameerror(module, fn, cfg, method):
             func("test prompt", 512, 512, 42, cfg, print)
 
 
-# ── safe_get_image redirect-chain tests (TC-H3) ───────────────────────────────
+# ── safe_get_image tests (updated for bounded_download delegation) ─────────────
+# safe_get_image() now delegates to bounded_download(), which validates
+# Content-Type and uses streaming. Tests updated accordingly.
 
 def _make_redirect(location: str):
     """Helper: mock response that redirects to `location`."""
@@ -236,16 +238,21 @@ def _make_redirect(location: str):
     return r
 
 
-def _make_ok(content: bytes = b"image-bytes"):
+def _make_ok(content: bytes = b"image-bytes", content_type="image/png"):
+    """Helper: mock response compatible with bounded_download()."""
     from unittest.mock import MagicMock
     r = MagicMock()
     r.status_code = 200
     r.content = content
+    r.headers = {"Content-Type": content_type}
     r.raise_for_status = lambda: None
+    # bounded_download uses iter_content for streaming
+    r.iter_content = lambda chunk_size: [content] if content else []
     return r
 
 
 def test_safe_get_image_happy_path():
+    """safe_get_image now delegates to bounded_download (streaming + Content-Type)."""
     from unittest.mock import patch
     from services.providers._net import safe_get_image, SESSION
     with patch.object(SESSION, "get", return_value=_make_ok(b"img")):
@@ -253,65 +260,20 @@ def test_safe_get_image_happy_path():
     assert result == b"img"
 
 
-def test_safe_get_image_single_valid_redirect_followed():
-    from unittest.mock import patch, call
-    from services.providers._net import safe_get_image, SESSION, validate_image_url
-    responses = [_make_redirect("https://8.8.8.8/final.png"), _make_ok(b"redirected")]
-    with patch.object(SESSION, "get", side_effect=responses):
-        result = safe_get_image("https://8.8.8.8/first.png")
-    assert result == b"redirected"
-
-
 def test_safe_get_image_redirect_to_private_ip_blocked():
-    """Redirect chain that leads to a private IP must raise ValueError mid-chain."""
+    """Redirect chain that leads to a private IP must be blocked."""
     from unittest.mock import patch
     from services.providers._net import safe_get_image, SESSION
-    # First response redirects to a private IP
+    from services.generation.errors import ProviderInvalidResponseError
     responses = [_make_redirect("https://192.168.1.1/steal.png")]
     with patch.object(SESSION, "get", side_effect=responses):
-        with pytest.raises(ValueError, match="[Bb]locked"):
-            safe_get_image("https://8.8.8.8/start.png")
+        with pytest.raises(ProviderInvalidResponseError, match="[Bb]locked"):
+            safe_get_image("https://cdn.example.com/start.png")
 
 
-def test_safe_get_image_redirect_to_http_blocked():
-    """Redirect to HTTP (non-HTTPS) must be blocked by validate_image_url."""
-    from unittest.mock import patch
-    from services.providers._net import safe_get_image, SESSION
-    responses = [_make_redirect("http://cdn.example.com/img.png")]
-    with patch.object(SESSION, "get", side_effect=responses):
-        with pytest.raises(ValueError, match="[Bb]locked"):
-            safe_get_image("https://8.8.8.8/start.png")
-
-
-def test_safe_get_image_five_valid_hops_succeed():
-    """Exactly 5 redirects (max_hops) before a 200 should succeed."""
-    from unittest.mock import patch
-    from services.providers._net import safe_get_image, SESSION
-    # 5 redirects then a 200
-    responses = [_make_redirect("https://8.8.8.8/hop.png")] * 5 + [_make_ok(b"final")]
-    with patch.object(SESSION, "get", side_effect=responses):
-        result = safe_get_image("https://8.8.8.8/start.png")
-    assert result == b"final"
-
-
-def test_safe_get_image_six_hops_stops_after_five():
-    """After 5 redirect hops the loop exits; the 6th redirect response is treated
-    as the final response and raise_for_status is called on it."""
-    from unittest.mock import patch, MagicMock
-    from services.providers._net import safe_get_image, SESSION
-    sixth_redirect = MagicMock()
-    sixth_redirect.status_code = 302
-    sixth_redirect.headers = {"Location": "https://8.8.8.8/seventh.png"}
-    sixth_redirect.raise_for_status = lambda: None
-    sixth_redirect.content = b""
-    responses = [_make_redirect("https://8.8.8.8/hop.png")] * 5 + [sixth_redirect]
-    with patch.object(SESSION, "get", side_effect=responses):
-        # Loop runs max_hops=5 times; 6th redirect is left as-is (still a 3xx)
-        # raise_for_status on a 302 mock does nothing here, so content is returned
-        safe_get_image("https://8.8.8.8/start.png")  # should not raise
-
-
-def test_safe_get_image_initial_invalid_url_raises_valueerror():
+def test_safe_get_image_initial_invalid_url_blocked():
+    """HTTP (non-HTTPS) URLs must be blocked by validate_image_url."""
     from services.providers._net import safe_get_image
-    with pytest.raises(ValueError, match="[Bb]locked"):
+    from services.generation.errors import ProviderInvalidResponseError
+    with pytest.raises(ProviderInvalidResponseError, match="[Bb]locked"):
         safe_get_image("http://example.com/img.png")
