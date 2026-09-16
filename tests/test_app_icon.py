@@ -59,7 +59,7 @@ def test_main_keeps_root_hidden_until_app_is_built(monkeypatch):
         "data.repository",
         SimpleNamespace(init_db=Mock(), migrate_from_json=Mock(return_value=0)),
     )
-    monkeypatch.setitem(__import__("sys").modules, "config.settings", SimpleNamespace(APP_DIR="."))
+    monkeypatch.setitem(__import__("sys").modules, "config.settings", SimpleNamespace(APP_DIR=".", migrate_legacy_data=Mock(return_value=False)))
     monkeypatch.setitem(__import__("sys").modules, "ui.app", SimpleNamespace(App=FakeApp))
 
     main.main()
