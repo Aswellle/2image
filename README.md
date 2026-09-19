@@ -229,5 +229,5 @@ pytest tests/ -v
 <div align='center'>
 如果这个项目对你有帮助，欢迎 ⭐ Star 支持！
 
-⭐ [GitHub Star](https://github.com/Aswellle/devhunter) ⭐
+⭐ [GitHub Star](https://github.com/Aswellle/2image) ⭐
 </div>
