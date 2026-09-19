@@ -224,5 +224,10 @@ pytest tests/ -v
 ---
 
 ## 📄 许可证
-
 本项目采用 [MIT License](LICENSE) 开源协议。
+
+<div align='center'>
+如果这个项目对你有帮助，欢迎 ⭐ Star 支持！
+
+⭐ [GitHub Star](https://github.com/Aswellle/devhunter) ⭐
+</div>
