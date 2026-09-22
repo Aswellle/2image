@@ -131,6 +131,16 @@ jobs:
             dist/build-metadata.json
 
 
+      - name: Verify release notes
+        shell: pwsh
+        run: |
+          $notes = "release-notes/v${{ steps.ver.outputs.version }}.md"
+          if (-not (Test-Path $notes)) {
+            Write-Error "Release notes not found: $notes (see release-notes/TEMPLATE.md)"
+            exit 1
+          }
+          Write-Host "Using release notes: $notes"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -138,7 +148,7 @@ jobs:
           name: "v${{ steps.ver.outputs.version }}"
           draft: false
           prerelease: false
-          body_path: RELEASE_NOTES_v${{ steps.ver.outputs.version }}.md
+          body_path: release-notes/v${{ steps.ver.outputs.version }}.md
           files: |
             dist/text2image_pro.exe
             installer/Output/*.exe

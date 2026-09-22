@@ -4,6 +4,7 @@ from tkinter import ttk
 from config.fonts import init_fonts
 from config.i18n import _
 from services.providers import FREE_PROVIDERS, PAID_PROVIDERS
+from tests.conftest import skip_if_no_tk
 from ui.main_content import _StrengthSlider
 
 
@@ -46,12 +47,11 @@ def test_compact_strength_slider_hides_internal_value_label():
     assert slider.cv.texts == []
 
 
-def test_full_strength_slider_shows_internal_value_and_marks():
+@skip_if_no_tk
+def test_full_strength_slider_shows_internal_value_and_marks(tk_root):
     init_fonts()
-    root = tk.Tk()
-    root.withdraw()
-    slider = _StrengthSlider(root, tk.DoubleVar(value=0.6), marks=True)
-    root.update_idletasks()
+    slider = _StrengthSlider(tk_root, tk.DoubleVar(value=0.6), marks=True)
+    tk_root.update_idletasks()
 
     items = [
         slider.cv.itemcget(item, "text")
@@ -63,12 +63,11 @@ def test_full_strength_slider_shows_internal_value_and_marks():
 
 
 
-def test_generation_row_fits_provider_selector_and_generate_button():
+@skip_if_no_tk
+def test_generation_row_fits_provider_selector_and_generate_button(tk_root):
     init_fonts()
-    root = tk.Tk()
-    root.withdraw()
 
-    controls = tk.Frame(root)
+    controls = tk.Frame(tk_root)
     size_label = tk.Label(controls, text=_("lbl_size"), font=("Microsoft YaHei", 10))
     size = ttk.Combobox(controls, width=12, state="readonly")
     provider_label = tk.Label(controls, text=_("lbl_provider"), font=("Microsoft YaHei", 10))
@@ -82,8 +81,6 @@ def test_generation_row_fits_provider_selector_and_generate_button():
 
     for widget in (size_label, size, provider_label, provider, generate):
         widget.pack(side="left")
-    root.update_idletasks()
+    tk_root.update_idletasks()
 
     assert controls.winfo_reqwidth() <= 840
-
-    root.destroy()

@@ -1,16 +1,48 @@
 """Pytest configuration and fixtures."""
+import time
+
 import pytest
 import tkinter as tk
+
+# Tcl resolves its script library per interpreter; on the Windows CI runner that
+# search intermittently fails with `TclError: invalid command name
+# "tcl_findLibrary"` and succeeds on the next attempt. Retry before giving up so
+# a transient bootstrap failure skips instead of failing the suite.
+_TK_ATTEMPTS = 3
+_TK_RETRY_DELAY = 0.3
+
+
+def _make_tk_root():
+    """Create a withdrawn Tk root, or None when tcl/tk is unavailable."""
+    last_error = None
+    for attempt in range(_TK_ATTEMPTS):
+        try:
+            root = tk.Tk()
+        except tk.TclError as exc:
+            last_error = exc
+            if attempt < _TK_ATTEMPTS - 1:
+                time.sleep(_TK_RETRY_DELAY * (attempt + 1))
+            continue
+        except Exception as exc:  # non-Tcl runtime errors are not retryable
+            last_error = exc
+            break
+        root.withdraw()
+        return root
+    if last_error is not None:
+        print(f"tkinter root unavailable: {last_error!r}")
+    return None
 
 
 def _tkinter_available() -> bool:
     """Check if tcl/tk runtime is available (CI environments may not have it)."""
-    try:
-        root = tk.Tk()
-        root.destroy()
-        return True
-    except Exception:
+    root = _make_tk_root()
+    if root is None:
         return False
+    try:
+        root.destroy()
+    except tk.TclError:
+        pass
+    return True
 
 
 # Skip marker for tests requiring a display/tcl runtime
@@ -25,14 +57,13 @@ skip_if_no_tk = pytest.mark.skipif(
 @pytest.fixture
 def tk_root():
     """Create a real Tk root for widget tests. Skips if tcl/tk unavailable."""
-    if not _tkinter_available():
+    root = _make_tk_root()
+    if root is None:
         pytest.skip("tcl/tk runtime not available (headless CI)")
-    root = tk.Tk()
-    root.withdraw()
     yield root
     try:
         root.destroy()
-    except Exception:
+    except tk.TclError:
         pass
 
 
