@@ -60,7 +60,14 @@ def test_paid_provider_excluded_without_key():
     assert "openai_image" not in order
 
 def test_paid_provider_included_with_key():
+    # PAY-001: 配置了 key ≠ 授权自动消费 —— 自动路由默认排除付费接口
     order = get_provider_order("banner design", {"openai_key": "sk-test"})
+    assert "openai_image" not in order
+
+def test_paid_provider_included_with_opt_in():
+    # 显式 opt-in 后，场景路由才会使用付费接口
+    order = get_provider_order(
+        "banner design", {"openai_key": "sk-test", "paid_auto_opt_in": True})
     assert "openai_image" in order
 
 def test_commercial_provider_excluded_without_key():
@@ -69,7 +76,10 @@ def test_commercial_provider_excluded_without_key():
     assert "fal_flux" not in order
 
 def test_commercial_provider_included_with_key():
-    order = get_provider_order("", {"fal_key": "key-test"}, template_id="brand_product_launch")
+    # 已配置 key 且 opt-in → commercial 接口可进入场景路由
+    order = get_provider_order(
+        "", {"fal_key": "key-test", "paid_auto_opt_in": True},
+        template_id="brand_product_launch")
     assert "fal_flux" in order
 
 

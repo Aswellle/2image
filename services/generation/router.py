@@ -1,16 +1,24 @@
 """
-services/generation/router.py — Health-aware scoring router v2
-────────────────────────────────────────────────────────────────
-Replaces smart_router.py with a scoring-based router that
-considers: capability, health, latency, cost, quota, and user
-priority — not just static keyword matching.
+services/generation/router.py — Health-aware scoring router v3（生产路由入口）
+──────────────────────────────────────────────────────────────────────────────
+Phase 3 完成：原 smart_router.py 的场景/模板/关键词语义已迁入
+services/generation/scenes.py，过滤与健康感知排序在此统一执行：
+
+  1. 场景路由（模板 ID > 关键词推断）给出候选及其产品优先级
+  2. _filter_available：key 可用性（免费+付费）+ PAY-001 付费 opt-in
+  3. _demote_unhealthy：按熔断状态/延迟将不健康接口降级到队尾
+     （OPEN 的接口保留在末尾 —— cooldown 过后仍可作最后兜底，
+      熔断期间由 orchestrator 负责跳过）
+  4. 保证 Pollinations 兜底
+
+smart_router.get_provider_order 保留为兼容层，生产代码应直接 import 本模块。
 """
 from __future__ import annotations
 
 import logging
 
-
-from services.generation.provider_health import get_health_registry
+from services.generation import scenes
+from services.generation.provider_health import get_health_registry, HealthState
 from services.generation.provider_manifest import (
     ALL_MANIFESTS,
     COMMERCIAL_MANIFESTS,
@@ -19,15 +27,128 @@ from services.generation.provider_manifest import (
     ProviderManifest,
     resolve_provider_id,
 )
+from services.providers import (
+    DEFAULT_ORDER,
+    FREE_PROVIDERS,
+    OPTIONAL_KEY_PROVIDERS,
+    PROVIDER_KEYS,
+)
 
 log = logging.getLogger(__name__)
+
+# stable_id -> config_key for providers that require a key
+_KEY_MAP: dict = {name: key for name, key in PROVIDER_KEYS.items() if key}
+
+# set of free provider ids (no key required or key is None)
+_FREE_PROVIDERS: set = set(FREE_PROVIDERS.keys())
+
+
+def _has_key(name: str, cfg: dict) -> bool:
+    """A provider is key-ready when it needs no key, its key is optional
+    (e.g. StableHorde anonymous), or a non-empty key is configured."""
+    key = _KEY_MAP.get(name)
+    if not key or name in OPTIONAL_KEY_PROVIDERS:
+        return True
+    return bool(str(cfg.get(key, "") or "").strip())
+
+
+def _filter_available(order: list, cfg: dict, allow_paid: bool | None = None) -> list:
+    """过滤掉当前配置下不可用的接口。
+
+    规则（PAY-001 / ROUTE-001）：
+      1. 任何需要 Key 的接口（免费或付费），未配置 Key 就跳过 ——
+         避免自动路由反复撞击缺 Key 的接口（每次触发 3 轮无谓重试）。
+      2. 付费/商业接口仅在用户显式 opt-in（cfg["paid_auto_opt_in"]）时
+         才进入自动路由；显式下拉选择不受此限制。
+      3. 付费日预算用尽时，付费接口同样被剔除（静默降级到免费）。
+    """
+    from services.generation import budget
+
+    if allow_paid is None:
+        allow_paid = bool(cfg.get("paid_auto_opt_in", False))
+    result = []
+    for name in order:
+        if not _has_key(name, cfg):
+            continue
+        if name not in _FREE_PROVIDERS and not allow_paid:
+            continue
+        result.append(name)
+    return budget.filter_by_budget(result, cfg)
+
+
+def _demote_unhealthy(order: list) -> list:
+    """ROUTE-003: 按健康状态重排 —— 稳定路由优先级为主序，健康罚分为副序。
+
+    罚分：DEGRADED +50 / HALF_OPEN +25 / OPEN +1000（沉底），
+    另加延迟罚分 min(10, avg_latency_ms/500)。同罚分保持原顺序（稳定）。
+    """
+    reg = get_health_registry()
+
+    def sort_key(pair):
+        idx, pid = pair
+        health = reg.get(pid)
+        penalty = 0.0
+        if health.state == HealthState.OPEN:
+            penalty += 1000.0
+        elif health.state == HealthState.DEGRADED:
+            penalty += 50.0
+        elif health.state == HealthState.HALF_OPEN:
+            penalty += 25.0
+        if health.avg_latency_ms > 0:
+            penalty += min(10.0, health.avg_latency_ms / 500.0)
+        return (penalty, idx)
+
+    return [pid for _, pid in sorted(enumerate(order), key=sort_key)]
+
+
+def get_provider_order(
+    prompt: str = "",
+    cfg: dict | None = None,
+    template_id: str = "",
+    fallback_order: list | None = None,
+) -> list:
+    """
+    返回针对当前请求的最优接口优先序列。
+
+    Parameters
+    ----------
+    prompt        : 用户提示词（用于关键词检测）
+    cfg           : 配置字典（key 可用性 + 付费 opt-in + 预算）
+    template_id   : 当前模板ID（优先于关键词检测）
+    fallback_order: 兜底顺序，None 时使用 DEFAULT_ORDER
+
+    Returns
+    -------
+    list[str]  稳定 provider_id 列表，至少包含一个免费兜底接口
+    """
+    cfg = cfg or {}
+
+    # 1. 场景路由：模板 ID 最优先，其次关键词推断
+    scene = scenes.scene_for_template(template_id) or scenes.detect_scene(prompt)
+    base = scenes.route_for(scene)
+    # 把未在场景列表中的接口追加到末尾（保证完整兜底）
+    for name in (fallback_order or DEFAULT_ORDER):
+        if name not in base:
+            base.append(name)
+
+    # 2. 可用性过滤
+    available = _filter_available(base, cfg)
+
+    # 3. 健康降级排序
+    available = _demote_unhealthy(available)
+
+    # 4. 保证最终列表非空
+    if not available:
+        available = ["pollinations"]
+
+    return available
 
 
 class Router:
     """
-    Score-based provider router.
+    能力/健康评分路由（manifest 驱动，与场景路由互补）。
 
-    Usage::
+    用于需要按能力过滤的场景（如 img2img）或显式指定 provider：
 
         router = Router(cfg={"sf_key": "xxx", ...})
         order = router.get_order(
@@ -104,8 +225,6 @@ class Router:
 
         return order
 
-
-
     def _is_available(
         self,
         manifest: ProviderManifest,
@@ -136,10 +255,9 @@ class Router:
         Score a provider for routing priority.
 
         Score =
-          health_score * 30
-          + user_priority * 25
-          + latency_score * 15
+          health_score
           + free_bonus
+          + latency_bonus
         """
         health = health_reg.get(manifest.id)
 
@@ -156,20 +274,3 @@ class Router:
             score += latency_bonus
 
         return score
-
-
-def get_provider_order(
-    prompt: str = "",
-    cfg: dict | None = None,
-    prefer_paid: bool = False,
-    require_img2img: bool = False,
-    explicit_provider: str | None = None,
-) -> list[str]:
-    """Convenience function matching the old smart_router interface."""
-    router = Router(cfg or {})
-    return router.get_order(
-        prompt=prompt,
-        prefer_paid=prefer_paid,
-        require_img2img=require_img2img,
-        explicit_provider=explicit_provider,
-    )

@@ -208,6 +208,15 @@ COMMERCIAL_MANIFESTS: dict[str, ProviderManifest] = {
         config_key="recraft_key",
         description="Recraft 设计/插画",
     ),
+    "volcengine_ark": ProviderManifest(
+        id="volcengine_ark",
+        name="豆包 Seedream (火山引擎)",
+        category="commercial",
+        config_key="volcengine_key",
+        description="豆包 Seedream 3.0/4.0 文生图，SeedEdit 3.0 图生图",
+        supports_img2img=True,
+        capabilities={"text2image", "img2img"},
+    ),
 }
 
 ALL_MANIFESTS: dict[str, ProviderManifest] = {

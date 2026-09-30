@@ -148,13 +148,45 @@ class TestRouter:
 
 class TestGetProviderOrder:
     def test_convenience_function(self):
+        """v3: 模块级 get_provider_order 即场景路由（smart_router 兼容签名）。"""
         cfg = {"sf_key": "xxx"}
         order = get_provider_order(prompt="test", cfg=cfg)
         assert isinstance(order, list)
         assert len(order) > 0
 
-    def test_convenience_with_paid(self):
-        cfg = {"sf_key": "xxx", "openai_key": "yyy"}
-        order = get_provider_order(prompt="test", cfg=cfg, prefer_paid=True)
-        has_paid = any(pid in PAID_MANIFESTS for pid in order)
-        assert has_paid
+    def test_scene_routing_via_keywords(self):
+        # "banner" 关键词 → text_overlay 场景
+        cfg = {"sf_key": "xxx", "paid_auto_opt_in": True}
+        order = get_provider_order(prompt="设计一个 banner 标题", cfg=cfg)
+        assert "siliconflow" in order  # text_overlay 场景含 siliconflow
+
+    def test_template_id_overrides_keywords(self):
+        cfg = {"sf_key": "xxx"}
+        order = get_provider_order("", cfg, template_id="xhs_hot")
+        assert order[0] == "siliconflow"  # social_media 场景首选
+
+    def test_fallback_order_respected(self):
+        # fallback_order 语义 = 替换 DEFAULT_ORDER（与旧 smart_router 一致）
+        cfg = {"sf_key": "xxx", "gemini_key": "gk"}
+        order = get_provider_order("", cfg, fallback_order=["gemini", "siliconflow", "pollinations"])
+        assert order[:3] == ["gemini", "siliconflow", "pollinations"]
+
+    def test_paid_opt_in_still_enforced_by_scene_router(self):
+        # PAY-001: 场景路由同样尊重付费 opt-in
+        cfg = {"openai_key": "yyy"}  # 未 opt-in
+        order = get_provider_order("banner 标题", cfg)
+        assert "openai_image" not in order
+
+    def test_unhealthy_provider_demoted_to_tail(self):
+        reg = get_health_registry()
+        health = reg.get("siliconflow")
+        for _ in range(health.OPEN_THRESHOLD):
+            health.record_failure("transient")
+
+        cfg = {"sf_key": "xxx"}
+        order = get_provider_order(
+            "", cfg, fallback_order=["siliconflow", "pollinations"])
+        # siliconflow 熔断（OPEN）→ 沉到队尾
+        assert order.index("pollinations") < order.index("siliconflow")
+        reg.reset("siliconflow")
+

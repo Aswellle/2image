@@ -15,51 +15,80 @@ import uuid
 from datetime import datetime
 from typing import Callable
 
+import requests
 from PIL import Image, PngImagePlugin
 
 from config.settings import IMAGES_DIR
 
 from services.generation.cancellation import CancellationToken
-from services.generation.downloader import bounded_download
 from services.generation.errors import (
     DeadlineExceeded,
     GenerationCancelled,
     ProviderAuthError,
     ProviderError,
+    ProviderPolicyError,
+    ProviderQuotaError,
     ProviderRateLimitError,
     ProviderTransientError,
+    classify_http_error,
 )
 from services.generation.orchestrator import GenerationOrchestrator
 from services.logger import log_to_file
 from services.providers import ALL_PROVIDERS, DEFAULT_ORDER
+from services.providers._net import safe_error_text
 
 
 def _wrap_provider_fn(fn: Callable) -> Callable:
     """Map provider exceptions to ProviderError taxonomy.
 
-    Existing providers raise ValueError/RuntimeError; the orchestrator needs
-    ProviderError to make correct fallback decisions (e.g. 401 → don't retry).
+    Existing providers raise ValueError/RuntimeError with human-readable
+    messages; the orchestrator needs ProviderError to make correct
+    fallback decisions (e.g. 401 → don't retry, 400 → don't fallback).
+
+    Classification order:
+      1. Already a domain error → pass through untouched
+      2. requests.HTTPError     → classify_http_error(status_code)
+      3. requests.Timeout / ConnectionError → transient
+      4. Message keyword match  → auth / quota / rate-limit / policy
+      5. Anything else          → transient (retry, then fallback)
     """
     def wrapped(prompt, width, height, seed, cfg, log_cb):
         try:
             return fn(prompt, width, height, seed, cfg, log_cb)
         except (ProviderError, GenerationCancelled):
             raise  # Already domain errors, don't re-wrap
-        except Exception as exc:
-            msg = str(exc)
-            lowered = msg.lower()
-            # Map auth-related errors (missing/invalid API key)
-            if "key" in lowered and any(
-                kw in lowered for kw in ("api", "需要", "无效", "invalid", "missing", "required")
-            ):
-                raise ProviderAuthError(msg) from exc
-            # Map rate-limit related errors
-            if any(kw in lowered for kw in ("rate", "429", "limit", "限流", "too many")):
-                raise ProviderRateLimitError(msg) from exc
-            # Default: transient (will be retried by orchestrator, then fallback)
+        except requests.HTTPError as exc:
+            status = getattr(exc.response, "status_code", None) or 0
+            raise classify_http_error(status, safe_error_text(exc.response)
+                                      if exc.response is not None else "") from exc
+        except (requests.Timeout, requests.ConnectionError) as exc:
             raise ProviderTransientError(f"{type(exc).__name__}: {exc}") from exc
+        except Exception as exc:
+            raise _classify_by_message(str(exc)) from exc
     wrapped.__name__ = getattr(fn, "__name__", "wrapped_provider")
     return wrapped
+
+
+_AUTH_KEYWORDS = ("key", "token", "令牌", "密钥", "需要配置", "未配置", "无效",
+                  "invalid", "missing", "required", "unauthorized", "401", "403")
+_QUOTA_KEYWORDS = ("quota", "balance", "余额", "额度", "充值", "402", "insufficient")
+_RATE_LIMIT_KEYWORDS = ("rate", "429", "限流", "too many", "频繁", "throttl")
+_POLICY_KEYWORDS = ("policy", "nsfw", "safety", "content moderation",
+                    "违规", "敏感", "审核", "不合规", "blocked")
+
+
+def _classify_by_message(msg: str) -> ProviderError:
+    """Best-effort classification of a provider's plain-text error."""
+    lowered = msg.lower()
+    if any(kw in lowered for kw in _QUOTA_KEYWORDS):
+        return ProviderQuotaError(msg)
+    if any(kw in lowered for kw in _RATE_LIMIT_KEYWORDS):
+        return ProviderRateLimitError(msg)
+    if any(kw in lowered for kw in _AUTH_KEYWORDS):
+        return ProviderAuthError(msg)
+    if any(kw in lowered for kw in _POLICY_KEYWORDS):
+        return ProviderPolicyError(msg)
+    return ProviderTransientError(msg)
 
 
 def generate_image(prompt, w, h, seed, cfg,
@@ -121,7 +150,19 @@ def generate_image(prompt, w, h, seed, cfg,
     if result.deadline_exceeded:
         raise DeadlineExceeded(f"生成超时（{deadline_seconds}s）")
     if result.image_bytes is not None:
-        return result.image_bytes, result.provider_id or ""
+        used = result.provider_id or ""
+        # PAY-001: 记录付费估算消耗（免费接口为 no-op），单图/队列/批量统一入口
+        try:
+            from services.generation import budget
+            total = budget.record_spend(used, cfg)
+            if total and budget.is_paid(used):
+                limit = budget.daily_budget(cfg)
+                if limit > 0:
+                    log_to_file(f"💰 付费消耗估算 +${budget.estimate_cost(used):.2f} "
+                                f"（今日 ${total:.2f} / ${limit:.2f}）")
+        except Exception:
+            pass  # 预算记录失败绝不影响生成结果
+        return result.image_bytes, used
 
     raise RuntimeError("所有接口均失败:\n" + "\n".join(result.errors))
 

@@ -15,7 +15,7 @@ from data.repository import add_entry
 from services.generation.cancellation import CancellationToken
 from services.generation.errors import DeadlineExceeded, GenerationCancelled
 from services.image_service import generate_image, save_image_file
-from services.smart_router import get_provider_order
+from services.generation.router import get_provider_order
 from services.translation import has_chinese, translate_zh_to_en
 
 
@@ -50,6 +50,19 @@ class GenerationController:
 
         # Check if provider needs API key
         if not self._check_provider_key(psel):
+            return
+
+        # PAY-001: 显式选择付费接口时，日预算用尽则阻断（免费接口不受限）
+        from services.providers import resolve_provider_id
+        from services.generation import budget
+        pid = resolve_provider_id(psel)
+        if pid and budget.is_paid(pid) and budget.over_budget(self.cfg):
+            limit = budget.daily_budget(self.cfg)
+            messagebox.showwarning(
+                "付费预算已用尽",
+                f"今日付费估算消耗已达 ${budget.spent_today(self.cfg):.2f}"
+                f"（上限 ${limit:.2f}）。\n"
+                f"如需继续使用 {psel}，请调高「paid_daily_budget_usd」设置。")
             return
 
         sz = content.szv.get()
@@ -100,35 +113,33 @@ class GenerationController:
         if self._cancel_token is not None:
             self._cancel_token.cancel()
     def _check_provider_key(self, psel: str) -> bool:
-        """Check if selected provider has required API key configured."""
-        checks = {
-            "💎 OpenAI GPT-Image": ("openai_key", self.app._open_paid_wizard,
-                                    "使用 OpenAI GPT-Image 需要填写 API Key。\n是否现在配置？"),
-            "💎 Stability AI": ("stability_key", self.app._open_paid_wizard,
-                                "使用 Stability AI 需要填写 API Key。\n是否现在配置？"),
-            "💎 Replicate FLUX": ("replicate_key", self.app._open_paid_wizard,
-                                "使用 Replicate 需要填写 API Token。\n是否现在配置？"),
-            "💎 Nano Banana Pro (Gemini 3 Pro Image)": ("gemini_key", self.app._open_wizard,
-                                "使用 Nano Banana Pro 需要填写 Google Gemini API Key。\n是否现在配置？"),
-            "💎 MiniMax image-01": ("minimax_key", self.app._open_paid_wizard,
-                                "使用 MiniMax image-01 需要填写 API Key。\n是否现在配置？"),
-            "💎 Black Forest Labs FLUX": ("bfl_key", self.app._open_paid_wizard,
-                                "使用 Black Forest Labs 官方 API 需要填写 API Key。\n是否现在配置？"),
-            "硅基流动 SiliconFlow (★推荐)": ("sf_key", self.app._open_wizard,
-                                "使用硅基流动需要填写 API Key。\n是否现在配置？"),
-            "HuggingFace (备用)": ("hf_token", self.app._open_wizard,
-                                "使用 HuggingFace 需要填写 Token。\n是否现在配置？"),
-        }
+        """Check if selected provider has required API key configured.
 
-        if psel not in checks:
+        Registry-driven（ROUTE-001）: resolve display name → stable id →
+        config key，新供应商自动纳入检查，无需在此维护硬编码名单。
+        """
+        from services.providers import (
+            ALL_PROVIDERS, FREE_PROVIDERS, OPTIONAL_KEY_PROVIDERS,
+            PROVIDER_KEYS, resolve_provider_id,
+        )
+
+        pid = resolve_provider_id(psel)
+        if pid is None or pid not in ALL_PROVIDERS:
+            return True  # 自动模式 / 未知接口 — 交给运行时处理
+
+        key_name = PROVIDER_KEYS.get(pid)
+        if not key_name or pid in OPTIONAL_KEY_PROVIDERS:
+            return True
+        if str(self.cfg.get(key_name, "") or "").strip():
             return True
 
-        key_name, wizard_fn, msg = checks[psel]
-        if not self.cfg.get(key_name, "").strip():
-            if messagebox.askyesno("需要配置", msg):
-                wizard_fn()
-            return False
-        return True
+        # 缺 Key → 引导配置（付费接口走付费向导）
+        is_paid = pid not in FREE_PROVIDERS
+        wizard_fn = self.app._open_paid_wizard if is_paid else self.app._open_wizard
+        msg = (f"使用 {psel} 需要填写 API Key。\n是否现在配置？")
+        if messagebox.askyesno("需要配置", msg):
+            wizard_fn()
+        return False
     def _run_generation(
         self,
         prompt: str,
@@ -143,7 +154,7 @@ class GenerationController:
 
         if has_chinese(prompt):
             self.root.after(0, lambda: self.app._st(_("status_translating"), "warn"))
-            translated = translate_zh_to_en(prompt, log_cb=self.app._log)
+            translated = translate_zh_to_en(prompt, log_cb=self.app._log, token=token)
             self.app._batch_params["translated"] = translated
 
         try:
