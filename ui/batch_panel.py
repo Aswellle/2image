@@ -12,6 +12,7 @@ Fix-4: 查看对比后点「返回」清空面板 / 无法再次生成变体
   · reset() 先调用 _hide_compare() 确保面板恢复正常布局
 """
 import io
+import inspect
 import threading
 import tkinter as tk
 from tkinter import ttk
@@ -19,6 +20,7 @@ from PIL import Image, ImageTk
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from services.generation.errors import GenerationCancelled
 
 
 CELL_W    = 260
@@ -201,6 +203,7 @@ class BatchPanel(tk.Frame):
         self._done_cnt = 0
         self._running   = False     # 防止并发 start_batch
         self._batch_gen = 0         # 版本号：旧批次 stale after() 回调通过对比自动失效
+        self._batch_token = None    # 当前批次的 CancellationToken（JOB-001）
         self._cmp_a    = None
         self._cmp_b    = None
         self._cmp_mode = False
@@ -227,6 +230,12 @@ class BatchPanel(tk.Frame):
             self._ctrl, text="", font=F["body"], bg="#0a1220", fg=C["warn"])
         self._progress_lbl.pack(side="left", padx=8)
 
+        self._stop_btn = tk.Button(self._ctrl, text="⏹ 停止",
+                                   font=F["small_b"], bg=C["hl"], fg="white",
+                                   bd=0, padx=8, pady=3, cursor="hand2",
+                                   state="disabled",
+                                   command=self.cancel_batch)
+        self._stop_btn.pack(side="right", padx=3, pady=6)
         tk.Button(self._ctrl, text="⚖ 查看对比",
                   font=F["small_b"], bg=C["cmp_a"], fg="white",
                   bd=0, padx=8, pady=3, cursor="hand2",
@@ -326,6 +335,15 @@ class BatchPanel(tk.Frame):
         self._on_keep  = on_keep_fn
         self._cmp_a    = self._cmp_b = None
 
+        # JOB-001: 本批次的取消令牌；generate_fn 支持时才传入
+        from services.generation.cancellation import CancellationToken
+        self._batch_token = CancellationToken()
+        try:
+            self._gen_accepts_token = "token" in inspect.signature(generate_fn).parameters
+        except (TypeError, ValueError):
+            self._gen_accepts_token = False
+        self._stop_btn.config(state="normal")
+
         # Fix-4: 确保先回到网格视图（避免对比面板遮盖网格）
         self._hide_compare()
 
@@ -400,6 +418,7 @@ class BatchPanel(tk.Frame):
                        c.set_loading() if g == self._batch_gen else None)
 
             try:
+                gen_kw = {"token": self._batch_token} if self._gen_accepts_token else {}
                 data, used = generate_fn(
                     translated,
                     params["w"], params["h"],
@@ -408,16 +427,27 @@ class BatchPanel(tk.Frame):
                     provider_order=params["porder"],
                     status_cb=lambda s: None,
                     log_cb=log_fn,
+                    **gen_kw,
                 )
                 path = save_fn(data, params["prompt"])
                 self.after(0, lambda c=cell, d=data, p=path, u=used, g=gen:
                            self._on_cell_done(c, d, p, u, g))
+            except GenerationCancelled:
+                self.after(0, lambda c=cell, g=gen:
+                           self._on_cell_error(c, "⏹ 已取消", g))
             except Exception as ex:
                 self.after(0, lambda c=cell, e=str(ex), g=gen:
                            self._on_cell_error(c, e, g))
 
         for i in range(self._n):
             threading.Thread(target=_gen_one, args=(i,), daemon=True).start()
+
+    def cancel_batch(self) -> None:
+        """取消当前批次：打断所有在飞生成（≤500ms 内停止等待/轮询）。"""
+        if self._batch_token is not None:
+            self._batch_token.cancel()
+        self._stop_btn.config(state="disabled")
+        self._progress_lbl.config(text="⏹ 停止中…")
 
     def _on_cell_done(self, cell, data, path, used, gen=None):
         if gen is not None and gen != self._batch_gen:
@@ -440,6 +470,7 @@ class BatchPanel(tk.Frame):
                 text=f"{self._done_cnt} / {self._n}  生成中…")
         else:
             self._running = False
+            self._stop_btn.config(state="disabled")
             err_cnt  = sum(1 for c in self._cells[:self._n] if c.state == "error")
             if err_cnt:
                 self._progress_lbl.config(

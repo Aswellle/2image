@@ -362,11 +362,14 @@ class QueuePanel(tk.Frame):
             else "▶ 已继续运行…")
 
     def _stop(self):
-        """发出停止信号；_run_loop 在当前任务完成后退出循环。"""
+        """停止队列：立即打断当前任务的等待/轮询（JOB-001），不再等它跑完。"""
         if not self._running:
             return
         self._stop_flag = True
-        self._set_prog("⏹ 停止中 — 当前任务完成后退出…")
+        token = getattr(self, "_job_token", None)
+        if token is not None:
+            token.cancel()
+        self._set_prog("⏹ 停止中 — 正在打断当前任务…")
 
     def _clear_done(self):
         done_s = {"done", "cancelled", "failed"}
@@ -412,6 +415,8 @@ class QueuePanel(tk.Frame):
         from services.image_service import generate_image, save_image_file
         from services.translation  import has_chinese, translate_zh_to_en
         from data.repository       import add_entry
+        from services.generation.cancellation import CancellationToken
+        from services.generation.errors import GenerationCancelled
 
         done_cnt = 0
 
@@ -434,6 +439,9 @@ class QueuePanel(tk.Frame):
             item = next_widget._item
             t0   = time.time()
 
+            # JOB-001: 每个任务独立取消令牌，停止时可立即打断当前任务
+            self._job_token = CancellationToken()
+
             # 实时计算剩余任务数（修复 #7）
             remaining_now = sum(1 for w in self._widgets
                                 if w._item.status in ("waiting", "running"))
@@ -451,13 +459,14 @@ class QueuePanel(tk.Frame):
                 translated = prompt
                 if has_chinese(prompt):
                     translated = translate_zh_to_en(
-                        prompt, log_cb=self.app._log)
+                        prompt, log_cb=self.app._log, token=self._job_token)
 
                 seed       = random.randint(0, 2_147_483_647)
                 data, used = generate_image(
                     translated, w_n, h_n, seed, self.app.cfg,
                     provider_order=item.porder,
-                    log_cb=self.app._log)
+                    log_cb=self.app._log,
+                    token=self._job_token)
 
                 path    = save_image_file(data, prompt)
                 add_entry(prompt, translated, path, used)
@@ -481,6 +490,18 @@ class QueuePanel(tk.Frame):
                     self.app._st(f"✅ 队列完成一张  {u[:30]}", "ok")
 
                 self.app.root.after(0, _on_done)
+
+            except GenerationCancelled:
+                elapsed = time.time() - t0
+
+                def _on_cancel(w=next_widget, el=elapsed):
+                    if not w.winfo_exists():
+                        return
+                    w.update_status("cancelled", elapsed=el)
+
+                self.app.root.after(0, _on_cancel)
+                if self._stop_flag:
+                    break   # 用户主动停止 → 退出整个队列循环
 
             except Exception as ex:
                 elapsed = time.time() - t0
