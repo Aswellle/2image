@@ -539,7 +539,8 @@ class MainContent:
 
     # ── 对比逻辑 ─────────────────────────────────────────────
     def _pick_compare_image(self):
-        entries = get_all_entries()
+        # DATA-003: 只取最近 200 张，避免大历史库全量加载
+        entries = get_all_entries(limit=200)
         if not entries:
             messagebox.showinfo("提示", "暂无历史图片可用于对比"); return
 
@@ -563,7 +564,7 @@ class MainContent:
                   bd=0, padx=12, pady=5, cursor="hand2",
                   command=lambda: self._pick_cmp_file(win)
                   ).pack(side="right", padx=12, pady=8)
-        tk.Label(hdr, text=f"共 {len(entries)} 张 · 滚轮滑动",
+        tk.Label(hdr, text=f"最近 {len(entries)} 张 · 滚轮滑动",
                  font=F["small"], bg=C["acc"], fg="#93c5fd"
                  ).pack(side="right", padx=4)
 

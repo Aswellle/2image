@@ -14,11 +14,9 @@ import os
 import sqlite3
 import threading
 import time
-import uuid
 from datetime import datetime, timedelta
-from pathlib import Path
 
-from config.settings import DB_FILE, IMAGES_DIR
+from config.settings import DB_FILE
 from services.generation.file_ownership import safe_delete_file
 
 # 每个线程持有独立连接，避免跨线程共享和连接泄漏
@@ -38,9 +36,14 @@ def _conn() -> sqlite3.Connection:
     return _thread_local.conn
 
 
+# 当前 schema 版本（DATA-004）。新增 schema 变更时 +1 并在
+# _MIGRATIONS 中注册步骤；每个步骤必须幂等。
+DB_SCHEMA_VERSION = 1
+
+
 # ─── 初始化 ───────────────────────────────────────────────────
 def init_db() -> None:
-    """建表，并对旧库自动补列（升级兼容）。"""
+    """建表，并执行版本化 schema 迁移（升级兼容）。"""
     with _conn() as c:
         c.execute("""
             CREATE TABLE IF NOT EXISTS history (
@@ -73,22 +76,50 @@ def init_db() -> None:
             )
         """)
         c.execute("CREATE INDEX IF NOT EXISTS idx_entry_tag_tag ON entry_tag(tag_id)")
-        # 升级旧库：自动补充新列
-        for col_def in [
-            "ALTER TABLE history ADD COLUMN nickname  TEXT    DEFAULT NULL",
-            "ALTER TABLE history ADD COLUMN favorited INTEGER DEFAULT 0",
-            "ALTER TABLE history ADD COLUMN tags      TEXT    DEFAULT ''",
-        ]:
-            try:
-                c.execute(col_def)
-            except sqlite3.OperationalError:
-                pass
         c.commit()
+        _run_schema_migrations(c)
         _migrate_tags_from_csv()
 
         # Setup FTS5 search
         from data.search import setup_fts5
         setup_fts5(c)
+
+
+def _migrate_v0_to_v1(c: sqlite3.Connection) -> None:
+    """v0（无版本标记的旧库）→ v1：补齐后加的列。
+
+    新库建表时已含全部列，ALTER 会抛 duplicate column —— 静默忽略
+    是本步骤幂等性的实现方式。
+    """
+    for col_def in [
+        "ALTER TABLE history ADD COLUMN nickname  TEXT    DEFAULT NULL",
+        "ALTER TABLE history ADD COLUMN favorited INTEGER DEFAULT 0",
+        "ALTER TABLE history ADD COLUMN tags      TEXT    DEFAULT ''",
+    ]:
+        try:
+            c.execute(col_def)
+        except sqlite3.OperationalError:
+            pass
+
+
+# version -> migration step（按版本号升序执行，跳过已应用的版本）
+_MIGRATIONS: dict = {
+    1: _migrate_v0_to_v1,
+}
+
+
+def _run_schema_migrations(c: sqlite3.Connection) -> None:
+    """PRAGMA user_version 驱动的版本化迁移（DATA-004）。
+
+    替代散落的 ALTER ... except pass：每个 schema 变更注册为独立
+    步骤，版本号持久化在 DB 中，升级路径可审计、幂等、可跳过。
+    """
+    current = c.execute("PRAGMA user_version").fetchone()[0]
+    for version in sorted(_MIGRATIONS):
+        if current < version:
+            _MIGRATIONS[version](c)
+            c.execute(f"PRAGMA user_version = {version}")
+    c.commit()
 
 
 def _migrate_tags_from_csv():
@@ -134,6 +165,28 @@ def add_entry(prompt: str, translated: str, image_path: str, provider: str) -> d
 
 
 # ─── 读取 ─────────────────────────────────────────────────────
+def _keyword_clause(keyword: str) -> tuple:
+    """Build the WHERE fragment for a keyword search (DATA-003).
+
+    拉丁字母关键词 → FTS5 前缀查询（O(log N)，不随历史量退化）；
+    CJK 关键词 / FTS 不可用 → LIKE 子串查询（unicode61 不切中文）。
+    Returns (sql_fragment, params)。
+    """
+    from data.search import fts_ids
+    if keyword:
+        ids = fts_ids(_conn(), keyword)
+        if ids is not None:
+            nick = f"%{keyword}%"
+            if not ids:
+                # FTS 无匹配 —— 但 nickname 未入索引，仍保留 nickname LIKE
+                return "(nickname LIKE ?)", [nick]
+            placeholders = ",".join("?" * len(ids))
+            return (f"(id IN ({placeholders}) OR nickname LIKE ?)",
+                    ids + [nick])
+        return "(prompt LIKE ? OR nickname LIKE ?)", [f"%{keyword}%", f"%{keyword}%"]
+    return "", []
+
+
 def get_all_entries(keyword: str = "",
                     only_favorites: bool = False,
                     tag_filter: str = "",
@@ -142,9 +195,10 @@ def get_all_entries(keyword: str = "",
     clauses, params = [], []
     if only_favorites:
         clauses.append("favorited = 1")
-    if keyword:
-        clauses.append("(prompt LIKE ? OR nickname LIKE ?)")
-        params += [f"%{keyword}%", f"%{keyword}%"]
+    kw_sql, kw_params = _keyword_clause(keyword)
+    if kw_sql:
+        clauses.append(kw_sql)
+        params += kw_params
     if tag_filter:
         clauses.append("""
             id IN (
@@ -197,9 +251,10 @@ def get_entries_keyset(after_id: int = 0, limit: int = 50,
         params.append(after_id)
     if only_favorites:
         clauses.append("favorited = 1")
-    if keyword:
-        clauses.append("(prompt LIKE ? OR nickname LIKE ?)")
-        params += [f"%{keyword}%", f"%{keyword}%"]
+    kw_sql, kw_params = _keyword_clause(keyword)
+    if kw_sql:
+        clauses.append(kw_sql)
+        params += kw_params
     if tag_filter:
         clauses.append(
             "id IN (SELECT et.entry_id FROM entry_tag et "
@@ -585,7 +640,6 @@ def _set_test_db(path: str = ":memory:") -> None:
     调用后需重置 _thread_local 连接。
     """
     global DB_FILE, _test_db_path
-    import threading
     _test_db_path = path
     DB_FILE = path
     # 重置所有线程的数据库连接

@@ -12,6 +12,7 @@ from config.fonts import F
 from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color
 from config.i18n import _
 from data.repository import (get_all_entries, get_all_tags, count_entries,
+                             get_entries_keyset,
                              get_stats, update_tags, rename_entry,
                              toggle_favorite, delete_entry, clear_all_entries)
 from ui.app_protocol import SidebarProtocol
@@ -327,11 +328,42 @@ class HistorySidebar:
         for e in items:
             self._card(e, cur_gen)
         if _has_more:
-            more_btn = tk.Button(self.hi, text=_("btn_show_more", count=count_entries()),
-                                 font=F["body"], bg=C["acc"], fg=C["text"],
-                                 bd=0, padx=12, pady=6, cursor="hand2",
-                                 command=lambda: self._refresh_hist(load_all=True))
-            more_btn.pack(fill="x", padx=8, pady=4)
+            self._append_more_btn(cur_gen, items[-1]["id"])
+
+    def _append_more_btn(self, gen: int, after_id: int):
+        """DATA-003: keyset 分页「加载更多」—— 追加下一页，不全量重载。"""
+        self._more_btn = tk.Button(
+            self.hi, text=_("btn_show_more", count=count_entries()),
+            font=F["body"], bg=C["acc"], fg=C["text"],
+            bd=0, padx=12, pady=6, cursor="hand2",
+            command=lambda: self._load_more(gen, after_id))
+        self._more_btn.pack(fill="x", padx=8, pady=4)
+
+    def _load_more(self, gen: int, after_id: int):
+        """Keyset 分页取下一页并追加卡片（O(limit)，与历史总量无关）。"""
+        if gen != self._hist_gen:
+            return  # 期间已发生刷新，本次作废
+        btn = getattr(self, "_more_btn", None)
+        if btn is not None:
+            try:
+                btn.destroy()
+            except tk.TclError:
+                pass
+            self._more_btn = None
+        kw = self.sv.get().strip()
+        HIST_PAGE_SIZE = 100
+        items = get_entries_keyset(after_id=after_id, limit=HIST_PAGE_SIZE + 1,
+                                   keyword=kw, tag_filter=self._tag_filter,
+                                   only_favorites=self._fav_only)
+        has_more = len(items) > HIST_PAGE_SIZE
+        if has_more:
+            items = items[:HIST_PAGE_SIZE]
+        if not items:
+            return
+        for e in items:
+            self._card(e, gen)
+        if has_more:
+            self._append_more_btn(gen, items[-1]["id"])
 
     def _card(self, e: dict, gen: int):
         """
