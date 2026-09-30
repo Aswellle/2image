@@ -37,6 +37,8 @@ from services.application import GenerationController, MenuController, SettingsC
 MAX_NICK_LEN = 20  # 昵称/提示符显示截断长度
 
 
+from ui.viewer import ImageViewerWindow
+from ui.wizard_free import ConfigWizard
 from ui.wizard_paid import PaidWizard
 from ui.prompt_wizard import PromptWizard
 from ui.phrase_panel import PhrasePanel
@@ -570,8 +572,12 @@ class App:
                 "需要配置 API Key",
                 f"{err[:200]}\n\n点击「🆓 免费配置」配置硅基流动 API Key。"))
 
-
-        if not d: return
+    def _export(self):
+        """导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"""
+        d = filedialog.askdirectory(title="选择导出位置")
+        if not d:
+            return
+        items = get_all_entries()
         out = os.path.join(d, f"AI生图_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         os.makedirs(out, exist_ok=True)
 
