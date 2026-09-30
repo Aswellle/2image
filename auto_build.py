@@ -29,7 +29,7 @@ def get_version() -> str:
     return version
 
 
-def _run(command: list[str], label: str) -> None:
+def _run(command: list[str], label: str, check: bool = True) -> None:
     print(f"{label}: {' '.join(command)}")
     result = subprocess.run(
         command,
@@ -42,7 +42,7 @@ def _run(command: list[str], label: str) -> None:
         print(result.stdout, end="")
     if result.stderr:
         print(result.stderr, end="", file=sys.stderr)
-    if result.returncode:
+    if result.returncode and check:
         raise RuntimeError(f"{label}失败，退出码: {result.returncode}")
 
 
@@ -61,6 +61,9 @@ def _clean_output_dirs() -> None:
 
 def pyinstaller_build() -> Path:
     _clean_output_dirs()
+    # SUP-001: 构建期获取字体（锁定版本+SHA256），失败仅告警（运行时回退）
+    _run([sys.executable, str(PROJECT_DIR / "tools" / "fetch_fonts.py")],
+         "获取打包字体", check=False)
     _run(
         [
             sys.executable,

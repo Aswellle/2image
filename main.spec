@@ -6,11 +6,21 @@ from PyInstaller.utils.hooks import collect_submodules
 _root = SPECPATH
 _provider_modules = collect_submodules("services.providers")
 
+# SUP-001: 随安装包分发字体（构建前由 tools/fetch_fonts.py 获取；
+# 目录为空时跳过，运行时回退系统字体）
+_datas = [(os.path.join(_root, 'ICON_256x256.ico'), '.')]
+_fonts_dir = os.path.join(_root, 'assets', 'fonts')
+if os.path.isdir(_fonts_dir):
+    for _f in os.listdir(_fonts_dir):
+        _fp = os.path.join(_fonts_dir, _f)
+        if os.path.isfile(_fp):
+            _datas.append((_fp, 'fonts'))
+
 a = Analysis(
     [os.path.join(_root, 'main.py')],
     pathex=[_root],
     binaries=[],
-    datas=[(os.path.join(_root, 'ICON_256x256.ico'), '.')],
+    datas=_datas,
     hiddenimports=_provider_modules,
     hookspath=[],
     hooksconfig={},
