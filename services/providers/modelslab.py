@@ -181,7 +181,9 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
                 img_bytes = _download_image(outputs[0], log)
                 log(f"  ✓ ModelsLab/{model_id} 成功，"
                     f"{len(img_bytes)//1024}KB")
-                result = (img_bytes, f"ModelsLab/{model_id}")
+                # 直接返回 —— result 会在下一轮模型迭代被重置，
+                # continue 会把成功结果丢弃（契约测试发现的 bug）
+                return (img_bytes, f"ModelsLab/{model_id}")
             except Exception as e:
                 log(f"    下载失败: {e}，换模型…")
             continue
