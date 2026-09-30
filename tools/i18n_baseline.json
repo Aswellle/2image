@@ -1,0 +1,3677 @@
+[
+ {
+  "file": "ui/app.py",
+  "line": 1,
+  "text": "ui/app.py — 主应用窗口  v5.2\n──────────────────────────────\n在 v5 "
+ },
+ {
+  "file": "ui/app.py",
+  "line": 60,
+  "text": "主窗口控制器 v5.2。侧栏/主区控件已提取至独立模块。"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 399,
+  "text": "保留变体后刷新历史列表并自动预览。\n\n        修复：\n          · 接收 batch_panel 传来"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 487,
+  "text": "根据当前自动发现的 Provider 注册表实时统计顶栏可用接口数。\n\n        不再维护易过期的手写 key 列"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 576,
+  "text": "导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 614,
+  "text": "<!DOCTYPE html><html lang='zh'><head><meta charset='UTF-8'><"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 614,
+  "text": "条 ·"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 614,
+  "text": "</p><table><tr><th>时间</th><th>提示词</th><th>接口</th><th>收藏</th>"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 626,
+  "text": "完成"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 360,
+  "text": "提示"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 360,
+  "text": "请先生成或选择一张图片"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 416,
+  "text": "✅ 已保留变体到历史记录"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 497,
+  "text": "Pollinations.AI (免费·无需Key)"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 499,
+  "text": "StableHorde (兜底)"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 501,
+  "text": "Cloudflare AI (免费1万次/天)"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 577,
+  "text": "选择导出位置"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 581,
+  "text": "AI生图_"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 599,
+  "text": "无图"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 626,
+  "text": "已导出"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 626,
+  "text": "条\n至："
+ },
+ {
+  "file": "ui/app.py",
+  "line": 630,
+  "text": "提示"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 630,
+  "text": "暂无图片"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 637,
+  "text": "完成"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 642,
+  "text": "📋 路径已复制"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 637,
+  "text": "已保存："
+ },
+ {
+  "file": "ui/app.py",
+  "line": 557,
+  "text": "额度"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 570,
+  "text": "额度"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 572,
+  "text": "需要配置 API Key"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 625,
+  "text": "记录本.html"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 633,
+  "text": "所有文件"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 573,
+  "text": "点击「🆓 免费配置」配置硅基流动 API Key。"
+ },
+ {
+  "file": "ui/app_protocol.py",
+  "line": 1,
+  "text": "ui/app_protocol.py — AppProtocol 接口族\n\n面板通过协议与 App 交互，不依赖具体 A"
+ },
+ {
+  "file": "ui/app_protocol.py",
+  "line": 14,
+  "text": "HistorySidebar 依赖的 App 接口。"
+ },
+ {
+  "file": "ui/app_protocol.py",
+  "line": 43,
+  "text": "MainContent 依赖的 App 接口。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 1,
+  "text": "ui/batch_panel.py  v2\n─────────────────────\nFix-3: ≥4张时底部按钮栏"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 35,
+  "text": "网格中的单个图片格（v2：内部用 grid 布局保证按钮栏始终可见）。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 196,
+  "text": "批量变体面板主控件 v2。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 446,
+  "text": "取消当前批次：打断所有在飞生成（≤500ms 内停止等待/轮询）。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 460,
+  "text": "出错也计入完成数，确保 _running 能正确重置。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 483,
+  "text": "完全重置面板（Fix-4: 先 hide_compare 恢复布局）。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 494,
+  "text": "保留变体 — 修复版。\n\n        问题根因：\n          1. 原代码未验证 cell.path 对应的"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 575,
+  "text": "K 键：保留第一个「完成」状态的格。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 582,
+  "text": "D 键：丢弃第一个「完成」或「出错」状态的格。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 589,
+  "text": "C 键：对第一个「完成」状态的格触发对比。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 629,
+  "text": "Fix-4: 正确恢复 ctrl + grid_host 布局。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 370,
+  "text": "线程安全地确保 params['translated'] 已完成翻译。"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 95,
+  "text": "等待…"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 104,
+  "text": "生成中"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 145,
+  "text": "✅ 已保留"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 156,
+  "text": "— 已丢弃 —"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 188,
+  "text": "等待…"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 233,
+  "text": "⏹ 停止"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 450,
+  "text": "⏹ 停止中…"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 612,
+  "text": "提示"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 613,
+  "text": "请先在两张图上点击「⚖ 对比」按钮分别标记 A 和 B"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 358,
+  "text": "生成中…"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 225,
+  "text": "🎲  批量变体面板"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 239,
+  "text": "⚖ 查看对比"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 283,
+  "text": "⚖  图片对比模式"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 287,
+  "text": "← 返回网格"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 291,
+  "text": "🔄 交换 A/B"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 304,
+  "text": "← A  原图"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 315,
+  "text": "B →  对比图"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 470,
+  "text": "生成中…"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 477,
+  "text": "张成功 /"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 477,
+  "text": "张失败  · 请检查状态"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 480,
+  "text": "✅ 全部"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 480,
+  "text": "张生成完成  · 请选择保留或丢弃"
+ },
+ {
+  "file": "ui/batch_panel.py",
+  "line": 437,
+  "text": "⏹ 已取消"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 30,
+  "text": "Canvas 绘制的强度滑块。\n    范围 0.1~0.9；轨道颜色渐变：蓝（微调） → 紫（融合） → 红（重构）。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 768,
+  "text": "参考图缩略图 Canvas 尺寸随图生图侧栏动画过渡实时变化，\n        用与 _on_prev_resize 相"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 798,
+  "text": "更新输入框字符计数标签（公开，供 PhrasePanel 等外部调用）。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 810,
+  "text": "将提示词文本框内容复制到系统剪贴板，并在字数标签短暂显示反馈。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 829,
+  "text": "构建图生图参考图侧栏——预览 Tab 内 _prev_host 的第 0 列。\n\n        对标 Automati"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 911,
+  "text": "真正支持图生图、且能在现有下拉框/向导里配置密钥的接口。\n\n        IMG2IMG_PROVIDERS 里还有 "
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 923,
+  "text": "把图生图可用接口名称以竖向分行方式填入侧栏提示区。\n        每次调用先销毁旧行再重建，保证列表长度变化时不会残留"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 951,
+  "text": "postcommand：让弹出 Listbox 的宽度自动扩展到最长项目的实际像素宽，\n        解决 ttk.C"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 969,
+  "text": "切换文生图/图生图。\n\n        图生图的参考图侧栏固定在预览 Tab 内部（_prev_host 第 0 列），"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1020,
+  "text": "图生图参考图侧栏的列宽 0 ↔ _I2I_COL_W 平滑过渡（ease-out，\n        约 220ms，14"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1061,
+  "text": "批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个\n        入口并给出提示，避免用户以为批量结果也套"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1075,
+  "text": "在参考图预览 Canvas 上绘制占位符（尺寸取实际渲染宽高，\n        侧栏展开动画期间会随每一帧的宽度实时重绘"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1089,
+  "text": "将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1104,
+  "text": "弹出文件选择器，读取参考图字节并更新预览和 UI 状态。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1125,
+  "text": "清除参考图，恢复占位符。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 548,
+  "text": "⚖ 选取对比图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 275,
+  "text": "0 字符"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 390,
+  "text": "📝 文生图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 395,
+  "text": "🖼 图生图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 470,
+  "text": "⚖ 选取对比图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 474,
+  "text": "✕ 清空对比"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 511,
+  "text": "生成图片后在此处显示缩略预览\n\n双击预览图 → 独立查看器\n点击「⚖ 选取对比图」→ 并排对比"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 536,
+  "text": "选取对比图后显示"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 545,
+  "text": "提示"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 545,
+  "text": "暂无历史图片可用于对比"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 709,
+  "text": "选取对比图片"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 869,
+  "text": "上传参考图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 873,
+  "text": "✕ 清除"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1085,
+  "text": "点击上传参考图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1106,
+  "text": "选取参考图（图生图）"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1129,
+  "text": "上传参考图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 127,
+  "text": "微调"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 127,
+  "text": "融合"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 127,
+  "text": "重构"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 500,
+  "text": "当前图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 528,
+  "text": "对比图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 760,
+  "text": "⚖ 已设置对比图："
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 818,
+  "text": "✓ 已复制"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 933,
+  "text": "⚠ 暂无可用图生图接口，请先配置密钥"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1080,
+  "text": "点击上传参考图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1115,
+  "text": "更换参考图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 280,
+  "text": "📋 复制提示词"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 463,
+  "text": "📋 复制路径"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 466,
+  "text": "🔄 重新生成"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 478,
+  "text": "双击预览图 → 独立查看器"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 559,
+  "text": "⚖  选取对比图（从历史记录）"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 710,
+  "text": "图片"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 710,
+  "text": "所有文件"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 848,
+  "text": "🖼 图生图参考图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 880,
+  "text": "变化强度"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 894,
+  "text": "变化强度仅适用于 Stability AI：0.1–0.3 尽量保留原图；0.4–0.6 平衡改动；0.7–0.9 按提"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1066,
+  "text": "（图生图暂不支持）"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1107,
+  "text": "图片"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1108,
+  "text": "所有文件"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1121,
+  "text": "读取失败"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1122,
+  "text": "参考图读取失败:"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 567,
+  "text": "最近"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 567,
+  "text": "张 · 滚轮滑动"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 698,
+  "text": "✅ 选取此图"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 945,
+  "text": "✓ 可用接口 ("
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 938,
+  "text": "Google Gemini Nano Banana (免费额度)"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 1,
+  "text": "ui/phrase_panel.py  v2\n──────────────────────\n提示词片段库对话框（Topl"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 28,
+  "text": "✨ 画质增强"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 29,
+  "text": "💡 光影效果"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 30,
+  "text": "🎨 艺术风格"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 31,
+  "text": "📐 构图方式"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 32,
+  "text": "📷 镜头参数"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 33,
+  "text": "🌙 氛围情绪"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 34,
+  "text": "👤 人物细节"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 42,
+  "text": "词条中文说明悬浮窗。\n\n    使用方式：\n        tip = _PhraseTooltip(root, chi"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 206,
+  "text": "提示词片段库面板（非模态）。"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 186,
+  "text": "缓出曲线淡入：progress^0.55，前期快后期慢，共 _FRAMES 帧。"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 486,
+  "text": "🔧 自定义词条\n\n点击「➕」将此词条追加到主输入框末尾，\n与其他词条用逗号自动分隔。"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 536,
+  "text": "提示"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 536,
+  "text": "请输入词条内容"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 539,
+  "text": "提示"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 539,
+  "text": "请先选择分类"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 240,
+  "text": "点击词条追加到输入框  ·  🖱 悬停词条查看中文说明"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 262,
+  "text": "✕ 清空搜索"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 276,
+  "text": "分类"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 327,
+  "text": "➕ 新建词条："
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 342,
+  "text": "添加到当前分类"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 449,
+  "text": "删除词条"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 449,
+  "text": "删除「"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 374,
+  "text": "条"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 409,
+  "text": "（暂无词条）"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 409,
+  "text": "（无匹配结果）"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 506,
+  "text": "共"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 506,
+  "text": "条词条  ·  点击词条追加到输入框  ·  🖱 悬停查看中文说明"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1,
+  "text": "ui/prompt_wizard.py  v3\n────────────────────────────────────"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 40,
+  "text": "写实摄影 (Photorealistic)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 40,
+  "text": "电影感 (Cinematic)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 41,
+  "text": "动漫插画 (Anime/Illustration)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 41,
+  "text": "油画 (Oil Painting)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 42,
+  "text": "水彩 (Watercolor)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 42,
+  "text": "赛博朋克 (Cyberpunk)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 43,
+  "text": "奇幻艺术 (Fantasy Art)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 43,
+  "text": "极简主义 (Minimalist)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 44,
+  "text": "复古胶片 (Vintage Film)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 44,
+  "text": "3D 渲染 (3D Render)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 45,
+  "text": "波普艺术 (Pop Art)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 45,
+  "text": "黑白摄影 (Black & White)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 46,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 49,
+  "text": "温柔浪漫 (Romantic)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 49,
+  "text": "神秘深邃 (Mysterious)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 50,
+  "text": "史诗壮观 (Epic)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 50,
+  "text": "清新自然 (Fresh & Natural)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 51,
+  "text": "忧郁诗意 (Melancholic)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 51,
+  "text": "活泼欢快 (Cheerful)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 52,
+  "text": "冷峻帅气 (Cool & Calm)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 52,
+  "text": "温暖治愈 (Warm & Healing)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 53,
+  "text": "紧张刺激 (Intense)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 53,
+  "text": "梦幻唯美 (Dreamy)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 54,
+  "text": "孤独静谧 (Solitary)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 54,
+  "text": "欢庆喜悦 (Festive)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 55,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 58,
+  "text": "柔滑细腻皮肤 (Smooth porcelain skin)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 59,
+  "text": "毛发清晰可见 (Ultra-detailed hair strands)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 60,
+  "text": "服装纹理细致 (Fabric texture detail)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 61,
+  "text": "金属反光质感 (Metallic reflective surface)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 62,
+  "text": "水面涟漪细节 (Water ripple details)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 63,
+  "text": "自然植被纹理 (Organic botanical texture)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 64,
+  "text": "砖石建筑细节 (Stone and brick texture)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 65,
+  "text": "光线粒子感 (Volumetric light particles)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 66,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 69,
+  "text": "三分法构图 (Rule of thirds)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 70,
+  "text": "中心构图 (Center composition)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 71,
+  "text": "对称构图 (Symmetrical)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 72,
+  "text": "引导线构图 (Leading lines)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 73,
+  "text": "框架构图 (Frame within frame)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 74,
+  "text": "对角线构图 (Diagonal)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 75,
+  "text": "黄金螺旋 (Golden spiral)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 76,
+  "text": "留白构图 (Negative space)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 77,
+  "text": "俯瞰鸟瞰 (Bird's eye view)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 78,
+  "text": "低角度仰拍 (Low angle worm's eye)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 79,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 82,
+  "text": "黄金时刻柔光 (Golden hour soft light)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 83,
+  "text": "蓝调时刻 (Blue hour)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 84,
+  "text": "霓虹灯夜景 (Neon night lighting)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 85,
+  "text": "伦勃朗光 (Rembrandt lighting)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 86,
+  "text": "逆光剪影 (Backlit silhouette)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 87,
+  "text": "柔和自然光 (Soft natural window light)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 88,
+  "text": "戏剧性侧光 (Dramatic side lighting)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 89,
+  "text": "环境光 (Ambient environmental lighting)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 90,
+  "text": "工作室三点布光 (Studio three-point lighting)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 91,
+  "text": "体积光丁达尔 (Volumetric Tyndall rays)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 92,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 95,
+  "text": "85mm 人像定焦 f/1.4 浅景深"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 96,
+  "text": "35mm 街拍 f/2.8 自然透视"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 97,
+  "text": "50mm 标准 f/1.8 接近人眼"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 98,
+  "text": "24mm 广角 f/4 环境感强"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 99,
+  "text": "200mm 长焦 f/2.8 压缩背景"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 100,
+  "text": "微距镜头 f/8 超近距特写"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 101,
+  "text": "鱼眼镜头 180° 夸张透视"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 102,
+  "text": "移轴镜头 miniature 效果"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 103,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 106,
+  "text": "8K 超高清 (8K Ultra HD)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 107,
+  "text": "HDR 高动态范围 (HDR)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 108,
+  "text": "RAW 摄影质感 (RAW photography)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 109,
+  "text": "杂志封面品质 (Magazine cover quality)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 110,
+  "text": "专业修图精修 (Professional retouched)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 111,
+  "text": "电影级色调 (Cinematic color grade)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 112,
+  "text": "超锐细节 (Ultra sharp details)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 113,
+  "text": "无噪点纯净 (Noise-free clean)"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 114,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 131,
+  "text": "一行维度参数。布局使用 grid：\n      列 0  图标+标签（固定宽，右对齐）\n      列 1  ttk.C"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 193,
+  "text": "把滚动事件从子控件传递到 canvas_ref，使悬停任意控件均可滚动。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 417,
+  "text": "左栏底部固定的模板应用条，不随模板列表滚动。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 918,
+  "text": "正面提示词文本框内容变更时触发词数指示器刷新。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 926,
+  "text": "实时更新 Token 预算指示器：\n        · 右上角标签：词数/字符数\n        · 智能压缩按钮：仅在"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 968,
+  "text": "智能压缩按钮处理器：将提示词截断到预算以内。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1051,
+  "text": "打开 AI 提示词助手模型密钥配置向导。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1058,
+  "text": "根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 204,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 234,
+  "text": "● 空闲"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 235,
+  "text": "◐ 预览中"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 236,
+  "text": "● 待填充"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 441,
+  "text": "🎯  主题关键词（必填）"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 465,
+  "text": "🎛  可选维度参数"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 471,
+  "text": "🎨 风格"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 473,
+  "text": "🌙 氛围"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 476,
+  "text": "🔍 细节"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 478,
+  "text": "📐 构图"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 480,
+  "text": "💡 光影"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 482,
+  "text": "📷 镜头"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 484,
+  "text": "✨ 画质"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 490,
+  "text": "📝  额外补充（可选）"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 550,
+  "text": "🎯  主题关键词（用于填充模板）"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 570,
+  "text": "小红书"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 571,
+  "text": "情绪爆款"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 572,
+  "text": "知识干货"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 573,
+  "text": "通用自媒体"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 710,
+  "text": "AI 生成或选中模板后\n正面提示词显示在这里…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 790,
+  "text": "[参数]"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 910,
+  "text": "AI 生成或选中模板后\n正面提示词显示在这里…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 117,
+  "text": "自定义"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 118,
+  "text": "自定义"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 119,
+  "text": "自定义"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 120,
+  "text": "自定义"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 121,
+  "text": "自定义"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 122,
+  "text": "自定义"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 123,
+  "text": "自定义"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 213,
+  "text": "自定义…"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 249,
+  "text": "— 专业版"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 422,
+  "text": "📋  应用模板"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 695,
+  "text": "✕ 清除内容"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 723,
+  "text": "✂️ 智能压缩"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 777,
+  "text": "提示"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 777,
+  "text": "请先填写主题关键词！"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 814,
+  "text": "[模板]"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 876,
+  "text": "✅ 生成成功！"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 877,
+  "text": "✅ 生成完成"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 894,
+  "text": "❌ 失败"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 898,
+  "text": "需要配置 API Key"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 914,
+  "text": "已清除模板内容"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 937,
+  "text": "显示在这里"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 937,
+  "text": "AI 生成"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1012,
+  "text": "显示在这里"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1018,
+  "text": "✅ 已填入主输入框！可切回主界面微调后生成"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1030,
+  "text": "显示在这里"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1062,
+  "text": "✅ 模型已配置"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 636,
+  "text": "已预览："
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 816,
+  "text": "已应用："
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 983,
+  "text": "✂️ 已压缩："
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 983,
+  "text": "词 →"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 983,
+  "text": "词"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1032,
+  "text": "📋 已复制！"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1064,
+  "text": "⚠️ 仅备用通道"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1066,
+  "text": "🔑 配置模型密钥"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 283,
+  "text": "参数模式精细调控 · 模板模式一键出图"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 401,
+  "text": "🎲 随机全部维度"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 457,
+  "text": "示例：东亚少女  海边咖啡馆  黄昏  白色长裙"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 502,
+  "text": "💡  如：不要水印、主体面朝右边、禁止出现文字"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 560,
+  "text": "💡  输入图片主题，如：咖啡美食、职场干货、旅行风景"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 683,
+  "text": "📋  正面提示词（可编辑）"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 743,
+  "text": "📋 复制正面"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 760,
+  "text": "📖  本次会话历史"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 954,
+  "text": "✂️ 智能压缩（→"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 954,
+  "text": "词）"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 964,
+  "text": "✂️ 智能压缩"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 998,
+  "text": "AI 生成中"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 280,
+  "text": "专业版"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 959,
+  "text": "✂️ 建议压缩（→ 约72词）"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 1,
+  "text": "ui/queue_panel.py — 顺序生成队列面板  v1\n───────────────────────────"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 180,
+  "text": "顺序生成队列面板。\n\n    集成到 app.py 方式：\n      self._queue_panel = Queu"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 161,
+  "text": "必须在主线程调用。在此方法里创建 PhotoImage。"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 332,
+  "text": "图生图模式下锁定「加入队列」入口（见 MainContent._switch_mode）。"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 365,
+  "text": "停止队列：立即打断当前任务的等待/轮询（JOB-001），不再等它跑完。"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 407,
+  "text": "队列执行循环。\n\n        修复 #2/#7：改为 while 循环从 live 列表中取任务，而非一次性快照：\n"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 231,
+  "text": "⏹ 停止"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 372,
+  "text": "⏹ 停止中 — 正在打断当前任务…"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 127,
+  "text": "🔍 查看结果"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 240,
+  "text": "队列为空 · 在主输入框写好提示词后点「➕ 加入队列」"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 281,
+  "text": "📋  队列为空\n\n在主输入框填好提示词，点击「➕ 加入队列」\n连续添加多个不同提示词后，点「▶ 开始」\n程序会按顺序自动"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 305,
+  "text": "已加入："
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 317,
+  "text": "提示"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 317,
+  "text": "顺序生成队列暂不支持图生图模式\n请切换到「📝 文生图」后再加入队列"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 323,
+  "text": "提示"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 323,
+  "text": "请先在主输入框填写提示词"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 345,
+  "text": "提示"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 345,
+  "text": "队列中没有等待中的任务\n请先点「➕ 加入队列」添加提示词"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 351,
+  "text": "▶ 运行中…"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 361,
+  "text": "⏸ 已暂停 — 当前任务完成后停止"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 362,
+  "text": "▶ 已继续运行…"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 551,
+  "text": "共"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 328,
+  "text": "自动（按优先级）"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 209,
+  "text": "📋  顺序生成队列"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 529,
+  "text": "⏹ 已停止  ·  本轮完成"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 529,
+  "text": "张  ·  还有"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 529,
+  "text": "个等待中（可再次点「▶ 开始」）"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 532,
+  "text": "🎉 全部完成！  共生成"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 532,
+  "text": "张图片"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 490,
+  "text": "✅ 队列完成一张"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 25,
+  "text": "鼠标悬停气泡提示（类级 Toplevel 单例）。\n    · 悬停 450ms 后开始显示\n    · 所有实例共享一"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 334,
+  "text": "DATA-003: keyset 分页「加载更多」—— 追加下一页，不全量重载。"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 343,
+  "text": "Keyset 分页取下一页并追加卡片（O(limit)，与历史总量无关）。"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 369,
+  "text": "渲染单条历史卡片。\n        gen: 当前 _hist_gen 值，传给 _load_thumb 以支持过期检测"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 589,
+  "text": "仅修改前一张和新一张卡片的背景色/边框色，\n        完全不销毁/重建任何 widget，彻底消除与 viewer"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 611,
+  "text": "安全异步加载缩略图。\n        双重校验机制：\n          1. gen 代号：_refresh_hist"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 450,
+  "text": "取消收藏"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 450,
+  "text": "添加到收藏"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 472,
+  "text": "设为右侧对比图"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 490,
+  "text": "弹出右键上下文菜单（使用共享单例，避免每次右键创建新 Menu widget）"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 322,
+  "text": "暂无收藏"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 685,
+  "text": "🏷 编辑标签 —"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 877,
+  "text": "清空全部"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 877,
+  "text": "条记录？\n（不删除磁盘图片文件）"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 504,
+  "text": "📋 提示词已复制"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 536,
+  "text": "📋 已加入队列"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 538,
+  "text": "📋  复制提示词"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 539,
+  "text": "📁  复制图片路径"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 541,
+  "text": "🔁  一键重新生成"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 542,
+  "text": "🔍  在查看器中打开"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 544,
+  "text": "➕  加入生成队列"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 546,
+  "text": "🗑  删除此记录"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 794,
+  "text": "字"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 804,
+  "text": "确认"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 824,
+  "text": "取消收藏"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 828,
+  "text": "添加收藏"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 323,
+  "text": "🏷 无「"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 323,
+  "text": "」标签"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 324,
+  "text": "无匹配"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 324,
+  "text": "暂无记录"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 512,
+  "text": "📁 路径已复制"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 693,
+  "text": "🏷  编辑标签"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 699,
+  "text": "当前标签（点击移除）"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 729,
+  "text": "从历史标签选择"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 743,
+  "text": "新建标签"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 799,
+  "text": "字"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 804,
+  "text": "重命名为：「"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 824,
+  "text": "从喜爱列表移除？\n\n「"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 828,
+  "text": "收藏到喜爱列表？\n\n「"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 739,
+  "text": "（无历史标签）"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 804,
+  "text": "(清除)"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 1,
+  "text": "ui/stats_dashboard.py — 统计仪表板"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 16,
+  "text": "统计仪表板 Toplevel 窗口。"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 37,
+  "text": "1月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 37,
+  "text": "2月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 37,
+  "text": "3月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 37,
+  "text": "4月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 37,
+  "text": "5月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 37,
+  "text": "6月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 38,
+  "text": "7月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 38,
+  "text": "8月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 38,
+  "text": "9月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 38,
+  "text": "10月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 38,
+  "text": "11月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 38,
+  "text": "12月"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 39,
+  "text": "一"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 39,
+  "text": "二"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 39,
+  "text": "三"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 39,
+  "text": "四"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 39,
+  "text": "五"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 39,
+  "text": "六"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 39,
+  "text": "日"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 51,
+  "text": "📊 生成统计看板"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 169,
+  "text": "全年生成热力图"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 169,
+  "text": "悬浮格子查看当日详情"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 418,
+  "text": "接口使用分布"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 487,
+  "text": "标签热度 Top-10"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 67,
+  "text": "🔄 刷新数据"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 145,
+  "text": "总生成图片"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 146,
+  "text": "已收藏"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 147,
+  "text": "今日生成"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 148,
+  "text": "近 7 天"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 149,
+  "text": "近 30 天"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 372,
+  "text": "较少"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 381,
+  "text": "较多"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 63,
+  "text": "📊  生成统计看板"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 251,
+  "text": "年  全年生成"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 251,
+  "text": "张"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 257,
+  "text": "最活跃月份:"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 257,
+  "text": "月 ("
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 257,
+  "text": "张)"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 259,
+  "text": "最高单日:"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 259,
+  "text": "张)"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 345,
+  "text": "星期"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 345,
+  "text": "生成:"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 345,
+  "text": "张图片"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 348,
+  "text": "星期"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 348,
+  "text": "暂无生成记录"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 75,
+  "text": "更新于"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 390,
+  "text": "年份"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 470,
+  "text": "次"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 532,
+  "text": "暂未使用标签  —  在历史记录卡片中点击 🏷 添加"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 525,
+  "text": "次"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 1,
+  "text": "ui/viewer.py  v4 — 单图渲染架构图片查看器\n─────────────────────────────"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 27,
+  "text": "弹出式图片查看器（单图渲染架构、自由拖拽、缩放、裁剪）。"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 197,
+  "text": "后台线程：只负责 PIL 图像缩放，PIL Image 发回主线程创建 PhotoImage。"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 335,
+  "text": "更新元信息文本（只保留 Provider 和 Seed）。"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 353,
+  "text": "切换元信息显示/隐藏。"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 108,
+  "text": "📁 另存为"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 109,
+  "text": "📋 复制路径"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 143,
+  "text": "大小: --"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 145,
+  "text": "缩放: --"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 147,
+  "text": "文件: --"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 525,
+  "text": "裁剪预览"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 486,
+  "text": "提示"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 486,
+  "text": "请先加载图片"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 519,
+  "text": "裁剪"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 519,
+  "text": "选区太小，请重新选择"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 599,
+  "text": "裁剪另存为"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 604,
+  "text": "保存成功"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 609,
+  "text": "提示"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 609,
+  "text": "暂无图片"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 619,
+  "text": "提示"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 619,
+  "text": "暂无图片"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 628,
+  "text": "完成"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 262,
+  "text": "缩放:"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 347,
+  "text": "无元数据"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 489,
+  "text": "✂ 取消裁剪"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 491,
+  "text": "裁剪模式：拖拽鼠标选区，Esc 取消"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 604,
+  "text": "已保存至："
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 628,
+  "text": "已保存："
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 633,
+  "text": "📋 路径已复制"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 116,
+  "text": "滚轮缩放  拖拽平移  +/- 键  Esc 退出裁剪"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 330,
+  "text": "大小:"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 332,
+  "text": "文件:"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 537,
+  "text": "✂ 裁剪完成，原图已覆盖保存"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 539,
+  "text": "✂ 裁剪完成（原图未修改）"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 546,
+  "text": "✅ 应用裁剪"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 557,
+  "text": "📁 另存为新文件…"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 563,
+  "text": "同时覆盖保存原图文件（此操作不可撤销）"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 569,
+  "text": "仅在查看器中显示裁剪结果（不修改原图文件）"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 598,
+  "text": "所有文件"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 603,
+  "text": "另存:"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 612,
+  "text": "💾 已保存:"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 622,
+  "text": "所有文件"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 626,
+  "text": "💾 另存:"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 576,
+  "text": "裁剪后尺寸："
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 1,
+  "text": "ui/wizard_free.py  v5\n─────────────────────\n免费接口配置向导  v5 新增："
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 20,
+  "text": "免费接口配置向导（v5）。"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 50,
+  "text": "关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 621,
+  "text": "绿边 idle，获焦后变隐形。"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 119,
+  "text": "硅基流动 SiliconFlow"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 120,
+  "text": "★ 强烈推荐 · 国内服务 · 速度快 · 注册送免费额度"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 148,
+  "text": "📋 步骤：打开链接 → 注册/登录 → 账户 → API密钥 → 新建 → 复制（格式: sk-xxxxx）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 156,
+  "text": "🆓 完全免费 · 无需注册 · 无需 Key · FLUX 高质量"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 206,
+  "text": "🆓 免费 10,000 neurons/天 · FLUX.1-schnell · SDXL · 全球 CDN 加速"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 256,
+  "text": "📋 步骤：① dash.cloudflare.com 注册 → ② 右侧找到 Account ID 并复制 → ③ Pr"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 265,
+  "text": "🆓 免费 100次/天 · FLUX/SDXL/10000+模型 · 无需信用卡"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 296,
+  "text": "📋 步骤：注册 → Dashboard → Account → API Keys → Copy Key"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 304,
+  "text": "注册送 $5 · SDXL/FLUX 高质量 · 印度云平台"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 336,
+  "text": "备用接口"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 369,
+  "text": "兜底接口，队列长时自动跳过"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 396,
+  "text": "🆓 FLUX.1 Free · 免费额度 · 质量高"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 424,
+  "text": "📋 步骤：注册 → Settings → API Keys → New Key → 复制（格式: xxxx...）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 432,
+  "text": "🆓 免费额度 · 无需绑卡 · 支持图生图"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 461,
+  "text": "📋 步骤：用 Google 账号登录 AI Studio → Get API Key → Create API Key "
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 476,
+  "text": "阿里云 通义万相 / Qwen-Image"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 477,
+  "text": "🆓 新用户免费额度 · 国内直连速度快"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 511,
+  "text": "🆓 注册送 1000 次免费调用 · 商业合规定位"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 122,
+  "text": "• 中国国产云平台，注册即送免费额度，支持 FLUX.1-schnell / SDXL 等"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 123,
+  "text": "• 生图速度约 2~5 秒，推理质量高，支持最大 1024×1024"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 124,
+  "text": "• v3 HQ变体模式：优先使用 FLUX.1-dev（28步），画质显著高于 schnell"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 158,
+  "text": "• 完全开源的生成平台（柏林团队），基于 FLUX.1 模型，质量优秀"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 159,
+  "text": "• 无需注册、无需 API Key，直接启用即可使用"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 160,
+  "text": "• v2 HQ变体模式：开启 enhance=true（AI 自动丰富提示词），提升画面细节"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 209,
+  "text": "• Cloudflare 全球节点加速，FLUX.1-schnell + SDXL 高质量模型"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 210,
+  "text": "• 每天 10,000 free neurons ≈ 约 10~20 张全分辨率图片，完全免费"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 211,
+  "text": "• 需要：① Cloudflare Account ID  ② API Token（Workers AI Read 权限"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 212,
+  "text": "• 注册免费，无需信用卡；API Token 仅需 Read 权限，安全性高"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 268,
+  "text": "• 印度 AI 平台，注册免费获得每日 100 次 API 配额，无需信用卡"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 269,
+  "text": "• 支持 FLUX.1-schnell / SDXL / Stable Diffusion 及 10,000+ 社区模型"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 270,
+  "text": "• 每日 100 次配额适合个人日常使用，次日自动重置"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 271,
+  "text": "• API 稳定（2~5秒响应），支持异步处理模式"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 306,
+  "text": "• 印度 AI 云平台，支持 500+ 模型，注册即送 $5 免费额度"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 307,
+  "text": "• $5 额度约可生成 200~500 张图片（视模型而定）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 308,
+  "text": "• 模型：SDXL 1.0（steps=30）/ FLUX Schnell / Stable Diffusion 3"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 338,
+  "text": "• 免费注册，作为上述接口的备用"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 339,
+  "text": "• 支持 FLUX.1-schnell / SDXL 等模型，有速率限制"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 371,
+  "text": "• 完全免费，无需填写（留空使用匿名 Key）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 372,
+  "text": "• 高峰期队列可能较长，程序检测到队列过长会自动跳过"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 398,
+  "text": "• 提供 FLUX.1-schnell-Free 免费图像生成端点，质量媲美付费模型"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 399,
+  "text": "• 注册即可使用，赠送初始 $5 额度，免费端点每月有一定配额"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 400,
+  "text": "• 速度快（通常 3~6 秒），支持最大 1024×1024"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 434,
+  "text": "• Google 图像模型 \"Nano Banana\"（Gemini 2.5 Flash Image），免费额度"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 435,
+  "text": "• 通过 Google AI Studio 获取 API Key，登录 Google 账号即可，全程免费"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 436,
+  "text": "• 支持图生图（切到「图生图」模式后自动传入参考图）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 437,
+  "text": "• 同一个 Key 也用于「💎 付费接口配置」里更高画质的 Nano Banana Pro"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 479,
+  "text": "• 阿里云 DashScope 平台，wanx2.1-t2i-turbo 模型，新用户有免费调用额度"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 480,
+  "text": "• 国内网络直连，无需代理，速度稳定"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 481,
+  "text": "• 提交任务后异步轮询，出图通常在 10~30 秒内完成"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 513,
+  "text": "• Fibo 模型，训练数据经授权，主打商业可用/版权合规场景"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 514,
+  "text": "• 新用户注册即送 1000 次免费 API 调用"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 515,
+  "text": "• 同步返回（sync=true），无需等待轮询"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 556,
+  "text": "🎨 高质量模式（推荐）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 557,
+  "text": "硅基流动优先 FLUX.1-dev(28步)，Pollinations 开启 enhance，效果更佳，耗时稍长"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 559,
+  "text": "⚡ 标准模式"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 560,
+  "text": "各接口使用默认参数，速度更快，适合快速预览"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 53,
+  "text": "未保存的更改"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 53,
+  "text": "有未保存的更改，确定关闭？"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 81,
+  "text": "⚙  配置接口密钥"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 84,
+  "text": "配置后将自动保存，下次启动无需重填"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 127,
+  "text": "硅基流动 API Key:"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 137,
+  "text": "🌐 注册硅基流动（免费）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 142,
+  "text": "🔑 登录后获取 API Key"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 171,
+  "text": "✅ 启用 Pollinations.AI（无需配置，直接使用）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 179,
+  "text": "勾选后 Pollinations.AI 将在接口列表中出现，可直接选用"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 183,
+  "text": "🌐 官网：pollinations.ai"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 191,
+  "text": "Pollinations Key（可选，遇 401 再填）:"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 238,
+  "text": "🌐 注册 Cloudflare（免费）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 243,
+  "text": "🔑 创建 API Token"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 249,
+  "text": "📖 查看 Workers AI 文档"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 284,
+  "text": "🌐 注册 ModelsLab（免费）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 321,
+  "text": "🌐 注册 Segmind（免费送 $5）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 352,
+  "text": "🌐 注册 HuggingFace"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 357,
+  "text": "🔑 创建 Token（类型选 Read）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 375,
+  "text": "StableHorde Key（可选）:"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 385,
+  "text": "🌐 注册 StableHorde（可选）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 413,
+  "text": "🌐 注册 Together AI（免费）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 418,
+  "text": "🔑 获取 API Key"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 450,
+  "text": "🌐 打开 Google AI Studio（免费）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 455,
+  "text": "🔑 生成 API Key"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 464,
+  "text": "图像模型:"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 494,
+  "text": "🌐 注册阿里云 DashScope"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 499,
+  "text": "🔑 获取 API Key"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 528,
+  "text": "🌐 注册 Bria AI（送 1000 次）"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 541,
+  "text": "变体生成质量模式"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 543,
+  "text": "影响批量变体的画质与速度平衡"
+ },
+ {
+  "file": "ui/wizard_free.py",
+  "line": 581,
+  "text": "下次启动时不再显示此向导（可在「⚙ 设置」中重新打开）"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 1,
+  "text": "ui/wizard_llm.py\nAI 提示词助手 · 推理模型密钥配置向导\n\n独立于生图密钥向导（wizard_fre"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 47,
+  "text": "AI 提示词助手模型密钥配置向导（模态对话框）。"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 28,
+  "text": "硅基流动自动预设的首选候选"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 29,
+  "text": "硅基流动自动预设的稳定备用"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 30,
+  "text": "千问旗舰，英文创作能力强"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 31,
+  "text": "速度与质量均衡"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 32,
+  "text": "轻量兜底，保证最低可用性"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 36,
+  "text": "质量优先 · 更强推理/指令遵循 · 官方 API 按量计费"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 37,
+  "text": "速度优先 · 低延迟/低成本 · 官方 API 按量计费"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 41,
+  "text": "效果较好，但速度受免费队列影响"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 42,
+  "text": "轻量快速，效果一般"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 426,
+  "text": "把当前 preset_var 的值投射为整行卡片的明确选中态。"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 56,
+  "text": "🤖 AI 提示词助手 · 模型密钥配置"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 162,
+  "text": "提示词模型预设"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 163,
+  "text": "选择质量优先或速度优先的调用路径"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 244,
+  "text": "提示：Pro / Flash 使用 DeepSeek 官方 API（api.deepseek.com），不能复用硅基流动"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 251,
+  "text": "硅基流动 SiliconFlow"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 252,
+  "text": "⭐ 强烈推荐 · DeepSeek V3 · 免费额度 · 国内访问快"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 310,
+  "text": "📋 步骤：注册/登录 → 控制台 → API 密钥 → 新建密钥 → 复制（格式：sk-xxxxx）"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 318,
+  "text": "🆓 完全免费 · 速度较慢 · 硅基流动不可用时自动切换"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 356,
+  "text": "📋 步骤：注册/登录 → Settings → Access Tokens → New token → 复制（格式：hf"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 367,
+  "text": "• 密钥仅保存在本机 ~/2image/config.json，不上传至任何服务器"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 368,
+  "text": "• 开发版本的 .gitignore 已排除 config.json，密钥不会随代码提交到仓库"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 369,
+  "text": "• 提示词生成请求直接从你的电脑发往 SiliconFlow / HuggingFace，不经过中间服务器"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 185,
+  "text": "硅基流动自动（推荐）"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 186,
+  "text": "按 DeepSeek V3 → Qwen → GLM 自动降级；复用 sf_key，适合免费/稳妥使用"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 255,
+  "text": "• 注册即送免费 Token，DeepSeek V3-0324 / Qwen2.5-72B 等顶级模型均可调用"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 256,
+  "text": "• 同一个 sf_key 同时用于生图和提示词生成，已在「免费配置」中填写则此处自动预填"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 257,
+  "text": "• 提示词生成约消耗 200~400 token/次，免费额度通常够用数百次"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 321,
+  "text": "• 免费推理 API，Mixtral-8x7B / Zephyr-7b 两个模型按顺序自动尝试"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 322,
+  "text": "• 生成质量低于硅基流动，且有并发限制（免费队列可能需等待 20~60 秒）"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 323,
+  "text": "• 建议：已配置 sf_key 的情况下，hf_token 作为备用即可；也可只填 sf_key"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 392,
+  "text": "✅  检测到 DeepSeek 官方 Key，"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 392,
+  "text": "预设可立即使用"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 395,
+  "text": "✅  检测到已配置硅基流动 Key，AI 提示词助手可立即使用"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 210,
+  "text": "点击选择"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 398,
+  "text": "✅  检测到 DeepSeek 官方 Key；请选择 DeepSeek Pro 或 Flash 预设后使用"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 488,
+  "text": "⚠️  Pro / Flash 预设需要填写 DeepSeek 官方 API Key"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 492,
+  "text": "⚠️  自动预设请至少填写硅基流动或 HuggingFace Key"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 97,
+  "text": "💾  保存并关闭"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 103,
+  "text": "稍后配置"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 116,
+  "text": "🤖  AI 提示词助手 · 模型密钥配置"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 120,
+  "text": "配置后即可使用 AI 自动生成高质量生图提示词"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 173,
+  "text": "单选模型预设"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 177,
+  "text": "请选择 1 个模型作为 AI 提示词助手的调用路径"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 180,
+  "text": "◉ 当前使用"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 223,
+  "text": "DeepSeek 官方 API Key（Pro / Flash 预设专用）:"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 238,
+  "text": "🌐 DeepSeek 官方平台"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 264,
+  "text": "模型调用优先级（自动降级，无需手动选择）"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 281,
+  "text": "硅基流动 API Key（sf_key）:"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 297,
+  "text": "🌐 注册硅基流动（免费）"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 303,
+  "text": "🔑 获取 API Key"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 343,
+  "text": "🌐 注册 HuggingFace（免费）"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 349,
+  "text": "🔑 获取 Access Token"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 401,
+  "text": "⚠️  仅配置了 HuggingFace Token（兜底通道），建议同时配置硅基流动或 DeepSeek"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 404,
+  "text": "❌  尚未配置任何推理模型密钥，AI 提示词助手暂时无法使用，请至少配置一项"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 438,
+  "text": "✓ 已选择"
+ },
+ {
+  "file": "ui/wizard_llm.py",
+  "line": 438,
+  "text": "点击选择"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 1,
+  "text": "ui/wizard_paid.py  v3\n──────────────────────\n付费接口配置向导。\n\nv3 新"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 25,
+  "text": "付费接口（OpenAI / Stability AI / Replicate / xAI / 豆包）配置窗口。"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 40,
+  "text": "关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 33,
+  "text": "💎 付费接口配置"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 100,
+  "text": "支持文生图+图生图  |  6 种模型可选  |  按量计费"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 132,
+  "text": "🌐 OpenAI 注册 / 充值"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 133,
+  "text": "🔑 生成 API Key"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 138,
+  "text": "Core ~¥0.02/张  |  Ultra ~¥0.06/张  |  SD3.5 ~¥0.47/张"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 161,
+  "text": "🌐 注册 Stability AI"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 162,
+  "text": "🔑 获取 API Key"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 167,
+  "text": "多种 FLUX 模型可选  |  社区模型丰富  |  按量计费"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 190,
+  "text": "🌐 注册 Replicate"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 191,
+  "text": "🔑 获取 API Token"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 195,
+  "text": "火山引擎 豆包 Seedream"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 196,
+  "text": "Seedream 4.0 文生图 (最新最强)  |  SeedEdit 3.0 图生图  |  按量计费"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 225,
+  "text": "🌐 注册火山引擎"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 226,
+  "text": "🔑 获取 API Key"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 231,
+  "text": "Black Forest Labs (FLUX 官方)"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 232,
+  "text": "FLUX.2 Pro / Flex  |  最高写实质量  |  按量计费"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 254,
+  "text": "🌐 注册 BFL"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 255,
+  "text": "🔑 获取 API Key"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 102,
+  "text": "• 模型族：GPT-Image 1 (旧版) / 1.5 / 2 / 2.5 Flare (快速) / 2.5 Sunb"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 103,
+  "text": "• GPT-Image 2+ 支持任意分辨率（16 的倍数，长边 ≤3840）"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 104,
+  "text": "• quality=auto/low/medium/high  |  支持图生图"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 105,
+  "text": "• 首次使用可能需要在 OpenAI 后台完成 Organization Verification"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 106,
+  "text": "• 需要信用卡绑定，按用量计费（最低充值 $5）"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 140,
+  "text": "• 支持 Core / Ultra / SD3.5-Large 三档，新用户赠送 25 Credits 试用"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 141,
+  "text": "• Core：速度最快；Ultra：最高画质；SD3.5：文字渲染能力强"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 169,
+  "text": "• FLUX.1 系列：Pro / Dev / Schnell / Realism 多种风格"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 170,
+  "text": "• 支持图生图（FLUX.1 Kontext 系列）和 ControlNet"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 171,
+  "text": "• $0.04~0.08/张，新用户赠送 $5 Credits"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 198,
+  "text": "• Seedream 4.0：最新最强模型，支持 1024x1024 ~ 2048x2048 多种尺寸"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 199,
+  "text": "• Seedream 3.0：上一代模型，速度更快，成本更低"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 200,
+  "text": "• SeedEdit 3.0：图生图专用，自动在「图生图」模式下启用"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 201,
+  "text": "• guidance_scale 建议 2.0~3.0，支持 watermark 开关"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 202,
+  "text": "• 新用户赠送试用额度，按生成张数计费"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 234,
+  "text": "• FLUX.2 Pro：官方最强模型，支持 2K 分辨率"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 235,
+  "text": "• FLUX.2 Flex：灵活风格，适合创意设计"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 236,
+  "text": "• FLUX Kontext Pro：图生图专用（自动在图生图模式启用）"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 54,
+  "text": "💎 付费接口配置"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 57,
+  "text": "GPT-Image / 豆包 / Stability / Replicate"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 62,
+  "text": "💾 保存配置"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 66,
+  "text": "关闭"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 120,
+  "text": "模型:"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 126,
+  "text": "画质:"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 154,
+  "text": "模型档位:"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 158,
+  "text": "core=最快  ultra=最佳  sd3.5=文字强"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 184,
+  "text": "模型:"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 205,
+  "text": "火山引擎 API Key:"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 215,
+  "text": "模型:"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 222,
+  "text": "图生图自动用 SeedEdit"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 249,
+  "text": "模型:"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 116,
+  "text": "Check if selected provider has required API key configured.\n"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 139,
+  "text": "使用"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 139,
+  "text": "需要填写 API Key。\n是否现在配置？"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 140,
+  "text": "需要配置"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 43,
+  "text": "提示"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 43,
+  "text": "请先输入描述文字！"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 48,
+  "text": "提示"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 48,
+  "text": "请选择一个具体接口，而非分隔线。"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 62,
+  "text": "付费预算已用尽"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 215,
+  "text": "提示"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 215,
+  "text": "批量生成暂不支持图生图模式\n请切换到「📝 文生图」后再批量生成"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 220,
+  "text": "提示"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 220,
+  "text": "请先输入描述文字！"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 225,
+  "text": "提示"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 225,
+  "text": "请选择一个具体接口，而非分隔线。"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 63,
+  "text": "今日付费估算消耗已达 $"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 63,
+  "text": "（上限 $"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 63,
+  "text": "）。\n如需继续使用"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 63,
+  "text": "，请调高「paid_daily_budget_usd」设置。"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 73,
+  "text": "建议配置"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 74,
+  "text": "尚未配置任何免费 API Key。\n建议配置「硅基流动」。\n是否现在配置？"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 169,
+  "text": "图生图模式需要先选取参考图"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 195,
+  "text": "⏰ 生成超时:"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 63,
+  "text": "🔑  接口配置"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 64,
+  "text": "🆓  免费接口配置…"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 65,
+  "text": "💎  付费接口配置…"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 70,
+  "text": "🌐  免费接口注册链接"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 71,
+  "text": "★  硅基流动（推荐，免费赠额）"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 73,
+  "text": "·  Google Gemini（500次/天）"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 75,
+  "text": "·  Cloudflare AI（1万次/天）"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 77,
+  "text": "·  OpenRouter（部分模型免费）"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 79,
+  "text": "·  ModelsLab（100次/天）"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 81,
+  "text": "·  Segmind（注册送 $5）"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 88,
+  "text": "🌐  付费接口注册链接"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 95,
+  "text": "·  xAI Grok（注册送 $25）"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 101,
+  "text": "📊  统计看板…"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 111,
+  "text": "📁  数据文件夹"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 113,
+  "text": "📄  调试日志"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 119,
+  "text": "🖼  应用偏好设置…"
+ },
+ {
+  "file": "services/application/menu_controller.py",
+  "line": 120,
+  "text": "⌨  快捷键说明…"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 28,
+  "text": "⌨ 快捷键说明"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 70,
+  "text": "🖼 应用偏好设置"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 46,
+  "text": "生成 / 重新生成"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 47,
+  "text": "AI 提示词助手"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 48,
+  "text": "📚 提示词片段库"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 49,
+  "text": "另存为"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 50,
+  "text": "导出历史记录"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 51,
+  "text": "打开独立查看器"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 52,
+  "text": "清空调试日志"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 110,
+  "text": "✅ 已保存！"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 39,
+  "text": "⌨  快捷键说明"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 81,
+  "text": "🖼  应用偏好设置"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 87,
+  "text": "默认生成尺寸"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 95,
+  "text": "启动行为"
+ },
+ {
+  "file": "services/application/settings_controller.py",
+  "line": 98,
+  "text": "启动时显示免费接口配置向导"
+ }
+]
