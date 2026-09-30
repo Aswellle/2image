@@ -112,6 +112,7 @@ class GenerationOrchestrator:
             if fn is None:
                 continue
 
+            last_error: Exception | None = None
             # Try this provider with retries
             for attempt in range(1, self.retry_policy.max_attempts + 1):
                 if token:
@@ -157,10 +158,11 @@ class GenerationOrchestrator:
                     result.cancelled = True
                     if log_cb:
                         log_cb("✗ 用户取消")
-
+                    return result
 
                 except ProviderError as exc:
                     result.attempts += 1
+                    last_error = exc
                     health.record_failure(exc.code)
                     error_msg = f"[{provider_id}] {exc.code}: {exc}"
                     result.errors.append(error_msg)
@@ -204,6 +206,14 @@ class GenerationOrchestrator:
                             raise GenerationCancelled("Cancelled during retry wait")
 
             if result.deadline_exceeded or result.cancelled:
+                break
+
+            # Honor the fallback=False contract: a caller error (e.g.
+            # invalid request) would fail identically on every provider,
+            # so stop the chain instead of burning the whole registry.
+            if last_error is not None and not getattr(last_error, "fallback", True):
+                if log_cb:
+                    log_cb(f"⏹ {last_error.code} — 请求本身无效，停止尝试其他接口")
                 break
 
         # All providers exhausted

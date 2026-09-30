@@ -42,8 +42,10 @@ class TestErrorTaxonomy:
 
     def test_auth_error_not_retryable(self):
         err = ProviderAuthError("bad key")
+        # 认证错误不重试本 provider，但穿透到下一家（fallback=True）：
+        # 链路中段的 401/缺 key 不应终止整个生成任务。
         assert err.retryable is False
-        assert err.fallback is False
+        assert err.fallback is True
         assert err.code == "auth_failed"
 
     def test_quota_error_fallback_not_retryable(self):

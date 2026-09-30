@@ -31,11 +31,18 @@ class ProviderError(Exception):
 
 
 class ProviderAuthError(ProviderError):
-    """401 / 403 / invalid key — never retry this provider."""
+    """401 / 403 / invalid key — never retry this provider.
+
+    fallback=True (not False): a bad key on one provider mid-chain must
+    fall through to the next candidate, not abort the whole job. The
+    "stop everything" semantic is reserved for caller errors
+    (ProviderInvalidRequestError), where every provider would fail
+    identically.
+    """
 
     code = "auth_failed"
     retryable = False
-    fallback = False
+    fallback = True
 
 
 class ProviderQuotaError(ProviderError):
