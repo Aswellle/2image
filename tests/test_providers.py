@@ -214,13 +214,17 @@ _NETWORK_FAILURE_CASES = [
                           ids=[c[1] for c in _NETWORK_FAILURE_CASES])
 def test_provider_connection_error_not_nameerror(module, fn, cfg, method):
     """A network failure must surface as ValueError/RuntimeError/TimeoutError,
-    never NameError (which would indicate missing `import requests`)."""
-    from unittest.mock import patch
-    from services.providers import _net
+    never NameError (which would indicate missing `import requests`).
+
+    NET-004: provider 使用 thread-local `get_session()` —— 打桩点改为
+    各模块导入的 `_get_session` 访问器。"""
+    from unittest.mock import MagicMock, patch
     mod = importlib.import_module(module)
     func = getattr(mod, fn)
     conn_err = _requests.exceptions.ConnectionError("simulated network down")
-    with patch.object(_net.SESSION, method, side_effect=conn_err):
+    fake_session = MagicMock()
+    getattr(fake_session, method).side_effect = conn_err
+    with patch.object(mod, "_get_session", return_value=fake_session):
         with pytest.raises((ValueError, RuntimeError, TimeoutError)):
             func("test prompt", 512, 512, 42, cfg, print)
 
@@ -254,8 +258,11 @@ def _make_ok(content: bytes = b"image-bytes", content_type="image/png"):
 def test_safe_get_image_happy_path():
     """safe_get_image now delegates to bounded_download (streaming + Content-Type)."""
     from unittest.mock import patch
+    from services.providers import _net
     from services.providers._net import safe_get_image, SESSION
-    with patch.object(SESSION, "get", return_value=_make_ok(b"img")):
+    # NET-004: safe_get_image 用 thread-local get_session()；测试中指回 SESSION 便于打桩
+    with patch.object(_net, "get_session", return_value=SESSION), \
+         patch.object(SESSION, "get", return_value=_make_ok(b"img")):
         result = safe_get_image("https://8.8.8.8/img.png")
     assert result == b"img"
 
@@ -263,10 +270,12 @@ def test_safe_get_image_happy_path():
 def test_safe_get_image_redirect_to_private_ip_blocked():
     """Redirect chain that leads to a private IP must be blocked."""
     from unittest.mock import patch
+    from services.providers import _net
     from services.providers._net import safe_get_image, SESSION
     from services.generation.errors import ProviderInvalidResponseError
     responses = [_make_redirect("https://192.168.1.1/steal.png")]
-    with patch.object(SESSION, "get", side_effect=responses):
+    with patch.object(_net, "get_session", return_value=SESSION), \
+         patch.object(SESSION, "get", side_effect=responses):
         with pytest.raises(ProviderInvalidResponseError, match="[Bb]locked"):
             safe_get_image("https://cdn.example.com/start.png")
 

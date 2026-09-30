@@ -9,7 +9,7 @@ import base64
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "fal_flux",
@@ -54,14 +54,14 @@ def _poll_fal(request_id: str, queue_base: str, headers: dict, log: Callable) ->
     for i in range(_MAX_POLLS):
         time.sleep(_POLL_SEC)
         try:
-            st = _session.get(status_url, headers=headers, timeout=15)
+            st = _get_session().get(status_url, headers=headers, timeout=15)
         except Exception as e:
             log(f"  轮询错误: {e}"); continue
         if st.status_code != 200: continue
         status = st.json().get("status", "")
         log(f"  [{i+1}] {status}")
         if status == "COMPLETED":
-            res = _session.get(result_url, headers=headers, timeout=20)
+            res = _get_session().get(result_url, headers=headers, timeout=20)
             if res.status_code != 200:
                 raise ValueError(f"fal.ai 结果获取失败: {res.status_code}")
             images = res.json().get("images", [])
@@ -120,7 +120,7 @@ def try_fal_flux(prompt: str, w: int, h: int, seed: int,
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         try:
-            resp = _session.post(queue_base, headers=headers, json=payload, timeout=30)
+            resp = _get_session().post(queue_base, headers=headers, json=payload, timeout=30)
         except Exception as e:
             _LAST_DONE[0] = time.time()
             raise ValueError(f"无法连接 fal.ai: {e}")

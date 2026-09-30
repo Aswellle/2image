@@ -20,7 +20,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session
+from services.providers._net import get_session as _get_session
 
 PROVIDER_INFO = {
     "id": "segmind",
@@ -116,7 +116,7 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
 
             for attempt in range(1, 4):
                 try:
-                    resp = _session.post(url, headers=headers,
+                    resp = _get_session().post(url, headers=headers,
                                          json=payload, timeout=_TIMEOUT)
                 except requests.exceptions.ConnectionError as e:
                     log(f"    网络错误: {e}")

@@ -11,7 +11,7 @@ v3 变体高质量模式（variant_hq）：
 import requests
 import time
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "siliconflow",
@@ -96,7 +96,7 @@ def try_siliconflow(prompt: str, w: int, h: int, seed: int,
             payload["negative_prompt"] = _HQ_NEGATIVE
 
         try:
-            resp = _session.post(
+            resp = _get_session().post(
                 "https://api.siliconflow.cn/v1/images/generations",
                 headers=headers, json=payload, timeout=90
             )

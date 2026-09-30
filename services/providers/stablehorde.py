@@ -18,13 +18,14 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "stablehorde",
     "name": "StableHorde (兜底)",
     "category": "free",
     "config_key": "stablehorde_key",
+    "key_optional": True,  # 匿名 Key "0000000000" 也可用
 }
 
 
@@ -80,7 +81,7 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int,
 
         for attempt in range(1, 4):
             try:
-                resp = _session.post(
+                resp = _get_session().post(
                     f"{_BASE}/generate/async",
                     headers=sub_headers,
                     json=sub_body,
@@ -155,7 +156,7 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int,
         time.sleep(poll_interval)
 
         try:
-            chk = _session.get(
+            chk = _get_session().get(
                 f"{_BASE}/generate/check/{job_id}",
                 headers=chk_headers, timeout=15)
             chk.raise_for_status()
@@ -192,7 +193,7 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int,
 
     # ── 获取结果 ─────────────────────────────────────────────────
     try:
-        result = _session.get(
+        result = _get_session().get(
             f"{_BASE}/generate/status/{job_id}",
             headers=chk_headers, timeout=30)
         result.raise_for_status()

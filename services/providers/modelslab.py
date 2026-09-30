@@ -22,7 +22,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "modelslab",
@@ -130,7 +130,7 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
             if gap < _MIN_INTERVAL:
                 time.sleep(_MIN_INTERVAL - gap)
             try:
-                _resp = _session.post(_API_URL, json=payload, timeout=_TIMEOUT)
+                _resp = _get_session().post(_API_URL, json=payload, timeout=_TIMEOUT)
             except requests.exceptions.ConnectionError as e:
                 _net_error = ("conn", e)
             except requests.exceptions.Timeout:
@@ -204,7 +204,7 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
             for i in range(_MAX_POLL):
                 time.sleep(_POLL_INTERVAL)
                 try:
-                    fr  = _session.post(
+                    fr  = _get_session().post(
                         _FETCH_URL,
                         json={"key": key, "request_id": str(fetch_id)},
                         timeout=30)

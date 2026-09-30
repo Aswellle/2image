@@ -18,7 +18,7 @@ from typing import Callable, Tuple
 import requests
 
 from config.model_catalog import MINIMAX_IMAGE_DEFAULT, MINIMAX_IMAGE_NAMES
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
 
 PROVIDER_INFO = {
@@ -108,7 +108,7 @@ def try_minimax_image(
         for attempt in range(1, _MAX_RETRIES + 1):
             try:
                 log(f"[MiniMax] 尝试 {attempt}/{_MAX_RETRIES}…")
-                resp = _session.post(
+                resp = _get_session().post(
                     _ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT,
                 )
                 if resp.status_code == 429:

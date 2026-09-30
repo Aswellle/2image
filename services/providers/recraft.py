@@ -20,7 +20,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "recraft",
@@ -67,7 +67,7 @@ def try_recraft(prompt: str, w: int, h: int, seed: int,
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         try:
-            resp = _session.post(
+            resp = _get_session().post(
                 "https://external.api.recraft.ai/v1/images/generations",
                 headers={
                     "Authorization": f"Bearer {key}",

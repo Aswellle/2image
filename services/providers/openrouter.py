@@ -19,7 +19,7 @@ import time
 import base64
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
 
 PROVIDER_INFO = {
@@ -78,7 +78,7 @@ def try_openrouter(
         for attempt in range(1, _MAX_RETRIES + 1):
             try:
                 log(f"[OpenRouter] 尝试 {attempt}/{_MAX_RETRIES}，模型：{model}…")
-                resp = _session.post(
+                resp = _get_session().post(
                     _ENDPOINT,
                     headers=headers,
                     json=payload,

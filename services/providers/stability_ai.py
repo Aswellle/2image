@@ -1,6 +1,6 @@
 """services/providers/stability_ai.py — Stability AI（文生图 + 图生图）"""
 import base64
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
     "id": "stability_ai",
@@ -63,7 +63,7 @@ def try_stability_ai(prompt, w, h, seed, cfg, log):
             "output_format": (None, "png"),
             "seed":          (None, str(seed % 4294967294)),
         }
-        resp = _session.post(_EP_IMG2IMG, headers=headers, files=files, timeout=150)
+        resp = _get_session().post(_EP_IMG2IMG, headers=headers, files=files, timeout=150)
     else:
         # ── 文生图模式（原逻辑）──────────────────────────────────
         model = cfg.get("stability_model","core")
@@ -72,7 +72,7 @@ def try_stability_ai(prompt, w, h, seed, cfg, log):
         log(f"► Stability AI  模型={model}  宽高比={aspect}")
         data = {"prompt":prompt,"aspect_ratio":aspect,"output_format":"png","seed":str(seed%4294967294)}
         if model == "sd3.5-large": data["model"] = "sd3.5-large"
-        resp = _session.post(url, headers=headers,
+        resp = _get_session().post(url, headers=headers,
                              files={k:(None,v) for k,v in data.items()}, timeout=120)
 
     log(f"  状态: {resp.status_code}")

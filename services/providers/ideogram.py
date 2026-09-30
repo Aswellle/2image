@@ -14,7 +14,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "ideogram",
@@ -73,7 +73,7 @@ def try_ideogram(prompt: str, w: int, h: int, seed: int,
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         try:
-            resp = _session.post(
+            resp = _get_session().post(
                 _ENDPOINT,
                 headers={"Api-Key": key},
                 files=files,

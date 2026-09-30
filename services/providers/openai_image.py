@@ -25,7 +25,7 @@ from config.model_catalog import (
     GPT_IMAGE_NAMES,
     GPT_IMAGE_LEGACY,
 )
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
     "id": "openai_image",
@@ -135,11 +135,11 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
         files = {"image": ("ref.png", ref_image, "image/png")}
         data = {"model": model, "prompt": prompt, "n": "1",
                 "size": size_str, "quality": quality}
-        resp = _session.post("https://api.openai.com/v1/images/edits",
+        resp = _get_session().post("https://api.openai.com/v1/images/edits",
             headers=headers, files=files, data=data, timeout=180)
     else:
         log(f"► OpenAI GPT-Image  文生图  模型={GPT_IMAGE_NAMES.get(model, model)}  质量={quality}  尺寸={size_str}")
-        resp = _session.post("https://api.openai.com/v1/images/generations",
+        resp = _get_session().post("https://api.openai.com/v1/images/generations",
             headers={**headers, "Content-Type": "application/json"},
             json={"model": model, "prompt": prompt, "n": 1,
                   "size": size_str, "quality": quality}, timeout=120)

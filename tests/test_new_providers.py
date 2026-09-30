@@ -110,7 +110,7 @@ class TestVolcengineArkProvider:
         with pytest.raises(ValueError, match="火山引擎"):
             try_volcengine_ark("test", 64, 64, 42, {"volcengine_key": "  "}, print)
 
-    @patch("services.providers.volcengine_ark._session")
+    @patch("services.providers.volcengine_ark._get_session")
     def test_text2image_success(self, mock_session):
         from services.providers.volcengine_ark import try_volcengine_ark
 
@@ -119,13 +119,13 @@ class TestVolcengineArkProvider:
         mock_resp.json.return_value = {
             "data": [{"url": "https://example.com/img.png"}]
         }
-        mock_session.post.return_value = mock_resp
+        mock_session.return_value.post.return_value = mock_resp
 
         mock_img_resp = MagicMock()
         mock_img_resp.status_code = 200
         mock_img_resp.content = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
         mock_img_resp.raise_for_status = MagicMock()
-        mock_session.get.return_value = mock_img_resp
+        mock_session.return_value.get.return_value = mock_img_resp
 
         cfg = {"volcengine_key": "test-key", "ark_model": "doubao-seedream-4-0-t2i"}
         data, name = try_volcengine_ark("a cat", 64, 64, 42, cfg, print)
@@ -134,7 +134,7 @@ class TestVolcengineArkProvider:
         assert "豆包" in name
         assert "Seedream 4.0" in name
 
-    @patch("services.providers.volcengine_ark._session")
+    @patch("services.providers.volcengine_ark._get_session")
     def test_text2image_b64_response(self, mock_session):
         from services.providers.volcengine_ark import try_volcengine_ark
 
@@ -144,33 +144,33 @@ class TestVolcengineArkProvider:
         mock_resp.json.return_value = {
             "data": [{"b64_json": img_b64}]
         }
-        mock_session.post.return_value = mock_resp
+        mock_session.return_value.post.return_value = mock_resp
 
         cfg = {"volcengine_key": "test-key"}
         data, name = try_volcengine_ark("a cat", 64, 64, 42, cfg, print)
 
         assert data == b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
-    @patch("services.providers.volcengine_ark._session")
+    @patch("services.providers.volcengine_ark._get_session")
     def test_401_raises_auth_error(self, mock_session):
         from services.providers.volcengine_ark import try_volcengine_ark
 
         mock_resp = MagicMock()
         mock_resp.status_code = 401
-        mock_session.post.return_value = mock_resp
+        mock_session.return_value.post.return_value = mock_resp
 
         cfg = {"volcengine_key": "bad-key"}
         with pytest.raises((ValueError, RuntimeError), match="无效或已过期"):
             try_volcengine_ark("a cat", 64, 64, 42, cfg, print)
 
-    @patch("services.providers.volcengine_ark._session")
+    @patch("services.providers.volcengine_ark._get_session")
     def test_empty_data_raises_error(self, mock_session):
         from services.providers.volcengine_ark import try_volcengine_ark
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {"data": []}
-        mock_session.post.return_value = mock_resp
+        mock_session.return_value.post.return_value = mock_resp
 
         cfg = {"volcengine_key": "test-key"}
         with pytest.raises((ValueError, RuntimeError), match="无图片"):
@@ -206,7 +206,7 @@ class TestOpenAIGPTImage25:
 class TestGeminiNanoBanana:
     """测试 Gemini Nano Banana 版本选择"""
 
-    @patch("services.providers.gemini._session")
+    @patch("services.providers.gemini._get_session")
     def test_default_model_is_v2(self, mock_session):
         """默认应使用 Nano Banana 2"""
         from services.providers.gemini import try_gemini
@@ -222,16 +222,16 @@ class TestGeminiNanoBanana:
                 }
             }]
         }
-        mock_session.post.return_value = mock_resp
+        mock_session.return_value.post.return_value = mock_resp
 
         cfg = {"gemini_key": "test-key"}
         try_gemini("a cat", 64, 64, 42, cfg, lambda m: None)
 
-        call_args = mock_session.post.call_args
+        call_args = mock_session.return_value.post.call_args
         url = call_args[0][0]
         assert "gemini-3.1-flash-image" in url
 
-    @patch("services.providers.gemini._session")
+    @patch("services.providers.gemini._get_session")
     def test_v1_model_selection(self, mock_session):
         """应支持选择 v1 模型"""
         from services.providers.gemini import try_gemini
@@ -247,16 +247,16 @@ class TestGeminiNanoBanana:
                 }
             }]
         }
-        mock_session.post.return_value = mock_resp
+        mock_session.return_value.post.return_value = mock_resp
 
         cfg = {"gemini_key": "test-key", "gemini_model": "gemini-2.5-flash-image"}
         try_gemini("a cat", 64, 64, 42, cfg, lambda m: None)
 
-        call_args = mock_session.post.call_args
+        call_args = mock_session.return_value.post.call_args
         url = call_args[0][0]
         assert "gemini-2.5-flash-image" in url
 
-    @patch("services.providers.gemini._session")
+    @patch("services.providers.gemini._get_session")
     def test_pro_model_selection(self, mock_session):
         """应支持选择 Pro 模型"""
         from services.providers.gemini import try_gemini
@@ -272,12 +272,12 @@ class TestGeminiNanoBanana:
                 }
             }]
         }
-        mock_session.post.return_value = mock_resp
+        mock_session.return_value.post.return_value = mock_resp
 
         cfg = {"gemini_key": "test-key", "gemini_model": "gemini-3-pro-image"}
         try_gemini("a cat", 64, 64, 42, cfg, lambda m: None)
 
-        call_args = mock_session.post.call_args
+        call_args = mock_session.return_value.post.call_args
         url = call_args[0][0]
         assert "gemini-3-pro-image" in url
 

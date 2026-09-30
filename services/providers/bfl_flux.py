@@ -15,7 +15,7 @@ import time
 import requests
 from typing import Callable, Tuple
 from config.model_catalog import BFL_TXT2IMG_DEFAULT
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "bfl_flux",
@@ -85,7 +85,7 @@ def try_bfl_flux(
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         try:
-            resp = _session.post(f"{_BASE}/{model}", headers=headers,
+            resp = _get_session().post(f"{_BASE}/{model}", headers=headers,
                                  json=payload, timeout=_TIMEOUT)
         except requests.exceptions.ConnectionError as e:
             _LAST_DONE[0] = time.time()
@@ -109,7 +109,7 @@ def try_bfl_flux(
     log(f"  任务 ID: {j.get('id', '?')}，开始轮询…")
     for i in range(_MAX_POLL):
         time.sleep(_POLL_INTERVAL)
-        poll_resp = _session.get(polling_url, headers={"x-key": key}, timeout=_TIMEOUT)
+        poll_resp = _get_session().get(polling_url, headers={"x-key": key}, timeout=_TIMEOUT)
         if poll_resp.status_code != 200:
             log(f"    轮询 {i+1}/{_MAX_POLL} 状态异常 {poll_resp.status_code}，继续等待…")
             continue

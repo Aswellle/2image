@@ -28,7 +28,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "huggingface",
@@ -121,7 +121,7 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
                 if gap < _MIN_INTERVAL:
                     time.sleep(_MIN_INTERVAL - gap)
                 try:
-                    _resp = _session.post(url, headers=headers,
+                    _resp = _get_session().post(url, headers=headers,
                                           json=body, timeout=_TIMEOUT)
                 except requests.exceptions.ConnectionError as e:
                     _dispatch_err = ("conn", e)

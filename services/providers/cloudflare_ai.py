@@ -20,7 +20,7 @@ import base64
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
     "id": "cloudflare_ai",
@@ -97,7 +97,7 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int,
             payload["guidance"] = guidance
 
         try:
-            resp = _session.post(url, headers=headers, json=payload,
+            resp = _get_session().post(url, headers=headers, json=payload,
                                  timeout=_TIMEOUT)
         except requests.exceptions.ConnectionError as e:
             log(f"    网络错误: {e}，换模型…")

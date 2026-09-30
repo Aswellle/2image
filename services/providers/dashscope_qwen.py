@@ -15,7 +15,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "dashscope_qwen",
@@ -64,7 +64,7 @@ def try_dashscope_qwen(
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         try:
-            resp = _session.post(_SUBMIT_URL, headers=headers, json=payload, timeout=_TIMEOUT)
+            resp = _get_session().post(_SUBMIT_URL, headers=headers, json=payload, timeout=_TIMEOUT)
         except requests.exceptions.ConnectionError as e:
             _LAST_DONE[0] = time.time()
             raise ValueError(f"无法连接 DashScope: {e}")
@@ -83,7 +83,7 @@ def try_dashscope_qwen(
     log(f"  任务 ID: {task_id}，开始轮询…")
     for i in range(_MAX_POLL):
         time.sleep(_POLL_INTERVAL)
-        poll_resp = _session.get(
+        poll_resp = _get_session().get(
             _TASK_URL.format(task_id=task_id),
             headers={"Authorization": f"Bearer {key}"},
             timeout=_TIMEOUT,

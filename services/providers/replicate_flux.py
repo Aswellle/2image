@@ -1,6 +1,6 @@
 """services/providers/replicate_flux.py — Replicate FLUX"""
 import base64, time
-from services.providers._net import SESSION as _session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "replicate_flux",
@@ -26,7 +26,7 @@ def try_replicate(prompt, w, h, seed, cfg, log):
     headers = {"Authorization":f"Bearer {key}","Content-Type":"application/json","Prefer":"wait"}
     body = {"input":{"prompt":prompt,"width":mw,"height":mh,"num_outputs":1,"seed":seed%2147483647}}
     if slug=="flux-dev": body["input"].update({"num_inference_steps":28,"guidance_scale":3.5})
-    resp = _session.post(f"https://api.replicate.com/v1/models/{path}/predictions",
+    resp = _get_session().post(f"https://api.replicate.com/v1/models/{path}/predictions",
                          headers=headers, json=body, timeout=90)
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401: raise ValueError("Replicate Token 无效")
@@ -37,7 +37,7 @@ def try_replicate(prompt, w, h, seed, cfg, log):
         log(f"  轮询中（id={pred_id[:8]}）…")
         for i in range(40):
             time.sleep(3)
-            pr = _session.get(f"https://api.replicate.com/v1/predictions/{pred_id}",
+            pr = _get_session().get(f"https://api.replicate.com/v1/predictions/{pred_id}",
                               headers={"Authorization":f"Bearer {key}"}, timeout=20)
             pr.raise_for_status(); pj=pr.json(); status=pj.get("status","")
             log(f"  [{i+1}/40] status={status}")

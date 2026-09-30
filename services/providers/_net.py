@@ -4,23 +4,46 @@ services/providers/_net.py — 共享 HTTP 工具
 集中管理所有 provider 共用的网络原语，避免跨 17 个文件的重复代码。
 
 提供：
-  SESSION              — 带连接池的共享 requests.Session
+  get_session()        — 每线程独立 Session（连接池 + HTTP keep-alive）
+  SESSION              — 兼容别名（主线程 Session，仅旧代码/测试使用）
   validate_image_url() — 基于 DNS 解析的 SSRF 防护（替代各文件的 _validate_image_url）
   safe_error_text()    — 从 API 响应中提取安全错误文本
 """
 import ipaddress
 import socket
+import threading
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
 import requests
 
-# ── 共享 Session（连接池 + HTTP keep-alive）─────────────────────────
-SESSION = requests.Session()
-_adapter = requests.adapters.HTTPAdapter(
-    pool_connections=6, pool_maxsize=12, max_retries=0)
-SESSION.mount("https://", _adapter)
-SESSION.mount("http://", _adapter)
+# ── Thread-local Session（NET-004）────────────────────────────────
+# requests.Session 并非线程安全（cookie jar / 连接池状态共享），
+# 每个 worker 线程持有独立 Session，连接池参数保持一致。
+_thread_local = threading.local()
+
+
+def _new_session() -> requests.Session:
+    sess = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(
+        pool_connections=6, pool_maxsize=12, max_retries=0)
+    sess.mount("https://", adapter)
+    sess.mount("http://", adapter)
+    return sess
+
+
+def get_session() -> requests.Session:
+    """返回当前线程的 Session（惰性创建）。"""
+    sess = getattr(_thread_local, "session", None)
+    if sess is None:
+        sess = _new_session()
+        _thread_local.session = sess
+    return sess
+
+
+# 向后兼容：旧代码直接 import SESSION。主线程（UI/测试）用它；
+# provider 代码应改用 get_session()。
+SESSION = _new_session()
 
 
 def validate_image_url(url: str) -> bool:
@@ -84,7 +107,7 @@ def safe_get_image(url: str, timeout: int = 60) -> bytes:
     # Deferred import avoids circular dependency:
     # providers._net → generation.downloader → providers._net
     from services.generation.downloader import bounded_download
-    return bounded_download(url, session=SESSION)
+    return bounded_download(url, session=get_session())
 
 
 def safe_error_text(resp) -> str:

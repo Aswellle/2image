@@ -21,7 +21,7 @@ from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_NAMES,
 )
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
 
 PROVIDER_INFO = {
@@ -111,7 +111,7 @@ def try_volcengine_ark(
         for attempt in range(1, _MAX_RETRIES + 1):
             try:
                 log(f"[豆包] 尝试 {attempt}/{_MAX_RETRIES}…")
-                resp = _session.post(
+                resp = _get_session().post(
                     _ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT,
                 )
                 if resp.status_code == 429:
@@ -138,7 +138,7 @@ def try_volcengine_ark(
                     img_url = items[0].get("url", "")
                     if not img_url:
                         raise ValueError("豆包返回数据中无图片 URL")
-                    img_resp = _session.get(img_url, timeout=60)
+                    img_resp = _get_session().get(img_url, timeout=60)
                     img_resp.raise_for_status()
                     image_bytes = img_resp.content
 

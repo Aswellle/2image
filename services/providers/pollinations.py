@@ -26,7 +26,7 @@ import time
 import urllib.parse
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session
+from services.providers._net import get_session as _get_session
 
 PROVIDER_INFO = {
     "id": "pollinations",
@@ -94,7 +94,7 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int,
         # HTTP 请求在锁外执行，多线程可真正并发
         for attempt in range(1, _MAX_RETRY + 1):
             try:
-                resp = _session.get(url, params=params,
+                resp = _get_session().get(url, params=params,
                                     timeout=_TIMEOUT, allow_redirects=True)
             except requests.exceptions.ConnectionError as e:
                 log(f"    网络错误: {e}")

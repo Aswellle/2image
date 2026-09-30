@@ -11,7 +11,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import SESSION as _session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
 
 PROVIDER_INFO = {
     "id": "bria_ai",
@@ -61,7 +61,7 @@ def try_bria_ai(
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         try:
-            resp = _session.post(_ENDPOINT, headers=headers,
+            resp = _get_session().post(_ENDPOINT, headers=headers,
                                  json=payload, timeout=_TIMEOUT)
         except requests.exceptions.ConnectionError as e:
             _LAST_DONE[0] = time.time()
