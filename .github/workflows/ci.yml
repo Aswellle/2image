@@ -19,23 +19,32 @@ jobs:
           python-version: "3.11"
 
       - name: Install tools
-        run: pip install ruff pytest pytest-cov pip-audit
+        run: pip install ruff pytest pytest-cov pip-audit mypy
 
       - name: Lint — critical (F821/E9, blocking)
-        run: ruff check services/ config/ data/ tests/ --select F821,E9
+        run: ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F821,E9
 
       - name: Lint — extended (non-blocking)
-        run: ruff check services/ config/ data/ tests/ --select F401,F841,E402
+        run: ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F401,F841,E402
         continue-on-error: true
 
       - name: Format check (non-blocking)
-        run: ruff format --check services/ config/ data/ tests/
+        run: ruff format --check main.py config/ data/ services/ ui/ tools/ tests/
         continue-on-error: true
 
+      - name: Type check — mypy (non-blocking, baseline phase)
+        run: mypy services/ data/ config/ --ignore-missing-imports --no-error-summary
+        continue-on-error: true
 
       - name: Security audit — pip-audit (non-blocking)
         run: pip-audit || true
         continue-on-error: true
+
+      - name: i18n — missing keys (blocking)
+        run: python tools/check_i18n.py --missing-keys
+
+      - name: i18n — hardcoded ratchet (blocking vs baseline)
+        run: python tools/check_i18n.py --hardcoded --baseline tools/i18n_baseline.json
 
 
 
@@ -43,12 +52,15 @@ jobs:
   test:
     needs: quality
     runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -58,7 +70,7 @@ jobs:
           pytest tests/ -v --tb=short `
             --cov=services --cov=data --cov=config `
             --cov-report=term-missing `
-            --cov-fail-under=50
+            --cov-fail-under=68
 
 
   # ── Build + Release (v* tag only) ─────────────────────────────
@@ -94,6 +106,15 @@ jobs:
         env:
           PYTHONUTF8: "1"
         run: python auto_build.py
+
+      - name: Verify bundled font
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "assets/fonts/JetBrainsMono-Regular.ttf")) {
+            Write-Error "Bundled font missing after build (tools/fetch_fonts.py should have fetched it)"
+            exit 1
+          }
+          Write-Host "Bundled font present: assets/fonts/JetBrainsMono-Regular.ttf"
 
       - name: Generate checksums + SBOM
         shell: pwsh

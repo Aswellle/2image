@@ -22,5 +22,5 @@ source = ["services", "data", "config"]
 omit = ["tests/*", "ui/*"]
 
 [tool.coverage.report]
-fail_under = 50
+fail_under = 68
 show_missing = true
