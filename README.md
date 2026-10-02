@@ -229,6 +229,6 @@ pytest tests/ -v
 
 ## ⭐ 支持这个项目
 
-如果 RemoteBridge 对你有帮助，欢迎给我一个 ⭐️ Star！
+如果 2image 对你有帮助，欢迎给我一个 ⭐️ Star！
 
 你的每一次支持，都是我持续改进的动力。
