@@ -353,6 +353,44 @@ class App:
             self.root.after(50, _update_viewer)
 
     # ══════════════════════════════════════════════════════════
+    #   状态栏 / 重置视图
+    # ══════════════════════════════════════════════════════════
+    def _st(self, msg: str, k: str = "ok"):
+        m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"]}
+        self.content.stv.set(msg); self.content.stl.config(fg=m.get(k, C["ok"]))
+
+    def _update_char_count(self):
+        """更新输入框字符计数标签（转发给 MainContent，供 PhrasePanel 等外部调用）。"""
+        try:
+            self.content._update_char_count()
+        except Exception:
+            pass
+
+    def _reset_view(self):
+        # 重置全部过滤状态，确保"重置视图"能恢复完整列表
+        self.sidebar._tag_filter = ""
+        self.sidebar._fav_only   = False
+        try:
+            self.sidebar._btn_all.config(bg=C["acc"], fg="white")
+            self.sidebar._btn_fav.config(bg=C["panel"], fg=C["star_off"])
+            self.sidebar._refresh_tag_chips()
+        except Exception:
+            pass
+        # 清空主界面状态
+        self.sel_id = self.cur_path = None
+        self._cur_bytes = self.content._prev_orig = None
+        self.content.pt.delete("1.0", "end")
+        self.content._prev_cv.delete("prev"); self.content._prev_item = None
+        self.content._clear_compare()
+        self.content._prev_cv.update_idletasks()
+        cw = self.content._prev_cv.winfo_width() or 600; ch = self.content._prev_cv.winfo_height() or 400
+        self.content._prev_cv.itemconfig(self.content._prev_ph,
+            text=_("preview_placeholder"))
+        self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
+        self._refresh_hist()
+        self._st(_("status_ready"), "ok")
+
+    # ══════════════════════════════════════════════════════════
     #   查看器
     # ══════════════════════════════════════════════════════════
     def _open_viewer(self):
