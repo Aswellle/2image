@@ -113,3 +113,19 @@ def test_refresh_hist_preserves_yview(sidebar, tk_root, in_memory_db):
     tk_root.update()
     first, _ = sidebar.hc.yview()
     assert first == pytest.approx(0.5, abs=0.05)
+
+
+def test_loader_threads_shutdown_with_sidebar(tk_root, mock_app, in_memory_db):
+    """宿主 Frame 销毁时 ThumbnailLoader 线程全部退出（CI 崩溃回归）。"""
+    import time
+    init_fonts()
+    mock_app.root = tk_root
+    frame = tk.Frame(tk_root)
+    frame.pack()
+    sb = HistorySidebar(frame, mock_app)
+    loader = sb._thumb_loader
+    tk_root.update()
+    frame.destroy()          # <Destroy> 钩子应触发 shutdown
+    time.sleep(0.1)
+    assert loader._stopped is True
+    assert not any(t.is_alive() for t in loader._threads)

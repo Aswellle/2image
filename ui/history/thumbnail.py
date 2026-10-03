@@ -98,8 +98,12 @@ class ThumbnailLoader:
 
     线程模型（UIUX §73）：工作线程绝不触碰 Tk —— 完成事件放入
     thread-safe 队列，由主线程的周期泵（after 30ms）取出发起回调。
+
+    生命周期：每个实例持有常驻工作线程，**必须**在宿主窗口销毁时
+    调用 shutdown()，否则线程随测试/窗口重建不断累积。
     """
     _PUMP_MS = 30
+    _STOP = object()   # 哨兵：worker 取到即退出
 
     def __init__(self, root, workers: int = 4,
                  pil_cache: PilThumbCache | None = None):
@@ -113,7 +117,7 @@ class ThumbnailLoader:
         self._pump_job = None
         self._threads = [
             threading.Thread(target=self._worker, daemon=True,
-                             name=f"thumb-loader-{i}")
+                             name=f"thumb-loader-{id(self)}-{i}")
             for i in range(max(1, workers))
         ]
         for t in self._threads:
@@ -137,7 +141,13 @@ class ThumbnailLoader:
         self._pil.clear()
 
     def shutdown(self) -> None:
-        """停止泵与工作线程并等待退出（保证 Tcl 销毁前完全静止）。"""
+        """停止泵与工作线程并等待退出（保证 Tcl 销毁前完全静止）。
+
+        幂等：重复调用安全。哨兵值让每个 worker 立即醒来退出，
+        不依赖轮询超时。
+        """
+        if self._stopped:
+            return
         self._stopped = True
         if self._pump_job is not None:
             try:
@@ -145,6 +155,11 @@ class ThumbnailLoader:
             except Exception:
                 pass
             self._pump_job = None
+        for _ in self._threads:
+            try:
+                self._q.put(self._STOP)
+            except Exception:
+                pass
         for t in self._threads:
             t.join(timeout=2.0)
 
@@ -168,11 +183,15 @@ class ThumbnailLoader:
 
     # ── 工作线程（不触碰任何 Tk API）─────────────────────────
     def _worker(self):
-        while not self._stopped:
+        while True:
             try:
                 job = self._q.get(timeout=0.05)
             except queue.Empty:
+                if self._stopped:
+                    return
                 continue
+            if job is self._STOP or self._stopped:
+                return
             try:
                 if job.gen != self._gen:
                     continue  # 过期任务：丢弃，不消耗解码资源

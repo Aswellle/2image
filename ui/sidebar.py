@@ -132,8 +132,14 @@ class HistorySidebar:
         self._filter_timer = None
         self._wheel_acc = 0.0
         self._thumb_loader = ThumbnailLoader(app.root, workers=4)
+        # 宿主 Frame 销毁时关闭加载器，避免常驻线程泄漏
+        parent.bind("<Destroy>", self._on_parent_destroy, add="+")
 
         self._build(parent)
+
+    def _on_parent_destroy(self, event):
+        if event.widget is self.parent:
+            self._thumb_loader.shutdown()
 
     # ══════════════════════════════════════════════════════════
     #   侧栏构建
