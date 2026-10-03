@@ -94,7 +94,8 @@ def mock_app():
             self._st_calls = []
         def _log(self, msg): self._log_calls.append(msg)
         def _st(self, msg, k="ok"): self._st_calls.append((msg, k))
-        def _refresh_hist(self, load_all=False): pass
+        def _toast(self, msg, level="info"): self._st_calls.append((msg, level))
+        def _refresh_hist(self, load_all=False, keep_scroll=False): pass
         def _refresh_tag_stats(self): pass
         def _load_entry(self, e): pass
         def _gen(self, event=None): pass

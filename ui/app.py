@@ -174,8 +174,8 @@ class App:
 
     # ── 薄委托方法（供侧栏/主区回调使用）─────────────────────────
 
-    def _refresh_hist(self, load_all: bool = False):
-        self.sidebar._refresh_hist(load_all)
+    def _refresh_hist(self, load_all: bool = False, keep_scroll: bool = False):
+        self.sidebar._refresh_hist(load_all, keep_scroll)
 
     def _refresh_tag_stats(self):
         self.content._refresh_tag_stats()

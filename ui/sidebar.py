@@ -129,6 +129,7 @@ class HistorySidebar:
         self._scroll_widgets = set()
         self._search_timer = None
         self._filter_timer = None
+        self._wheel_acc = 0.0
         self._thumb_pool = ThreadPoolExecutor(max_workers=4)
 
         self._build(parent)
@@ -149,11 +150,17 @@ class HistorySidebar:
         def _on_search(*_):
             if self._search_timer:
                 self.app.root.after_cancel(self._search_timer)
-            self._search_timer = self.app.root.after(250, self.app._refresh_hist)
+            self._search_timer = self.app.root.after(
+                250, lambda: self.app._refresh_hist(keep_scroll=True))
         self.sv.trace("w", _on_search)
         _srf = tk.Frame(sf, bg=C["entry"],
                         highlightbackground=C["ok"], highlightthickness=1)
         _srf.pack(fill="x", padx=2, pady=(4, 4))
+        # P0-08: 清除搜索按钮（有输入时显示）
+        _clr_btn = tk.Button(_srf, text="✕", font=F["small"], bd=0,
+                             bg=C["entry"], fg=C["sub"], cursor="hand2",
+                             padx=4, command=self._clear_search)
+        _clr_btn.pack(side="right", padx=(0, 4))
         _sre = tk.Entry(_srf, textvariable=self.sv, bg=C["entry"], fg=C["text"],
                         insertbackground="white", font=F["body"],
                         bd=0, relief="flat")
@@ -172,8 +179,10 @@ class HistorySidebar:
         def _upd_ph(*_):
             if self.sv.get():
                 _ph_lbl.place_forget()
+                _clr_btn.pack(side="right", padx=(0, 4))
             else:
                 _ph_lbl.place(x=2, y=0, relheight=1.0)
+                _clr_btn.pack_forget()
 
         _sre.bind("<FocusIn>",  lambda _: _ph_lbl.place_forget(), add="+")
         _sre.bind("<FocusOut>", lambda _: _upd_ph(),              add="+")
@@ -188,6 +197,16 @@ class HistorySidebar:
             bg=C["panel"], fg=C["star_off"], bd=0, padx=10, pady=3, cursor="hand2",
             relief="flat", command=self._filter_fav)
         self._btn_fav.pack(side="left")
+
+        # P0-08: 筛选状态条 —— 让当前过滤条件显式可见，无需用户猜测
+        self._filter_status = tk.Frame(flt, bg=C["panel"])
+        self._filter_status_lbl = tk.Label(self._filter_status, text="",
+            font=F["small"], bg=C["panel"], fg=C["sub"])
+        self._filter_status_lbl.pack(side="left", padx=(8, 2))
+        tk.Button(self._filter_status, text="✕ " + _("btn_clear_filter"),
+                  font=F["tiny_b"], bg=C["panel"], fg=C["hl"], bd=0,
+                  cursor="hand2", command=self._clear_filters
+                  ).pack(side="left")
 
         self._tag_bar_outer = tk.Frame(L, bg=C["panel"])
         self._tag_bar_outer.pack(fill="x", padx=6, pady=(0, 3))
@@ -239,15 +258,55 @@ class HistorySidebar:
 
     def _set_tag_filter(self, tag: str):
         self._tag_filter = tag
-        self._refresh_tag_chips(); self._debounced_refresh()
+        self._refresh_tag_chips(); self._update_filter_status(); self._debounced_refresh()
 
     def _bind_scroll(self, widget):
         if widget in self._scroll_widgets: return
         self._scroll_widgets.add(widget)
-        widget.bind("<MouseWheel>",
-                    lambda e: self.hc.yview_scroll(int(-1*(e.delta/120)), "units"), add="+")
-        widget.bind("<Button-4>", lambda e: self.hc.yview_scroll(-1, "units"), add="+")
-        widget.bind("<Button-5>", lambda e: self.hc.yview_scroll( 1, "units"), add="+")
+        # P0-06: 统一滚动事件处理（Windows MouseWheel / X11 Button-4/5）
+        widget.bind("<MouseWheel>", self._on_wheel, add="+")
+        widget.bind("<Button-4>", self._on_btn45, add="+")
+        widget.bind("<Button-5>", self._on_btn45, add="+")
+
+    def _on_wheel(self, event):
+        # Windows：delta 是 120 的倍数（高精度滚轮/触摸板可能更小）。
+        # 小步长累积成整行滚动，避免高频小 delta 丢帧。
+        self._wheel_acc += -event.delta / 120.0
+        units = int(self._wheel_acc)
+        if units:
+            self._wheel_acc -= units
+            self.hc.yview_scroll(units, "units")
+
+    def _on_btn45(self, event):
+        self.hc.yview_scroll(-1 if event.num == 4 else 1, "units")
+
+    # ── 搜索 / 筛选清除（P0-08）─────────────────────────────
+    def _clear_search(self):
+        self.sv.set("")
+        self._debounced_refresh()
+
+    def _clear_filters(self):
+        self._fav_only = False
+        self._tag_filter = ""
+        self._btn_all.config(bg=C["acc"], fg="white")
+        self._btn_fav.config(bg=C["panel"], fg=C["star_off"])
+        self._refresh_tag_chips()
+        self._update_filter_status()
+        self._debounced_refresh()
+
+    def _update_filter_status(self):
+        """根据当前过滤状态显隐状态条（收藏 / 标签）。"""
+        parts = []
+        if self._fav_only:
+            parts.append(_("btn_favorites_only"))
+        if self._tag_filter:
+            parts.append("#" + self._tag_filter)
+        if parts:
+            self._filter_status_lbl.config(
+                text=_("filter_viewing", filters=" · ".join(parts)))
+            self._filter_status.pack(side="left", padx=(6, 0))
+        else:
+            self._filter_status.pack_forget()
 
     def _update_card_wraplength(self, _sidebar_w: int):
         wl = max(80, _sidebar_w - THUMB_SIZE - 44)
@@ -271,7 +330,7 @@ class HistorySidebar:
 
     def _do_refresh(self):
         self._filter_timer = None
-        self.app._refresh_hist()
+        self.app._refresh_hist(keep_scroll=True)
         self.app._refresh_tag_stats()
 
     def _filter_all(self):
@@ -280,18 +339,22 @@ class HistorySidebar:
         self._btn_all.config(bg=C["acc"], fg="white")
         self._btn_fav.config(bg=C["panel"], fg=C["star_off"])
         self._refresh_tag_chips()      # ← 同步刷新标签栏高亮状态
+        self._update_filter_status()
         self._debounced_refresh()
 
     def _filter_fav(self):
         self._fav_only = True
         self._btn_fav.config(bg=C["star_on"], fg="white")
         self._btn_all.config(bg=C["panel"], fg=C["sub"])
+        self._update_filter_status()
         self._debounced_refresh()
 
     # ══════════════════════════════════════════════════════════
     #   历史卡片
     # ══════════════════════════════════════════════════════════
-    def _refresh_hist(self, load_all: bool = False):
+    def _refresh_hist(self, load_all: bool = False, keep_scroll: bool = False):
+        # §44: 滚动锚点 —— 过滤/搜索触发的刷新保持用户当前查看位置
+        anchor = self.hc.yview() if keep_scroll else None
         self._thumbs.clear()
         # Fix-5: 每次刷新递增代号，使旧线程的回调自动失效
         self._hist_gen += 1
@@ -318,6 +381,7 @@ class HistorySidebar:
             items = get_all_entries(keyword=kw, only_favorites=self._fav_only,
                                     tag_filter=self._tag_filter)
             _has_more = False
+        self._update_filter_status()
         if not items:
             msg = ("暂无收藏" if self._fav_only else
                    f"🏷 无「{self._tag_filter}」标签" if self._tag_filter else
@@ -329,6 +393,8 @@ class HistorySidebar:
             self._card(e, cur_gen)
         if _has_more:
             self._append_more_btn(cur_gen, items[-1]["id"])
+        if anchor is not None:
+            self.hc.yview_moveto(anchor[0])
 
     def _append_more_btn(self, gen: int, after_id: int):
         """DATA-003: keyset 分页「加载更多」—— 追加下一页，不全量重载。"""
@@ -762,7 +828,7 @@ class HistorySidebar:
 
         def _save():
             update_tags(entry["id"], ",".join(live_tags))
-            self.app._refresh_hist(); self._refresh_tag_chips(); self.app._refresh_tag_stats()
+            self.app._refresh_hist(keep_scroll=True); self._refresh_tag_chips(); self.app._refresh_tag_stats()
             self.app._log(f"🏷 更新标签 id={entry['id']} → {','.join(live_tags)}")
             win.destroy()
 

@@ -212,6 +212,16 @@ STRINGS = {
         "zh-TW": "⭐ 收藏",
         "en":    "⭐ Favorites",
     },
+    "filter_viewing": {
+        "zh-CN": "正在查看：{filters}",
+        "zh-TW": "正在檢視：{filters}",
+        "en":    "Viewing: {filters}",
+    },
+    "btn_clear_filter": {
+        "zh-CN": "清除筛选",
+        "zh-TW": "清除篩選",
+        "en":    "Clear filters",
+    },
 
     # ── 标签页 ──────────────────────────────────────────────
     "tab_preview": {
