@@ -6,8 +6,7 @@ import threading
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox
-from concurrent.futures import ThreadPoolExecutor
-from PIL import Image, ImageTk
+from PIL import ImageTk
 from config.fonts import F
 from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color
 from config.i18n import _
@@ -16,6 +15,7 @@ from data.repository import (get_all_entries, get_all_tags, count_entries,
                              get_stats, update_tags, rename_entry,
                              toggle_favorite, delete_entry, clear_all_entries)
 from ui.app_protocol import SidebarProtocol
+from ui.history.thumbnail import ThumbnailLoader
 THUMB_SIZE   = 90
 
 # ══════════════════════════════════════════════════════════════
@@ -130,7 +130,7 @@ class HistorySidebar:
         self._search_timer = None
         self._filter_timer = None
         self._wheel_acc = 0.0
-        self._thumb_pool = ThreadPoolExecutor(max_workers=4)
+        self._thumb_loader = ThumbnailLoader(app.root, workers=4)
 
         self._build(parent)
 
@@ -359,6 +359,7 @@ class HistorySidebar:
         # Fix-5: 每次刷新递增代号，使旧线程的回调自动失效
         self._hist_gen += 1
         cur_gen = self._hist_gen
+        self._thumb_loader.set_generation(cur_gen)  # P0-02: 旧任务在解码前即丢弃
         # 清空卡片注册表（将在 _card() 中重新注册）
         self._card_widgets.clear()
         # 重建后 _prev_sel_id 同步到当前 sel_id，避免下次 _update_sidebar_selection
@@ -389,8 +390,8 @@ class HistorySidebar:
             tk.Label(self.hi, text=msg, font=F["body"],
                      bg=C["panel"], fg=C["sub"]).pack(pady=30)
             return
-        for e in items:
-            self._card(e, cur_gen)
+        for i, e in enumerate(items):
+            self._card(e, cur_gen, prio=i)  # P0-02: 页首优先加载
         if _has_more:
             self._append_more_btn(cur_gen, items[-1]["id"])
         if anchor is not None:
@@ -426,12 +427,12 @@ class HistorySidebar:
             items = items[:HIST_PAGE_SIZE]
         if not items:
             return
-        for e in items:
-            self._card(e, gen)
+        for i, e in enumerate(items):
+            self._card(e, gen, prio=i)
         if has_more:
             self._append_more_btn(gen, items[-1]["id"])
 
-    def _card(self, e: dict, gen: int):
+    def _card(self, e: dict, gen: int, prio: int = 0):
         """
         渲染单条历史卡片。
         gen: 当前 _hist_gen 值，传给 _load_thumb 以支持过期检测。
@@ -457,7 +458,7 @@ class HistorySidebar:
         thumb_lbl = tk.Label(_thumb_f, bg=cbg, relief="flat", bd=0)
         thumb_lbl.pack(fill="both", expand=True)
         # Fix-5: 传入 gen 参数
-        self._load_thumb(e.get("image_path", ""), thumb_lbl, gen)
+        self._load_thumb(e.get("image_path", ""), thumb_lbl, gen, priority=prio)
         thumb_lbl.bind("<Button-1>",
                        lambda ev, en=e: (self.app._load_entry(en), "break")[1])
         self._bind_scroll(_thumb_f)
@@ -673,70 +674,50 @@ class HistorySidebar:
     # ══════════════════════════════════════════════════════════
     #   彻底修复：缩略图异步加载（双重校验防 widget ID 复用污染）
     # ══════════════════════════════════════════════════════════
-    def _load_thumb(self, path: str, label: tk.Label, gen: int):
+    def _load_thumb(self, path: str, label: tk.Label, gen: int, priority: int = 0):
         """
-        安全异步加载缩略图。
-        双重校验机制：
-          1. gen 代号：_refresh_hist 每次递增，旧批次线程发现代号不匹配则放弃
-          2. widget token：在 label 上记录本批次唯一 token，_apply 回调时再次
-             验证 label 上的 token 是否仍与启动时相同，避免 Tkinter widget
-             内部 ID 被销毁/重建后复用导致旧图片覆盖到新卡片的 Label 上。
-        所有 UI 操作严格在主线程通过 after(0, ...) 执行。
+        安全异步加载缩略图（P0-02/03：优先级队列 + L2 解码缓存）。
+
+        守卫机制不变：
+          1. gen 代号：loader 在解码前丢弃过期任务；_apply 回调再次校验
+          2. widget token：label 上的唯一 token 防止 widget ID 复用污染
+        解码/合成在工作线程（ThumbnailLoader），UI 操作严格经 after(0) 回主线程。
         """
         import uuid as _uuid
-        # 为本次加载生成唯一 token，写入 label 对象属性
         token = _uuid.uuid4().hex
         label._thumb_token = token   # type: ignore[attr-defined]
 
-        def _worker():
+        def _apply(ci, tok=token, lbl=label, g=gen):
+            # 双重校验：gen 代号 + widget token
+            if self._hist_gen != g:
+                return
             try:
-                if path and os.path.exists(path):
-                    img = Image.open(path)
-                    img.thumbnail((THUMB_SIZE, THUMB_SIZE), Image.LANCZOS)
-                    canvas_img = Image.new("RGBA", (THUMB_SIZE, THUMB_SIZE), (13, 27, 42, 255))
-                    ox = (THUMB_SIZE - img.width)  // 2
-                    oy = (THUMB_SIZE - img.height) // 2
-                    canvas_img.paste(img.convert("RGBA"), (ox, oy))
-
-                    def _apply(ci=canvas_img, tok=token, lbl=label, g=gen):
-                        # 双重校验：gen 代号 + widget token
-                        if self._hist_gen != g:
-                            return
-                        try:
-                            # winfo_exists() 返回 False 说明 widget 已被销毁
-                            if not lbl.winfo_exists():
-                                return
-                            # token 不一致说明这个 label 已被新卡片的 _load_thumb 重新使用
-                            if getattr(lbl, "_thumb_token", None) != tok:
-                                return
-                            ph = ImageTk.PhotoImage(ci)
-                            self._thumbs[path] = ph
-                            lbl.config(image=ph, text="",
-                                       width=THUMB_SIZE, height=THUMB_SIZE)
-                        except tk.TclError:
-                            pass
-
-                    self.app.root.after(0, _apply)
-
-                else:
-                    def _apply_empty(tok=token, lbl=label, g=gen):
-                        if self._hist_gen != g:
-                            return
-                        try:
-                            if not lbl.winfo_exists():
-                                return
-                            if getattr(lbl, "_thumb_token", None) != tok:
-                                return
-                            lbl.config(text="🖼", font=F["display"],
-                                       width=6, height=3)
-                        except tk.TclError:
-                            pass
-                    self.app.root.after(0, _apply_empty)
-
-            except Exception:
+                if not lbl.winfo_exists():
+                    return
+                if getattr(lbl, "_thumb_token", None) != tok:
+                    return
+                ph = ImageTk.PhotoImage(ci)
+                self._thumbs[path] = ph
+                lbl.config(image=ph, text="",
+                           width=THUMB_SIZE, height=THUMB_SIZE)
+            except tk.TclError:
                 pass
 
-        self._thumb_pool.submit(_worker)
+        def _apply_missing(tok=token, lbl=label, g=gen):
+            if self._hist_gen != g:
+                return
+            try:
+                if not lbl.winfo_exists():
+                    return
+                if getattr(lbl, "_thumb_token", None) != tok:
+                    return
+                lbl.config(text="🖼", font=F["display"],
+                           width=6, height=3)
+            except tk.TclError:
+                pass
+
+        self._thumb_loader.submit(path, THUMB_SIZE, priority, gen,
+                                  on_ready=_apply, on_missing=_apply_missing)
 
 
     # ══════════════════════════════════════════════════════════
