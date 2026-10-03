@@ -5,7 +5,7 @@ All UI modules import from here for global color consistency.
 Design tokens (semantic names) are provided via config/design_tokens.py
 This module provides backward-compatible DARK_THEME/LIGHT_THEME dicts.
 """
-from config.design_tokens import TOKENS, LIGHT_TOKENS, DesignTokens
+from config.design_tokens import TOKENS, LIGHT_TOKENS, sync_tokens_from_theme
 
 
 
@@ -46,6 +46,21 @@ DARK_THEME = {
     # 辅助
     "guide":    "#89b4fa",
     "tb":       "#0d1b2a",
+    # ── 语义令牌别名（UIUX §34/§68：新代码用语义名，旧键保持兼容）──
+    "surface":         "#1a1a2e",
+    "surface_raised":  "#16213e",
+    "surface_hover":   "#243a60",
+    "surface_selected": "#1a3a6a",
+    "accent":          "#0f3460",
+    "accent_hover":    "#1a4a7f",
+    "success":         "#4ecca3",
+    "danger":          "#e94560",
+    "warning":         "#f0a500",
+    "divider":         "#2a3a5a",
+    "text_primary":    "#eaeaea",
+    "text_secondary":  "#c0cfe0",
+    "text_muted":      "#8a9aba",
+    "text_inverse":    "#ffffff",
 }
 LIGHT_THEME = {
     # 基础
@@ -84,6 +99,21 @@ LIGHT_THEME = {
     # 辅助
     "guide":    "#2563eb",
     "tb":       "#f1f5f9",
+    # ── 语义令牌别名 ──
+    "surface":         "#f0f2f5",
+    "surface_raised":  "#ffffff",
+    "surface_hover":   "#eff6ff",
+    "surface_selected": "#dbeafe",
+    "accent":          "#1a56db",
+    "accent_hover":    "#3b82f6",
+    "success":         "#059669",
+    "danger":          "#dc2626",
+    "warning":         "#d97706",
+    "divider":         "#e2e8f0",
+    "text_primary":    "#1a1a2e",
+    "text_secondary":  "#4a5568",
+    "text_muted":      "#718096",
+    "text_inverse":    "#ffffff",
 }
 
 # ── 标签色彩 ──────────────────────────────────────────────────
@@ -120,6 +150,9 @@ def apply_theme(theme_name: str) -> None:
     if theme_name in THEMES:
         _current_theme = theme_name
         C.update(THEMES[theme_name])
+        # 令牌跟随主题切换：原地同步，组件无需重建
+        sync_tokens_from_theme(TOKENS, THEMES[theme_name])
+        sync_tokens_from_theme(LIGHT_TOKENS, THEMES[theme_name])
 
 
 def get_theme() -> str:
@@ -130,3 +163,8 @@ def init_theme(cfg: dict) -> None:
     """Initialize theme from config on app startup."""
     theme_name = cfg.get("theme", "dark")
     apply_theme(theme_name)
+
+
+# 模块加载即完成令牌初始同步（TOKENS/LIGHT_TOKENS 从主题 dict 派生）
+sync_tokens_from_theme(TOKENS, DARK_THEME)
+sync_tokens_from_theme(LIGHT_TOKENS, LIGHT_THEME)

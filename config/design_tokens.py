@@ -103,6 +103,57 @@ LIGHT_TOKENS = DesignTokens(
 TOKENS = DesignTokens()
 
 
+# ─── Theme derivation ─────────────────────────────────────────────
+# 令牌颜色一律从 theme.py 的主题 dict 派生（单一事实来源）。
+# theme.py 在模块底部调用 sync_tokens_from_theme() 完成初始同步，
+# 并在 apply_theme() 切换时再次同步——TOKENS 原地更新字段，
+# 因此已 import TOKENS 的组件引用始终有效，无需重建。
+
+# 主题 dict 键 → DesignTokens 字段名
+_THEME_KEY_MAP = {
+    "bg":     "surface_app",
+    "panel":  "surface_panel",
+    "card":   "surface_elevated",
+    "card_hl": "surface_overlay",
+    "text":   "text_primary",
+    "sub":    "text_secondary",
+    "text_muted": "text_muted",
+    "text_inverse": "text_inverse",
+    "acc":    "accent",
+    "accent_hover": "accent_hover",
+    "hl":     "highlight",
+    "ok":     "success",
+    "warn":   "warning",
+    "danger": "danger",
+    "sep":    "border_subtle",
+    "sash_hl": "border_focus",
+}
+
+# 与颜色无关、双主题共享的固定字段（不从主题派生）
+_FIXED_FIELDS = (
+    "info", "shadow_color",
+    "space_xs", "space_sm", "space_md", "space_lg", "space_xl", "space_2xl",
+    "radius_sm", "radius_md", "radius_lg", "radius_round",
+    "font_family", "font_family_mono",
+    "font_size_xs", "font_size_sm", "font_size_md",
+    "font_size_lg", "font_size_xl", "font_size_2xl",
+)
+
+
+def sync_tokens_from_theme(tokens: DesignTokens, theme: dict) -> None:
+    """把主题 dict 的颜色写入 tokens 实例（原地，引用保持有效）。"""
+    for theme_key, field in _THEME_KEY_MAP.items():
+        if theme_key in theme:
+            setattr(tokens, field, theme[theme_key])
+
+
+def derive_tokens_from_theme(theme: dict) -> DesignTokens:
+    """由主题 dict 生成一份新的 DesignTokens 实例。"""
+    t = DesignTokens()
+    sync_tokens_from_theme(t, theme)
+    return t
+
+
 # ─── Button state helpers ─────────────────────────────────────────
 
 def button_colors(state: str = "normal", variant: str = "primary") -> dict:
