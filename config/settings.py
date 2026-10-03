@@ -128,6 +128,7 @@ DEFAULT_CONFIG: dict = {
     "default_size":         "1024x1024",
     "show_wizard_on_start": True,
     "theme": "dark",
+    "sidebar_width": 360,
     # ── 付费边界（PAY-001）─────────────────────────────────────
     # False = 自动路由绝不使用付费接口（即使已配置 Key）；
     # 用户在下拉框显式选择付费接口不受此限制。

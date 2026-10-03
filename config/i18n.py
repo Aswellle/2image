@@ -222,6 +222,11 @@ STRINGS = {
         "zh-TW": "清除篩選",
         "en":    "Clear filters",
     },
+    "ctx_show_in_folder": {
+        "zh-CN": "📁  在文件夹中显示",
+        "zh-TW": "📁  在資料夾中顯示",
+        "en":    "📁  Show in Folder",
+    },
     "prompt_more_controls": {
         "zh-CN": "更多精细控制（细节/构图/光影/镜头/画质）",
         "zh-TW": "更多精細控制（細節/構圖/光影/鏡頭/畫質）",

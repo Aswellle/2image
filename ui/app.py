@@ -90,8 +90,11 @@ class App:
         self._cur_bytes = None
         self.toasts = ToastManager(root)
 
-        # Sidebar width
-        self._sidebar_w = SIDEBAR_DEF
+        # Sidebar width（§41：持久化；§42：可折叠）
+        self._sidebar_w = max(SIDEBAR_MIN, min(SIDEBAR_MAX,
+            int(self.cfg.get("sidebar_width", SIDEBAR_DEF) or SIDEBAR_DEF)))
+        self._sidebar_w_saved = self._sidebar_w
+        self._sidebar_collapsed = False
         self.MAX_NICK_LEN = MAX_NICK_LEN
         self._sash_drag_x = None
         self._sash_drag_w = None
@@ -108,14 +111,6 @@ class App:
         self._build_menu()
         self._build()
         self._bind_hotkeys()
-        self.root.after(50, lambda: self.sidebar._refresh_hist())
-        self._update_status_bar_tokens()
-
-        if self.cfg.get("show_wizard_on_start", True):
-            root.after(300, self._open_wizard)
-
-
-        # 导致 thumb_lbl 字符单位宽度把 right 挤成 0px → 标题/信息不可见。
         self.root.after(50, lambda: self.sidebar._refresh_hist())
         self._update_status_bar_tokens()
 
@@ -226,6 +221,7 @@ class App:
         r.bind("<Control-o>",        lambda e: self._open_viewer())
         r.bind("<Control-O>",        lambda e: self._open_viewer())
         r.bind("<Control-r>",        lambda e: self._gen())
+        r.bind("<Control-backslash>", lambda e: self._toggle_sidebar())  # §42 折叠侧栏
 
     # ── Controllers delegate menu/settings/build ─────────────────────
     def _build_menu(self) -> None:
@@ -274,6 +270,7 @@ class App:
         self._sash.bind("<ButtonPress-1>",   self._sash_start)
         self._sash.bind("<B1-Motion>",       self._sash_move)
         self._sash.bind("<ButtonRelease-1>", self._sash_end)
+        self._sash.bind("<Double-Button-1>", self._sash_reset)
 
         self._R = tk.Frame(self._body, bg=C["bg"])
         self.content = MainContent(self._R, self)
@@ -306,6 +303,8 @@ class App:
     def _sash_start(self, e):
         self._sash_drag_x = e.x_root
         self._sash_drag_w = self._sidebar_w
+        if self._sidebar_collapsed:      # 拖动即视为重新展开
+            self._sidebar_collapsed = False
     def _sash_move(self, e):
         if self._sash_drag_x is None: return
         self._sidebar_w = max(SIDEBAR_MIN, min(SIDEBAR_MAX,
@@ -322,7 +321,35 @@ class App:
     def _sash_end(self, e):
         self._sash_drag_x = None; self._sash_drag_w = None
         self._sash.config(bg=C["sash"])
-        # 松手后补全 wraplength 更新
+        # 松手后补全 wraplength 更新并持久化宽度（§41）
+        self.sidebar._update_card_wraplength(self._sidebar_w)
+        self._persist_sidebar_width()
+
+    def _sash_reset(self, e):
+        """双击分隔条恢复默认宽度（§41）。"""
+        self._sidebar_w = SIDEBAR_DEF
+        self._sidebar_collapsed = False
+        self._place_panels()
+        self.sidebar._update_card_wraplength(self._sidebar_w)
+        self._persist_sidebar_width()
+
+    def _persist_sidebar_width(self):
+        try:
+            self.cfg["sidebar_width"] = self._sidebar_w
+            save_config(self.cfg)
+        except Exception:
+            pass
+
+    def _toggle_sidebar(self):
+        """Ctrl+\ 折叠/展开历史侧栏（§42）：折叠后工作区获得完整宽度。"""
+        if self._sidebar_collapsed:
+            self._sidebar_w = self._sidebar_w_saved
+            self._sidebar_collapsed = False
+        else:
+            self._sidebar_w_saved = self._sidebar_w
+            self._sidebar_w = 0
+            self._sidebar_collapsed = True
+        self._place_panels()
         self.sidebar._update_card_wraplength(self._sidebar_w)
 
     # ══════════════════════════════════════════════════════════

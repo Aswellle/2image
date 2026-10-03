@@ -4,6 +4,7 @@ ui/sidebar.py — History sidebar extracted from App  v5.1
 """
 import threading
 import os
+import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import ImageTk
@@ -600,14 +601,22 @@ class HistorySidebar:
                 pord  = None if psel == _("provider_auto") else [psel]
                 self.app._queue_panel.add_task(en["prompt"], sz, pord)
                 self.app._switch_to_queue_tab()
-                self.app._st("📋 已加入队列", "ok")
+                self.app._toast("📋 已加入队列", "success")
 
+            # 📂 在文件夹中显示（§62：资源管理器定位并选中文件）
+            def _show_in_folder():
+                p = en.get("image_path", "")
+                if p and os.path.exists(p):
+                    subprocess.Popen(["explorer", "/select,",
+                                      os.path.normpath(p)])
+
+            # §61：高频动作在上，危险操作永远最后
+            menu.add_command(label="🔍  在查看器中打开",  command=_open_viewer_ctx)
+            menu.add_command(label="🔁  一键重新生成",    command=_regen)
+            menu.add_separator()
             menu.add_command(label="📋  复制提示词",      command=_copy_prompt)
             menu.add_command(label="📁  复制图片路径",    command=_copy_path)
-            menu.add_separator()
-            menu.add_command(label="🔁  一键重新生成",    command=_regen)
-            menu.add_command(label="🔍  在查看器中打开",  command=_open_viewer_ctx)
-            menu.add_separator()
+            menu.add_command(label=_("ctx_show_in_folder"), command=_show_in_folder)
             menu.add_command(label="➕  加入生成队列",    command=_add_to_queue)
             menu.add_separator()
             menu.add_command(label="🗑  删除此记录",
