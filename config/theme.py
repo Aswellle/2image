@@ -150,9 +150,9 @@ def apply_theme(theme_name: str) -> None:
     if theme_name in THEMES:
         _current_theme = theme_name
         C.update(THEMES[theme_name])
-        # 令牌跟随主题切换：原地同步，组件无需重建
+        # 活动令牌跟随主题切换：原地同步，组件无需重建
+        # （LIGHT_TOKENS 保持浅色常量语义，不随切换变动）
         sync_tokens_from_theme(TOKENS, THEMES[theme_name])
-        sync_tokens_from_theme(LIGHT_TOKENS, THEMES[theme_name])
 
 
 def get_theme() -> str:

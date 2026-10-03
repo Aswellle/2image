@@ -11,152 +11,177 @@
  },
  {
   "file": "ui/app.py",
-  "line": 365,
+  "line": 336,
+  "text": "双击分隔条恢复默认宽度（§41）。"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 351,
+  "text": "Ctrl+\\ 折叠/展开历史侧栏（§42）：折叠后工作区获得完整宽度。"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 400,
+  "text": "焦点在可编辑控件上时不拦截编辑类按键。"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 408,
+  "text": "Esc 关闭最上层覆盖窗口（查看器/提示词助手/词库）。"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 433,
+  "text": "←/→ 在历史列表中移动选中项（输入焦点在文本框时忽略）。"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 449,
   "text": "瞬态通知（UIUX §64）：快捷确认走 toast，不长期占据状态栏。"
  },
  {
   "file": "ui/app.py",
-  "line": 443,
+  "line": 527,
   "text": "保留变体后刷新历史列表并自动预览。\n\n        修复：\n          · 接收 batch_panel 传来"
  },
  {
   "file": "ui/app.py",
-  "line": 531,
+  "line": 615,
   "text": "根据当前自动发现的 Provider 注册表实时统计顶栏可用接口数。\n\n        不再维护易过期的手写 key 列"
  },
  {
   "file": "ui/app.py",
-  "line": 620,
+  "line": 704,
   "text": "导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"
  },
  {
   "file": "ui/app.py",
-  "line": 658,
+  "line": 742,
   "text": "<!DOCTYPE html><html lang='zh'><head><meta charset='UTF-8'><"
  },
  {
   "file": "ui/app.py",
-  "line": 658,
+  "line": 742,
   "text": "条 ·"
  },
  {
   "file": "ui/app.py",
-  "line": 658,
+  "line": 742,
   "text": "</p><table><tr><th>时间</th><th>提示词</th><th>接口</th><th>收藏</th>"
  },
  {
   "file": "ui/app.py",
-  "line": 670,
+  "line": 754,
   "text": "完成"
  },
  {
   "file": "ui/app.py",
-  "line": 404,
+  "line": 488,
   "text": "提示"
  },
  {
   "file": "ui/app.py",
-  "line": 404,
+  "line": 488,
   "text": "请先生成或选择一张图片"
  },
  {
   "file": "ui/app.py",
-  "line": 460,
+  "line": 544,
   "text": "✅ 已保留变体到历史记录"
  },
  {
   "file": "ui/app.py",
-  "line": 541,
+  "line": 625,
   "text": "Pollinations.AI (免费·无需Key)"
  },
  {
   "file": "ui/app.py",
-  "line": 543,
+  "line": 627,
   "text": "StableHorde (兜底)"
  },
  {
   "file": "ui/app.py",
-  "line": 545,
+  "line": 629,
   "text": "Cloudflare AI (免费1万次/天)"
  },
  {
   "file": "ui/app.py",
-  "line": 621,
+  "line": 705,
   "text": "选择导出位置"
  },
  {
   "file": "ui/app.py",
-  "line": 625,
+  "line": 709,
   "text": "AI生图_"
  },
  {
   "file": "ui/app.py",
-  "line": 643,
+  "line": 727,
   "text": "无图"
  },
  {
   "file": "ui/app.py",
-  "line": 670,
+  "line": 754,
   "text": "已导出"
  },
  {
   "file": "ui/app.py",
-  "line": 670,
+  "line": 754,
   "text": "条\n至："
  },
  {
   "file": "ui/app.py",
-  "line": 674,
+  "line": 758,
   "text": "提示"
  },
  {
   "file": "ui/app.py",
-  "line": 674,
+  "line": 758,
   "text": "暂无图片"
  },
  {
   "file": "ui/app.py",
-  "line": 681,
+  "line": 765,
   "text": "完成"
  },
  {
   "file": "ui/app.py",
-  "line": 686,
+  "line": 770,
   "text": "📋 路径已复制"
  },
  {
   "file": "ui/app.py",
-  "line": 681,
+  "line": 765,
   "text": "已保存："
  },
  {
   "file": "ui/app.py",
-  "line": 601,
+  "line": 685,
   "text": "额度"
  },
  {
   "file": "ui/app.py",
-  "line": 614,
+  "line": 698,
   "text": "额度"
  },
  {
   "file": "ui/app.py",
-  "line": 616,
+  "line": 700,
   "text": "需要配置 API Key"
  },
  {
   "file": "ui/app.py",
-  "line": 669,
+  "line": 753,
   "text": "记录本.html"
  },
  {
   "file": "ui/app.py",
-  "line": 677,
+  "line": 761,
   "text": "所有文件"
  },
  {
   "file": "ui/app.py",
-  "line": 617,
+  "line": 701,
   "text": "点击「🆓 免费配置」配置硅基流动 API Key。"
  },
  {
@@ -368,6 +393,46 @@
   "file": "ui/components/toast.py",
   "line": 139,
   "text": "立即结束当前通知（测试与极端情况使用）。"
+ },
+ {
+  "file": "ui/history/thumbnail.py",
+  "line": 1,
+  "text": "ui/history/thumbnail.py — Viewport-aware thumbnail pipeline "
+ },
+ {
+  "file": "ui/history/thumbnail.py",
+  "line": 35,
+  "text": "文件内容敏感的缓存键：路径 + mtime_ns + 大小 + 缩略图尺寸。"
+ },
+ {
+  "file": "ui/history/thumbnail.py",
+  "line": 45,
+  "text": "线程安全 LRU 缓存（键 → PIL Image）。"
+ },
+ {
+  "file": "ui/history/thumbnail.py",
+  "line": 76,
+  "text": "缩放到 thumb_size 内并居中贴到纯色方底（与既有视觉一致）。"
+ },
+ {
+  "file": "ui/history/thumbnail.py",
+  "line": 97,
+  "text": "优先级缩略图加载器：解码在工作线程，回调回主线程。\n\n    线程模型（UIUX §73）：工作线程绝不触碰 Tk ——"
+ },
+ {
+  "file": "ui/history/thumbnail.py",
+  "line": 125,
+  "text": "刷新列表时递增；队列中旧代号的未开始任务将被丢弃。"
+ },
+ {
+  "file": "ui/history/thumbnail.py",
+  "line": 131,
+  "text": "请求一张缩略图。on_ready/on_missing 均在主线程被调用。"
+ },
+ {
+  "file": "ui/history/thumbnail.py",
+  "line": 140,
+  "text": "停止泵与工作线程并等待退出（保证 Tcl 销毁前完全静止）。"
  },
  {
   "file": "ui/main_content.py",
@@ -1211,27 +1276,32 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 918,
+  "line": 520,
+  "text": "P1-25: 展开/收起高级维度（细节/构图/光影/镜头/画质）。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 939,
   "text": "正面提示词文本框内容变更时触发词数指示器刷新。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 926,
+  "line": 947,
   "text": "实时更新 Token 预算指示器：\n        · 右上角标签：词数/字符数\n        · 智能压缩按钮：仅在"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 968,
+  "line": 989,
   "text": "智能压缩按钮处理器：将提示词截断到预算以内。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1051,
+  "line": 1072,
   "text": "打开 AI 提示词助手模型密钥配置向导。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1058,
+  "line": 1079,
   "text": "根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"
  },
  {
@@ -1276,72 +1346,72 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 476,
+  "line": 479,
   "text": "🔍 细节"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 478,
+  "line": 481,
   "text": "📐 构图"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 480,
+  "line": 483,
   "text": "💡 光影"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 482,
+  "line": 485,
   "text": "📷 镜头"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 484,
+  "line": 487,
   "text": "✨ 画质"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 490,
+  "line": 501,
   "text": "📝  额外补充（可选）"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 550,
+  "line": 571,
   "text": "🎯  主题关键词（用于填充模板）"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 570,
+  "line": 591,
   "text": "小红书"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 571,
+  "line": 592,
   "text": "情绪爆款"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 572,
+  "line": 593,
   "text": "知识干货"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 573,
+  "line": 594,
   "text": "通用自媒体"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 710,
+  "line": 731,
   "text": "AI 生成或选中模板后\n正面提示词显示在这里…"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 790,
+  "line": 811,
   "text": "[参数]"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 910,
+  "line": 931,
   "text": "AI 生成或选中模板后\n正面提示词显示在这里…"
  },
  {
@@ -1396,122 +1466,122 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 695,
+  "line": 716,
   "text": "✕ 清除内容"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 723,
+  "line": 744,
   "text": "✂️ 智能压缩"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 777,
+  "line": 798,
   "text": "提示"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 777,
+  "line": 798,
   "text": "请先填写主题关键词！"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 814,
+  "line": 835,
   "text": "[模板]"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 876,
+  "line": 897,
   "text": "✅ 生成成功！"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 877,
+  "line": 898,
   "text": "✅ 生成完成"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 894,
+  "line": 915,
   "text": "❌ 失败"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 898,
+  "line": 919,
   "text": "需要配置 API Key"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 914,
+  "line": 935,
   "text": "已清除模板内容"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 937,
+  "line": 958,
   "text": "显示在这里"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 937,
+  "line": 958,
   "text": "AI 生成"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1012,
+  "line": 1033,
   "text": "显示在这里"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1018,
+  "line": 1039,
   "text": "✅ 已填入主输入框！可切回主界面微调后生成"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1030,
+  "line": 1051,
   "text": "显示在这里"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1062,
+  "line": 1083,
   "text": "✅ 模型已配置"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 636,
+  "line": 657,
   "text": "已预览："
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 816,
+  "line": 837,
   "text": "已应用："
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 983,
+  "line": 1004,
   "text": "✂️ 已压缩："
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 983,
+  "line": 1004,
   "text": "词 →"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 983,
+  "line": 1004,
   "text": "词"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1032,
+  "line": 1053,
   "text": "📋 已复制！"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1064,
+  "line": 1085,
   "text": "⚠️ 仅备用通道"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1066,
+  "line": 1087,
   "text": "🔑 配置模型密钥"
  },
  {
@@ -1531,47 +1601,47 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 502,
+  "line": 513,
   "text": "💡  如：不要水印、主体面朝右边、禁止出现文字"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 560,
+  "line": 581,
   "text": "💡  输入图片主题，如：咖啡美食、职场干货、旅行风景"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 683,
+  "line": 704,
   "text": "📋  正面提示词（可编辑）"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 743,
+  "line": 764,
   "text": "📋 复制正面"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 760,
+  "line": 781,
   "text": "📖  本次会话历史"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 954,
+  "line": 975,
   "text": "✂️ 智能压缩（→"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 954,
+  "line": 975,
   "text": "词）"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 964,
+  "line": 985,
   "text": "✂️ 智能压缩"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 998,
+  "line": 1019,
   "text": "AI 生成中"
  },
  {
@@ -1581,7 +1651,7 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 959,
+  "line": 980,
   "text": "✂️ 建议压缩（→ 约72词）"
  },
  {
@@ -1736,212 +1806,212 @@
  },
  {
   "file": "ui/sidebar.py",
-  "line": 25,
+  "line": 26,
   "text": "鼠标悬停气泡提示（类级 Toplevel 单例）。\n    · 悬停 450ms 后开始显示\n    · 所有实例共享一"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 298,
+  "line": 299,
   "text": "根据当前过滤状态显隐状态条（收藏 / 标签）。"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 400,
+  "line": 402,
   "text": "DATA-003: keyset 分页「加载更多」—— 追加下一页，不全量重载。"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 409,
+  "line": 411,
   "text": "Keyset 分页取下一页并追加卡片（O(limit)，与历史总量无关）。"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 435,
+  "line": 437,
   "text": "渲染单条历史卡片。\n        gen: 当前 _hist_gen 值，传给 _load_thumb 以支持过期检测"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 655,
+  "line": 665,
   "text": "仅修改前一张和新一张卡片的背景色/边框色，\n        完全不销毁/重建任何 widget，彻底消除与 viewer"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 677,
-  "text": "安全异步加载缩略图。\n        双重校验机制：\n          1. gen 代号：_refresh_hist"
+  "line": 687,
+  "text": "安全异步加载缩略图（P0-02/03：优先级队列 + L2 解码缓存）。\n\n        守卫机制不变：\n      "
  },
  {
   "file": "ui/sidebar.py",
-  "line": 516,
+  "line": 518,
   "text": "取消收藏"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 516,
+  "line": 518,
   "text": "添加到收藏"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 538,
+  "line": 540,
   "text": "设为右侧对比图"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 556,
+  "line": 558,
   "text": "弹出右键上下文菜单（使用共享单例，避免每次右键创建新 Menu widget）"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 386,
+  "line": 388,
   "text": "暂无收藏"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 751,
+  "line": 741,
   "text": "🏷 编辑标签 —"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 943,
+  "line": 933,
   "text": "清空全部"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 943,
+  "line": 933,
   "text": "条记录？\n（不删除磁盘图片文件）"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 570,
+  "line": 572,
   "text": "📋 提示词已复制"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 602,
+  "line": 604,
   "text": "📋 已加入队列"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 604,
-  "text": "📋  复制提示词"
- },
- {
-  "file": "ui/sidebar.py",
-  "line": 605,
-  "text": "📁  复制图片路径"
- },
- {
-  "file": "ui/sidebar.py",
-  "line": 607,
-  "text": "🔁  一键重新生成"
- },
- {
-  "file": "ui/sidebar.py",
-  "line": 608,
+  "line": 614,
   "text": "🔍  在查看器中打开"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 610,
+  "line": 615,
+  "text": "🔁  一键重新生成"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 617,
+  "text": "📋  复制提示词"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 618,
+  "text": "📁  复制图片路径"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 620,
   "text": "➕  加入生成队列"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 612,
+  "line": 622,
   "text": "🗑  删除此记录"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 860,
+  "line": 850,
   "text": "字"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 870,
+  "line": 860,
   "text": "确认"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 890,
+  "line": 880,
   "text": "取消收藏"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 894,
+  "line": 884,
   "text": "添加收藏"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 387,
+  "line": 389,
   "text": "🏷 无「"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 387,
+  "line": 389,
   "text": "」标签"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 388,
+  "line": 390,
   "text": "无匹配"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 388,
+  "line": 390,
   "text": "暂无记录"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 578,
+  "line": 580,
   "text": "📁 路径已复制"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 759,
+  "line": 749,
   "text": "🏷  编辑标签"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 765,
+  "line": 755,
   "text": "当前标签（点击移除）"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 795,
+  "line": 785,
   "text": "从历史标签选择"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 809,
+  "line": 799,
   "text": "新建标签"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 865,
+  "line": 855,
   "text": "字"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 870,
+  "line": 860,
   "text": "重命名为：「"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 890,
+  "line": 880,
   "text": "从喜爱列表移除？\n\n「"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 894,
+  "line": 884,
   "text": "收藏到喜爱列表？\n\n「"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 805,
+  "line": 795,
   "text": "（无历史标签）"
  },
  {
   "file": "ui/sidebar.py",
-  "line": 870,
+  "line": 860,
   "text": "(清除)"
  },
  {
