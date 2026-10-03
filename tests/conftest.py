@@ -54,9 +54,15 @@ skip_if_no_tk = pytest.mark.skipif(
 
 
 
-@pytest.fixture
-def tk_root():
-    """Create a real Tk root for widget tests. Skips if tcl/tk unavailable."""
+@pytest.fixture(scope="session")
+def tk_session_root():
+    """整个 pytest 会话共享一个 Tk root。
+
+    Windows 上反复创建/销毁 Tk 解释器会触发 Tcl C 层崩溃
+    （fatal 0x80000003 / access violation，见 CI test_thumbnail 处），
+    因此测试统一复用同一个解释器；测试自身只创建/销毁自己的
+    Frame / Toplevel，绝不 destroy 这个 root。
+    """
     root = _make_tk_root()
     if root is None:
         pytest.skip("tcl/tk runtime not available (headless CI)")
@@ -65,6 +71,12 @@ def tk_root():
         root.destroy()
     except tk.TclError:
         pass
+
+
+@pytest.fixture
+def tk_root(tk_session_root):
+    """共享 Tk root（函数级别名；勿在测试中 destroy）。"""
+    return tk_session_root
 
 
 

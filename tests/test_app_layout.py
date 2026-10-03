@@ -30,11 +30,14 @@ def app(tk_root, monkeypatch, tmp_path):
     monkeypatch.setattr(app_mod, "load_config", lambda: dict(cfg))
     monkeypatch.setattr(app_mod, "save_config",
                         lambda c: saved.update(dict(c)))
-    a = app_mod.App(tk_root)
+    # 共享会话 root 上以 Toplevel 承载 App，避免销毁整个解释器
+    top = tk.Toplevel(tk_root)
+    top.withdraw()
+    a = app_mod.App(top)
     tk_root.update()
     yield a, saved
     try:
-        tk_root.destroy()
+        top.destroy()   # 触发侧栏 <Destroy> 钩子 → loader shutdown
     except tk.TclError:
         pass
 
