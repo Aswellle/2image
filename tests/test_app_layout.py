@@ -76,3 +76,55 @@ def test_drag_after_collapse_uncollapses(app):
     a._toggle_sidebar()
     a._sash_start(type("E", (), {"x_root": 100})())
     assert a._sidebar_collapsed is False
+
+
+# ── §58 键盘工作流 ──────────────────────────────────────────
+def test_esc_closes_overlay(app, tk_root):
+    a, _ = app
+    overlay = tk.Toplevel(tk_root)
+    a._viewer_win = overlay
+    a._esc_overlay()
+    assert a._viewer_win is None
+    assert overlay.winfo_exists() == 0  # 已销毁
+
+
+def test_esc_no_overlay_noop(app):
+    a, _ = app
+    a._esc_overlay()  # 无覆盖窗口时不抛错
+
+
+def test_nav_history_moves_selection(app, tk_root):
+    a, _ = app
+    from data.repository import add_entry
+    newest = add_entry("newest prompt", "", "", "prov")
+    older = add_entry("older prompt", "", "", "prov")
+    tk_root.update()
+    a._nav_history_guarded(delta=-1)   # 无选中 → 选中列表第一条
+    assert a.sel_id in (newest["id"], older["id"])
+    first = a.sel_id
+    other = older["id"] if first == newest["id"] else newest["id"]
+    a._nav_history_guarded(delta=+1)
+    assert a.sel_id == other           # 向相邻条目移动
+
+
+def test_nav_guard_ignores_typing_focus(app, tk_root, monkeypatch):
+    a, _ = app
+    from data.repository import add_entry
+    add_entry("some prompt", "", "", "prov")
+    monkeypatch.setattr(a, "_typing_focus", lambda: True)
+    a._nav_history_guarded(delta=-1)
+    assert a.sel_id is None            # 输入焦点在文本框：不劫持
+
+
+def test_delete_guard_respects_typing_focus(app, tk_root, monkeypatch):
+    a, _ = app
+    from data.repository import add_entry
+    e = add_entry("to delete", "", "", "prov")
+    a.sel_id = e["id"]
+    called = []
+    monkeypatch.setattr(a.sidebar, "_del_entry", lambda eid: called.append(eid))
+    a._delete_selected_guarded()
+    assert called == [e["id"]]
+    monkeypatch.setattr(a, "_typing_focus", lambda: True)
+    a._delete_selected_guarded()
+    assert called == [e["id"]]         # 输入焦点在文本框时不触发删除

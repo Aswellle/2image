@@ -222,6 +222,13 @@ class App:
         r.bind("<Control-O>",        lambda e: self._open_viewer())
         r.bind("<Control-r>",        lambda e: self._gen())
         r.bind("<Control-backslash>", lambda e: self._toggle_sidebar())  # §42 折叠侧栏
+        # §58 键盘工作流补全（输入焦点在文本控件时不劫持编辑键）
+        r.bind("<Control-Shift-P>",  lambda e: self._open_prompt_wizard())
+        r.bind("<Control-Shift-p>",  lambda e: self._open_prompt_wizard())
+        r.bind("<Escape>",           self._esc_overlay)
+        r.bind("<Delete>",           self._delete_selected_guarded)
+        r.bind("<Left>",             lambda e: self._nav_history_guarded(e, -1))
+        r.bind("<Right>",            lambda e: self._nav_history_guarded(e, +1))
 
     # ── Controllers delegate menu/settings/build ─────────────────────
     def _build_menu(self) -> None:
@@ -387,6 +394,56 @@ class App:
     def _st(self, msg: str, k: str = "ok"):
         m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"]}
         self.content.stv.set(msg); self.content.stl.config(fg=m.get(k, C["ok"]))
+
+    # ── §58 键盘工作流 ────────────────────────────────────────
+    def _typing_focus(self) -> bool:
+        """焦点在可编辑控件上时不拦截编辑类按键。"""
+        try:
+            w = self.root.focus_get()
+        except Exception:
+            return False
+        return isinstance(w, (tk.Text, tk.Entry, ttk.Combobox, tk.Spinbox))
+
+    def _esc_overlay(self, event=None):
+        """Esc 关闭最上层覆盖窗口（查看器/提示词助手/词库）。"""
+        for attr, win in (("_viewer_win", self._viewer_win),
+                          ("_prompt_wizard", self._prompt_wizard),
+                          ("_phrase_panel", self._phrase_panel)):
+            if win is not None:
+                try:
+                    closer = getattr(win, "_on_close", None)
+                    if callable(closer):
+                        closer()
+                    else:
+                        win.destroy()
+                except tk.TclError:
+                    pass
+                if attr == "_viewer_win":
+                    self._viewer_win = None
+                setattr(self, attr, None)
+                return
+
+    def _delete_selected_guarded(self, event=None):
+        if self._typing_focus():
+            return
+        if self.sel_id is not None:
+            self.sidebar._del_entry(self.sel_id)
+
+    def _nav_history_guarded(self, event=None, delta: int = 1):
+        """←/→ 在历史列表中移动选中项（输入焦点在文本框时忽略）。"""
+        if self._typing_focus():
+            return
+        entries = get_all_entries(limit=500)
+        if not entries:
+            return
+        ids = [e["id"] for e in entries]
+        if self.sel_id in ids:
+            i = max(0, min(len(ids) - 1, ids.index(self.sel_id) + delta))
+        else:
+            i = 0  # 无选中：先定位到最新一条，再按方向移动
+        target = next((e for e in entries if e["id"] == ids[i]), None)
+        if target is not None:
+            self._load_entry(target)
 
     def _toast(self, msg: str, level: str = "info"):
         """瞬态通知（UIUX §64）：快捷确认走 toast，不长期占据状态栏。"""
