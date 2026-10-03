@@ -38,6 +38,7 @@ MAX_NICK_LEN = 20  # 昵称/提示符显示截断长度
 
 
 from ui.viewer import ImageViewerWindow
+from ui.components.toast import ToastManager
 from ui.wizard_free import ConfigWizard
 from ui.wizard_paid import PaidWizard
 from ui.prompt_wizard import PromptWizard
@@ -87,6 +88,7 @@ class App:
         self._prompt_wizard = None
         self._phrase_panel = None
         self._cur_bytes = None
+        self.toasts = ToastManager(root)
 
         # Sidebar width
         self._sidebar_w = SIDEBAR_DEF
@@ -358,6 +360,10 @@ class App:
     def _st(self, msg: str, k: str = "ok"):
         m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"]}
         self.content.stv.set(msg); self.content.stl.config(fg=m.get(k, C["ok"]))
+
+    def _toast(self, msg: str, level: str = "info"):
+        """瞬态通知（UIUX §64）：快捷确认走 toast，不长期占据状态栏。"""
+        self.toasts.show(msg, level)
 
     def _update_char_count(self):
         # 转发给 MainContent，供 PhrasePanel 等外部调用刷新字符计数
@@ -677,4 +683,4 @@ class App:
     def _copy_path(self):
         if self.cur_path:
             self.root.clipboard_clear(); self.root.clipboard_append(self.cur_path)
-            self._st("📋 路径已复制", "ok")
+            self._toast("📋 路径已复制", "success")

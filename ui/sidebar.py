@@ -509,7 +509,7 @@ class HistorySidebar:
                 if p:
                     self.app.root.clipboard_clear()
                     self.app.root.clipboard_append(p)
-                    self.app._st("📁 路径已复制", "ok")
+                    self.app._toast("📁 路径已复制", "success")
 
             # 🔁 一键重新生成（填入输入框并立即生成）
             def _regen():
