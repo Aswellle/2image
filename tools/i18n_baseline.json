@@ -11,147 +11,147 @@
  },
  {
   "file": "ui/app.py",
-  "line": 399,
+  "line": 437,
   "text": "保留变体后刷新历史列表并自动预览。\n\n        修复：\n          · 接收 batch_panel 传来"
  },
  {
   "file": "ui/app.py",
-  "line": 487,
+  "line": 525,
   "text": "根据当前自动发现的 Provider 注册表实时统计顶栏可用接口数。\n\n        不再维护易过期的手写 key 列"
  },
  {
   "file": "ui/app.py",
-  "line": 576,
+  "line": 614,
   "text": "导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"
  },
  {
   "file": "ui/app.py",
-  "line": 614,
+  "line": 652,
   "text": "<!DOCTYPE html><html lang='zh'><head><meta charset='UTF-8'><"
  },
  {
   "file": "ui/app.py",
-  "line": 614,
+  "line": 652,
   "text": "条 ·"
  },
  {
   "file": "ui/app.py",
-  "line": 614,
+  "line": 652,
   "text": "</p><table><tr><th>时间</th><th>提示词</th><th>接口</th><th>收藏</th>"
  },
  {
   "file": "ui/app.py",
-  "line": 626,
+  "line": 664,
   "text": "完成"
  },
  {
   "file": "ui/app.py",
-  "line": 360,
+  "line": 398,
   "text": "提示"
  },
  {
   "file": "ui/app.py",
-  "line": 360,
+  "line": 398,
   "text": "请先生成或选择一张图片"
  },
  {
   "file": "ui/app.py",
-  "line": 416,
+  "line": 454,
   "text": "✅ 已保留变体到历史记录"
  },
  {
   "file": "ui/app.py",
-  "line": 497,
+  "line": 535,
   "text": "Pollinations.AI (免费·无需Key)"
  },
  {
   "file": "ui/app.py",
-  "line": 499,
+  "line": 537,
   "text": "StableHorde (兜底)"
  },
  {
   "file": "ui/app.py",
-  "line": 501,
+  "line": 539,
   "text": "Cloudflare AI (免费1万次/天)"
  },
  {
   "file": "ui/app.py",
-  "line": 577,
+  "line": 615,
   "text": "选择导出位置"
  },
  {
   "file": "ui/app.py",
-  "line": 581,
+  "line": 619,
   "text": "AI生图_"
  },
  {
   "file": "ui/app.py",
-  "line": 599,
+  "line": 637,
   "text": "无图"
  },
  {
   "file": "ui/app.py",
-  "line": 626,
+  "line": 664,
   "text": "已导出"
  },
  {
   "file": "ui/app.py",
-  "line": 626,
+  "line": 664,
   "text": "条\n至："
  },
  {
   "file": "ui/app.py",
-  "line": 630,
+  "line": 668,
   "text": "提示"
  },
  {
   "file": "ui/app.py",
-  "line": 630,
+  "line": 668,
   "text": "暂无图片"
  },
  {
   "file": "ui/app.py",
-  "line": 637,
+  "line": 675,
   "text": "完成"
  },
  {
   "file": "ui/app.py",
-  "line": 642,
+  "line": 680,
   "text": "📋 路径已复制"
  },
  {
   "file": "ui/app.py",
-  "line": 637,
+  "line": 675,
   "text": "已保存："
  },
  {
   "file": "ui/app.py",
-  "line": 557,
+  "line": 595,
   "text": "额度"
  },
  {
   "file": "ui/app.py",
-  "line": 570,
+  "line": 608,
   "text": "额度"
  },
  {
   "file": "ui/app.py",
-  "line": 572,
+  "line": 610,
   "text": "需要配置 API Key"
  },
  {
   "file": "ui/app.py",
-  "line": 625,
+  "line": 663,
   "text": "记录本.html"
  },
  {
   "file": "ui/app.py",
-  "line": 633,
+  "line": 671,
   "text": "所有文件"
  },
  {
   "file": "ui/app.py",
-  "line": 573,
+  "line": 611,
   "text": "点击「🆓 免费配置」配置硅基流动 API Key。"
  },
  {

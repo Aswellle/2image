@@ -360,7 +360,7 @@ class App:
         self.content.stv.set(msg); self.content.stl.config(fg=m.get(k, C["ok"]))
 
     def _update_char_count(self):
-        """更新输入框字符计数标签（转发给 MainContent，供 PhrasePanel 等外部调用）。"""
+        # 转发给 MainContent，供 PhrasePanel 等外部调用刷新字符计数
         try:
             self.content._update_char_count()
         except Exception:

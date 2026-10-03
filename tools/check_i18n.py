@@ -158,8 +158,10 @@ def report_hardcoded(baseline_path: str | None, update: bool) -> int:
             print(f"    {cnt:4d}  {file}")
         return 0
     base = json.loads(Path(baseline_path).read_text(encoding="utf-8"))
-    base_set = {(f["file"], f["line"], f["text"]) for f in base}
-    new = [f for f in findings if (f["file"], f["line"], f["text"]) not in base_set]
+    # 棘轮键只用 (file, text)：行号会随任何编辑漂移，纳入键会让存量
+    # 字符串被误报为新增（v2.4.1 曾因此阻断发布）
+    base_set = {(f["file"], f["text"]) for f in base}
+    new = [f for f in findings if (f["file"], f["text"]) not in base_set]
     if new:
         print(f"[hardcoded] 发现 {len(new)} 处**新增**硬编码中文：", file=sys.stderr)
         for f in new[:20]:
