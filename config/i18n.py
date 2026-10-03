@@ -222,6 +222,11 @@ STRINGS = {
         "zh-TW": "清除篩選",
         "en":    "Clear filters",
     },
+    "prompt_more_controls": {
+        "zh-CN": "更多精细控制（细节/构图/光影/镜头/画质）",
+        "zh-TW": "更多精細控制（細節/構圖/光影/鏡頭/畫質）",
+        "en":    "More fine controls (detail/composition/lighting/camera/quality)",
+    },
 
     # ── 标签页 ──────────────────────────────────────────────
     "tab_preview": {

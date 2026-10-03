@@ -461,7 +461,7 @@ class PromptWizard(tk.Toplevel):
 
         self._hdivider(parent, PX)
 
-        # ── 7 个维度参数 ───────────────────────────────────────
+        # ── 7 个维度参数（P1-25 渐进披露：默认只展示风格/氛围）──
         self._sec_label(parent, "🎛  可选维度参数", PX)
         cv_ref = None
 
@@ -472,17 +472,28 @@ class PromptWizard(tk.Toplevel):
             guide="填写绘画风格，如：水墨画风、复古漫画、科幻写实")
         self._dim_mood   = _DimRow(cv_ref, dim_host, "🌙 氛围", MOOD_P,
             guide="填写情绪基调，如：压抑沉重、喜庆热闹、梦幻迷离")
-        self._hdivider_thin(dim_host)
-        self._dim_detail = _DimRow(cv_ref, dim_host, "🔍 细节", DETAIL_P,
+
+        # 高级维度宿主：默认收起，点击「更多精细控制」展开
+        self._adv_host = tk.Frame(dim_host, bg=C["bg"])
+        self._hdivider_thin(self._adv_host)
+        self._dim_detail = _DimRow(cv_ref, self._adv_host, "🔍 细节", DETAIL_P,
             guide="填写关键细节，如：雨滴挂在睫毛上、锈迹斑斑的金属板")
-        self._dim_comp   = _DimRow(cv_ref, dim_host, "📐 构图", COMP_P,
+        self._dim_comp   = _DimRow(cv_ref, self._adv_host, "📐 构图", COMP_P,
             guide="填写画面布局，如：主体偏左 1/3、强调前景后景层次")
-        self._dim_light  = _DimRow(cv_ref, dim_host, "💡 光影", LIGHT_P,
+        self._dim_light  = _DimRow(cv_ref, self._adv_host, "💡 光影", LIGHT_P,
             guide="填写光源，如：烛光从下方打亮脸部、雨后阳光穿破云层")
-        self._dim_cam    = _DimRow(cv_ref, dim_host, "📷 镜头", CAMERA_P,
+        self._dim_cam    = _DimRow(cv_ref, self._adv_host, "📷 镜头", CAMERA_P,
             guide="填写镜头参数，如：400mm 望远 f/5.6、GoPro 超广角")
-        self._dim_qual   = _DimRow(cv_ref, dim_host, "✨ 画质", QUALITY_P,
+        self._dim_qual   = _DimRow(cv_ref, self._adv_host, "✨ 画质", QUALITY_P,
             guide="填写画质描述，如：胶片颗粒感、印刷品半调网点")
+
+        self._adv_open = False
+        self._adv_toggle = tk.Button(
+            dim_host, text="▸ " + _("prompt_more_controls"),
+            font=F["body"], bg=C["bg"], fg=C["guide"], bd=0,
+            cursor="hand2", anchor="w",
+            command=self._toggle_advanced_dims)
+        self._adv_toggle.pack(fill="x", pady=(4, 0))
 
         self._hdivider(parent, PX)
 
@@ -505,6 +516,16 @@ class PromptWizard(tk.Toplevel):
                  ).pack(fill="x", padx=PX, pady=(5, 0))
 
     # ── 节标题 ─────────────────────────────────────────────────
+    def _toggle_advanced_dims(self):
+        """P1-25: 展开/收起高级维度（细节/构图/光影/镜头/画质）。"""
+        self._adv_open = not self._adv_open
+        if self._adv_open:
+            self._adv_host.pack(fill="x")
+            self._adv_toggle.config(text="▾ " + _("prompt_more_controls"))
+        else:
+            self._adv_host.pack_forget()
+            self._adv_toggle.config(text="▸ " + _("prompt_more_controls"))
+
     @staticmethod
     def _sec_label(parent, text: str, px: int = 16):
         tk.Label(parent, text=text,
