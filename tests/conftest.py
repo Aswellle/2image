@@ -118,3 +118,47 @@ def mock_app():
         def _display_title(self, e):
             return e.get("nickname") or e.get("prompt", "")[:20]
     return MockApp()
+
+
+@pytest.fixture(autouse=True)
+def isolate_real_config(tmp_path, monkeypatch):
+    """安全网：任何测试调用 save_config 都落盘到临时目录。
+
+    save_config 在调用时读取 config.settings.CONFIG_FILE 模块全局，
+    因此在此处替换该路径即可保护所有导入方（含 settings_controller
+    等 from-import 场景）。事故背景：2026-10-04 测试曾覆写真实
+    ~/2image/config.json 导致用户配置丢失。
+    """
+    import config.settings as _settings
+    monkeypatch.setattr(_settings, "CONFIG_FILE", str(tmp_path / "config.json"))
+    monkeypatch.setattr(_settings, "APP_DIR", str(tmp_path))
+
+
+@pytest.fixture
+def app(tk_root, monkeypatch):
+    """构造完整 App（内存库 + mock 配置读写），yield (app, saved_cfg)。"""
+    import data.repository as repo
+    from config.fonts import init_fonts
+    from config.settings import DEFAULT_CONFIG
+    import ui.app as app_mod
+
+    repo._set_test_db(":memory:")
+    repo.init_db()
+    init_fonts()
+    cfg = dict(DEFAULT_CONFIG)
+    cfg["show_wizard_on_start"] = False
+    cfg["sidebar_width"] = 999          # 超上限，应被钳制到 SIDEBAR_MAX
+    saved = {}
+    monkeypatch.setattr(app_mod, "load_config", lambda: dict(cfg))
+    monkeypatch.setattr(app_mod, "save_config",
+                        lambda c: saved.update(dict(c)))
+    # 共享会话 root 上以 Toplevel 承载 App，避免销毁整个解释器
+    top = tk.Toplevel(tk_root)
+    top.withdraw()
+    a = app_mod.App(top)
+    tk_root.update()
+    yield a, saved
+    try:
+        top.destroy()   # 触发侧栏 <Destroy> 钩子 → loader shutdown
+    except tk.TclError:
+        pass

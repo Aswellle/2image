@@ -25,12 +25,22 @@ class MenuController:
         self.root = app.root
 
     def build(self) -> None:
-        """Build the complete menu bar."""
-        menubar = Menu(self.root, bg=C["panel"], fg=C["text"],
+        """Build the complete menu bar.
+
+        结构（§66 信息层级）：
+            文件   — 文档/图片级动作（查看器、另存为、导出、日志）
+            工具   — 创作辅助（提示词助手、词库、结果 Tab）
+            接口   — 供应商配置与注册链接
+            数据   — 统计与本地数据入口
+            设置   — 界面语言、偏好、快捷键
+        """
+        menubar = Menu(self.root, tearoff=0,
+                       bg=C["panel"], fg=C["text"],
                        activebackground=C["acc"], activeforeground="white",
                        relief="flat", bd=0)
         self.root.config(menu=menubar)
 
+        self._build_file_menu(menubar)
         self._build_tools_menu(menubar)
         self._build_api_menu(menubar)
         self._build_data_menu(menubar)
@@ -45,6 +55,19 @@ class MenuController:
     def _open_url(self, url: str):
         return lambda: webbrowser.open(url)
 
+    def _build_file_menu(self, menubar: Menu) -> None:
+        m_file = self._menu(menubar)
+        menubar.add_cascade(label=_("menu_file"), menu=m_file)
+        m_file.add_command(label=_("menu_open_viewer") + "   Ctrl+O",
+                           command=self.app._open_viewer)
+        m_file.add_command(label=_("menu_save_as") + "   Ctrl+S",
+                           command=self.app._save)
+        m_file.add_command(label=_("menu_export") + "   Ctrl+E",
+                           command=self.app._export)
+        m_file.add_separator()
+        m_file.add_command(label=_("menu_clear_log") + "   Ctrl+L",
+                           command=self.app._clr_log)
+
     def _build_tools_menu(self, menubar: Menu) -> None:
         m_tools = self._menu(menubar)
         menubar.add_cascade(label=_("menu_tools"), menu=m_tools)
@@ -53,21 +76,21 @@ class MenuController:
         m_tools.add_separator()
         m_tools.add_command(label=_("phrase_title") + "…         Ctrl+B",
                             command=self.app._open_phrase_panel)
-        m_tools.add_command(label=_("btn_variant_gen"),
+        m_tools.add_command(label=_("menu_switch_variants") + "   Ctrl+2",
                             command=self.app._switch_to_variant_tab)
-        m_tools.add_command(label="  📋  " + _("tab_queue").strip() + "…         Ctrl+Q",
+        m_tools.add_command(label=_("menu_switch_queue") + "   Ctrl+Q",
                             command=self.app._switch_to_queue_tab)
 
     def _build_api_menu(self, menubar: Menu) -> None:
         m_api = self._menu(menubar)
-        menubar.add_cascade(label=" 🔑  接口配置 ", menu=m_api)
-        m_api.add_command(label="  🆓  免费接口配置…", command=self.app._open_wizard)
-        m_api.add_command(label="  💎  付费接口配置…", command=self.app._open_paid_wizard)
+        menubar.add_cascade(label=" 🔑  " + _("menu_api") + " ", menu=m_api)
+        m_api.add_command(label="  " + _("menu_free_config"), command=self.app._open_wizard)
+        m_api.add_command(label="  " + _("menu_paid_config"), command=self.app._open_paid_wizard)
         m_api.add_separator()
 
         # Free provider registration links
         m_free_links = self._menu(m_api)
-        m_api.add_cascade(label="  🌐  免费接口注册链接", menu=m_free_links)
+        m_api.add_cascade(label="  " + _("menu_free_links"), menu=m_free_links)
         m_free_links.add_command(label="  ★  硅基流动（推荐，免费赠额）",
             command=self._open_url("https://cloud.siliconflow.cn/account/ak"))
         m_free_links.add_command(label="  ·  Google Gemini（500次/天）",
@@ -85,7 +108,7 @@ class MenuController:
 
         # Paid provider registration links
         m_paid_links = self._menu(m_api)
-        m_api.add_cascade(label="  🌐  付费接口注册链接", menu=m_paid_links)
+        m_api.add_cascade(label="  " + _("menu_paid_links"), menu=m_paid_links)
         m_paid_links.add_command(label="  ·  OpenAI GPT-Image",
             command=self._open_url("https://platform.openai.com/api-keys"))
         m_paid_links.add_command(label="  ·  Stability AI",
@@ -116,5 +139,17 @@ class MenuController:
     def _build_settings_menu(self, menubar: Menu) -> None:
         m_set = self._menu(menubar)
         menubar.add_cascade(label=_("menu_settings"), menu=m_set)
-        m_set.add_command(label="  🖼  应用偏好设置…", command=self.app._open_app_settings)
-        m_set.add_command(label="  ⌨  快捷键说明…", command=self.app._show_shortcuts)
+
+        # 界面语言（zh-CN / zh-TW / en）——切换后重启生效
+        m_lang = self._menu(m_set)
+        m_set.add_cascade(label="  🌐  " + _("settings_language"), menu=m_lang)
+        for code, native in self.app.SUPPORTED_LANGUAGES.items():
+            m_lang.add_radiobutton(label=native, variable=self.app.lang_var,
+                                   value=code, command=lambda c=code:
+                                       self.app.settings_controller.set_language(c))
+
+        m_set.add_separator()
+        m_set.add_command(label="  🖼  " + _("settings_prefs_title") + "…",
+                          command=self.app._open_app_settings)
+        m_set.add_command(label="  ⌨  " + _("settings_shortcuts_title") + "…",
+                          command=self.app._show_shortcuts)

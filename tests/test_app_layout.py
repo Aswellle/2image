@@ -18,30 +18,6 @@ import data.repository as repo
 import ui.app as app_mod
 
 
-@pytest.fixture
-def app(tk_root, monkeypatch, tmp_path):
-    repo._set_test_db(":memory:")
-    repo.init_db()
-    init_fonts()
-    cfg = dict(DEFAULT_CONFIG)
-    cfg["show_wizard_on_start"] = False
-    cfg["sidebar_width"] = 999          # 超上限，应被钳制到 SIDEBAR_MAX
-    saved = {}
-    monkeypatch.setattr(app_mod, "load_config", lambda: dict(cfg))
-    monkeypatch.setattr(app_mod, "save_config",
-                        lambda c: saved.update(dict(c)))
-    # 共享会话 root 上以 Toplevel 承载 App，避免销毁整个解释器
-    top = tk.Toplevel(tk_root)
-    top.withdraw()
-    a = app_mod.App(top)
-    tk_root.update()
-    yield a, saved
-    try:
-        top.destroy()   # 触发侧栏 <Destroy> 钩子 → loader shutdown
-    except tk.TclError:
-        pass
-
-
 def test_startup_single_refresh(app):
     """启动路径只调度一次刷新（重复块已清理）；宽度受 MAX 钳制。"""
     a, _ = app

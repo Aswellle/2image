@@ -212,6 +212,106 @@ STRINGS = {
         "zh-TW": "⭐ 收藏",
         "en":    "⭐ Favorites",
     },
+    "menu_file": {
+        "zh-CN": "文件",
+        "zh-TW": "檔案",
+        "en":    "File",
+    },
+    "menu_open_viewer": {
+        "zh-CN": "🔍  打开独立查看器…",
+        "zh-TW": "🔍  開啟獨立檢視器…",
+        "en":    "🔍  Open Viewer…",
+    },
+    "menu_save_as": {
+        "zh-CN": "💾  当前图片另存为…",
+        "zh-TW": "💾  目前圖片另存為…",
+        "en":    "💾  Save Current Image As…",
+    },
+    "menu_export": {
+        "zh-CN": "📦  导出历史记录…",
+        "zh-TW": "📦  匯出歷史記錄…",
+        "en":    "📦  Export History…",
+    },
+    "menu_clear_log": {
+        "zh-CN": "🧹  清空调试日志",
+        "zh-TW": "🧹  清除除錯日誌",
+        "en":    "🧹  Clear Debug Log",
+    },
+    "menu_api": {
+        "zh-CN": "接口配置",
+        "zh-TW": "介面設定",
+        "en":    "Providers",
+    },
+    "menu_free_config": {
+        "zh-CN": "🆓  免费接口配置…",
+        "zh-TW": "🆓  免費介面設定…",
+        "en":    "🆓  Free Provider Setup…",
+    },
+    "menu_paid_config": {
+        "zh-CN": "💎  付费接口配置…",
+        "zh-TW": "💎  付費介面設定…",
+        "en":    "💎  Paid Provider Setup…",
+    },
+    "menu_free_links": {
+        "zh-CN": "🌐  免费接口注册链接",
+        "zh-TW": "🌐  免費介面註冊連結",
+        "en":    "🌐  Free Provider Sign-up Links",
+    },
+    "menu_paid_links": {
+        "zh-CN": "🌐  付费接口注册链接",
+        "zh-TW": "🌐  付費介面註冊連結",
+        "en":    "🌐  Paid Provider Sign-up Links",
+    },
+    "menu_switch_variants": {
+        "zh-CN": "🧩  切换到变体生成",
+        "zh-TW": "🧩  切換到變體生成",
+        "en":    "🧩  Go to Variants",
+    },
+    "menu_switch_queue": {
+        "zh-CN": "📋  切换到生成队列…",
+        "zh-TW": "📋  切換到生成佇列…",
+        "en":    "📋  Go to Queue…",
+    },
+    "settings_language": {
+        "zh-CN": "界面语言",
+        "zh-TW": "介面語言",
+        "en":    "Interface Language",
+    },
+    "settings_lang_restart": {
+        "zh-CN": "🌐 语言设置已保存，重启应用后生效",
+        "zh-TW": "🌐 語言設定已儲存，重啟應用後生效",
+        "en":    "🌐 Language saved — restart the app to apply",
+    },
+    "settings_default_size": {
+        "zh-CN": "默认生成尺寸",
+        "zh-TW": "預設生成尺寸",
+        "en":    "Default Image Size",
+    },
+    "settings_startup": {
+        "zh-CN": "启动行为",
+        "zh-TW": "啟動行為",
+        "en":    "Startup",
+    },
+    "settings_show_wizard": {
+        "zh-CN": "启动时显示免费接口配置向导",
+        "zh-TW": "啟動時顯示免費介面設定精靈",
+        "en":    "Show free provider wizard on startup",
+    },
+    "settings_saved": {
+        "zh-CN": "✅ 已保存！",
+        "zh-TW": "✅ 已儲存！",
+        "en":    "✅ Saved!",
+    },
+    "settings_prefs_title": {
+        "zh-CN": "应用偏好设置",
+        "zh-TW": "應用偏好設定",
+        "en":    "Preferences",
+    },
+    "settings_shortcuts_title": {
+        "zh-CN": "快捷键说明",
+        "zh-TW": "快速鍵說明",
+        "en":    "Keyboard Shortcuts",
+    },
     "filter_viewing": {
         "zh-CN": "正在查看：{filters}",
         "zh-TW": "正在檢視：{filters}",

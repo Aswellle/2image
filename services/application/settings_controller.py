@@ -22,10 +22,19 @@ class SettingsController:
         self.app = app
         self.root = app.root
 
+    def set_language(self, lang: str) -> None:
+        """保存界面语言选择（重启应用后由 init_language 生效）。"""
+        if lang == self.app.cfg.get("language", "zh-CN"):
+            return
+        self.app.cfg["language"] = lang
+        save_config(self.app.cfg)
+        self.app._toast(_("settings_lang_restart"), "info")
+        self.app._log(f"🌐 language → {lang} (restart to apply)")
+
     def show_shortcuts(self) -> None:
         """Show keyboard shortcuts dialog."""
         win = tk.Toplevel(self.root)
-        win.title("⌨ 快捷键说明")
+        win.title("⌨ " + _("settings_shortcuts_title"))
         win.configure(bg=C["bg"])
         win.resizable(False, False)
         win.grab_set()
@@ -36,7 +45,7 @@ class SettingsController:
 
         hdr = tk.Frame(win, bg=C["acc"])
         hdr.pack(fill="x")
-        tk.Label(hdr, text="⌨  快捷键说明", font=F["h1"],
+        tk.Label(hdr, text="⌨  " + _("settings_shortcuts_title"), font=F["h1"],
                  bg=C["acc"], fg="white").pack(side="left", padx=16, pady=10)
 
         body = tk.Frame(win, bg=C["bg"])
@@ -67,24 +76,35 @@ class SettingsController:
     def show_app_settings(self) -> None:
         """Show application preferences dialog."""
         win = tk.Toplevel(self.root)
-        win.title("🖼 应用偏好设置")
+        win.title("🖼 " + _("settings_prefs_title"))
         win.configure(bg=C["bg"])
         win.resizable(False, False)
         win.grab_set()
         win.update_idletasks()
         x = self.root.winfo_x() + (self.root.winfo_width() - 460) // 2
         y = self.root.winfo_y() + (self.root.winfo_height() - 360) // 2
-        win.geometry(f"460x360+{max(0, x)}+{max(0, y)}")
+        win.geometry(f"460x440+{max(0, x)}+{max(0, y)}")
 
         hdr = tk.Frame(win, bg=C["acc"])
         hdr.pack(fill="x")
-        tk.Label(hdr, text="🖼  应用偏好设置", font=F["h1"],
+        tk.Label(hdr, text="🖼  " + _("settings_prefs_title"), font=F["h1"],
                  bg=C["acc"], fg="white").pack(side="left", padx=16, pady=10)
 
         body = tk.Frame(win, bg=C["bg"])
         body.pack(fill="both", expand=True, padx=24, pady=16)
 
-        tk.Label(body, text="默认生成尺寸", font=F["btn"],
+        tk.Label(body, text=_("settings_language"), font=F["btn"],
+                 bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
+        lang_var = tk.StringVar(value=self.app.cfg.get("language", "zh-CN"))
+        lang_frame = tk.Frame(body, bg=C["bg"])
+        lang_frame.pack(fill="x", pady=(0, 14))
+        for code, native in self.app.SUPPORTED_LANGUAGES.items():
+            tk.Radiobutton(lang_frame, text=native, variable=lang_var,
+                           value=code, font=F["body"], bg=C["bg"], fg=C["text"],
+                           activebackground=C["bg"], selectcolor=C["entry"]
+                           ).pack(side="left", padx=(0, 14))
+
+        tk.Label(body, text=_("settings_default_size"), font=F["btn"],
                  bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
         sz_var = tk.StringVar(value=self.app.cfg.get("default_size", "1024x1024").replace("×", "x"))
         ttk.Combobox(body, textvariable=sz_var, state="readonly", width=20,
@@ -92,10 +112,10 @@ class SettingsController:
                              "1920x1080", "576x1024", "720x1280", "768x1024"]
                      ).pack(anchor="w", pady=(0, 14))
 
-        tk.Label(body, text="启动行为", font=F["btn"],
+        tk.Label(body, text=_("settings_startup"), font=F["btn"],
                  bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
         wiz_var = tk.BooleanVar(value=self.app.cfg.get("show_wizard_on_start", True))
-        tk.Checkbutton(body, text="启动时显示免费接口配置向导",
+        tk.Checkbutton(body, text=_("settings_show_wizard"),
                        variable=wiz_var, font=F["body"], bg=C["bg"], fg=C["text"],
                        activebackground=C["bg"], selectcolor=C["entry"]).pack(anchor="w")
 
@@ -107,7 +127,13 @@ class SettingsController:
             self.app.cfg["show_wizard_on_start"] = wiz_var.get()
             save_config(self.app.cfg)
             self.app.content.szv.set(sz_var.get())
-            st.config(text="✅ 已保存！")
+            if lang_var.get() != self.app.cfg.get("language", "zh-CN"):
+                # set_language 内部会再次 save_config 并提示重启生效
+                self.set_language(lang_var.get())
+                st.config(text=_("settings_lang_restart"))
+                win.after(2500, win.destroy)
+                return
+            st.config(text=_("settings_saved"))
             win.after(1200, win.destroy)
 
         bot = tk.Frame(win, bg=C["panel"])
