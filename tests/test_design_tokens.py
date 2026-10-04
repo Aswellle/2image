@@ -10,7 +10,6 @@ import tempfile
 import pytest
 
 from config.design_tokens import (
-    LIGHT_TOKENS,
     TOKENS,
     DesignTokens,
     button_colors,
@@ -18,7 +17,7 @@ from config.design_tokens import (
     status_pill_colors,
     sync_tokens_from_theme,
 )
-from config.theme import DARK_THEME, LIGHT_THEME, apply_theme, get_theme
+from config.theme import DARK_THEME, init_theme
 
 import re
 
@@ -31,43 +30,28 @@ class TestDesignTokens:
         assert TOKENS.text_primary == DARK_THEME["text"]
         assert TOKENS.accent == DARK_THEME["acc"]
 
-    def test_light_tokens_derive_from_light_theme(self):
-        assert LIGHT_TOKENS.surface_app == LIGHT_THEME["bg"]
-        assert LIGHT_TOKENS.text_primary == LIGHT_THEME["text"]
-
-    def test_theme_key_parity(self):
-        """双主题 dict 键集合必须一致，防止语义别名单边缺失。"""
-        assert set(DARK_THEME.keys()) == set(LIGHT_THEME.keys())
-
     def test_semantic_alias_keys_exist(self):
+        """语义令牌别名键必须齐全（暗色单主题）。"""
         for key in ("surface", "surface_raised", "surface_hover",
                     "surface_selected", "accent", "accent_hover",
                     "success", "danger", "warning", "divider",
                     "text_primary", "text_secondary", "text_muted",
-                    "text_inverse"):
+                    "text_inverse", "surface_disabled", "text_disabled"):
             assert key in DARK_THEME, f"DARK_THEME 缺少语义键 {key}"
-            assert key in LIGHT_THEME, f"LIGHT_THEME 缺少语义键 {key}"
 
     def test_all_colors_valid_hex(self):
-        for name, theme in (("dark", DARK_THEME), ("light", LIGHT_THEME)):
-            for key, val in theme.items():
-                assert _HEX_RE.match(val), f"{name}.{key} = {val!r} 不是 #rrggbb"
+        for key, val in DARK_THEME.items():
+            assert _HEX_RE.match(val), f"DARK_THEME.{key} = {val!r} 不是 #rrggbb"
 
-    def test_apply_theme_resyncs_tokens(self):
-        original = get_theme()
-        try:
-            apply_theme("dark")
-            assert TOKENS.accent == DARK_THEME["acc"]
-            apply_theme("light")
-            assert TOKENS.accent == LIGHT_THEME["acc"]
-            assert TOKENS.surface_app == LIGHT_THEME["bg"]
-        finally:
-            apply_theme(original)
+    def test_init_theme_resyncs_tokens(self):
+        TOKENS.accent = "#000000"   # 模拟外部篡改
+        init_theme({})
+        assert TOKENS.accent == DARK_THEME["acc"]
 
     def test_derive_tokens_from_theme(self):
-        t = derive_tokens_from_theme(LIGHT_THEME)
-        assert t.accent == LIGHT_THEME["acc"]
-        assert t.success == LIGHT_THEME["ok"]
+        t = derive_tokens_from_theme(DARK_THEME)
+        assert t.accent == DARK_THEME["acc"]
+        assert t.success == DARK_THEME["ok"]
 
     def test_sync_in_place_keeps_identity(self):
         t = DesignTokens()

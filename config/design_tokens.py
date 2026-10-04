@@ -78,36 +78,15 @@ class DesignTokens:
         return getattr(self, key, default)
 
 
-# Light theme variant
-LIGHT_TOKENS = DesignTokens(
-    surface_app="#f5f7fa",
-    surface_panel="#ffffff",
-    surface_elevated="#e8ecf0",
-    surface_overlay="#dfe4ea",
-    text_primary="#1a1a2e",
-    text_secondary="#4a5568",
-    text_muted="#718096",
-    text_inverse="#ffffff",
-    accent="#3182ce",
-    accent_hover="#2c5282",
-    highlight="#e53e3e",
-    success="#38a169",
-    warning="#d69e2e",
-    danger="#e53e3e",
-    info="#3182ce",
-    border_subtle="#e2e8f0",
-    border_focus="#3182ce",
-)
-
-# Default dark theme
+# 应用令牌实例（暗色单主题；theme.py 完成从 DARK_THEME 的派生同步）
 TOKENS = DesignTokens()
 
 
 # ─── Theme derivation ─────────────────────────────────────────────
 # 令牌颜色一律从 theme.py 的主题 dict 派生（单一事实来源）。
-# theme.py 在模块底部调用 sync_tokens_from_theme() 完成初始同步，
-# 并在 apply_theme() 切换时再次同步——TOKENS 原地更新字段，
-# 因此已 import TOKENS 的组件引用始终有效，无需重建。
+# theme.py 在模块底部与 init_theme() 中调用 sync_tokens_from_theme()
+# 完成同步——TOKENS 原地更新字段，因此已 import TOKENS 的组件
+# 引用始终有效，无需重建。
 
 # 主题 dict 键 → DesignTokens 字段名
 _THEME_KEY_MAP = {

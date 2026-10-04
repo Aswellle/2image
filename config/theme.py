@@ -2,10 +2,10 @@
 config/theme.py — Unified color scheme and design tokens.
 All UI modules import from here for global color consistency.
 
-Design tokens (semantic names) are provided via config/design_tokens.py
-This module provides backward-compatible DARK_THEME/LIGHT_THEME dicts.
+本项目只提供暗色主题（DARK_THEME）。语义令牌（semantic names）
+由 config/design_tokens.py 提供并从本模块的主题 dict 派生。
 """
-from config.design_tokens import TOKENS, LIGHT_TOKENS, sync_tokens_from_theme
+from config.design_tokens import TOKENS, sync_tokens_from_theme
 
 
 
@@ -61,59 +61,8 @@ DARK_THEME = {
     "text_secondary":  "#c0cfe0",
     "text_muted":      "#8a9aba",
     "text_inverse":    "#ffffff",
-}
-LIGHT_THEME = {
-    # 基础
-    "bg":       "#f0f2f5",
-    "panel":    "#ffffff",
-    "acc":      "#1a56db",
-    "hl":       "#dc2626",
-    "text":     "#1a1a2e",
-    "sub":      "#4a5568",
-    "entry":    "#ffffff",
-    "ok":       "#059669",
-    "warn":     "#d97706",
-    "sep":      "#e2e8f0",
-    # 卡片 / 选中
-    "card":     "#ffffff",
-    "card_hl":  "#eff6ff",
-    "card_sel": "#dbeafe",
-    "card_fav": "#fefce8",
-    "empty":    "#f8fafc",
-    # 收藏 / 操作
-    "star_on":  "#f59e0b",
-    "star_off": "#cbd5e1",
-    "keep_bg":  "#059669",
-    "dis_bg":   "#dc2626",
-    "purple":   "#7c3aed",
-    "dpurp":    "#6d28d9",
-    "gold":     "#f59e0b",
-    "paid":     "#7c3aed",
-    # 分隔 / 对比
-    "sash":     "#94a3b8",
-    "sash_hl":  "#3b82f6",
-    "cmp_a":    "#1d4ed8",
-    "cmp_b":    "#dc2626",
-    "neg_fg":   "#dc2626",
-    "neg_bg":   "#fef2f2",
-    # 辅助
-    "guide":    "#2563eb",
-    "tb":       "#f1f5f9",
-    # ── 语义令牌别名 ──
-    "surface":         "#f0f2f5",
-    "surface_raised":  "#ffffff",
-    "surface_hover":   "#eff6ff",
-    "surface_selected": "#dbeafe",
-    "accent":          "#1a56db",
-    "accent_hover":    "#3b82f6",
-    "success":         "#059669",
-    "danger":          "#dc2626",
-    "warning":         "#d97706",
-    "divider":         "#e2e8f0",
-    "text_primary":    "#1a1a2e",
-    "text_secondary":  "#4a5568",
-    "text_muted":      "#718096",
-    "text_inverse":    "#ffffff",
+    "surface_disabled": "#334155",
+    "text_disabled":   "#94a3b8",
 }
 
 # ── 标签色彩 ──────────────────────────────────────────────────
@@ -129,42 +78,16 @@ def tag_color(tag: str) -> str:
     return TAG_PALETTE[h % len(TAG_PALETTE)]
 
 
-# ─── Theme switching infrastructure ──────────────────────────
+# ─── Theme infrastructure（暗色单主题）────────────────────────
+# 项目决定只保留暗色模式：无运行时切换，C 即 DARK_THEME 本体。
 
-_current_theme = "dark"
-
-THEMES = {
-    "dark":  DARK_THEME,
-    "light": LIGHT_THEME,
-}
-
-# Active theme dict — for future runtime switching.
-# Existing UI files import DARK_THEME as C directly; this global C
-# is for new code that wants runtime theme switching.
-C = DARK_THEME  # same object — mutations via apply_theme() are visible to all importers
+C = DARK_THEME
 
 
-def apply_theme(theme_name: str) -> None:
-    """Switch to a named theme. Requires app restart for full effect."""
-    global _current_theme, C
-    if theme_name in THEMES:
-        _current_theme = theme_name
-        C.update(THEMES[theme_name])
-        # 活动令牌跟随主题切换：原地同步，组件无需重建
-        # （LIGHT_TOKENS 保持浅色常量语义，不随切换变动）
-        sync_tokens_from_theme(TOKENS, THEMES[theme_name])
+def init_theme(cfg: dict | None = None) -> None:
+    """初始化令牌同步（保留入口以兼容既有调用方；cfg 兼容旧配置键）。"""
+    sync_tokens_from_theme(TOKENS, DARK_THEME)
 
 
-def get_theme() -> str:
-    return _current_theme
-
-
-def init_theme(cfg: dict) -> None:
-    """Initialize theme from config on app startup."""
-    theme_name = cfg.get("theme", "dark")
-    apply_theme(theme_name)
-
-
-# 模块加载即完成令牌初始同步（TOKENS/LIGHT_TOKENS 从主题 dict 派生）
+# 模块加载即完成令牌初始同步（TOKENS 从主题 dict 派生）
 sync_tokens_from_theme(TOKENS, DARK_THEME)
-sync_tokens_from_theme(LIGHT_TOKENS, LIGHT_THEME)
