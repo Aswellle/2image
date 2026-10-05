@@ -327,17 +327,40 @@ PHRASE_DESCRIPTIONS: dict[str, str] = {
 
 # ── 用户自定义词条 ────────────────────────────────────────────
 def _load_custom() -> dict[str, list[str]]:
+    """读取自定义词条；文件损坏时保留 .bak 备份并返回空，绝不静默清库。"""
     try:
         if os.path.exists(_CUSTOM_FILE):
-            return json.load(open(_CUSTOM_FILE, "r", encoding="utf-8"))
+            with open(_CUSTOM_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
     except Exception:
-        pass
+        try:
+            backup = _CUSTOM_FILE + ".corrupt.bak"
+            if os.path.exists(_CUSTOM_FILE):
+                import shutil
+                shutil.copy2(_CUSTOM_FILE, backup)
+        except Exception:
+            pass
     return {}
 
 
 def _save_custom(data: dict) -> None:
-    json.dump(data, open(_CUSTOM_FILE, "w", encoding="utf-8"),
-              ensure_ascii=False, indent=2)
+    """原子写入自定义词条（temp + os.replace），防止断电/崩溃损坏词库。"""
+    import tempfile
+    os.makedirs(os.path.dirname(_CUSTOM_FILE), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(_CUSTOM_FILE),
+                               suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, _CUSTOM_FILE)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def get_all_phrases() -> dict[str, list[str]]:

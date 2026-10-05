@@ -117,11 +117,24 @@ def scene_for_template(template_id: str) -> str:
     return TEMPLATE_SCENE.get(template_id, "")
 
 
+def _keyword_hit(keyword: str, text: str) -> bool:
+    """拉丁关键词按词边界匹配，中文关键词按子串匹配。
+
+    修复：裸子串匹配下 "UI" 会命中 "fruit"/"juice"、"text" 会命中
+    "texture"，导致场景误判、供应商优先级被打乱。
+    """
+    import re
+
+    if re.search(r"[A-Za-z]", keyword):
+        return re.search(rf"\b{re.escape(keyword)}\b", text, re.IGNORECASE) is not None
+    return keyword in text
+
+
 def detect_scene(prompt: str) -> str:
     """从提示词关键词推断商业场景，返回场景名或空字符串。"""
-    prompt_lower = (prompt or "").lower()
+    text = prompt or ""
     for keywords, scene in KEYWORD_RULES:
-        if any(kw.lower() in prompt_lower for kw in keywords):
+        if any(_keyword_hit(kw, text) for kw in keywords):
             return scene
     return ""
 

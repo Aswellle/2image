@@ -48,9 +48,12 @@ def _write_sync(msg: str) -> None:
 def _writer_loop() -> None:
     while True:
         msg = _QUEUE.get()
-        if msg is None:          # shutdown sentinel
-            break
-        _write_sync(msg)
+        try:
+            if msg is None:          # shutdown sentinel
+                break
+            _write_sync(msg)
+        finally:
+            _QUEUE.task_done()  # 未调用 join() 将永久挂起
 
 
 def _ensure_writer() -> None:
@@ -79,9 +82,17 @@ def log_to_file(msg: str) -> None:
 
 
 def flush_logs(timeout: float = 2.0) -> None:
-    """等待队列中已排队的日志落盘（用于测试/优雅退出）。"""
+    """等待队列中已排队的日志落盘（用于测试/优雅退出）。
+
+    带 timeout 上限轮询 unfinished_tasks，超时即返回（writer
+    死亡等异常情况下不再无限等待）。
+    """
+    import time as _time
     try:
-        _QUEUE.join()
+        _ensure_writer()
+        deadline = _time.monotonic() + max(0.0, float(timeout))
+        while _QUEUE.unfinished_tasks > 0 and _time.monotonic() < deadline:
+            _time.sleep(0.02)
     except Exception:
         pass
 

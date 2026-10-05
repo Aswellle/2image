@@ -121,11 +121,14 @@ class QueueMetrics:
             self.total_failed += 1
 
         if job.duration_ms:
-            # Running average
-            n = self.total_succeeded + self.total_failed
-            self.avg_duration_ms = (
-                self.avg_duration_ms * (n - 1) + job.duration_ms
-            ) / n
+            # Running average — 只计入真实执行的任务，避免 n=0 除零
+            # （首个任务即 cancelled 时 succeeded+failed 为 0）
+            if job.state in (JobState.SUCCEEDED, JobState.FAILED):
+                n = self.total_succeeded + self.total_failed
+                if n > 0:
+                    self.avg_duration_ms = (
+                        self.avg_duration_ms * (n - 1) + job.duration_ms
+                    ) / n
 
         # Per-provider stats
         provider = job.result_provider or job.provider_id or "unknown"
