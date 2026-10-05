@@ -27,7 +27,6 @@ class GenerationController:
     def __init__(self, app) -> None:
         self.app = app
         self.root = app.root
-        self.cfg = app.cfg
         self._cancel_token: CancellationToken | None = None
 
     def generate(self, event=None) -> None:
@@ -48,40 +47,27 @@ class GenerationController:
             messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。")
             return
 
-        # Check if provider needs API key
-        if not self._check_provider_key(psel):
-            return
-
-        # PAY-001: 显式选择付费接口时，日预算用尽则阻断（免费接口不受限）
-        from services.providers import resolve_provider_id
-        from services.generation import budget
-        pid = resolve_provider_id(psel)
-        if pid and budget.is_paid(pid) and budget.over_budget(self.cfg):
-            limit = budget.daily_budget(self.cfg)
-            messagebox.showwarning(
-                "付费预算已用尽",
-                f"今日付费估算消耗已达 ${budget.spent_today(self.cfg):.2f}"
-                f"（上限 ${limit:.2f}）。\n"
-                f"如需继续使用 {psel}，请调高「paid_daily_budget_usd」设置。")
+        # Check if provider needs API key + budget guard（单图/变体共用）
+        if not self._precheck_provider(psel):
             return
 
         sz = content.szv.get()
         w, h = [int(x) for x in sz.replace("×", "x").split("x")]
 
         if psel == _("provider_auto"):
-            if not self.cfg.get("sf_key", "").strip() and not self.cfg.get("hf_token", "").strip():
+            if not self.app.cfg.get("sf_key", "").strip() and not self.app.cfg.get("hf_token", "").strip():
                 if messagebox.askyesno("建议配置",
                     "尚未配置任何免费 API Key。\n建议配置「硅基流动」。\n是否现在配置？"):
                     self.app._open_wizard()
                     return
-            porder = get_provider_order(prompt, self.cfg)
+            porder = get_provider_order(prompt, self.app.cfg)
         else:
             porder = [psel]
 
         self.app._batch_total = 1
         self.app._batch_done = 0
         self.app._batch_params = {"prompt": prompt, "translated": "", "w": w, "h": h,
-                                  "porder": porder, "cfg": self.cfg}
+                                  "porder": porder, "cfg": self.app.cfg}
 
         # Update UI state
         content.gb.config(state="disabled", text=_("btn_generating"))
@@ -112,6 +98,26 @@ class GenerationController:
         """Cancel the currently running generation, if any."""
         if self._cancel_token is not None:
             self._cancel_token.cancel()
+
+    def _precheck_provider(self, psel: str) -> bool:
+        """生成前置检查：Key 配置 + 付费日预算（单图与变体共用）。"""
+        if not self._check_provider_key(psel):
+            return False
+        # PAY-001: 显式选择付费接口时，日预算用尽则阻断（免费接口不受限）
+        from services.providers import resolve_provider_id
+        from services.generation import budget
+        cfg = self.app.cfg
+        pid = resolve_provider_id(psel)
+        if pid and budget.is_paid(pid) and budget.over_budget(cfg):
+            limit = budget.daily_budget(cfg)
+            messagebox.showwarning(
+                "付费预算已用尽",
+                f"今日付费估算消耗已达 ${budget.spent_today(cfg):.2f}"
+                f"（上限 ${limit:.2f}）。\n"
+                f"如需继续使用 {psel}，请调高「paid_daily_budget_usd」设置。")
+            return False
+        return True
+
     def _check_provider_key(self, psel: str) -> bool:
         """Check if selected provider has required API key configured.
 
@@ -130,7 +136,7 @@ class GenerationController:
         key_name = PROVIDER_KEYS.get(pid)
         if not key_name or pid in OPTIONAL_KEY_PROVIDERS:
             return True
-        if str(self.cfg.get(key_name, "") or "").strip():
+        if str(self.app.cfg.get(key_name, "") or "").strip():
             return True
 
         # 缺 Key → 引导配置（付费接口走付费向导）
@@ -152,12 +158,14 @@ class GenerationController:
         seed = random.randint(0, 2_147_483_647)
         translated = prompt
 
-        if has_chinese(prompt):
-            self.root.after(0, lambda: self.app._st(_("status_translating"), "warn"))
-            translated = translate_zh_to_en(prompt, log_cb=self.app._log, token=token)
-            self.app._batch_params["translated"] = translated
-
         try:
+            # 翻译也纳入取消保护：限流等待期间取消会抛 GenerationCancelled，
+            # 若在 try 之外会逃逸工作线程导致界面永久停留在“生成中”
+            if has_chinese(prompt):
+                self.root.after(0, lambda: self.app._st(_("status_translating"), "warn"))
+                translated = translate_zh_to_en(prompt, log_cb=self.app._log, token=token)
+                self.app._batch_params["translated"] = translated
+
             # Handle img2img mode
             content = self.app.content
             _gen_mode = getattr(content, '_gen_mode', 't2i')
@@ -173,7 +181,7 @@ class GenerationController:
                 strength = 0.6
 
             data, used = generate_image(
-                translated, w, h, seed, self.cfg,
+                translated, w, h, seed, self.app.cfg,
                 provider_order=porder,
                 status_cb=self._make_status_cb(len(porder)),
                 log_cb=self.app._log,
@@ -225,17 +233,21 @@ class GenerationController:
             messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。")
             return
 
+        # 变体与单图共用 Key + 预算前置检查，防止批量路径绕过付费阻断
+        if not self._precheck_provider(psel):
+            return
+
         n = max(1, min(6, content.variant_n_var.get()))
         sz = content.szv.get()
         w, h = [int(x) for x in sz.replace("×", "x").split("x")]
 
         if psel == _("provider_auto"):
-            porder = get_provider_order(prompt, self.cfg)
+            porder = get_provider_order(prompt, self.app.cfg)
         else:
             porder = [psel]
 
         self.app._batch_params = {"prompt": prompt, "translated": "", "w": w, "h": h,
-                                  "porder": porder, "cfg": self.cfg}
+                                  "porder": porder, "cfg": self.app.cfg}
         content._nb.select(1)
 
         content._batch_panel.start_batch(
