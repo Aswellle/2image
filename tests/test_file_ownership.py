@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from services.generation.file_ownership import (
+from data.file_ownership import (
     FileOwnershipError,
     is_owned_path,
     safe_delete_file,
@@ -126,7 +126,7 @@ class TestDeleteEntryIntegration:
 
     def test_delete_entry_with_managed_path(self, tmp_path, monkeypatch):
         from data import repository
-        from services.generation import file_ownership
+        from data import file_ownership
 
         monkeypatch.setattr(file_ownership, "IMAGES_DIR", str(tmp_path))
 
@@ -143,7 +143,7 @@ class TestDeleteEntryIntegration:
 
     def test_delete_entry_outside_path_not_deleted(self, tmp_path, monkeypatch):
         from data import repository
-        from services.generation import file_ownership
+        from data import file_ownership
 
         managed = tmp_path / "images"
         managed.mkdir()

@@ -2,7 +2,7 @@
 data/repository.py — SQLite 历史记录存取层  v4
 ─────────────────────────────────────────────
 v4 新增（Phase 1 安全重构）：
-  - delete_entry() 使用 file_ownership.safe_delete_file() 防止路径穿越
+  - delete_entry() 使用 data.file_ownership.safe_delete_file() 防止路径穿越
   - migrate_from_json() 改为事务 + report，失败不丢旧数据
   - save_image_file() 改用 UUID 文件名防碰撞
   - 原子文件写入（tempfile + os.replace）
@@ -17,7 +17,7 @@ import time
 from datetime import datetime, timedelta
 
 from config.settings import DB_FILE
-from services.generation.file_ownership import safe_delete_file
+from data.file_ownership import safe_delete_file
 
 # 每个线程持有独立连接，避免跨线程共享和连接泄漏
 _thread_local = threading.local()

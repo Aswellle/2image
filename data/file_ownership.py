@@ -1,5 +1,5 @@
 """
-services/generation/file_ownership.py — Secure file deletion
+data/file_ownership.py — Secure file deletion
 ───────────────────────────────────────────────────────────
 Prevents path traversal and symlink attacks when deleting
 generated images.  All file operations MUST go through
