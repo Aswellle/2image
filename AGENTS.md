@@ -25,7 +25,7 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
           ├── config/settings.py    ← load/save JSON config
           ├── config/fonts.py       ← font loading, F dict
           ├── config/theme.py       ← DARK_THEME (single dark theme), tag_color()
-          ├── config/i18n.py        ← _(key) translation function, 3 locales
+          ├── config/i18n.py        ← _(key) translation function, 2 locales
           ├── data/repository.py    ← SQLite CRUD (thread-local connections)
           ├── services/
           │   ├── image_service.py  ← dispatch to providers
@@ -295,7 +295,7 @@ Font keys: `_sans`, `disp`, `title`, `h1`, `h2`, `btn`, `body`, `body_b`, `body_
 
 ### i18n System
 
-`config/i18n.py` provides a `_(key, **kwargs)` function with 154 translation keys across 3 locales (`zh-CN`, `zh-TW`, `en`). Initialize at startup with `init_language(cfg)`. Usage:
+`config/i18n.py` provides a `_(key, **kwargs)` function with 154 translation keys across 2 locales (`zh-CN`, `en`). Initialize at startup with `init_language(cfg)`. Usage:
 
 ```python
 from config.i18n import _
@@ -334,7 +334,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`config/settings.py`|Path constants (`APP_DIR`, `IMAGES_DIR`, `DB_FILE`), `DEFAULT_CONFIG` dict (all API keys + defaults), `load_config()`/`save_config()`, config v1→v2 migration|
 |`config/fonts.py`|Font loading/caching, `F` dict, `init_fonts()`|
 |`config/theme.py`|`DARK_THEME` (single dark theme), `tag_color()`, global `C`|
-|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (154 keys, 3 locales), `init_language()`|
+|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (154 keys, 2 locales), `init_language()`|
 |`data/repository.py`|SQLite schema (`history` table: id, timestamp, prompt, translated, image_path, provider, nickname, favorited), tags via junction table (`entry_tags`), full CRUD API, stats, heatmap, JSON→SQLite migration, `_set_test_db()` for in-memory testing|
 |`services/image_service.py`|`generate_image()` — iterates providers in order, catches `ValueError`, falls back; `save_image_file()` — saves bytes to disk|
 |`services/smart_router.py`|`get_provider_order()` — scene-aware routing: template→scene→providers, keyword detection, filters unavailable paid providers|

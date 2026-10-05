@@ -22,7 +22,7 @@ def _restore_lang():
 
 def test_supported_languages_cover_all_locales(app, tk_root):
     a, _ = app
-    assert set(a.SUPPORTED_LANGUAGES) == {"zh-CN", "zh-TW", "en"}
+    assert set(a.SUPPORTED_LANGUAGES) == {"zh-CN", "en"}
     assert a.lang_var.get() == "zh-CN"  # 默认配置
 
 
@@ -49,7 +49,7 @@ def test_set_language_notifies_restart(app, monkeypatch):
     a, _ = app
     toasts = []
     monkeypatch.setattr(a, "_toast", lambda m, l="info": toasts.append((m, l)))
-    a.settings_controller.set_language("zh-TW")
+    a.settings_controller.set_language("en")
     assert len(toasts) == 1
     msg, level = toasts[0]
     assert "重启" in msg or "restart" in msg.lower()
@@ -57,12 +57,12 @@ def test_set_language_notifies_restart(app, monkeypatch):
 
 
 def test_translation_applies_after_init_language():
-    """切换语言 + 重启（init_language）后翻译生效。"""
+    """切换语言 + 重启（init_language）后翻译生效；zh-TW 旧配置回落简体。"""
     init_language({"language": "en"})
     assert _("menu_file") == "📁  File"  # 与 menu_tools 等一致带 emoji 前缀
     assert _("settings_language") == "Interface Language"
-    init_language({"language": "zh-TW"})
-    assert _("menu_file") == "📁  檔案"
+    init_language({"language": "zh-TW"})   # 已移除的语言 → 回落 zh-CN
+    assert _("menu_file") == "📁  文件"
     init_language({"language": "zh-CN"})
     assert _("menu_file") == "📁  文件"
 
@@ -110,5 +110,5 @@ def test_menu_bar_structure_with_language_submenu(app):
     settings_sub = tree[4][2]
     lang = next(sub for t, l, sub in settings_sub if t == "cascade" and "界面语言" in l)
     entries = [(l, v) for t, l, v in lang if t == "radiobutton"]
-    assert [v for _, v in entries] == ["zh-CN", "zh-TW", "en"]
-    assert [l for l, _ in entries] == ["简体中文", "繁體中文", "English"]
+    assert [v for _, v in entries] == ["zh-CN", "en"]
+    assert [l for l, _ in entries] == ["简体中文", "English"]

@@ -82,10 +82,9 @@ class App:
         self.settings_controller = SettingsController(self)
         self.gen_controller = GenerationController(self)
 
-        # 界面语言（zh-CN / zh-TW / en）——切换后重启生效
+        # 界面语言（zh-CN / en）——切换后重启生效
         self.SUPPORTED_LANGUAGES = {
             "zh-CN": "简体中文",
-            "zh-TW": "繁體中文",
             "en": "English",
         }
         self.lang_var = tk.StringVar(master=root, value=get_language())

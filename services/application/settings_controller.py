@@ -24,6 +24,8 @@ class SettingsController:
 
     def set_language(self, lang: str) -> None:
         """保存界面语言选择（重启应用后由 init_language 生效）。"""
+        if lang not in self.app.SUPPORTED_LANGUAGES:
+            return
         if lang == self.app.cfg.get("language", "zh-CN"):
             return
         self.app.cfg["language"] = lang
