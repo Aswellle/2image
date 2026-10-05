@@ -9,6 +9,10 @@ Implements the Job Queue V2 from the development plan:
     Any state → CANCELLED | DEADLINE_EXCEEDED | FAILED
 
 Supports: pause/resume, cancel, retry, metrics tracking.
+
+注意：当前仅状态机/指标/暂停取消被生产使用（JobState 枚举、
+QueueMetrics）；``_process_job`` 是占位实现，不执行真实生成——
+生产队列见 ``ui/queue_panel.py``。接入 orchestrator 前勿用于生产。
 """
 from __future__ import annotations
 

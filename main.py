@@ -9,6 +9,8 @@ import tkinter as tk
 import sys
 import os
 
+from services.logger import log_to_file
+
 _APP_USER_MODEL_ID = "Aswellle.2image"
 _ICON_FILE = "ICON_256x256.ico"
 
@@ -56,7 +58,7 @@ def main():
     # ── 数据目录迁移（旧版 ~/.text_to_image_app → 新版 ~/2image）──
     from config.settings import migrate_legacy_data
     if migrate_legacy_data():
-        print("[迁移] 旧版数据已成功迁移到 ~/2image 目录")
+        log_to_file("[迁移] 旧版数据已成功迁移到 ~/2image 目录")
 
     # ── 数据库初始化（建表 / 迁移旧 JSON）──────────────────────
     from data.repository import init_db, migrate_from_json
@@ -65,7 +67,7 @@ def main():
     old_json = os.path.join(APP_DIR, "history.json")
     migrated = migrate_from_json(old_json)
     if migrated:
-        print(f"[迁移] 已从 history.json 导入 {migrated} 条记录到 SQLite")
+        log_to_file(f"[迁移] 已从 history.json 导入 {migrated} 条记录到 SQLite")
 
     # ── 启动 UI ─────────────────────────────────────────────────
     from ui.app import App

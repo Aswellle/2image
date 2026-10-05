@@ -417,6 +417,38 @@ STRINGS = {
         "zh-CN": "{err}\n\n点击「🆓 免费配置」配置硅基流动 API Key。",
         "en":    "{err}\n\nClick \"🆓 Free Config\" to set up a SiliconFlow API key.",
     },
+    "dlg_need_generate_first": {
+        "zh-CN": "请先生成或选择一张图片",
+        "en":    "Generate or select an image first",
+    },
+    "dlg_export_done": {
+        "zh-CN": "完成",
+        "en":    "Done",
+    },
+    "dlg_export_done_body": {
+        "zh-CN": "已导出 {n} 条\n至：{out}",
+        "en":    "Exported {n} items\nTo: {out}",
+    },
+    "dlg_confirm_rename": {
+        "zh-CN": "确认",
+        "en":    "Confirm",
+    },
+    "dlg_confirm_rename_body": {
+        "zh-CN": "重命名为：「{name}」？",
+        "en":    "Rename to \"{name}\"?",
+    },
+    "dlg_unfavorite_body": {
+        "zh-CN": "从喜爱列表移除？\n\n「{name}」",
+        "en":    "Remove from favorites?\n\n\"{name}\"",
+    },
+    "dlg_favorite_body": {
+        "zh-CN": "收藏到喜爱列表？\n\n「{name}」",
+        "en":    "Add to favorites?\n\n\"{name}\"",
+    },
+    "dlg_confirm_clear_n_body": {
+        "zh-CN": "清空全部 {n} 条记录？\n（不删除磁盘图片文件）",
+        "en":    "Clear all {n} records?\n(Disk image files are kept)",
+    },
     "dlg_queue_empty_prompt": {
         "zh-CN": "请先在主输入框填写提示词",
         "en":    "Enter a prompt in the main input box first",

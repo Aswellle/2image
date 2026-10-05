@@ -39,6 +39,7 @@ class ProviderHealth:
     OPEN_THRESHOLD: int = field(default=5, init=False)
     COOLDOWN_SECONDS: float = field(default=30.0, init=False)
     HALF_OPEN_MAX: int = field(default=1, init=False)
+    _half_open_probes: int = field(default=0, init=False)
 
     def record_success(self, latency_ms: float = 0.0) -> None:
         with self._lock:
@@ -53,6 +54,7 @@ class ProviderHealth:
             if self._state == HealthState.HALF_OPEN:
                 self._state = HealthState.HEALTHY
                 self.cooldown_until = None
+                self._half_open_probes = 0
 
     def record_failure(self, error_code: str | None = None) -> None:
         with self._lock:
@@ -61,6 +63,11 @@ class ProviderHealth:
             self.last_error_code = error_code
             self.last_failure_at = time.monotonic()
 
+            if self._state == HealthState.HALF_OPEN:
+                # 探测失败：重新熔断并重置冷却，探针名额一并归还
+                self._state = HealthState.OPEN
+                self.cooldown_until = time.monotonic() + self.COOLDOWN_SECONDS
+                self._half_open_probes = 0
             if self.consecutive_failures >= self.OPEN_THRESHOLD:
                 self._state = HealthState.OPEN
                 self.cooldown_until = time.monotonic() + self.COOLDOWN_SECONDS
@@ -78,8 +85,15 @@ class ProviderHealth:
 
     @property
     def is_available(self) -> bool:
-        """Can this provider be tried?"""
-        return self.state in (HealthState.HEALTHY, HealthState.DEGRADED, HealthState.HALF_OPEN)
+        """Can this provider be tried? HALF_OPEN 只放行单个探针。"""
+        state = self.state
+        if state == HealthState.HALF_OPEN:
+            with self._lock:
+                if self._half_open_probes >= self.HALF_OPEN_MAX:
+                    return False  # 已有并发探针，其余调用者继续等待
+                self._half_open_probes += 1
+                return True
+        return state in (HealthState.HEALTHY, HealthState.DEGRADED)
 
     @property
     def success_rate(self) -> float:

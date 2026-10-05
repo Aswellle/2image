@@ -74,26 +74,27 @@ def translate_zh_to_en(text: str, log_cb: Optional[Callable[[str], None]] = None
         text = text[:MAX_PROMPT_CHARS]
         if log_cb:
             log_cb(f"提示词过长，已截断至 {MAX_PROMPT_CHARS} 字符")
+    # 锁内只做限速等待与时间槽预占：15s 超时的 HTTP 请求若持锁，
+    # 最慢请求会串行阻塞所有后续翻译调用
     with _TRANS_LOCK:
         gap = time.time() - _LAST_DONE[0]
         if gap < _MIN_INTERVAL:
             _interruptible_wait(_MIN_INTERVAL - gap, token)
-        try:
-            resp = requests.get(
-                "https://api.mymemory.translated.net/get",
-                params={"q": text, "langpair": "zh|en"}, timeout=15)
-            translated = resp.json().get("responseData", {}).get("translatedText", "")
-            if translated and "PLEASE SELECT" not in translated.upper() and len(translated) > 2:
-                _log_privacy(log_cb, "翻译完成", translated)
-                cache.put(text, translated)
-                return translated
-        except GenerationCancelled:
-            raise
-        except Exception as e:
-            if log_cb:
-                log_cb(f"翻译失败（使用原文）: {type(e).__name__}")
-        finally:
-            _LAST_DONE[0] = time.time()
+        _LAST_DONE[0] = time.time()
+    try:
+        resp = requests.get(
+            "https://api.mymemory.translated.net/get",
+            params={"q": text, "langpair": "zh|en"}, timeout=15)
+        translated = resp.json().get("responseData", {}).get("translatedText", "")
+        if translated and "PLEASE SELECT" not in translated.upper() and len(translated) > 2:
+            _log_privacy(log_cb, "翻译完成", translated)
+            cache.put(text, translated)
+            return translated
+    except GenerationCancelled:
+        raise
+    except Exception as e:
+        if log_cb:
+            log_cb(f"翻译失败（使用原文）: {type(e).__name__}")
     return text
 
 

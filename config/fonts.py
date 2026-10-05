@@ -90,8 +90,18 @@ def _download(url: str, dest: str, entry: dict) -> bool:
     """从 URL 下载字体到 dest（校验通过才落盘），失败返回 False。"""
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        # 流式读取并限长：恶意/被投毒的响应在 SHA 校验前先撑爆内存
+        limit = 10 * 1024 * 1024
+        buf = bytearray()
         with urllib.request.urlopen(req, timeout=12) as r:
-            data = r.read()
+            while True:
+                chunk = r.read(64 * 1024)
+                if not chunk:
+                    break
+                buf.extend(chunk)
+                if len(buf) > limit:
+                    return False
+        data = bytes(buf)
         if not _verify(data, entry):
             return False
         with open(dest, "wb") as _fh:

@@ -424,25 +424,35 @@ pytest tests/ -v --cov=services --cov=config --cov=data --cov-report=term-missin
 
 ## Provider Quick Reference
 
+Registry auto-discovers 23 active providers（`services/providers/__init__.py`）。
+可用性判断由 `PROVIDER_KEYS` / `OPTIONAL_KEY_PROVIDERS` / `MULTI_KEY_PROVIDERS` 驱动；
+manifest 一致性由 `tests/test_registry_consistency.py` 护栏锁定。
+
 |Tier|Provider|Key in cfg|File|
 |---|---|---|---|
 |Free|SiliconFlow (★推荐)|`sf_key`|`siliconflow.py`|
-|Free|Google Gemini|`gemini_key`|`gemini.py`|
-|Free|Pollinations.AI|`pollinations_enabled`|`pollinations.py`|
-|Free|Cloudflare AI|`cf_account_id` + `cf_api_token`|`cloudflare_ai.py`|
+|Free|Google Gemini Nano Banana|`gemini_key`|`gemini.py`|
+|Free|Pollinations.AI|无（`pollinations_enabled` 开关）|`pollinations.py`|
+|Free|Cloudflare AI|`cf_account_id` + `cf_api_token`（双凭证）|`cloudflare_ai.py`|
 |Free|ModelsLab|`modelslab_key`|`modelslab.py`|
 |Free|Segmind|`segmind_key`|`segmind.py`|
 |Free|OpenRouter|`openrouter_key` + `openrouter_model`|`openrouter.py`|
 |Free|HuggingFace|`hf_token`|`huggingface.py`|
-|Free|StableHorde|`stablehorde_key`|`stablehorde.py`|
-|Paid|OpenAI DALL-E 3|`openai_key`|`openai_dalle.py`|
-|Paid|Stability AI|`stability_key`|`stability_ai.py`|
-|Paid|Replicate FLUX|`replicate_key`|`replicate_flux.py`|
+|Free|StableHorde|`stablehorde_key`（可选，匿名可用）|`stablehorde.py`|
+|Free|Together AI|`together_key`|`together_ai.py`|
+|Free|阿里云百炼 通义万相|`dashscope_key`|`dashscope_qwen.py`|
+|Free|Bria AI|`bria_key`|`bria_ai.py`|
+|Paid|OpenAI GPT-Image|`openai_key` + `gpt_image_model`|`openai_image.py`|
+|Paid|Stability AI|`stability_key` + `stability_model`|`stability_ai.py`|
+|Paid|Replicate FLUX|`replicate_key` + `replicate_model`|`replicate_flux.py`|
 |Paid|xAI Grok|`xai_key`|`xai_grok.py`|
-|Commercial|Ideogram v2|`ideogram_key`|`ideogram.py`|
+|Paid|BFL（FLUX 官方）|`bfl_key` + `bfl_model`|`bfl_flux.py`|
+|Paid|Gemini Nano Banana Pro|`gemini_key`（与 gemini 共用）|`gemini_nano_banana_pro.py`|
+|Commercial|Ideogram|`ideogram_key`|`ideogram.py`|
 |Commercial|fal.ai FLUX Ultra|`fal_key`|`fal_flux.py`|
-|Commercial|Recraft v3|`recraft_key` + `recraft_style`|`recraft.py`|
-|Disabled|Together AI|`together_key`|`together_ai.py` (commented out in registry)|
+|Commercial|Recraft|`recraft_key` + `recraft_style` + `recraft_model`|`recraft.py`|
+|Commercial|MiniMax Image|`minimax_key`|`minimax_image.py`|
+|Commercial|火山引擎 豆包 Seedream|`volcengine_key` + `ark_model`|`volcengine_ark.py`|
 
 ---
 

@@ -11,7 +11,7 @@ from pathlib import Path
 import json
 
 DEFAULT_TEMPLATE = os.path.join(os.path.dirname(__file__), '..', 'installer', 'template.iss')
-DEFAULT_ICON = r"D:\Chrome Downloads\1.Vibe Coding文生图一站式程序项目更新仓库\text_to_iamge_app_refactored\ICON_256x256.ico"
+DEFAULT_ICON = os.path.join(os.path.dirname(__file__), "..", "ICON_256x256.ico")
 VERSION_FILE = os.path.join(os.path.dirname(__file__), '..', 'version.json')
 
 

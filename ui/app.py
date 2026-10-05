@@ -496,7 +496,7 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _open_viewer(self):
         if self._cur_bytes is None and self.cur_path is None:
-            messagebox.showinfo("提示", "请先生成或选择一张图片"); return
+            messagebox.showinfo(_("dlg_tip"), _("dlg_need_generate_first")); return
         if self._viewer_win is not None:
             try: self._viewer_win.lift(); self._viewer_win.focus_force(); return
             except tk.TclError: self._viewer_win = None
@@ -787,7 +787,7 @@ class App:
                 f"<table><tr><th>时间</th><th>提示词</th><th>接口</th>"
                 f"<th>收藏</th><th>图片</th></tr>{rows}</table></body></html>")
         open(os.path.join(out, "记录本.html"), "w", encoding="utf-8").write(html_str)
-        messagebox.showinfo("完成", f"已导出 {len(items)} 条\n至：{out}")
+        messagebox.showinfo(_("dlg_export_done"), _("dlg_export_done_body", n=len(items), out=out))
 
     def _save(self):
         if not self.cur_path or not os.path.exists(self.cur_path):

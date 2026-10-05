@@ -863,7 +863,7 @@ class HistorySidebar:
         btn2 = tk.Frame(inline, bg=cbg); btn2.pack(fill="x", pady=(3, 0))
         def _confirm():
             nn = nick_var.get().strip()
-            if not messagebox.askyesno("确认", f'重命名为：「{nn or "(清除)"}」？', parent=self.app.root): return
+            if not messagebox.askyesno(_("dlg_confirm_rename"), _("dlg_confirm_rename_body", name=nn or "(清除)"), parent=self.app.root): return
             rename_entry(entry["id"], nn)
             try: inline.destroy(); self._inline_frame = None
             except Exception: pass
@@ -883,11 +883,11 @@ class HistorySidebar:
         is_fav = bool(entry.get("favorited", 0))
         title  = self.app._display_title(entry)
         if is_fav:
-            if not messagebox.askyesno("取消收藏", f'从喜爱列表移除？\n\n「{title}」', parent=self.app.root): return
+            if not messagebox.askyesno(_("dlg_tip"), _("dlg_unfavorite_body", name=title), parent=self.app.root): return
             toggle_favorite(entry["id"], False)
             new_fav = False
         else:
-            if not messagebox.askyesno("添加收藏", f'收藏到喜爱列表？\n\n「{title}」', parent=self.app.root): return
+            if not messagebox.askyesno(_("dlg_tip"), _("dlg_favorite_body", name=title), parent=self.app.root): return
             toggle_favorite(entry["id"], True)
             new_fav = True
 
