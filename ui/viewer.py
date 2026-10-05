@@ -22,6 +22,22 @@ from config.i18n import _
 from config.settings import IMAGES_DIR
 
 
+# 渲染像素预算：限制单帧缩放结果的内存占用（40M 像素 ≈ RGBA 160MB）。
+# 修复：放大倍率上限按比例（30 倍）计算，1024² 图放大到极限时
+# 需要一次性分配约 3.7GB 的 RGBA 缓冲，直接冻结界面。
+_MAX_RENDER_PIXELS = 40_000_000
+
+
+def _clamped_render_size(ow: int, oh: int, zoom: float) -> tuple[int, int]:
+    """按缩放倍率计算目标尺寸，超出像素预算时等比压缩。"""
+    new_w = max(1, int(ow * zoom))
+    new_h = max(1, int(oh * zoom))
+    if new_w * new_h > _MAX_RENDER_PIXELS:
+        scale = (_MAX_RENDER_PIXELS / (new_w * new_h)) ** 0.5
+        new_w = max(1, int(new_w * scale))
+        new_h = max(1, int(new_h * scale))
+    return new_w, new_h
+
 
 class ImageViewerWindow(tk.Toplevel):
     """弹出式图片查看器（单图渲染架构、自由拖拽、缩放、裁剪）。"""
@@ -208,8 +224,7 @@ class ImageViewerWindow(tk.Toplevel):
                 continue
             try:
                 ow, oh = img.size
-                new_w = max(1, int(ow * round_zoom))
-                new_h = max(1, int(oh * round_zoom))
+                new_w, new_h = _clamped_render_size(ow, oh, round_zoom)
                 filt = Image.NEAREST if round_zoom >= 3.0 else Image.LANCZOS
                 resized = img.resize((new_w, new_h), filt)
                 # 注意：ImageTk.PhotoImage 必须在主线程创建，这里只发 PIL Image

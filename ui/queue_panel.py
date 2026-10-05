@@ -325,7 +325,13 @@ class QueuePanel(tk.Frame):
             return
         sz    = self.app.szv.get()
         psel  = self.app.pv.get()
-        pord  = None if psel in ("自动（按优先级）", "") else [psel]
+        if psel.startswith("───"):
+            messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。",
+                                parent=self.app.root)
+            return
+        # 自动档判断走 i18n 键（与 sidebar 一致），硬编码中文文案在
+        # 英文界面下匹配不到会导致伪造的供应商顺序被传入
+        pord  = None if (not psel or psel == _("provider_auto")) else [psel]
         self.add_task(prompt, sz, pord)
 
     def set_img2img_lock(self, locked: bool):
@@ -427,9 +433,11 @@ class QueuePanel(tk.Frame):
             if self._stop_flag:
                 break
 
-            # 从 live 列表取下一个 waiting 条目（自动含运行中途新加入的任务）
+            # 从 live 列表取下一个 waiting 条目（自动含运行中途新加入的任务）。
+            # 对列表做快照迭代：主线程 _remove/_clear_done 可能并发修改 self._widgets
+            snapshot = list(self._widgets)
             next_widget = None
-            for w in self._widgets:
+            for w in snapshot:
                 if w._item.status == "waiting":
                     next_widget = w
                     break
@@ -443,7 +451,7 @@ class QueuePanel(tk.Frame):
             self._job_token = CancellationToken()
 
             # 实时计算剩余任务数（修复 #7）
-            remaining_now = sum(1 for w in self._widgets
+            remaining_now = sum(1 for w in snapshot
                                 if w._item.status in ("waiting", "running"))
             self.app.root.after(
                 0, lambda w=next_widget:

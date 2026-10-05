@@ -95,6 +95,7 @@ class App:
         self._viewer_win = None
         self._prompt_wizard = None
         self._phrase_panel = None
+        self._stats_win = None
         self._cur_bytes = None
         self.toasts = ToastManager(root)
 
@@ -400,7 +401,7 @@ class App:
     #   状态栏 / 重置视图
     # ══════════════════════════════════════════════════════════
     def _st(self, msg: str, k: str = "ok"):
-        m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"]}
+        m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"], "err": C["hl"]}
         self.content.stv.set(msg); self.content.stl.config(fg=m.get(k, C["ok"]))
 
     # ── §58 键盘工作流 ────────────────────────────────────────
@@ -615,7 +616,12 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _show_stats(self):
         from ui.stats_dashboard import StatsDashboard
-        StatsDashboard(self.root, self)
+        # 懒单例：与其他覆盖窗口一致，避免重复堆叠
+        if self._stats_win is None or not self._stats_win.winfo_exists():
+            self._stats_win = StatsDashboard(self.root, self)
+        else:
+            self._stats_win.lift()
+            self._stats_win.focus_force()
     # ══════════════════════════════════════════════════════════
     #   接口状态栏
     # ══════════════════════════════════════════════════════════
