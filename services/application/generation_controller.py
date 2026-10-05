@@ -125,13 +125,26 @@ class GenerationController:
         config key，新供应商自动纳入检查，无需在此维护硬编码名单。
         """
         from services.providers import (
-            ALL_PROVIDERS, FREE_PROVIDERS, OPTIONAL_KEY_PROVIDERS,
-            PROVIDER_KEYS, resolve_provider_id,
+            ALL_PROVIDERS, FREE_PROVIDERS, MULTI_KEY_PROVIDERS,
+            OPTIONAL_KEY_PROVIDERS, PROVIDER_KEYS, resolve_provider_id,
         )
 
         pid = resolve_provider_id(psel)
         if pid is None or pid not in ALL_PROVIDERS:
             return True  # 自动模式 / 未知接口 — 交给运行时处理
+
+        # 多键接口（如 Cloudflare 双凭证）：要求全部凭证就绪
+        required_keys = MULTI_KEY_PROVIDERS.get(pid)
+        if required_keys:
+            if all(str(self.app.cfg.get(k, "") or "").strip() for k in required_keys):
+                return True
+            is_paid = pid not in FREE_PROVIDERS
+            wizard_fn = self.app._open_paid_wizard if is_paid else self.app._open_wizard
+            if messagebox.askyesno(
+                    "需要配置",
+                    f"使用 {psel} 需要填写全部凭证（{'、'.join(required_keys)}）。\n是否现在配置？"):
+                wizard_fn()
+            return False
 
         key_name = PROVIDER_KEYS.get(pid)
         if not key_name or pid in OPTIONAL_KEY_PROVIDERS:

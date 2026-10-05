@@ -30,6 +30,7 @@ from services.generation.provider_manifest import (
 from services.providers import (
     DEFAULT_ORDER,
     FREE_PROVIDERS,
+    MULTI_KEY_PROVIDERS,
     OPTIONAL_KEY_PROVIDERS,
     PROVIDER_KEYS,
 )
@@ -236,8 +237,13 @@ class Router:
         if require_img2img and not manifest.supports_img2img:
             return False
 
-        # Key check
-        if manifest.config_key and not self.cfg.get(manifest.config_key):
+        # Key check — 多键接口要求全部凭证就绪（如 Cloudflare 双凭证）
+        required_keys = MULTI_KEY_PROVIDERS.get(manifest.id)
+        if required_keys:
+            if not all(str(self.cfg.get(k, "") or "").strip()
+                       for k in required_keys):
+                return False
+        elif manifest.config_key and not self.cfg.get(manifest.config_key):
             return False
 
         # Commercial providers need explicit opt-in

@@ -27,6 +27,7 @@ PROVIDER_INFO = {
     "name": "Cloudflare AI (免费1万次/天)",
     "category": "free",
     "config_key": "cf_account_id",
+    "extra_config_keys": ("cf_api_token",),  # 双凭证：Account ID + API Token
 }
 
 

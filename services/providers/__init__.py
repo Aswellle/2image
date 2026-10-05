@@ -23,6 +23,8 @@ PROVIDER_KEYS: dict[str, str | None] = {}
 
 # stable_id where an empty key is acceptable (e.g. StableHorde anonymous)
 OPTIONAL_KEY_PROVIDERS: set[str] = set()
+# 需要多个凭证全部就绪才可用的接口（如 Cloudflare 的 Account ID + API Token）
+MULTI_KEY_PROVIDERS: dict[str, tuple[str, ...]] = {}
 
 # stable_id → try_fn (img2img providers only)
 IMG2IMG_PROVIDERS: dict[str, callable] = {}
@@ -64,9 +66,13 @@ for loader, module_name, is_pkg in pkgutil.iter_modules(__path__):
         _for_loop_registry[category][stable_id] = try_fn
 
     # Mappings
-    PROVIDER_KEYS[stable_id] = info.get("config_key")
+    _config_key = info.get("config_key")
+    PROVIDER_KEYS[stable_id] = _config_key
     if info.get("key_optional"):
         OPTIONAL_KEY_PROVIDERS.add(stable_id)
+    _extra_keys = info.get("extra_config_keys")
+    if _extra_keys and _config_key:
+        MULTI_KEY_PROVIDERS[stable_id] = (_config_key, *_extra_keys)
     _NAME_TO_ID[display_name] = stable_id
 
     if info.get("supports_img2img"):

@@ -29,7 +29,10 @@ from data.repository import (add_entry, clear_all_entries, count_entries,
 from services.image_service import generate_image, save_image_file
 from services.logger import log_to_file
 from services.translation import has_chinese, translate_zh_to_en
-from services.providers import FREE_PROVIDERS, PAID_PROVIDERS, PROVIDER_KEYS
+from services.providers import (
+    FREE_PROVIDERS, MULTI_KEY_PROVIDERS, OPTIONAL_KEY_PROVIDERS,
+    PAID_PROVIDERS, PROVIDER_KEYS,
+)
 
 
 from services.application import GenerationController, MenuController, SettingsController
@@ -635,15 +638,17 @@ class App:
         cfg = self.cfg
 
         def _is_available(name: str) -> bool:
-            if name == "Pollinations.AI (免费·无需Key)":
+            """注册表驱动的可用性判断（显示名特判已随 v8 稳定 ID 化消亡）。"""
+            required_keys = MULTI_KEY_PROVIDERS.get(name)
+            if required_keys:
+                # 多键接口（Cloudflare 双凭证）要求全部凭证就绪
+                return all(str(cfg.get(k, "") or "").strip() for k in required_keys)
+            if name == "pollinations":
                 return bool(cfg.get("pollinations_enabled", True))
-            if name == "StableHorde (兜底)":
-                return True  # 空 Key 走匿名低优先级模式，仍可正常生成
-            if name == "Cloudflare AI (免费1万次/天)":
-                return bool(cfg.get("cf_account_id", "").strip()
-                            and cfg.get("cf_api_token", "").strip())
             key_name = PROVIDER_KEYS.get(name)
-            return key_name is None or bool(cfg.get(key_name, "").strip())
+            if key_name is None or name in OPTIONAL_KEY_PROVIDERS:
+                return True  # 无需 Key（如 StableHorde 匿名模式）
+            return bool(str(cfg.get(key_name, "") or "").strip())
 
         free_count = sum(_is_available(name) for name in FREE_PROVIDERS)
         paid_count = sum(_is_available(name) for name in PAID_PROVIDERS)

@@ -138,10 +138,30 @@ def generate_image(prompt, w, h, seed, cfg,
         fn = ALL_PROVIDERS.get(name)
         if fn is not None:
             providers[name] = _wrap_provider_fn(fn)
-    # Add any remaining providers not in explicit order as final fallback
+    # Add any remaining providers not in explicit order as final fallback.
+    # 过滤未配置 Key / 未开启付费 opt-in / 超预算的接口——防止显式选择
+    # 免费接口失败后，自动回退链产生未授权的付费调用。
+    from services.providers import (
+        FREE_PROVIDERS, MULTI_KEY_PROVIDERS, OPTIONAL_KEY_PROVIDERS, PROVIDER_KEYS,
+    )
+    from services.generation import budget as _budget
+    paid_allowed = bool(cfg.get("paid_auto_opt_in"))
+    over_budget = _budget.over_budget(cfg)
     for name, fn in ALL_PROVIDERS.items():
-        if name not in providers and fn is not None:
-            providers[name] = _wrap_provider_fn(fn)
+        if name in providers or fn is None:
+            continue
+        if name not in FREE_PROVIDERS and (not paid_allowed or over_budget):
+            continue
+        required_keys = MULTI_KEY_PROVIDERS.get(name)
+        if required_keys:
+            if not all(str(cfg.get(k, "") or "").strip() for k in required_keys):
+                continue
+        else:
+            key_name = PROVIDER_KEYS.get(name)
+            if (key_name and name not in OPTIONAL_KEY_PROVIDERS
+                    and not str(cfg.get(key_name, "") or "").strip()):
+                continue
+        providers[name] = _wrap_provider_fn(fn)
 
     orch = GenerationOrchestrator(
         providers=providers,

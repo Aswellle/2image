@@ -58,7 +58,7 @@ FREE_MANIFESTS: dict[str, ProviderManifest] = {
         id="cloudflare_ai",
         name="Cloudflare AI (免费1万次/天)",
         category="free",
-        config_key="cf_api_token",
+        config_key="cf_account_id",
         description="Cloudflare AI Worker",
     ),
     "modelslab": ProviderManifest(
@@ -124,7 +124,7 @@ FREE_MANIFESTS: dict[str, ProviderManifest] = {
 PAID_MANIFESTS: dict[str, ProviderManifest] = {
     "openai_image": ProviderManifest(
         id="openai_image",
-        name="💎 OpenAI GPT-Image",
+        name="OpenAI GPT-Image (付费)",
         category="paid",
         config_key="openai_key",
         description="OpenAI DALL-E / GPT-Image",
@@ -171,20 +171,20 @@ PAID_MANIFESTS: dict[str, ProviderManifest] = {
         supports_img2img=True,
         capabilities={"text2image", "img2img"},
     ),
-    "minimax_image": ProviderManifest(
-        id="minimax_image",
-        name="💎 MiniMax image-01",
-        category="paid",
-        config_key="minimax_key",
-        description="MiniMax image-01",
-        supports_img2img=True,
-        capabilities={"text2image", "img2img"},
-    ),
 }
 
 # ─── Commercial Providers ────────────────────────────────────────
 
 COMMERCIAL_MANIFESTS: dict[str, ProviderManifest] = {
+    "minimax_image": ProviderManifest(
+        id="minimax_image",
+        name="MiniMax Image 01 (免费试用)",
+        category="commercial",
+        config_key="minimax_key",
+        description="MiniMax image-01",
+        supports_img2img=True,
+        capabilities={"text2image", "img2img"},
+    ),
     "ideogram": ProviderManifest(
         id="ideogram",
         name="Ideogram v4 (文字入图)",
