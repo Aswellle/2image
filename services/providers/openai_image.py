@@ -156,12 +156,13 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
     if resp.status_code == 429:
         raise ValueError("OpenAI 速率限制")
     if resp.status_code == 400:
-        raise ValueError(f"GPT-Image 请求错误: {resp.json().get('error',{}).get('message','')}")
+        raise ValueError(f"GPT-Image 请求错误: {_safe_error_text(resp)}")
     if resp.status_code != 200:
         raise ValueError(f"OpenAI 返回 {resp.status_code}: {_safe_error_text(resp)}")
 
     j = resp.json()
-    b64 = j["data"][0].get("b64_json", "")
+    data_items = j.get("data") or []
+    b64 = (data_items[0].get("b64_json", "") if data_items else "")
     if not b64:
         raise ValueError("GPT-Image 返回数据中无图片")
     display_name = GPT_IMAGE_NAMES.get(model, model)

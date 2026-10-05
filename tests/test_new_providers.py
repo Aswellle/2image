@@ -111,7 +111,8 @@ class TestVolcengineArkProvider:
             try_volcengine_ark("test", 64, 64, 42, {"volcengine_key": "  "}, print)
 
     @patch("services.providers.volcengine_ark._get_session")
-    def test_text2image_success(self, mock_session):
+    @patch("services.providers.volcengine_ark._safe_get_image")
+    def test_text2image_success(self, mock_safe_get, mock_session):
         from services.providers.volcengine_ark import try_volcengine_ark
 
         mock_resp = MagicMock()
@@ -121,11 +122,8 @@ class TestVolcengineArkProvider:
         }
         mock_session.return_value.post.return_value = mock_resp
 
-        mock_img_resp = MagicMock()
-        mock_img_resp.status_code = 200
-        mock_img_resp.content = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
-        mock_img_resp.raise_for_status = MagicMock()
-        mock_session.return_value.get.return_value = mock_img_resp
+        # 图片下载走 safe_get_image 安全通道（SSRF 校验），直接 mock 其返回
+        mock_safe_get.return_value = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
         cfg = {"volcengine_key": "test-key", "ark_model": "doubao-seedream-4-0-t2i"}
         data, name = try_volcengine_ark("a cat", 64, 64, 42, cfg, print)

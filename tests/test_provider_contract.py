@@ -60,11 +60,13 @@ class TestVolcengineArk:
         import services.providers.volcengine_ark as mod
         sess = _fake_session(
             post=_resp(200, {"data": [{"url": "https://cdn.example.com/x.png"}]}),
-            get=_resp(200, content=PNG_BYTES),
         )
-        with patch(f"{self.MOD}._get_session", return_value=sess):
+        # 图片下载已接入 safe_get_image 安全通道（SSRF 校验），mock 其返回
+        with patch(f"{self.MOD}._get_session", return_value=sess), \
+             patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES) as safe_dl:
             data, _ = mod.try_volcengine_ark("cat", 1024, 1024, 1, self.CFG, lambda s: None)
         assert data == PNG_BYTES
+        safe_dl.assert_called_once_with("https://cdn.example.com/x.png")
 
     def test_401_retries_then_runtime_error(self):
         import services.providers.volcengine_ark as mod
