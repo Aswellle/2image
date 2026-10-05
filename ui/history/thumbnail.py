@@ -207,6 +207,3 @@ class ThumbnailLoader:
                 self._outq.put(lambda fn=job.on_ready, im=img: fn(im))
             except Exception:
                 continue  # 单张失败不影响其他缩略图
-
-    def shutdown(self) -> None:
-        self._stopped = True

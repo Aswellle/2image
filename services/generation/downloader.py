@@ -17,6 +17,8 @@ import requests
 
 from services.generation.cancellation import CancellationToken, Deadline
 from services.generation.errors import (
+    DeadlineExceeded,
+    GenerationCancelled,
     ProviderInvalidResponseError,
     ProviderPayloadTooLargeError,
     ProviderTransientError,
@@ -67,33 +69,36 @@ def bounded_download(
 
     try:
         resp = _follow_redirects(sess, url, token, deadline)
-        resp.raise_for_status()
     except requests.Timeout as exc:
         raise ProviderTransientError(f"Download timeout: {exc}") from exc
     except requests.ConnectionError as exc:
         raise ProviderTransientError(f"Connection failed: {exc}") from exc
-    except (ProviderInvalidResponseError, ProviderPayloadTooLargeError):
+    except (GenerationCancelled, DeadlineExceeded,
+            ProviderInvalidResponseError, ProviderPayloadTooLargeError):
         raise
     except Exception as exc:
         raise ProviderTransientError(f"Download failed: {exc}") from exc
 
-    # Validate content-type
-    content_type = resp.headers.get("Content-Type", "").split(";", 1)[0].lower().strip()
-    if content_type and content_type not in allowed_types:
-        raise ProviderInvalidResponseError(
-            f"Unsupported content type: {content_type}"
-        )
-
-    # Check Content-Length header first
-    length = resp.headers.get("Content-Length")
-    if length and int(length) > max_bytes:
-        raise ProviderPayloadTooLargeError(
-            f"Content-Length {length} exceeds max {max_bytes}"
-        )
-
-    # Stream with size cap
-    data = bytearray()
+    # 响应体（含流式读取）处理完后必须关闭，错误路径也不例外
     try:
+        resp.raise_for_status()
+
+        # Validate content-type
+        content_type = resp.headers.get("Content-Type", "").split(";", 1)[0].lower().strip()
+        if content_type and content_type not in allowed_types:
+            raise ProviderInvalidResponseError(
+                f"Unsupported content type: {content_type}"
+            )
+
+        # Check Content-Length header first
+        length = resp.headers.get("Content-Length")
+        if length and int(length) > max_bytes:
+            raise ProviderPayloadTooLargeError(
+                f"Content-Length {length} exceeds max {max_bytes}"
+            )
+
+        # Stream with size cap
+        data = bytearray()
         for chunk in resp.iter_content(CHUNK_SIZE):
             if token:
                 token.throw_if_cancelled()
@@ -107,6 +112,11 @@ def bounded_download(
                     )
     except requests.Timeout as exc:
         raise ProviderTransientError(f"Read timeout: {exc}") from exc
+    except (GenerationCancelled, DeadlineExceeded,
+            ProviderInvalidResponseError, ProviderPayloadTooLargeError):
+        raise
+    finally:
+        resp.close()
 
     if not data:
         raise ProviderInvalidResponseError("Empty image response")
@@ -148,6 +158,7 @@ def _follow_redirects(
 
         location = resp.headers.get("Location")
         if not location:
+            resp.close()
             raise ProviderInvalidResponseError("Redirect with no Location header")
 
         from urllib.parse import urlparse
@@ -160,6 +171,9 @@ def _follow_redirects(
             current_url = urljoin(current_url, location)
         else:
             current_url = location
+
+        # 中间跳响应必须关闭，重定向链长时才不泄漏连接
+        resp.close()
 
     raise ProviderInvalidResponseError(
         f"Too many redirects (>{MAX_REDIRECT_HOPS})"
