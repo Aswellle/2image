@@ -212,11 +212,6 @@ STRINGS = {
         "zh-TW": "⭐ 收藏",
         "en":    "⭐ Favorites",
     },
-    "menu_file": {
-        "zh-CN": "文件",
-        "zh-TW": "檔案",
-        "en":    "File",
-    },
     "menu_open_viewer": {
         "zh-CN": "🔍  打开独立查看器…",
         "zh-TW": "🔍  開啟獨立檢視器…",

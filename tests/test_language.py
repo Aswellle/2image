@@ -59,12 +59,12 @@ def test_set_language_notifies_restart(app, monkeypatch):
 def test_translation_applies_after_init_language():
     """切换语言 + 重启（init_language）后翻译生效。"""
     init_language({"language": "en"})
-    assert _("menu_file") == "File"
+    assert _("menu_file") == "📁  File"  # 与 menu_tools 等一致带 emoji 前缀
     assert _("settings_language") == "Interface Language"
     init_language({"language": "zh-TW"})
-    assert _("menu_file") == "檔案"
+    assert _("menu_file") == "📁  檔案"
     init_language({"language": "zh-CN"})
-    assert _("menu_file") == "文件"
+    assert _("menu_file") == "📁  文件"
 
 
 def test_unknown_language_falls_back_to_default():

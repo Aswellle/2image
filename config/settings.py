@@ -108,6 +108,10 @@ DEFAULT_CONFIG: dict = {
     # ── 新增接口（v8：火山豆包）──────────────────────────────────
     "volcengine_key":        "",   # 火山引擎 Ark API Key（豆包 Seedream 文生图 / SeedEdit 图生图）
     "ark_model":             ARK_IMAGE_DEFAULT,  # 可选值见 config.model_catalog（豆包系列）
+    "bfl_key":               "",   # BFL（FLUX 官方）API Key — wizard_paid 写入
+    "minimax_key":           "",   # MiniMax 图像 API Key
+    "dashscope_key":         "",   # 阿里云百炼（通义万相）API Key
+    "bria_key":              "",   # Bria AI API Key
     # ── 付费模型偏好 ───────────────────────────────────────────
     "gpt_image_model":      GPT_IMAGE_DEFAULT,    # 可选值见 config.model_catalog
     "gpt_image_quality":    "auto",               # low | medium | high | auto
@@ -116,13 +120,6 @@ DEFAULT_CONFIG: dict = {
     "gemini_model":         GEMINI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
     "bfl_model":            BFL_TXT2IMG_DEFAULT,   # 可选值见 config.model_catalog（图生图固定 flux-kontext-pro）
     "deepseek_key":         "",   # DeepSeek 官方 API Key（Pro / Flash 预设）
-    # ── 付费模型偏好 ───────────────────────────────────────────
-    "gpt_image_model":      GPT_IMAGE_DEFAULT,    # 可选值见 config.model_catalog
-    "gpt_image_quality":    "auto",               # low | medium | high | auto
-    "stability_model":      "core",
-    "replicate_model":      "flux-1.1-pro",
-    "gemini_model":         GEMINI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
-    "bfl_model":            BFL_TXT2IMG_DEFAULT,   # 可选值见 config.model_catalog（图生图固定 flux-kontext-pro）
     # ── 通用设置 ───────────────────────────────────────────────
     "default_provider":     "自动（按优先级）",
     "default_size":         "1024x1024",
@@ -161,12 +158,28 @@ def load_config() -> dict:
     # 命名规则: TEXTIMG_<CONFIG_KEY_UPPERCASE>
     # 示例: TEXTIMG_SF_KEY, TEXTIMG_HF_TOKEN, TEXTIMG_OPENAI_KEY
     _prefix = "TEXTIMG_"
-    for key in DEFAULT_CONFIG:
+    for key, default in DEFAULT_CONFIG.items():
         env_val = os.environ.get(_prefix + key.upper(), "")
         if env_val:
-            cfg[key] = env_val
+            cfg[key] = _coerce_env_value(default, env_val)
 
     return cfg
+
+
+def _coerce_env_value(default, env_val: str):
+    """按 DEFAULT_CONFIG 中该键的类型转换环境变量字符串。
+
+    修复：布尔键此前直接接收原始字符串，"0"/"false" 亦为真值，
+    导致 paid_auto_opt_in 等安全默认被环境变量反向打开。
+    """
+    if isinstance(default, bool):
+        return env_val.strip().lower() in ("1", "true", "yes", "on")
+    if isinstance(default, (int, float)):
+        try:
+            return type(default)(env_val)
+        except ValueError:
+            return default  # 非法数值保持默认，避免类型污染
+    return env_val
 
 
 def _migrate_config_v1_to_v2(cfg: dict) -> dict:
