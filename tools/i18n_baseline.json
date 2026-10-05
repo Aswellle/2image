@@ -46,12 +46,17 @@
  },
  {
   "file": "ui/app.py",
-  "line": 623,
+  "line": 628,
   "text": "根据当前自动发现的 Provider 注册表实时统计顶栏可用接口数。\n\n        不再维护易过期的手写 key 列"
  },
  {
   "file": "ui/app.py",
-  "line": 712,
+  "line": 687,
+  "text": "单张生成成功回调：恢复按钮、刷新预览/历史/查看器。\n\n        b8dd17b 重构中误删导致生成成功后界面不更"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 735,
   "text": "导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"
  },
  {
@@ -61,27 +66,22 @@
  },
  {
   "file": "ui/app.py",
-  "line": 88,
-  "text": "繁體中文"
- },
- {
-  "file": "ui/app.py",
-  "line": 750,
+  "line": 773,
   "text": "<!DOCTYPE html><html lang='zh'><head><meta charset='UTF-8'><"
  },
  {
   "file": "ui/app.py",
-  "line": 750,
+  "line": 773,
   "text": "条 ·"
  },
  {
   "file": "ui/app.py",
-  "line": 750,
+  "line": 773,
   "text": "</p><table><tr><th>时间</th><th>提示词</th><th>接口</th><th>收藏</th>"
  },
  {
   "file": "ui/app.py",
-  "line": 762,
+  "line": 785,
   "text": "完成"
  },
  {
@@ -101,97 +101,97 @@
  },
  {
   "file": "ui/app.py",
-  "line": 633,
+  "line": 638,
   "text": "Pollinations.AI (免费·无需Key)"
  },
  {
   "file": "ui/app.py",
-  "line": 635,
+  "line": 640,
   "text": "StableHorde (兜底)"
  },
  {
   "file": "ui/app.py",
-  "line": 637,
+  "line": 642,
   "text": "Cloudflare AI (免费1万次/天)"
  },
  {
   "file": "ui/app.py",
-  "line": 713,
+  "line": 736,
   "text": "选择导出位置"
  },
  {
   "file": "ui/app.py",
-  "line": 717,
+  "line": 740,
   "text": "AI生图_"
  },
  {
   "file": "ui/app.py",
-  "line": 735,
+  "line": 758,
   "text": "无图"
  },
  {
   "file": "ui/app.py",
-  "line": 762,
+  "line": 785,
   "text": "已导出"
  },
  {
   "file": "ui/app.py",
-  "line": 762,
+  "line": 785,
   "text": "条\n至："
  },
  {
   "file": "ui/app.py",
-  "line": 766,
+  "line": 789,
   "text": "提示"
  },
  {
   "file": "ui/app.py",
-  "line": 766,
+  "line": 789,
   "text": "暂无图片"
  },
  {
   "file": "ui/app.py",
-  "line": 773,
+  "line": 796,
   "text": "完成"
  },
  {
   "file": "ui/app.py",
-  "line": 778,
+  "line": 801,
   "text": "📋 路径已复制"
  },
  {
   "file": "ui/app.py",
-  "line": 773,
+  "line": 796,
   "text": "已保存："
  },
  {
   "file": "ui/app.py",
-  "line": 693,
+  "line": 716,
   "text": "额度"
  },
  {
   "file": "ui/app.py",
-  "line": 706,
+  "line": 729,
   "text": "额度"
  },
  {
   "file": "ui/app.py",
-  "line": 708,
+  "line": 731,
   "text": "需要配置 API Key"
  },
  {
   "file": "ui/app.py",
-  "line": 761,
+  "line": 784,
   "text": "记录本.html"
  },
  {
   "file": "ui/app.py",
-  "line": 769,
+  "line": 792,
   "text": "所有文件"
  },
  {
   "file": "ui/app.py",
-  "line": 709,
+  "line": 732,
   "text": "点击「🆓 免费配置」配置硅基流动 API Key。"
  },
  {
@@ -1681,17 +1681,17 @@
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 332,
+  "line": 338,
   "text": "图生图模式下锁定「加入队列」入口（见 MainContent._switch_mode）。"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 365,
+  "line": 371,
   "text": "停止队列：立即打断当前任务的等待/轮询（JOB-001），不再等它跑完。"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 407,
+  "line": 413,
   "text": "队列执行循环。\n\n        修复 #2/#7：改为 while 循环从 live 列表中取任务，而非一次性快照：\n"
  },
  {
@@ -1701,7 +1701,7 @@
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 372,
+  "line": 378,
   "text": "⏹ 停止中 — 正在打断当前任务…"
  },
  {
@@ -1746,38 +1746,43 @@
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 345,
+  "line": 329,
   "text": "提示"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 345,
-  "text": "队列中没有等待中的任务\n请先点「➕ 加入队列」添加提示词"
+  "line": 329,
+  "text": "请选择一个具体接口，而非分隔线。"
  },
  {
   "file": "ui/queue_panel.py",
   "line": 351,
+  "text": "提示"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 351,
+  "text": "队列中没有等待中的任务\n请先点「➕ 加入队列」添加提示词"
+ },
+ {
+  "file": "ui/queue_panel.py",
+  "line": 357,
   "text": "▶ 运行中…"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 361,
+  "line": 367,
   "text": "⏸ 已暂停 — 当前任务完成后停止"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 362,
+  "line": 368,
   "text": "▶ 已继续运行…"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 551,
+  "line": 559,
   "text": "共"
- },
- {
-  "file": "ui/queue_panel.py",
-  "line": 328,
-  "text": "自动（按优先级）"
  },
  {
   "file": "ui/queue_panel.py",
@@ -1786,32 +1791,32 @@
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 529,
+  "line": 537,
   "text": "⏹ 已停止  ·  本轮完成"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 529,
+  "line": 537,
   "text": "张  ·  还有"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 529,
+  "line": 537,
   "text": "个等待中（可再次点「▶ 开始」）"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 532,
+  "line": 540,
   "text": "🎉 全部完成！  共生成"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 532,
+  "line": 540,
   "text": "张图片"
  },
  {
   "file": "ui/queue_panel.py",
-  "line": 490,
+  "line": 498,
   "text": "✅ 队列完成一张"
  },
  {
@@ -2291,217 +2296,222 @@
  },
  {
   "file": "ui/viewer.py",
-  "line": 27,
+  "line": 32,
+  "text": "按缩放倍率计算目标尺寸，超出像素预算时等比压缩。"
+ },
+ {
+  "file": "ui/viewer.py",
+  "line": 43,
   "text": "弹出式图片查看器（单图渲染架构、自由拖拽、缩放、裁剪）。"
  },
  {
   "file": "ui/viewer.py",
-  "line": 197,
+  "line": 213,
   "text": "后台线程：只负责 PIL 图像缩放，PIL Image 发回主线程创建 PhotoImage。"
  },
  {
   "file": "ui/viewer.py",
-  "line": 335,
+  "line": 350,
   "text": "更新元信息文本（只保留 Provider 和 Seed）。"
  },
  {
   "file": "ui/viewer.py",
-  "line": 353,
+  "line": 368,
   "text": "切换元信息显示/隐藏。"
  },
  {
   "file": "ui/viewer.py",
-  "line": 108,
+  "line": 124,
   "text": "📁 另存为"
  },
  {
   "file": "ui/viewer.py",
-  "line": 109,
+  "line": 125,
   "text": "📋 复制路径"
  },
  {
   "file": "ui/viewer.py",
-  "line": 143,
+  "line": 159,
   "text": "大小: --"
  },
  {
   "file": "ui/viewer.py",
-  "line": 145,
+  "line": 161,
   "text": "缩放: --"
  },
  {
   "file": "ui/viewer.py",
-  "line": 147,
+  "line": 163,
   "text": "文件: --"
  },
  {
   "file": "ui/viewer.py",
-  "line": 525,
+  "line": 540,
   "text": "裁剪预览"
  },
  {
   "file": "ui/viewer.py",
-  "line": 486,
+  "line": 501,
   "text": "提示"
  },
  {
   "file": "ui/viewer.py",
-  "line": 486,
+  "line": 501,
   "text": "请先加载图片"
  },
  {
   "file": "ui/viewer.py",
-  "line": 519,
+  "line": 534,
   "text": "裁剪"
  },
  {
   "file": "ui/viewer.py",
-  "line": 519,
+  "line": 534,
   "text": "选区太小，请重新选择"
  },
  {
   "file": "ui/viewer.py",
-  "line": 599,
+  "line": 614,
   "text": "裁剪另存为"
  },
  {
   "file": "ui/viewer.py",
-  "line": 604,
+  "line": 619,
   "text": "保存成功"
  },
  {
   "file": "ui/viewer.py",
-  "line": 609,
+  "line": 624,
   "text": "提示"
  },
  {
   "file": "ui/viewer.py",
-  "line": 609,
+  "line": 624,
   "text": "暂无图片"
  },
  {
   "file": "ui/viewer.py",
-  "line": 619,
+  "line": 634,
   "text": "提示"
  },
  {
   "file": "ui/viewer.py",
-  "line": 619,
+  "line": 634,
   "text": "暂无图片"
  },
  {
   "file": "ui/viewer.py",
-  "line": 628,
+  "line": 643,
   "text": "完成"
  },
  {
   "file": "ui/viewer.py",
-  "line": 262,
+  "line": 277,
   "text": "缩放:"
  },
  {
   "file": "ui/viewer.py",
-  "line": 347,
+  "line": 362,
   "text": "无元数据"
  },
  {
   "file": "ui/viewer.py",
-  "line": 489,
+  "line": 504,
   "text": "✂ 取消裁剪"
  },
  {
   "file": "ui/viewer.py",
-  "line": 491,
+  "line": 506,
   "text": "裁剪模式：拖拽鼠标选区，Esc 取消"
  },
  {
   "file": "ui/viewer.py",
-  "line": 604,
+  "line": 619,
   "text": "已保存至："
  },
  {
   "file": "ui/viewer.py",
-  "line": 628,
+  "line": 643,
   "text": "已保存："
  },
  {
   "file": "ui/viewer.py",
-  "line": 633,
+  "line": 648,
   "text": "📋 路径已复制"
  },
  {
   "file": "ui/viewer.py",
-  "line": 116,
+  "line": 132,
   "text": "滚轮缩放  拖拽平移  +/- 键  Esc 退出裁剪"
  },
  {
   "file": "ui/viewer.py",
-  "line": 330,
+  "line": 345,
   "text": "大小:"
  },
  {
   "file": "ui/viewer.py",
-  "line": 332,
+  "line": 347,
   "text": "文件:"
  },
  {
   "file": "ui/viewer.py",
-  "line": 537,
+  "line": 552,
   "text": "✂ 裁剪完成，原图已覆盖保存"
  },
  {
   "file": "ui/viewer.py",
-  "line": 539,
+  "line": 554,
   "text": "✂ 裁剪完成（原图未修改）"
  },
  {
   "file": "ui/viewer.py",
-  "line": 546,
+  "line": 561,
   "text": "✅ 应用裁剪"
  },
  {
   "file": "ui/viewer.py",
-  "line": 557,
+  "line": 572,
   "text": "📁 另存为新文件…"
  },
  {
   "file": "ui/viewer.py",
-  "line": 563,
+  "line": 578,
   "text": "同时覆盖保存原图文件（此操作不可撤销）"
  },
  {
   "file": "ui/viewer.py",
-  "line": 569,
+  "line": 584,
   "text": "仅在查看器中显示裁剪结果（不修改原图文件）"
  },
  {
   "file": "ui/viewer.py",
-  "line": 598,
+  "line": 613,
   "text": "所有文件"
  },
  {
   "file": "ui/viewer.py",
-  "line": 603,
+  "line": 618,
   "text": "另存:"
  },
  {
   "file": "ui/viewer.py",
-  "line": 612,
+  "line": 627,
   "text": "💾 已保存:"
  },
  {
   "file": "ui/viewer.py",
-  "line": 622,
+  "line": 637,
   "text": "所有文件"
  },
  {
   "file": "ui/viewer.py",
-  "line": 626,
+  "line": 641,
   "text": "💾 另存:"
  },
  {
   "file": "ui/viewer.py",
-  "line": 576,
+  "line": 591,
   "text": "裁剪后尺寸："
  },
  {
@@ -3511,117 +3521,122 @@
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 116,
+  "line": 103,
+  "text": "生成前置检查：Key 配置 + 付费日预算（单图与变体共用）。"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 122,
   "text": "Check if selected provider has required API key configured.\n"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 139,
+  "line": 145,
   "text": "使用"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 139,
+  "line": 145,
   "text": "需要填写 API Key。\n是否现在配置？"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 140,
+  "line": 146,
   "text": "需要配置"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 43,
+  "line": 42,
   "text": "提示"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 43,
+  "line": 42,
   "text": "请先输入描述文字！"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 48,
+  "line": 47,
   "text": "提示"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 48,
+  "line": 47,
   "text": "请选择一个具体接口，而非分隔线。"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 62,
+  "line": 114,
   "text": "付费预算已用尽"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 215,
+  "line": 223,
   "text": "提示"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 215,
+  "line": 223,
   "text": "批量生成暂不支持图生图模式\n请切换到「📝 文生图」后再批量生成"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 220,
+  "line": 228,
   "text": "提示"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 220,
+  "line": 228,
   "text": "请先输入描述文字！"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 225,
+  "line": 233,
   "text": "提示"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 225,
+  "line": 233,
   "text": "请选择一个具体接口，而非分隔线。"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 63,
-  "text": "今日付费估算消耗已达 $"
- },
- {
-  "file": "services/application/generation_controller.py",
-  "line": 63,
-  "text": "（上限 $"
- },
- {
-  "file": "services/application/generation_controller.py",
-  "line": 63,
-  "text": "）。\n如需继续使用"
- },
- {
-  "file": "services/application/generation_controller.py",
-  "line": 63,
-  "text": "，请调高「paid_daily_budget_usd」设置。"
- },
- {
-  "file": "services/application/generation_controller.py",
-  "line": 73,
+  "line": 59,
   "text": "建议配置"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 74,
+  "line": 60,
   "text": "尚未配置任何免费 API Key。\n建议配置「硅基流动」。\n是否现在配置？"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 169,
+  "line": 115,
+  "text": "今日付费估算消耗已达 $"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 115,
+  "text": "（上限 $"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 115,
+  "text": "）。\n如需继续使用"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 115,
+  "text": "，请调高「paid_daily_budget_usd」设置。"
+ },
+ {
+  "file": "services/application/generation_controller.py",
+  "line": 177,
   "text": "图生图模式需要先选取参考图"
  },
  {
   "file": "services/application/generation_controller.py",
-  "line": 195,
+  "line": 203,
   "text": "⏰ 生成超时:"
  },
  {
@@ -3631,52 +3646,52 @@
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 93,
+  "line": 94,
   "text": "★  硅基流动（推荐，免费赠额）"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 95,
+  "line": 96,
   "text": "·  Google Gemini（500次/天）"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 97,
+  "line": 98,
   "text": "·  Cloudflare AI（1万次/天）"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 99,
+  "line": 100,
   "text": "·  OpenRouter（部分模型免费）"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 101,
+  "line": 102,
   "text": "·  ModelsLab（100次/天）"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 103,
+  "line": 104,
   "text": "·  Segmind（注册送 $5）"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 117,
+  "line": 118,
   "text": "·  xAI Grok（注册送 $25）"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 123,
+  "line": 124,
   "text": "📊  统计看板…"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 133,
+  "line": 134,
   "text": "📁  数据文件夹"
  },
  {
   "file": "services/application/menu_controller.py",
-  "line": 135,
+  "line": 136,
   "text": "📄  调试日志"
  },
  {
@@ -3686,37 +3701,37 @@
  },
  {
   "file": "services/application/settings_controller.py",
-  "line": 55,
+  "line": 57,
   "text": "生成 / 重新生成"
  },
  {
   "file": "services/application/settings_controller.py",
-  "line": 56,
+  "line": 58,
   "text": "AI 提示词助手"
  },
  {
   "file": "services/application/settings_controller.py",
-  "line": 57,
+  "line": 59,
   "text": "📚 提示词片段库"
  },
  {
   "file": "services/application/settings_controller.py",
-  "line": 58,
+  "line": 60,
   "text": "另存为"
  },
  {
   "file": "services/application/settings_controller.py",
-  "line": 59,
+  "line": 61,
   "text": "导出历史记录"
  },
  {
   "file": "services/application/settings_controller.py",
-  "line": 60,
+  "line": 62,
   "text": "打开独立查看器"
  },
  {
   "file": "services/application/settings_controller.py",
-  "line": 61,
+  "line": 63,
   "text": "清空调试日志"
  }
 ]
