@@ -122,16 +122,39 @@ def mock_app():
 
 @pytest.fixture(autouse=True)
 def isolate_real_config(tmp_path, monkeypatch):
-    """安全网：任何测试调用 save_config 都落盘到临时目录。
+    """安全网：任何测试的磁盘写入都重定向到临时目录。
 
-    save_config 在调用时读取 config.settings.CONFIG_FILE 模块全局，
-    因此在此处替换该路径即可保护所有导入方（含 settings_controller
-    等 from-import 场景）。事故背景：2026-10-04 测试曾覆写真实
-    ~/2image/config.json 导致用户配置丢失。
+    覆盖在 import 期绑定路径的模块全局（from-import 场景无法通过
+    patch settings 本身生效）：
+      - config.settings.CONFIG_FILE / APP_DIR（save_config 运行时读取）
+      - data.repository.DB_FILE（SQLite 历史库）
+      - services.logger.LOG_FILE（调试日志）
+      - data.file_ownership.IMAGES_DIR（受管图片目录）
+      - services.phrase_library._CUSTOM_FILE（自定义短语词库）
+      - services.generation.budget.SPEND_FILE（付费消耗台账）
+
+    事故背景：2026-10-04 测试曾覆写真实 ~/2image/config.json 导致
+    用户配置丢失；DB/日志/词库路径此前同样未被护栏覆盖。
     """
     import config.settings as _settings
     monkeypatch.setattr(_settings, "CONFIG_FILE", str(tmp_path / "config.json"))
     monkeypatch.setattr(_settings, "APP_DIR", str(tmp_path))
+
+    import data.repository as _repo
+    monkeypatch.setattr(_repo, "DB_FILE", str(tmp_path / "history.db"))
+
+    import services.logger as _logger
+    monkeypatch.setattr(_logger, "LOG_FILE", str(tmp_path / "debug.log"))
+
+    import data.file_ownership as _ownership
+    monkeypatch.setattr(_ownership, "IMAGES_DIR", str(tmp_path / "images"))
+
+    import services.phrase_library as _phrases
+    monkeypatch.setattr(_phrases, "_CUSTOM_FILE",
+                        str(tmp_path / "phrase_library.json"))
+
+    import services.generation.budget as _budget
+    monkeypatch.setattr(_budget, "SPEND_FILE", str(tmp_path / "spend.json"))
 
 
 @pytest.fixture

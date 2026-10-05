@@ -94,21 +94,13 @@ def test_empty_cfg_always_contains_pollinations_fallback():
     assert "pollinations" in order
 
 def test_all_free_cfg_always_nonempty():
-    order = get_provider_order("", {})
-    assert len(order) > 0
-
-def test_unknown_providers_in_route_do_not_crash():
-    from services.smart_router import _filter_available
-    result = _filter_available(["nonexistent_id"], {})
-    assert result == []
-
-def test_all_free_cfg_always_nonempty():
     # Even with totally unknown prompt and blank cfg, must return at least one provider
     order = get_provider_order("", {})
     assert len(order) > 0
 
 def test_unknown_providers_in_route_do_not_crash():
-    # Routing keys are display strings; unknown ones should be filtered without crash
+    # Routing keys come in both stable-id and display-string styles;
+    # unknown inputs should be filtered without crash
     from services.smart_router import _filter_available
-    result = _filter_available(["NonExistentProvider"], {})
-    assert result == []
+    assert _filter_available(["nonexistent_id"], {}) == []
+    assert _filter_available(["NonExistentProvider"], {}) == []

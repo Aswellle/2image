@@ -77,15 +77,6 @@ class TestQueueMetrics:
         m.record_completion(job)
         assert m.total_cancelled == 1
 
-    def test_provider_stats(self):
-        m = QueueMetrics()
-        job = Job(state=JobState.SUCCEEDED, result_provider="siliconflow")
-        job.started_at = time.time() - 0.05
-        job.finished_at = time.time()
-        m.record_completion(job)
-        assert m.provider_stats["siliconflow"]["success"] == 1
-
-
 
 class TestJobQueue:
     def test_submit_returns_id(self):

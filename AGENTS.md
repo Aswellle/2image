@@ -7,11 +7,11 @@ Desktop text-to-image generation tool (文字生图工具) — a Python + Tkinte
 - **Language**: Python 3.11+
 - **GUI**: tkinter + ttk (stdlib, no external GUI framework)
 - **Packaging**: PyInstaller → Inno Setup → Windows `.exe` installer
-- **Version**: 1.2.1
+- **Version**: 2.5.0 (managed via `version.json`)
 - **Platform**: Windows-only (uses `ctypes.windll` for DPI awareness)
 - **Dependencies**: `pillow`, `requests` (plus stdlib: `tkinter`, `sqlite3`, `threading`, `json`, `ctypes`, `pathlib`, `base64`, `io`, `os`, `re`, `time`, `datetime`, `random`, `hashlib`, `collections`, `concurrent.futures`, `functools`, `webbrowser`, `shutil`, `html`, `queue`, `urllib`, `ipaddress`, `subprocess`, `argparse`, `tempfile`)
 - **No package management files exist**: no `requirements.txt`, `pyproject.toml`, `setup.py`, or `setup.cfg`
-- **No CI/CD**: no `.github/`, no pipeline configs, no `.gitignore`
+- **CI/CD**: GitHub Actions (`.github/workflows/ci.yml`) — quality gates + pytest matrix (3.11/3.12) + tag-driven build & release
 
 ---
 
@@ -24,14 +24,14 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
           │
           ├── config/settings.py    ← load/save JSON config
           ├── config/fonts.py       ← font loading, F dict
-          ├── config/theme.py       ← DARK_THEME, LIGHT_THEME, tag_color()
+          ├── config/theme.py       ← DARK_THEME (single dark theme), tag_color()
           ├── config/i18n.py        ← _(key) translation function, 3 locales
           ├── data/repository.py    ← SQLite CRUD (thread-local connections)
           ├── services/
           │   ├── image_service.py  ← dispatch to providers
           │   ├── smart_router.py   ← scene-aware provider selection
           │   ├── providers/*.py    ← individual API clients (auto-discovered)
-          │   ├── providers/retry.py ← @with_retries decorator
+          │   ├── generation/       ← orchestrator, router, budget, cancellation, downloader
           │   ├── prompt_assistant.py ← AI prompt generation (DeepSeek V3)
           │   ├── phrase_library.py ← built-in + custom phrase snippets
           │   ├── translation.py    ← zh→en via MyMemory API
@@ -103,7 +103,7 @@ python auto_build.py
 
 # Or build installer with custom parameters
 python tools/build_inno_installer.py \
-  --app-name "Text2Image" --version 1.2.1 \
+  --app-name "Text2Image" --version 2.5.0 \
   --src-dir . --out-dir dist --iscc-path ISCC
 
 # Run pip check (no requirements.txt — list what you have)
@@ -161,17 +161,13 @@ from services.providers._net import (
 )
 ```
 
-### with_retries Decorator (adoption pending)
+### Retry Policy (orchestrator-level)
 
-`services/providers/retry.py` provides a `@with_retries` decorator. **Note: as of 2026-05, zero providers use it** — each provider implements rate-limiting inline. The decorator signature is:
-
-```python
-from services.providers.retry import with_retries
-
-@with_retries(max_retries=3, base_delay=3.0, rate_limit_wait=30.0, min_interval=2.0)
-def try_myprovider(prompt, w, h, seed, cfg, log):
-    ...
-```
+Provider-level retries are owned by `services/generation/orchestrator.py` +
+`services/generation/retry_policy.py` (attempt loop, backoff, cancellation-aware
+sleep). Providers themselves only implement inline rate limiting via the
+serial-lock pattern below — the former `services/providers/retry.py`
+`@with_retries` decorator was removed (zero adopters).
 
 - `max_retries`: maximum retry attempts (default 3)
 - `base_delay`: initial wait in seconds (default 3.0)
@@ -231,7 +227,7 @@ Each provider and `translation.py` has its own lock — calls to different provi
 ### Config Flow
 
 ```
-load_config() → merges DEFAULT_CONFIG + ~/.text_to_image_app/config.json
+load_config() → merges DEFAULT_CONFIG + ~/2image/config.json
    │
    └── App.__init__: self.cfg = load_config()
           │
@@ -281,7 +277,7 @@ Font keys: `_sans`, `disp`, `title`, `h1`, `h2`, `btn`, `body`, `body_b`, `body_
 
 ### Theme / Color System
 
-`config/theme.py` defines two full palettes (`DARK_THEME`, `LIGHT_THEME`) plus helper utilities. The default palette keys:
+`config/theme.py` defines a single dark palette (`DARK_THEME`) plus helper utilities. The palette keys:
 
 - `bg` — `#0a0f1a` (background)
 - `panel` — `#0d1b2a` (surface)
@@ -294,12 +290,12 @@ Font keys: `_sans`, `disp`, `title`, `h1`, `h2`, `btn`, `body`, `body_b`, `body_
 
 **Dual theme access pattern** (known inconsistency):
 - Most UI files import `DARK_THEME` as a local `C` dict at module level (`from config.theme import DARK_THEME; C = DARK_THEME`)
-- `config/theme.py` also exports a global `C = DARK_THEME.copy()` for runtime theme switching (can be overridden via `apply_theme()`)
+- `config/theme.py` also exports a global `C` (module-level alias of `DARK_THEME`) for semantic-token access; `config/design_tokens.py` derives `TOKENS` from the theme dict
 - `tag_color(tag)` — deterministic hash-based color for tag labels
 
 ### i18n System
 
-`config/i18n.py` provides a `_(key, **kwargs)` function with 114 translation keys across 3 locales (`zh-CN`, `en`, `ja`). Initialize at startup with `init_language(cfg)`. Usage:
+`config/i18n.py` provides a `_(key, **kwargs)` function with 154 translation keys across 3 locales (`zh-CN`, `zh-TW`, `en`). Initialize at startup with `init_language(cfg)`. Usage:
 
 ```python
 from config.i18n import _
@@ -337,13 +333,13 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`main.py`|Entry point: DPI → fonts → DB init → `tk.Tk` → `App`|
 |`config/settings.py`|Path constants (`APP_DIR`, `IMAGES_DIR`, `DB_FILE`), `DEFAULT_CONFIG` dict (all API keys + defaults), `load_config()`/`save_config()`, config v1→v2 migration|
 |`config/fonts.py`|Font loading/caching, `F` dict, `init_fonts()`|
-|`config/theme.py`|`DARK_THEME`, `LIGHT_THEME`, `tag_color()`, `apply_theme()`, global `C`|
-|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (114 keys, 3 locales), `init_language()`|
+|`config/theme.py`|`DARK_THEME` (single dark theme), `tag_color()`, global `C`|
+|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (154 keys, 3 locales), `init_language()`|
 |`data/repository.py`|SQLite schema (`history` table: id, timestamp, prompt, translated, image_path, provider, nickname, favorited), tags via junction table (`entry_tags`), full CRUD API, stats, heatmap, JSON→SQLite migration, `_set_test_db()` for in-memory testing|
 |`services/image_service.py`|`generate_image()` — iterates providers in order, catches `ValueError`, falls back; `save_image_file()` — saves bytes to disk|
 |`services/smart_router.py`|`get_provider_order()` — scene-aware routing: template→scene→providers, keyword detection, filters unavailable paid providers|
 |`services/providers/__init__.py`|Auto-discovers all `try_*` functions via `pkgutil.iter_modules`, populates `FREE_PROVIDERS`, `PAID_PROVIDERS`, `COMMERCIAL_PROVIDERS`, `ALL_PROVIDERS`, `DEFAULT_ORDER`|
-|`services/providers/retry.py`|`with_retries()` decorator — retry + backoff + rate limiting for provider HTTP calls|
+|`services/generation/orchestrator.py`|Task-level generation orchestration — cancellation/deadline/health/retry/fallback|
 |`services/prompt_assistant.py`|`generate_prompt()` — calls DeepSeek V3 via SiliconFlow API; `apply_template()` — template-based prompt; `TEMPLATES` dict (~600 lines)|
 |`services/phrase_library.py`|Built-in + custom phrase management, `BUILTIN_PHRASES` (45 phrases, 7 categories)|
 |`services/translation.py`|`has_chinese()`, `translate_zh_to_en()` via MyMemory API|
@@ -355,9 +351,9 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`ui/batch_panel.py`|6-cell variant grid for multi-parameter exploration|
 |`ui/queue_panel.py`|Sequential job queue for batch generation|
 |`ui/viewer.py`|`ImageViewerWindow` — zoom, pan, crop, save, copy image|
-|`main.spec`|PyInstaller spec (console=True, icon set, upx enabled, no hiddenimports/datas)|
+|`main.spec`|PyInstaller spec (console=False, icon set, upx enabled, hiddenimports via `collect_submodules`)|
 |`auto_build.py`|Build orchestrator: version read → PyInstaller → Inno Setup → .exe installer|
-|`version.json`|`{"version": "1.2.1"}`|
+|`version.json`|`{"version": "2.5.0"}`|
 |`tests/conftest.py`|pytest fixtures: `tk_root` (real Tk), `in_memory_db` (SQLite :memory:), `mock_app` (hand-rolled AppProtocol mock)|
 
 ---
@@ -369,9 +365,9 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 - **GUI**: tkinter + ttk (stdlib) — no Qt, wx, or web-based UI
 - **Database**: SQLite via stdlib `sqlite3` (no ORM, raw SQL, WAL mode)
 - **Packaging**: PyInstaller → single `.exe` → Inno Setup → Windows installer (`text2image_pro_v<ver>.exe`, ~37 MB)
-- **Configuration**: JSON file at `~/.text_to_image_app/config.json`
-- **Image storage**: `~/.text_to_image_app/images/` (generated images saved as PNG files)
-- **Logs**: `~/.text_to_image_app/debug.log`
+- **Configuration**: JSON file at `~/2image/config.json`
+- **Image storage**: `~/2image/images/` (generated images saved as PNG files)
+- **Logs**: `~/2image/debug.log`
 - **Version**: Managed via `version.json` — read by `auto_build.py` and `tools/build_inno_installer.py`; not auto-incremented; no VCS integration
 - **Theme**: Dark by default; `DARK_THEME` is the primary color set; runtime switching supported but requires app restart for full effect
 
@@ -379,35 +375,37 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 
 ## Testing & QA
 
-- **Framework**: pytest 8.2.0 (also installed: pytest-cov 7.1.0, pytest-asyncio 0.23.6 — both unwired)
-- **No coverage configuration**: no `.coveragerc`, no `--cov` flags, no `pyproject.toml [tool.coverage]`
-- **Test files**: 3 files, 14 tests total
+- **Framework**: pytest（CI 矩阵 3.11/3.12 双版本 + coverage 上报）
+- **Test count**: ~514 items across 36 test files（`pytest tests/` 全量约 3 分钟）
+- **GUI**: 真实 Tk 会话级共享 root（`tk_session_root`），App 以 Toplevel 承载——规避 Windows 下反复创建/销毁解释器的 Tcl 崩溃
 
-### Test Files
+### Test Layout
 
-|File|Tests|What it covers|
+|Area|Files|What it covers|
 |---|---|---|
-|`tests/test_repository.py`|8|add_entry, get_all_entries (empty + populated), tag CRUD, tag filter, stats, favorite toggle, delete_entry|
-|`tests/test_image_service.py`|2|all providers fail → RuntimeError; save_image_file PNG roundtrip with metadata|
-|`tests/test_providers.py`|4|Gemini/OpenAI/SiliconFlow missing key → ValueError; SiliconFlow URL validation blocks internal IPs|
+|Data|`test_repository.py`, `test_search.py`, `test_file_ownership.py`|CRUD、FTS5 搜索、标签、路径穿越防护|
+|Generation|`test_orchestrator.py`, `test_router.py`, `test_budget.py`, `test_job_queue.py`, `test_metrics.py`, `test_integration_orchestrator_e2e.py`|编排状态机、场景路由、预算、取消/超时/重试|
+|Providers|`test_providers.py`, `test_provider_contract.py`, `test_provider_contract2.py`, `test_new_providers.py`, `test_adapter.py`|契约签名、Key 守卫、SSRF、错误映射|
+|UI|`test_protocol_compliance.py`, `test_sidebar_ux.py`, `test_app_layout.py`, `test_language.py`, `test_thumbnail.py`, `test_toast.py` 等|协议一致性 AST 护栏、交互回归、缩略图管线、i18n|
+|Infra|`test_config.py`, `test_design_tokens.py`, `test_gap_fixes.py`, `test_fault_injection.py`, `test_performance.py`|配置、令牌、故障注入、性能门槛|
 
 ### Fixtures (`tests/conftest.py`)
 
 |Fixture|Scope|Provides|
 |---|---|---|
-|`in_memory_db`|autouse per module|Swaps repository to `:memory:` SQLite via `_set_test_db()`; auto-cleanup|
-|`mock_app`|function|Hand-rolled `AppProtocol` mock with no-op methods and `_log_calls`/`_st_calls` record lists|
-|`tk_root`|function (orphaned)|Real `tkinter.Tk()` window — no test currently uses it; would break headless CI|
+|`isolate_real_config`|**autouse**|所有磁盘写入重定向到 tmp_path（config/db/log/images/词库/spend 台账六处模块全局绑定）|
+|`tk_session_root` / `tk_root`|session / alias|会话级共享真实 Tk root|
+|`app`|function|Toplevel 承载的完整 App（内存库 + mock 配置读写）|
+|`mock_app`|function|手写 AppProtocol mock（`_log_calls`/`_st_calls` 记录）|
+|`in_memory_db`|autouse per module|repository 切换 `:memory:` SQLite|
 
 ### Testing Patterns
 
-- **No mocking library**: No `unittest.mock` or `MagicMock` anywhere. Three strategies used:
-  1. Repository tests use `_set_test_db(":memory:")` to isolate from production data
-  2. Provider tests use empty `cfg={}` to trigger key-guard `ValueError` before any HTTP call
-  3. UI component tests use hand-rolled `MockApp` implementing protocol interfaces
-- **Network calls**: Never mocked — tests exploit the key-guard pattern (missing key raises `ValueError` before `requests.post`)
-- **Images**: `PIL.Image` used directly; no mocking of image I/O
-- **SQLite**: Fully isolated — `_set_test_db()` bypasses `DB_FILE` constant; each test module initializes fresh `:memory:` database
+- **隔离硬规则**：测试绝不读写真实用户配置/数据库（见 autouse `isolate_real_config`；2026-10-04 覆写事故的永久加固）
+- **unittest.mock 广泛使用**（`@patch` 网络/session）；provider 测试同时用空 `cfg={}` 触发 Key 守卫 `ValueError`
+- **协议护栏**：`test_protocol_compliance.py` 以 AST 校验 Protocol 声明、面板 `self.app.*` 引用与 `services/application/` 控制器引用都真实存在于 App
+- **UI 测试**：会话级 Tk root + Toplevel 承载 App，组件/布局断言基于真实控件
+- 命名：`test_<function_name>_<scenario>`
 
 ### Running Tests
 
@@ -415,21 +413,12 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 # All tests
 pytest tests/ -v
 
-# Specific file
+# Single file
 pytest tests/test_repository.py -v
 
-# With coverage (requires configuring --cov first)
-pytest tests/ -v --cov=data --cov=services --cov-report=term-missing
+# With coverage
+pytest tests/ -v --cov=services --cov=config --cov=data --cov-report=term-missing
 ```
-
-### Testing Conventions (if adding tests)
-
-- Use `in_memory_db` fixture for repository tests (autouse per module)
-- Use `mock_app` fixture for UI tests requiring `AppProtocol`
-- Provider tests: inject a controlled `cfg` dict rather than mocking `requests` — test key validation and error paths first
-- Repository tests: test against `:memory:` SQLite (add `_set_test_db()` fixture if not autouse)
-- UI tests are impractical with raw tkinter; focus on service/data layer unit tests
-- Name test functions: `test_<function_name>_<scenario>` (e.g., `test_add_entry_basic`, `test_generate_image_all_fail`)
 
 ---
 
@@ -486,7 +475,7 @@ python auto_build.py
 
 # Custom build
 python tools/build_inno_installer.py \
-  --app-name "Text2Image" --version 1.2.1 \
+  --app-name "Text2Image" --version 2.5.0 \
   --src-dir . --out-dir dist --iscc-path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 ```
 
@@ -504,7 +493,7 @@ python tools/build_inno_installer.py \
 
 - `main.spec` has empty `datas` — no non-Python assets bundled
 
-- `console=True` — shows terminal window in release builds (consider `--windowed`)
+- `console=False` — release builds are windowed; `print()` output in `main.py` is invisible in packaged builds (write to LOG_FILE instead)
 
 ### Git 提交规则
 
