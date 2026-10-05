@@ -1,6 +1,9 @@
 """services/providers/replicate_flux.py — Replicate FLUX"""
 import base64, time
-from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import (get_session as _get_session,
+                                    safe_error_text as _safe_error_text,
+                                    safe_get_image as _safe_get_image,
+                                    raise_if_cancelled as _raise_if_cancelled)
 
 PROVIDER_INFO = {
     "id": "replicate_flux",
@@ -36,6 +39,7 @@ def try_replicate(prompt, w, h, seed, cfg, log):
     if status != "succeeded" and pred_id:
         log(f"  轮询中（id={pred_id[:8]}）…")
         for i in range(40):
+            _raise_if_cancelled(cfg)
             time.sleep(3)
             pr = _get_session().get(f"https://api.replicate.com/v1/predictions/{pred_id}",
                               headers={"Authorization":f"Bearer {key}"}, timeout=20)

@@ -130,6 +130,14 @@ def generate_image(prompt, w, h, seed, cfg,
         eff_cfg = {**cfg, "_ref_image": ref_image, "_ref_strength": float(strength)}
         log_to_file(f"[img2img] 参考图 {len(ref_image)//1024}KB  强度={strength:.1f}")
 
+    # 取消下发：轮询型供应商在轮询循环里检查 cfg["_cancel_check"]，
+    # 提交-轮询任务（最长 6 分钟）在用户取消后立即中断而非空转到超时。
+    # 注入前确保是副本，绝不污染调用方共享的 cfg。
+    if token is not None:
+        if eff_cfg is cfg:
+            eff_cfg = dict(cfg)
+        eff_cfg["_cancel_check"] = token.throw_if_cancelled
+
     order = list(provider_order or DEFAULT_ORDER)
 
     # Build providers dict with error mapping wrapper

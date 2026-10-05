@@ -74,7 +74,7 @@ def try_bria_ai(
     if resp.status_code == 402:
         raise ValueError("Bria AI 免费额度已用完，请前往 https://platform.bria.ai/ 查看余量")
     if resp.status_code == 429:
-        raise ValueError("Bria AI 速率限制，请稍后再试")
+        raise ValueError("Bria AI 速率限制（HTTP 429），请稍后再试")
     if resp.status_code != 200:
         raise ValueError(f"Bria AI 返回 {resp.status_code}: {_safe_error_text(resp)}")
 

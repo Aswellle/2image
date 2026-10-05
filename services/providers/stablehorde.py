@@ -18,7 +18,11 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
+from services.providers._net import (get_session as _get_session,
+                                    validate_image_url as _validate_image_url,
+                                    safe_get_image as _safe_get_image,
+                                    raise_if_cancelled as _raise_if_cancelled,
+                                    safe_error_text as _safe_error_text)
 
 PROVIDER_INFO = {
     "id": "stablehorde",
@@ -118,10 +122,7 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int,
                     continue
                 break
             if sc not in (200, 202):
-                try:
-                    err = resp.json().get("message", resp.text[:80])
-                except Exception:
-                    err = resp.text[:80]
+                err = _safe_error_text(resp)
                 log(f"    {sc}: {err}，重试{attempt}…")
                 if attempt < 3:
                     time.sleep(5)
@@ -151,6 +152,7 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int,
     slow_count  = 0
 
     for i in range(max_poll):
+        _raise_if_cancelled(cfg)
         # 动态间隔：前 20 次 3s，之后 5s
         poll_interval = 3 if i < 20 else 5
         time.sleep(poll_interval)

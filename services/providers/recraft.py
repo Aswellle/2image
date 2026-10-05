@@ -91,7 +91,7 @@ def try_recraft(prompt: str, w: int, h: int, seed: int,
     if resp.status_code == 401:
         raise ValueError("Recraft API Key 无效")
     if resp.status_code == 429:
-        raise ValueError("Recraft 速率限制")
+        raise ValueError("Recraft 速率限制（HTTP 429）")
     if resp.status_code != 200:
         raise ValueError(f"Recraft 返回 {resp.status_code}: {_safe_error_text(resp)}")
 

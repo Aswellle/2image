@@ -28,7 +28,10 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import (get_session as _get_session,
+                                    safe_error_text as _safe_error_text,
+                                    safe_get_image as _safe_get_image,
+                                    read_bounded as _read_bounded)
 
 PROVIDER_INFO = {
     "id": "huggingface",
@@ -188,7 +191,7 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
             # 直接图片二进制
             if "image" in ct:
                 log(f"  ✓ HuggingFace/{sn} 成功（直接图片）")
-                result = (resp.content, f"HuggingFace/{sn}")
+                result = (_read_bounded(resp), f"HuggingFace/{sn}")
                 break
 
             # JSON 格式

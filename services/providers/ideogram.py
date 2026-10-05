@@ -88,7 +88,7 @@ def try_ideogram(prompt: str, w: int, h: int, seed: int,
     if resp.status_code == 401:
         raise ValueError("Ideogram API Key 无效")
     if resp.status_code == 429:
-        raise ValueError("Ideogram 速率限制，请稍后再试")
+        raise ValueError("Ideogram 速率限制（HTTP 429），请稍后再试")
     if resp.status_code == 400:
         raise ValueError(f"Ideogram 请求错误: {_safe_error_text(resp)}")
     if resp.status_code != 200:

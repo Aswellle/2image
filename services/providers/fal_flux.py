@@ -9,7 +9,10 @@ import base64
 import threading
 import time
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import (get_session as _get_session,
+                                    safe_error_text as _safe_error_text,
+                                    safe_get_image as _safe_get_image,
+                                    raise_if_cancelled as _raise_if_cancelled)
 
 PROVIDER_INFO = {
     "id": "fal_flux",
@@ -47,11 +50,13 @@ def _best_aspect(w: int, h: int) -> str:
     return min(_ASPECTS, key=lambda x: abs(x[0][0] / x[0][1] - r))[1]
 
 
-def _poll_fal(request_id: str, queue_base: str, headers: dict, log: Callable) -> bytes:
+def _poll_fal(request_id: str, queue_base: str, headers: dict,
+              cfg: dict, log: Callable) -> bytes:
     """轮询 fal.ai 队列直到完成，返回图片字节。"""
     status_url = f"{queue_base}/requests/{request_id}"
     result_url = f"{queue_base}/requests/{request_id}/response"
     for i in range(_MAX_POLLS):
+        _raise_if_cancelled(cfg)
         time.sleep(_POLL_SEC)
         try:
             st = _get_session().get(status_url, headers=headers, timeout=15)
@@ -136,6 +141,6 @@ def try_fal_flux(prompt: str, w: int, h: int, seed: int,
     log(f"  已提交  ID={request_id[:14]}…  等待生成…")
 
     # ── 轮询（锁外执行，不阻塞其他线程提交）─────────────────────
-    data = _poll_fal(request_id, queue_base, headers, log)
+    data = _poll_fal(request_id, queue_base, headers, cfg, log)
     log(f"  ✓ {label} 成功  {len(data) // 1024}KB")
     return data, label

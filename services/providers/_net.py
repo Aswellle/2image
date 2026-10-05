@@ -122,3 +122,26 @@ def safe_error_text(resp) -> str:
         return body.get("message", "") or str(body)[:150]
     except Exception:
         return f"HTTP {resp.status_code}"
+
+
+def raise_if_cancelled(cfg) -> None:
+    """轮询供应商的取消通道：cfg["_cancel_check"] 由调度器注入。
+
+    用户取消时抛 GenerationCancelled，让最长可达 6 分钟的
+    提交-轮询任务立即中断，而不是空转到各自超时。
+    """
+    check = cfg.get("_cancel_check") if isinstance(cfg, dict) else None
+    if check:
+        check()
+
+
+def read_bounded(resp, max_bytes: int = 25 * 1024 * 1024) -> bytes:
+    """限长读取直接返回图片二进制的响应，防止异常上游耗尽内存。"""
+    data = bytearray()
+    for chunk in resp.iter_content(64 * 1024):
+        if chunk:
+            data.extend(chunk)
+            if len(data) > max_bytes:
+                raise ValueError(
+                    f"图片响应超过 {max_bytes // (1024 * 1024)}MB 上限")
+    return bytes(data)

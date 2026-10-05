@@ -18,12 +18,7 @@ from typing import Callable, Tuple
 
 import requests
 
-from config.model_catalog import (
-    GEMINI_IMAGE_MODELS,
-    GEMINI_IMAGE_DEFAULT,
-    GEMINI_IMAGE_NAMES,
-    GEMINI_IMAGE_DEPRECATED,
-)
+from config.model_catalog import GEMINI_IMAGE_DEFAULT
 from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
 

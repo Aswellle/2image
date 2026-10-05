@@ -30,6 +30,8 @@ def _resp(status=200, json_data=None, content=b"", content_type="application/jso
     else:
         m.json.side_effect = ValueError("no json")
     m.content = content
+    # 支持流式读取（read_bounded 走 iter_content）
+    m.iter_content.return_value = iter([content]) if content else iter([])
     m.raise_for_status.return_value = None
     return m
 

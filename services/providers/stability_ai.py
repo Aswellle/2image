@@ -1,6 +1,8 @@
 """services/providers/stability_ai.py — Stability AI（文生图 + 图生图）"""
 import base64
-from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
+from services.providers._net import (get_session as _get_session,
+                                    safe_error_text as _safe_error_text,
+                                    read_bounded as _read_bounded)
 
 PROVIDER_INFO = {
     "id": "stability_ai",
@@ -30,7 +32,7 @@ def _parse_response(resp, model, log):
     """解析 Stability AI 响应（直接图片 or JSON base64）。"""
     if "image" in resp.headers.get("Content-Type",""):
         log(f"  ✓ Stability AI {model} 成功")
-        return resp.content, f"StabilityAI/{model}"
+        return _read_bounded(resp), f"StabilityAI/{model}"
     try:
         j = resp.json()
         for item in (j.get("artifacts") or j.get("images") or []):

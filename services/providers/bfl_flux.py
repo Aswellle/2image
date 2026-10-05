@@ -15,7 +15,10 @@ import time
 import requests
 from typing import Callable, Tuple
 from config.model_catalog import BFL_TXT2IMG_DEFAULT
-from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import (get_session as _get_session,
+                                    safe_error_text as _safe_error_text,
+                                    safe_get_image as _safe_get_image,
+                                    raise_if_cancelled as _raise_if_cancelled)
 
 PROVIDER_INFO = {
     "id": "bfl_flux",
@@ -97,7 +100,7 @@ def try_bfl_flux(
     if resp.status_code == 402:
         raise ValueError("Black Forest Labs 账户余额不足")
     if resp.status_code == 429:
-        raise ValueError("Black Forest Labs 速率限制，请稍后再试")
+        raise ValueError("Black Forest Labs 速率限制（HTTP 429），请稍后再试")
     if resp.status_code != 200:
         raise ValueError(f"BFL 提交失败 {resp.status_code}: {_safe_error_text(resp)}")
 
@@ -108,6 +111,7 @@ def try_bfl_flux(
 
     log(f"  任务 ID: {j.get('id', '?')}，开始轮询…")
     for i in range(_MAX_POLL):
+        _raise_if_cancelled(cfg)
         time.sleep(_POLL_INTERVAL)
         poll_resp = _get_session().get(polling_url, headers={"x-key": key}, timeout=_TIMEOUT)
         if poll_resp.status_code != 200:

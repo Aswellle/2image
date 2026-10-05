@@ -22,7 +22,10 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_get_image as _safe_get_image
+from services.providers._net import (get_session as _get_session,
+                                    validate_image_url as _validate_image_url,
+                                    safe_get_image as _safe_get_image,
+                                    raise_if_cancelled as _raise_if_cancelled)
 
 PROVIDER_INFO = {
     "id": "modelslab",
@@ -120,7 +123,6 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
         if has_neg:
             payload["negative_prompt"] = _HQ_NEGATIVE
 
-        result = None
 
         # ── 仅用锁保护限速 + 发包，响应处理和等待均在锁外 ────────
         _resp = None
@@ -204,6 +206,7 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
         if status in ("processing", "queued") and fetch_id:
             poll_result = None
             for i in range(_MAX_POLL):
+                _raise_if_cancelled(cfg)
                 time.sleep(_POLL_INTERVAL)
                 try:
                     fr  = _get_session().post(
@@ -240,13 +243,8 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
             continue
 
         # ── 其他错误状态 ──────────────────────────────────────────
-        if result is None:
-            err = j.get("message", j.get("error", str(j)[:120]))
-            log(f"    错误状态 '{status}': {err}，换模型…")
-            continue
-
-        if result:
-            return result
+        err = j.get("message", j.get("error", str(j)[:120]))
+        log(f"    错误状态 '{status}': {err}，换模型…")
 
     raise ValueError(
         "ModelsLab 所有模型均失败\n"

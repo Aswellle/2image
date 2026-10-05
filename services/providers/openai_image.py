@@ -16,14 +16,11 @@ services/providers/openai_image.py — OpenAI GPT-Image（文生图 + 图生图�
 import base64
 
 from config.model_catalog import (
-    GPT_IMAGE_1,
     GPT_IMAGE_2,
     GPT_IMAGE_25_FLARE,
     GPT_IMAGE_25_SUNBURST,
-    GPT_IMAGE_MODELS,
     GPT_IMAGE_DEFAULT,
     GPT_IMAGE_NAMES,
-    GPT_IMAGE_LEGACY,
 )
 from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
@@ -154,7 +151,7 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
             "OpenAI 拒绝访问 GPT-Image——首次使用该模型可能需要先在 "
             "platform.openai.com 后台完成 Organization Verification（组织验证）")
     if resp.status_code == 429:
-        raise ValueError("OpenAI 速率限制")
+        raise ValueError("OpenAI 速率限制（HTTP 429）")
     if resp.status_code == 400:
         raise ValueError(f"GPT-Image 请求错误: {_safe_error_text(resp)}")
     if resp.status_code != 200:

@@ -26,7 +26,9 @@ import time
 import urllib.parse
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session
+from services.providers._net import (get_session as _get_session,
+                                    validate_image_url as _validate_image_url,
+                                    read_bounded as _read_bounded)
 
 PROVIDER_INFO = {
     "id": "pollinations",
@@ -142,13 +144,19 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int,
                 log(f"    非图片响应({ct})，换模型…")
                 break
 
-            if len(resp.content) < 1024:
+            # 重定向后的最终地址也要过 SSRF 校验，内容读取限长
+            if not _validate_image_url(resp.url):
+                log("    重定向后地址未通过安全校验，放弃…")
+                break
+
+            img_data = _read_bounded(resp)
+            if len(img_data) < 1024:
                 log("    数据过小，换模型…")
                 break
 
             log(f"  ✓ Pollinations/{model} 成功 "
-                f"{len(resp.content)//1024}KB")
-            result = (resp.content, f"Pollinations/{model}")
+                f"{len(img_data)//1024}KB")
+            result = (img_data, f"Pollinations/{model}")
             break
 
         # 请求完成后更新实际完成时间戳（GIL 保证 list 赋值原子性）

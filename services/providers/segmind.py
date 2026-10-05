@@ -20,7 +20,9 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session
+from services.providers._net import (get_session as _get_session,
+                                    safe_error_text as _safe_error_text,
+                                    read_bounded as _read_bounded)
 
 PROVIDER_INFO = {
     "id": "segmind",
@@ -148,9 +150,9 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
                     break
                 if sc in (400, 422):
                     try:
-                        err = resp.json().get("error", resp.text[:120])
+                        err = _safe_error_text(resp)
                     except Exception:
-                        err = resp.text[:120]
+                        err = _safe_error_text(resp)
                     log(f"    参数错误: {err}，换模型…")
                     break
                 if sc != 200:
@@ -161,7 +163,7 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
                 ct = resp.headers.get("Content-Type", "")
                 if "image" in ct:
                     log(f"  ✓ Segmind/{endpoint} 成功（直接图片）")
-                    result = (resp.content, f"Segmind/{endpoint}")
+                    result = (_read_bounded(resp), f"Segmind/{endpoint}")
                     break
 
                 if "json" in ct or ct == "":
