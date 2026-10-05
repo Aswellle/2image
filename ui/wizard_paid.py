@@ -26,7 +26,7 @@ class PaidWizard(tk.Toplevel):
 
     def __init__(self, parent: tk.Tk, cfg: dict, on_save: Callable[[dict], None]):
         super().__init__(parent)
-        self.cfg = cfg
+        self.cfg = cfg.copy()  # 编辑副本，避免未保存的修改污染主配置
         self.on_save = on_save
         self._closing = False
         self._dirty = False
@@ -314,5 +314,7 @@ class PaidWizard(tk.Toplevel):
         self.cfg["ark_model"] = ark_id
         self.cfg["bfl_key"] = self.bfl_var.get().strip()
         self.cfg["bfl_model"] = self.bfl_model_var.get()
+        from config.settings import save_config
+        save_config(self.cfg)  # 与免费配置向导一致：保存必须落盘
         self.on_save(self.cfg)
         self._on_close()
