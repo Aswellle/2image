@@ -519,15 +519,17 @@ def migrate_from_json(json_path: str) -> dict:
 
     try:
         with _conn() as c:
+            # 缺失 id 的记录用递增回退 id，避免同毫秒生成主键互相碰撞
+            fallback_id = int(time.time() * 1000)
             for r in records:
                 try:
                     c.execute(
-                        "INSERT OR IGNORE INTO history"
+                        "INSERT INTO history"
                         "(id, timestamp, prompt, translated, image_path,"
                         " provider, nickname, favorited, tags)"
                         " VALUES (?,?,?,?,?,?,NULL,0,'')",
                         (
-                            r.get("id", int(time.time() * 1000)),
+                            r.get("id") or fallback_id,
                             r.get("timestamp", ""),
                             r.get("prompt", ""),
                             r.get("translated", ""),
@@ -535,7 +537,12 @@ def migrate_from_json(json_path: str) -> dict:
                             r.get("provider", ""),
                         ),
                     )
+                    fallback_id += 1
                     result["migrated"] += 1
+                except sqlite3.IntegrityError as exc:
+                    # id 冲突或约束不满足：计数并保留原文件，绝不静默丢弃
+                    result["failed"] += 1
+                    migration_errors.append(str(exc))
                 except Exception as exc:
                     result["failed"] += 1
                     migration_errors.append(str(exc))
@@ -543,7 +550,7 @@ def migrate_from_json(json_path: str) -> dict:
             c.commit()
 
         # Only rename the original file if ALL records migrated successfully
-        if result["failed"] == 0:
+        if result["failed"] == 0 and result["migrated"] == result["total"]:
             os.rename(json_path, json_path + ".migrated")
             logger.info(
                 "Migration complete: %d/%d records. Original renamed.",
