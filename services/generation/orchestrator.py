@@ -35,6 +35,7 @@ class OrchestratorResult:
 
     image_bytes: bytes | None = None
     provider_id: str | None = None
+    provider_display: str | None = None
     attempts: int = 0
     errors: list[str] = None
     duration_ms: float = 0.0
@@ -146,7 +147,10 @@ class GenerationOrchestrator:
 
                     health.record_success(latency_ms)
                     result.image_bytes = image_bytes
-                    result.provider_id = used_provider
+                    # 权威身份用注册表 stable id（provider 返回的展示串可能
+                    # 带 "/模型名" 后缀，预算/健康度/路由都按 stable id 查表）
+                    result.provider_id = provider_id
+                    result.provider_display = used_provider
                     result.attempts += 1
                     result.duration_ms = (time.monotonic() - start_time) * 1000
 

@@ -10,6 +10,7 @@ Phase 2 重构：
 import io
 import os
 import random
+import re
 import tempfile
 import uuid
 from datetime import datetime
@@ -69,24 +70,35 @@ def _wrap_provider_fn(fn: Callable) -> Callable:
     return wrapped
 
 
-_AUTH_KEYWORDS = ("key", "token", "令牌", "密钥", "需要配置", "未配置", "无效",
-                  "invalid", "missing", "required", "unauthorized", "401", "403")
-_QUOTA_KEYWORDS = ("quota", "balance", "余额", "额度", "充值", "402", "insufficient")
-_RATE_LIMIT_KEYWORDS = ("rate", "429", "限流", "too many", "频繁", "throttl")
-_POLICY_KEYWORDS = ("policy", "nsfw", "safety", "content moderation",
-                    "违规", "敏感", "审核", "不合规", "blocked")
+# 拉丁关键词用词边界正则匹配，避免子串误命中（如 "rate" 命中 "generate"）；
+# 中文关键词无词边界概念，保留子串匹配。
+_AUTH_LATIN = (r"\bkey\b", r"\btoken\b", r"\binvalid\b", r"\bmissing\b",
+               r"\brequired\b", r"\bunauthorized\b", r"\b40[13]\b")
+_AUTH_CJK = ("令牌", "密钥", "需要配置", "未配置", "无效")
+_QUOTA_LATIN = (r"\bquota\b", r"\bbalance\b", r"\binsufficient\b", r"\b402\b")
+_QUOTA_CJK = ("余额", "额度", "充值")
+_RATE_LIMIT_LATIN = (r"\brate limit\b", r"\b429\b", r"\btoo many\b", r"\bthrottl")
+_RATE_LIMIT_CJK = ("限流", "频繁")
+_POLICY_LATIN = (r"\bpolicy\b", r"\bnsfw\b", r"\bsafety\b",
+                 r"\bcontent moderation\b", r"\bblocked\b")
+_POLICY_CJK = ("违规", "敏感", "审核", "不合规")
+
+
+def _msg_matches(msg: str, latin: tuple[str, ...], cjk: tuple[str, ...]) -> bool:
+    if any(kw in msg for kw in cjk):
+        return True
+    return any(re.search(kw, msg, re.IGNORECASE) for kw in latin)
 
 
 def _classify_by_message(msg: str) -> ProviderError:
     """Best-effort classification of a provider's plain-text error."""
-    lowered = msg.lower()
-    if any(kw in lowered for kw in _QUOTA_KEYWORDS):
+    if _msg_matches(msg, _QUOTA_LATIN, _QUOTA_CJK):
         return ProviderQuotaError(msg)
-    if any(kw in lowered for kw in _RATE_LIMIT_KEYWORDS):
+    if _msg_matches(msg, _RATE_LIMIT_LATIN, _RATE_LIMIT_CJK):
         return ProviderRateLimitError(msg)
-    if any(kw in lowered for kw in _AUTH_KEYWORDS):
+    if _msg_matches(msg, _AUTH_LATIN, _AUTH_CJK):
         return ProviderAuthError(msg)
-    if any(kw in lowered for kw in _POLICY_KEYWORDS):
+    if _msg_matches(msg, _POLICY_LATIN, _POLICY_CJK):
         return ProviderPolicyError(msg)
     return ProviderTransientError(msg)
 
@@ -150,7 +162,10 @@ def generate_image(prompt, w, h, seed, cfg,
     if result.deadline_exceeded:
         raise DeadlineExceeded(f"生成超时（{deadline_seconds}s）")
     if result.image_bytes is not None:
+        # provider_id 已是注册表 stable id，付费预算/健康度按它查表；
+        # 展示串（含模型名）仅用于界面与历史记录展示
         used = result.provider_id or ""
+        shown = result.provider_display or used
         # PAY-001: 记录付费估算消耗（免费接口为 no-op），单图/队列/批量统一入口
         try:
             from services.generation import budget
@@ -162,7 +177,7 @@ def generate_image(prompt, w, h, seed, cfg,
                                 f"（今日 ${total:.2f} / ${limit:.2f}）")
         except Exception:
             pass  # 预算记录失败绝不影响生成结果
-        return result.image_bytes, used
+        return result.image_bytes, shown
 
     raise RuntimeError("所有接口均失败:\n" + "\n".join(result.errors))
 
