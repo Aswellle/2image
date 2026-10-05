@@ -678,6 +678,24 @@ class App:
         self.gen_controller.generate(event)
 
 
+    def _ok(self, data: bytes, path: str, prov: str) -> None:
+        """单张生成成功回调：恢复按钮、刷新预览/历史/查看器。
+
+        b8dd17b 重构中误删导致生成成功后界面不更新，按原实现恢复。
+        """
+        self.content.pb.stop()
+        self.content.pb.pack_forget()
+        self.content.gb.config(state="normal", text=_("btn_generate"))
+        self.cur_path = path
+        self._cur_bytes = data
+        self.content._set_preview(data)
+        self._push_to_viewer(data, path)
+        self._st(_("status_success", prov=prov), "ok")
+        self._log(f"✓ 成功 provider={prov}")
+        self._batch_params = None
+        self._refresh_hist()
+        self._refresh_tag_stats()
+
     def _err(self, err: str) -> None:
         """Handle generation error (kept in App for UI state access)."""
         self.content.gb.config(state="normal", text=_("btn_generate"))

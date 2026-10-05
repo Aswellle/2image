@@ -16,6 +16,9 @@ from pathlib import Path
 import pytest
 
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
+APP_CONTROLLER_DIR = (
+    Path(__file__).resolve().parent.parent / "services" / "application"
+)
 PANEL_FILES = [
     "sidebar.py",
     "main_content.py",
@@ -95,6 +98,27 @@ def test_panel_app_refs_exist_on_app(fname):
         pytest.skip(f"{fname} not present")
     surface = _app_surface()
     missing = {k: v for k, v in _app_refs(path).items() if k not in surface}
+    assert not missing, (
+        f"{fname} references self.app.<X> not defined on App: {missing}"
+    )
+
+
+@pytest.mark.parametrize(
+    "fname",
+    sorted(p.name for p in APP_CONTROLLER_DIR.glob("*.py")
+           if p.name != "__init__.py"),
+)
+def test_app_controller_refs_exist_on_app(fname):
+    """应用控制器的 self.app.<X> 引用必须真实存在于 App。
+
+    背景：generation_controller 调用 App._ok，而该方法在 App 重构中被
+    误删——UI 面板护栏不扫描 services/application/，断链因此漏网。
+    """
+    surface = _app_surface()
+    missing = {
+        k: v for k, v in _app_refs(APP_CONTROLLER_DIR / fname).items()
+        if k not in surface
+    }
     assert not missing, (
         f"{fname} references self.app.<X> not defined on App: {missing}"
     )
