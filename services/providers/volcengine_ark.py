@@ -17,11 +17,17 @@ import threading
 import time
 from typing import Callable, Tuple
 
+import requests
+
 from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_NAMES,
 )
-from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
+from services.providers._net import (
+    get_session as _get_session,
+    safe_error_text as _safe_error_text,
+    safe_get_image as _safe_get_image,
+)
 
 
 PROVIDER_INFO = {
@@ -138,9 +144,7 @@ def try_volcengine_ark(
                     img_url = items[0].get("url", "")
                     if not img_url:
                         raise ValueError("豆包返回数据中无图片 URL")
-                    img_resp = _get_session().get(img_url, timeout=60)
-                    img_resp.raise_for_status()
-                    image_bytes = img_resp.content
+                    image_bytes = _safe_get_image(img_url)
 
                 _LAST_DONE[0] = time.time()
                 log("[豆包] 生成成功 ✓")
@@ -151,7 +155,7 @@ def try_volcengine_ark(
                 log(f"[豆包] 错误：{e}")
                 if attempt < _MAX_RETRIES:
                     time.sleep(3 * attempt)
-            except Exception as e:
+            except requests.RequestException as e:
                 last_err = RuntimeError(str(e))
                 log(f"[豆包] 网络错误：{e}")
                 if attempt < _MAX_RETRIES:
