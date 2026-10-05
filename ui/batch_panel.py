@@ -329,6 +329,7 @@ class BatchPanel(tk.Frame):
             log_fn("⚠ 批量生成正在进行中，请等待完成后再次触发")
             return
         self._running   = True
+        self._params    = dict(params or {})  # 快照：飞行中 app._batch_params 可能被单图生成覆写
         self._batch_gen += 1   # 让所有旧批次挂起的 after() 回调失效
         self._n        = min(max(1, n), MAX_CELLS)
         self._done_cnt = 0
@@ -509,7 +510,7 @@ class BatchPanel(tk.Frame):
         import os
         from data.repository import add_entry
 
-        params     = self.app._batch_params or {}
+        params     = self._params or self.app._batch_params or {}
         prompt     = params.get("prompt", "")
         translated = params.get("translated", "")
 

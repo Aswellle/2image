@@ -365,6 +365,66 @@ STRINGS = {
         "zh-CN": "需要配置 API Key！\n请在「🆓 免费接口配置」或「💎 付费接口配置」中填写。",
         "en":    "API Key required!\nPlease configure in Free API Keys or Paid API Keys.",
     },
+    "dlg_tip": {
+        "zh-CN": "提示",
+        "en":    "Notice",
+    },
+    "dlg_empty_prompt": {
+        "zh-CN": "请先输入描述文字！",
+        "en":    "Please enter a description first!",
+    },
+    "dlg_pick_specific_provider": {
+        "zh-CN": "请选择一个具体接口，而非分隔线。",
+        "en":    "Please pick a concrete provider, not a separator.",
+    },
+    "dlg_suggest_free_key_title": {
+        "zh-CN": "建议配置",
+        "en":    "Suggestion",
+    },
+    "dlg_suggest_free_key_body": {
+        "zh-CN": "尚未配置任何免费 API Key。\n建议配置「硅基流动」。\n是否现在配置？",
+        "en":    "No free API key configured yet.\nSiliconFlow is recommended.\nConfigure now?",
+    },
+    "dlg_budget_exhausted_title": {
+        "zh-CN": "付费预算已用尽",
+        "en":    "Daily budget exhausted",
+    },
+    "dlg_budget_exhausted_body": {
+        "zh-CN": "今日付费估算消耗已达 ${spent}（上限 ${limit}）。\n如需继续使用 {provider}，请调高「paid_daily_budget_usd」设置。",
+        "en":    "Today's estimated paid spend has reached ${spent} (limit ${limit}).\nTo keep using {provider}, raise the \"paid_daily_budget_usd\" setting.",
+    },
+    "dlg_need_config_title": {
+        "zh-CN": "需要配置",
+        "en":    "Configuration needed",
+    },
+    "dlg_need_key_body": {
+        "zh-CN": "使用 {provider} 需要填写 API Key。\n是否现在配置？",
+        "en":    "Using {provider} requires an API key.\nConfigure now?",
+    },
+    "dlg_need_keys_body": {
+        "zh-CN": "使用 {provider} 需要填写全部凭证（{keys}）。\n是否现在配置？",
+        "en":    "Using {provider} requires all of these credentials ({keys}).\nConfigure now?",
+    },
+    "dlg_batch_no_img2img": {
+        "zh-CN": "批量生成暂不支持图生图模式\n请切换到「📝 文生图」后再批量生成",
+        "en":    "Batch generation does not support img2img mode.\nSwitch to text-to-image first.",
+    },
+    "dlg_err_key_title": {
+        "zh-CN": "需要配置 API Key",
+        "en":    "API key configuration needed",
+    },
+    "dlg_err_key_body": {
+        "zh-CN": "{err}\n\n点击「🆓 免费配置」配置硅基流动 API Key。",
+        "en":    "{err}\n\nClick \"🆓 Free Config\" to set up a SiliconFlow API key.",
+    },
+    "dlg_queue_empty_prompt": {
+        "zh-CN": "请先在主输入框填写提示词",
+        "en":    "Enter a prompt in the main input box first",
+    },
+    "dlg_compare_empty": {
+        "zh-CN": "暂无历史图片可用于对比",
+        "en":    "No history images available for comparison",
+    },
 
     # ── 搜索 / 筛选 ─────────────────────────────────────────
     "search_placeholder": {

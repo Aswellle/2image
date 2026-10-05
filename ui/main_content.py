@@ -8,6 +8,7 @@ import io
 import os
 import random
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 
@@ -542,7 +543,7 @@ class MainContent:
         # DATA-003: 只取最近 200 张，避免大历史库全量加载
         entries = get_all_entries(limit=200)
         if not entries:
-            messagebox.showinfo("提示", "暂无历史图片可用于对比"); return
+            messagebox.showinfo(_("dlg_tip"), _("dlg_compare_empty")); return
 
         win = tk.Toplevel(self.app.root)
         win.title("⚖ 选取对比图"); win.configure(bg=C["bg"])
@@ -606,6 +607,18 @@ class MainContent:
         # 因此 Label 图像变黑。
         # 修复：将缓存绑定到 win 对象，生命周期与窗口相同。
         win._photo_cache = {}   # {path: PhotoImage}，跟随窗口存活
+
+        # 有界线程池加载缩略图：此前每图起一个 daemon 线程，
+        # 长历史（200 条）一次弹窗即 churn 200 线程
+        _thumb_pool = ThreadPoolExecutor(max_workers=4,
+                                         thread_name_prefix="cmp-thumb")
+
+        def _shutdown_pool(event=None):
+            if event is not None and getattr(event, "widget", None) is not win:
+                return  # 子控件销毁事件不处理
+            _thumb_pool.shutdown(wait=False)
+
+        win.bind("<Destroy>", _shutdown_pool)
 
         def _select(path, dialog):
             dialog.unbind_all("<MouseWheel>")
@@ -671,7 +684,7 @@ class MainContent:
                                 except Exception: pass
                             win.after(0, _empty)
                     except Exception: pass
-                threading.Thread(target=_worker, daemon=True).start()
+                _thumb_pool.submit(_worker)
             _load_t()
 
             # 标题（显示更多字符，换行显示）

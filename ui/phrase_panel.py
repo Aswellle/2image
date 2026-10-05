@@ -387,7 +387,8 @@ class PhrasePanel(tk.Toplevel):
             if self._cur_cat:
                 self._render_chips(self._phrases.get(self._cur_cat, []))
             return
-        results = [p for phrases in self._phrases.values()
+        # 搜索结果携带 (分类, 词条) 对：删除操作需要真实归属分类
+        results = [(cat, p) for cat, phrases in self._phrases.items()
                    for p in phrases if kw in p.lower()]
         self._render_chips(results, search_mode=True)
 
@@ -416,7 +417,14 @@ class PhrasePanel(tk.Toplevel):
                  if not search_mode else C["acc"])
         HL_BG = "#243a60"   # 悬停背景色
 
-        for i, phrase in enumerate(phrases):
+        # 常规模式为词条列表（归属当前分类）；搜索模式为 (分类, 词条) 对
+        if search_mode:
+            pairs = list(phrases)
+        else:
+            cat_now = self._cur_cat or ""
+            pairs = [(cat_now, p) for p in phrases]
+
+        for i, (cat, phrase) in enumerate(pairs):
             row_idx, col_idx = divmod(i, 3)
             self._chip_inner.columnconfigure(col_idx, weight=1)
 
@@ -443,11 +451,11 @@ class PhrasePanel(tk.Toplevel):
             append_btn.pack(side="right", padx=4, pady=4)
 
             # ── 删除按钮（仅自定义词条）───────────────────
-            if not is_builtin(self._cur_cat or "", phrase):
-                def _del(cat=self._cur_cat, p=phrase):
+            if not is_builtin(cat, phrase):
+                def _del(c=cat, p=phrase):
                     if messagebox.askyesno(
                             "删除词条", f'删除「{p}」？', parent=self):
-                        delete_custom_phrase(cat, p)
+                        delete_custom_phrase(c, p)
                         self._reload()
                 tk.Button(chip, text="🗑", font=F["small"],
                           bg=C["card"], fg="#e05555", bd=0, padx=4,

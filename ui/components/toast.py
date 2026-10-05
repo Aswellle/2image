@@ -54,7 +54,16 @@ class ToastManager:
         try:
             self._display(message, level, duration)
         except tk.TclError:
-            self._busy = False
+            self._recover_from_error()
+        except Exception:
+            # a non-Tcl rendering failure must not leave _busy stuck forever
+            self._recover_from_error()
+
+    def _recover_from_error(self):
+        """Drop the current toast and keep pumping (normal path resets via fade-out chain)."""
+        self._busy = False
+        if self._queue:
+            self._root.after(10, self._pump)
 
     def _display(self, message: str, level: str, duration: int):
         if self._win is None or not self._win.winfo_exists():

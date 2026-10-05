@@ -908,7 +908,7 @@ class HistorySidebar:
             self.app._refresh_hist()
 
     def _del_entry(self, eid):
-        if not messagebox.askyesno(_("dlg_confirm_delete"),
+        if not messagebox.askyesno(_("dlg_tip"),
                 _("dlg_confirm_delete"),
                 parent=self.app.root): return
         delete_entry(eid, remove_file=True)

@@ -638,7 +638,7 @@ class App:
         cfg = self.cfg
 
         def _is_available(name: str) -> bool:
-            """注册表驱动的可用性判断（显示名特判已随 v8 稳定 ID 化消亡）。"""
+            """Registry-driven availability (v7 display-name branches died with v8 stable IDs)."""
             required_keys = MULTI_KEY_PROVIDERS.get(name)
             if required_keys:
                 # 多键接口（Cloudflare 双凭证）要求全部凭证就绪
@@ -733,8 +733,8 @@ class App:
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
         if any(k in err for k in ["API Key", "Key", "Token", "token", "401", "402", "403", "额度"]):
             self.root.after(100, lambda: messagebox.showwarning(
-                "需要配置 API Key",
-                f"{err[:200]}\n\n点击「🆓 免费配置」配置硅基流动 API Key。"))
+                _("dlg_err_key_title"),
+                _("dlg_err_key_body", err=err[:200])))
 
     def _export(self):
         """导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"""

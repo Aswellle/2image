@@ -39,12 +39,12 @@ class GenerationController:
             self.app._st(_("status_prompt_too_long", cur=len(prompt), max=MAX_PROMPT_CHARS), "hl")
             return
         if not prompt:
-            messagebox.showwarning("提示", "请先输入描述文字！")
+            messagebox.showwarning(_("dlg_tip"), _("dlg_empty_prompt"))
             return
 
         psel = content.pv.get()
         if psel.startswith("───"):
-            messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。")
+            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"))
             return
 
         # Check if provider needs API key + budget guard（单图/变体共用）
@@ -56,8 +56,8 @@ class GenerationController:
 
         if psel == _("provider_auto"):
             if not self.app.cfg.get("sf_key", "").strip() and not self.app.cfg.get("hf_token", "").strip():
-                if messagebox.askyesno("建议配置",
-                    "尚未配置任何免费 API Key。\n建议配置「硅基流动」。\n是否现在配置？"):
+                if messagebox.askyesno(_("dlg_suggest_free_key_title"),
+                    _("dlg_suggest_free_key_body")):
                     self.app._open_wizard()
                     return
             porder = get_provider_order(prompt, self.app.cfg)
@@ -111,10 +111,10 @@ class GenerationController:
         if pid and budget.is_paid(pid) and budget.over_budget(cfg):
             limit = budget.daily_budget(cfg)
             messagebox.showwarning(
-                "付费预算已用尽",
-                f"今日付费估算消耗已达 ${budget.spent_today(cfg):.2f}"
-                f"（上限 ${limit:.2f}）。\n"
-                f"如需继续使用 {psel}，请调高「paid_daily_budget_usd」设置。")
+                _("dlg_budget_exhausted_title"),
+                _("dlg_budget_exhausted_body",
+                  spent=f"${budget.spent_today(cfg):.2f}",
+                  limit=f"${limit:.2f}", provider=psel))
             return False
         return True
 
@@ -141,8 +141,9 @@ class GenerationController:
             is_paid = pid not in FREE_PROVIDERS
             wizard_fn = self.app._open_paid_wizard if is_paid else self.app._open_wizard
             if messagebox.askyesno(
-                    "需要配置",
-                    f"使用 {psel} 需要填写全部凭证（{'、'.join(required_keys)}）。\n是否现在配置？"):
+                    _("dlg_need_config_title"),
+                    _("dlg_need_keys_body", provider=psel,
+                      keys="、".join(required_keys))):
                 wizard_fn()
             return False
 
@@ -155,8 +156,8 @@ class GenerationController:
         # 缺 Key → 引导配置（付费接口走付费向导）
         is_paid = pid not in FREE_PROVIDERS
         wizard_fn = self.app._open_paid_wizard if is_paid else self.app._open_wizard
-        msg = (f"使用 {psel} 需要填写 API Key。\n是否现在配置？")
-        if messagebox.askyesno("需要配置", msg):
+        if messagebox.askyesno(_("dlg_need_config_title"),
+                           _("dlg_need_key_body", provider=psel)):
             wizard_fn()
         return False
     def _run_generation(
@@ -232,18 +233,17 @@ class GenerationController:
         content = self.app.content
 
         if getattr(content, "_gen_mode", "t2i") == "i2i":
-            messagebox.showwarning(
-                "提示", "批量生成暂不支持图生图模式\n请切换到「📝 文生图」后再批量生成")
+            messagebox.showwarning(_("dlg_tip"), _("dlg_batch_no_img2img"))
             return
 
         prompt = content.pt.get("1.0", "end").strip()
         if not prompt:
-            messagebox.showwarning("提示", "请先输入描述文字！")
+            messagebox.showwarning(_("dlg_tip"), _("dlg_empty_prompt"))
             return
 
         psel = content.pv.get()
         if psel.startswith("───"):
-            messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。")
+            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"))
             return
 
         # 变体与单图共用 Key + 预算前置检查，防止批量路径绕过付费阻断
