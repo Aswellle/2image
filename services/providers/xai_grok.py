@@ -82,60 +82,62 @@ def try_xai_grok(
         "response_format": "url",
     }
 
+    # ── 持锁范围仅限限速等待：预占时间槽后立即放锁 ──────────────────
+    # 修复：原版锁覆盖整个重试循环，429 退避与 HTTP 超时都持锁，
+    # 批量并发时其余线程最长被阻塞数分钟。等待/请求均在锁外执行。
     with _LOCK:
         gap = time.time() - _LAST_DONE[0]
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
+        _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
 
-        last_err = None
-        for attempt in range(1, _MAX_RETRIES + 1):
-            try:
-                log(f"[xAI Grok] 尝试 {attempt}/{_MAX_RETRIES}（Aurora 模型，固定 1024×1024）…")
-                resp = _get_session().post(
-                    _ENDPOINT,
-                    headers=headers,
-                    json=payload,
-                    timeout=_TIMEOUT,
+
+    last_err = None
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            log(f"[xAI Grok] 尝试 {attempt}/{_MAX_RETRIES}（Aurora 模型，固定 1024×1024）…")
+            resp = _get_session().post(
+                _ENDPOINT,
+                headers=headers,
+                json=payload,
+                timeout=_TIMEOUT,
+            )
+            if resp.status_code == 429:
+                log("[xAI Grok] 速率限制（5 req/s），等待 30s…")
+                time.sleep(30)
+                continue
+            if resp.status_code == 402:
+                raise ValueError(
+                    "xAI 账户余额不足。\n"
+                    "充值地址：https://console.x.ai\n"
+                    "提示：消费满 $5 后可开启数据共享计划获得 $150/月免费额度"
                 )
-                if resp.status_code == 429:
-                    log("[xAI Grok] 速率限制（5 req/s），等待 30s…")
-                    time.sleep(30)
-                    continue
-                if resp.status_code == 402:
-                    raise ValueError(
-                        "xAI 账户余额不足。\n"
-                        "充值地址：https://console.x.ai\n"
-                        "提示：消费满 $5 后可开启数据共享计划获得 $150/月免费额度"
-                    )
-                if resp.status_code == 401:
-                    raise ValueError(
-                        "xAI API Key 无效或已过期，请前往 https://console.x.ai 重新生成。"
-                    )
-                if resp.status_code != 200:
-                    raise RuntimeError(
-                        f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                    )
+            if resp.status_code == 401:
+                raise ValueError(
+                    "xAI API Key 无效或已过期，请前往 https://console.x.ai 重新生成。"
+                )
+            if resp.status_code != 200:
+                raise RuntimeError(
+                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
+                )
 
-                data = resp.json()
-                image_bytes = _extract_image(data, log)
-                _LAST_DONE[0] = time.time()
-                log("[xAI Grok] 生成成功 ✓ (Aurora / 1024×1024 JPEG)")
-                return (image_bytes, f"xAI/{_MODEL}")
+            data = resp.json()
+            image_bytes = _extract_image(data, log)
+            log("[xAI Grok] 生成成功 ✓ (Aurora / 1024×1024 JPEG)")
+            return (image_bytes, f"xAI/{_MODEL}")
 
-            except (ValueError, RuntimeError) as e:
-                last_err = e
-                log(f"[xAI Grok] 错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(4 * attempt)
-            except requests.RequestException as e:
-                last_err = RuntimeError(str(e))
-                log(f"[xAI Grok] 网络错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(4 * attempt)
+        except (ValueError, RuntimeError) as e:
+            last_err = e
+            log(f"[xAI Grok] 错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(4 * attempt)
+        except requests.RequestException as e:
+            last_err = RuntimeError(str(e))
+            log(f"[xAI Grok] 网络错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(4 * attempt)
 
-        _LAST_DONE[0] = time.time()
-        raise RuntimeError(f"xAI Grok 全部重试失败：{last_err}")
-
+    raise RuntimeError(f"xAI Grok 全部重试失败：{last_err}")
 
 def _extract_image(data: dict, log: Callable) -> bytes:
     """解析 OpenAI 兼容的 {data:[{url}]} 或 {data:[{b64_json}]} 格式。"""

@@ -99,47 +99,49 @@ def try_minimax_image(
     else:
         log(f"► MiniMax image-01  文生图  宽高比={aspect}")
 
+    # ── 持锁范围仅限限速等待：预占时间槽后立即放锁 ──────────────────
+    # 修复：原版锁覆盖整个重试循环，429 退避与 HTTP 超时都持锁，
+    # 批量并发时其余线程最长被阻塞数分钟。等待/请求均在锁外执行。
     with _LOCK:
         gap = time.time() - _LAST_DONE[0]
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
+        _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
 
-        last_err = None
-        for attempt in range(1, _MAX_RETRIES + 1):
-            try:
-                log(f"[MiniMax] 尝试 {attempt}/{_MAX_RETRIES}…")
-                resp = _get_session().post(
-                    _ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT,
+
+    last_err = None
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            log(f"[MiniMax] 尝试 {attempt}/{_MAX_RETRIES}…")
+            resp = _get_session().post(
+                _ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT,
+            )
+            if resp.status_code == 429:
+                log("[MiniMax] 速率限制，等待 20s…")
+                time.sleep(20)
+                continue
+            if resp.status_code != 200:
+                raise RuntimeError(
+                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
                 )
-                if resp.status_code == 429:
-                    log("[MiniMax] 速率限制，等待 20s…")
-                    time.sleep(20)
-                    continue
-                if resp.status_code != 200:
-                    raise RuntimeError(
-                        f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                    )
 
-                data = resp.json()
-                image_bytes = _extract_image(data)
-                _LAST_DONE[0] = time.time()
-                log("[MiniMax] 生成成功 ✓")
-                return (image_bytes, f"MiniMax/{MINIMAX_IMAGE_NAMES.get(_MODEL, _MODEL)}")
+            data = resp.json()
+            image_bytes = _extract_image(data)
+            log("[MiniMax] 生成成功 ✓")
+            return (image_bytes, f"MiniMax/{MINIMAX_IMAGE_NAMES.get(_MODEL, _MODEL)}")
 
-            except (ValueError, RuntimeError) as e:
-                last_err = e
-                log(f"[MiniMax] 错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(3 * attempt)
-            except requests.RequestException as e:
-                last_err = RuntimeError(str(e))
-                log(f"[MiniMax] 网络错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(3 * attempt)
+        except (ValueError, RuntimeError) as e:
+            last_err = e
+            log(f"[MiniMax] 错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(3 * attempt)
+        except requests.RequestException as e:
+            last_err = RuntimeError(str(e))
+            log(f"[MiniMax] 网络错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(3 * attempt)
 
-        _LAST_DONE[0] = time.time()
-        raise RuntimeError(f"MiniMax 全部重试失败：{last_err}")
-
+    raise RuntimeError(f"MiniMax 全部重试失败：{last_err}")
 
 def _extract_image(data: dict) -> bytes:
     """响应体：{"data": {"image_base64": ["<b64>", ...]}, "base_resp": {...}}。"""

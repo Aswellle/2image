@@ -108,58 +108,62 @@ def try_volcengine_ark(
     else:
         log(f"► 豆包 {display_name}  文生图  尺寸={size_str}")
 
+    # ── 持锁范围仅限限速等待：预占时间槽后立即放锁 ──────────────────
+    # 修复：原版锁覆盖整个重试循环，429 退避与 HTTP 超时都持锁，
+    # 批量并发时其余线程最长被阻塞数分钟。等待/请求均在锁外执行。
     with _LOCK:
         gap = time.time() - _LAST_DONE[0]
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
+        _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
 
-        last_err = None
-        for attempt in range(1, _MAX_RETRIES + 1):
-            try:
-                log(f"[豆包] 尝试 {attempt}/{_MAX_RETRIES}…")
-                resp = _get_session().post(
-                    _ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT,
+
+    last_err = None
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            log(f"[豆包] 尝试 {attempt}/{_MAX_RETRIES}…")
+            resp = _get_session().post(
+                _ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT,
+            )
+            if resp.status_code == 429:
+                log("[豆包] 速率限制，等待 15s…")
+                time.sleep(15)
+                continue
+            if resp.status_code == 401:
+                raise ValueError("火山引擎 API Key 无效或已过期")
+            if resp.status_code != 200:
+                raise RuntimeError(
+                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
                 )
-                if resp.status_code == 429:
-                    log("[豆包] 速率限制，等待 15s…")
-                    time.sleep(15)
-                    continue
-                if resp.status_code == 401:
-                    raise ValueError("火山引擎 API Key 无效或已过期")
-                if resp.status_code != 200:
-                    raise RuntimeError(
-                        f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                    )
 
-                data = resp.json()
-                items = data.get("data", [])
-                if not items:
-                    raise ValueError("豆包返回数据中无图片")
+            data = resp.json()
+            items = data.get("data", [])
+            if not items:
+                raise ValueError("豆包返回数据中无图片")
 
-                # 优先使用 b64_json，否则下载 URL
-                b64 = items[0].get("b64_json", "")
-                if b64:
-                    image_bytes = base64.b64decode(b64)
-                else:
-                    img_url = items[0].get("url", "")
-                    if not img_url:
-                        raise ValueError("豆包返回数据中无图片 URL")
-                    image_bytes = _safe_get_image(img_url)
+            # 优先使用 b64_json，否则下载 URL
+            b64 = items[0].get("b64_json", "")
+            if b64:
+                image_bytes = base64.b64decode(b64)
+            else:
+                img_url = items[0].get("url", "")
+                if not img_url:
+                    raise ValueError("豆包返回数据中无图片 URL")
+                image_bytes = _safe_get_image(img_url)
 
-                _LAST_DONE[0] = time.time()
-                log("[豆包] 生成成功 ✓")
-                return (image_bytes, f"豆包/{display_name}")
+            log("[豆包] 生成成功 ✓")
+            return (image_bytes, f"豆包/{display_name}")
 
-            except (ValueError, RuntimeError) as e:
-                last_err = e
-                log(f"[豆包] 错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(3 * attempt)
-            except requests.RequestException as e:
-                last_err = RuntimeError(str(e))
-                log(f"[豆包] 网络错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(3 * attempt)
+        except (ValueError, RuntimeError) as e:
+            last_err = e
+            log(f"[豆包] 错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(3 * attempt)
+        except requests.RequestException as e:
+            last_err = RuntimeError(str(e))
+            log(f"[豆包] 网络错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(3 * attempt)
 
-        _LAST_DONE[0] = time.time()
-        raise RuntimeError(f"豆包全部重试失败：{last_err}")
+    raise RuntimeError(f"豆包全部重试失败：{last_err}")
+

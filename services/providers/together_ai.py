@@ -61,57 +61,59 @@ def try_together_ai(
     if seed and seed > 0:
         payload["seed"] = seed
 
+    # ── 持锁范围仅限限速等待：预占时间槽后立即放锁 ──────────────────
+    # 修复：原版锁覆盖整个重试循环，429 退避与 HTTP 超时都持锁，
+    # 批量并发时其余线程最长被阻塞数分钟。等待/请求均在锁外执行。
     with _LOCK:
         gap = time.time() - _LAST_DONE[0]
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
+        _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
 
-        last_err = None
-        for attempt in range(1, _MAX_RETRIES + 1):
-            try:
-                log(f"[Together AI] 尝试 {attempt}/{_MAX_RETRIES}…")
-                resp = _get_session().post(
-                    _ENDPOINT,
-                    headers=headers,
-                    json=payload,
-                    timeout=_TIMEOUT,
+
+    last_err = None
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            log(f"[Together AI] 尝试 {attempt}/{_MAX_RETRIES}…")
+            resp = _get_session().post(
+                _ENDPOINT,
+                headers=headers,
+                json=payload,
+                timeout=_TIMEOUT,
+            )
+            if resp.status_code == 429:
+                log("[Together AI] 触发速率限制，等待 30s…")
+                time.sleep(30)
+                continue
+            if resp.status_code == 402:
+                raise ValueError("Together AI 余额不足，请前往 https://api.together.ai/ 充值。")
+            if resp.status_code == 404:
+                raise ValueError(
+                    "Together AI 模型不可用（FLUX.1-schnell 可能已从免费 "
+                    "Serverless API 下线），请前往 https://api.together.ai/ 确认当前可用模型。"
                 )
-                if resp.status_code == 429:
-                    log("[Together AI] 触发速率限制，等待 30s…")
-                    time.sleep(30)
-                    continue
-                if resp.status_code == 402:
-                    raise ValueError("Together AI 余额不足，请前往 https://api.together.ai/ 充值。")
-                if resp.status_code == 404:
-                    raise ValueError(
-                        "Together AI 模型不可用（FLUX.1-schnell 可能已从免费 "
-                        "Serverless API 下线），请前往 https://api.together.ai/ 确认当前可用模型。"
-                    )
-                if resp.status_code != 200:
-                    raise RuntimeError(
-                        f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                    )
+            if resp.status_code != 200:
+                raise RuntimeError(
+                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
+                )
 
-                data = resp.json()
-                image_bytes = _extract_image(data, log)
-                _LAST_DONE[0] = time.time()
-                log("[Together AI] 生成成功 ✓")
-                return (image_bytes, "TogetherAI/FLUX.1-schnell")
+            data = resp.json()
+            image_bytes = _extract_image(data, log)
+            log("[Together AI] 生成成功 ✓")
+            return (image_bytes, "TogetherAI/FLUX.1-schnell")
 
-            except (ValueError, RuntimeError) as e:
-                last_err = e
-                log(f"[Together AI] 错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(3 * attempt)
-            except requests.RequestException as e:
-                last_err = RuntimeError(str(e))
-                log(f"[Together AI] 网络错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(3 * attempt)
+        except (ValueError, RuntimeError) as e:
+            last_err = e
+            log(f"[Together AI] 错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(3 * attempt)
+        except requests.RequestException as e:
+            last_err = RuntimeError(str(e))
+            log(f"[Together AI] 网络错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(3 * attempt)
 
-        _LAST_DONE[0] = time.time()
-        raise RuntimeError(f"Together AI 全部重试失败：{last_err}")
-
+    raise RuntimeError(f"Together AI 全部重试失败：{last_err}")
 
 def _extract_image(data: dict, log: Callable) -> bytes:
     """解析 {data:[{url}]} 格式并下载图片。"""

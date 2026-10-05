@@ -34,29 +34,6 @@ PROVIDER_INFO = {
     "config_key": "gemini_key",
     "description": "Nano Banana 系列：v1/v2/v2 Lite/Pro",
 }
-
-
-
-
-
-
-
-
-
-# ── 串行锁（防批量变体并发触发速率限制）──────────────────────────────
-_LOCK = threading.Lock()
-_LAST_DONE = [0.0]
-_MIN_INTV = 2.0  # Gemini 免费层建议间隔
-
-_DEFAULT_MODEL = GEMINI_IMAGE_DEFAULT  # 默认使用 Nano Banana 2
-_ENDPOINT_TPL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-)
-_TIMEOUT = 90
-_MAX_RETRIES = 3
-
-
-
 # ── 串行锁（防批量变体并发触发速率限制）──────────────────────────────
 _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
@@ -123,50 +100,52 @@ def try_gemini(
         },
     }
 
+    # ── 持锁范围仅限限速等待：预占时间槽后立即放锁 ──────────────────
+    # 修复：原版锁覆盖整个重试循环，429 等待与 HTTP 超时都持锁，
+    # 批量并发时其余线程最长被阻塞数分钟。等待/请求均在锁外执行。
     with _LOCK:
         gap = time.time() - _LAST_DONE[0]
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
-
-        last_err = None
-        for attempt in range(1, _MAX_RETRIES + 1):
-            try:
-                log(f"[Gemini] 尝试 {attempt}/{_MAX_RETRIES}…")
-                resp = _get_session().post(
-                    endpoint,
-                    headers=headers,
-                    json=payload,
-                    timeout=_TIMEOUT,
-                )
-                if resp.status_code == 429:
-                    log("[Gemini] 触发速率限制，等待 30s…")
-                    time.sleep(30)
-                    continue
-                if resp.status_code != 200:
-                    raise RuntimeError(
-                        f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                    )
-
-                data = resp.json()
-                # 解析 base64 图片数据
-                image_bytes = _extract_image(data, log)
-                _LAST_DONE[0] = time.time()
-                log("[Gemini] 生成成功 ✓")
-                return (image_bytes, f"Gemini/{model}")
-
-            except (ValueError, RuntimeError) as e:
-                last_err = e
-                log(f"[Gemini] 错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(3 * attempt)
-            except requests.RequestException as e:
-                last_err = RuntimeError(str(e))
-                log(f"[Gemini] 网络错误：{e}")
-                if attempt < _MAX_RETRIES:
-                    time.sleep(3 * attempt)
-
         _LAST_DONE[0] = time.time()
-        raise RuntimeError(f"Gemini 全部重试失败：{last_err}")
+
+    last_err = None
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            log(f"[Gemini] 尝试 {attempt}/{_MAX_RETRIES}…")
+            resp = _get_session().post(
+                endpoint,
+                headers=headers,
+                json=payload,
+                timeout=_TIMEOUT,
+            )
+            if resp.status_code == 429:
+                log("[Gemini] 触发速率限制，等待 30s…")
+                time.sleep(30)
+                continue
+            if resp.status_code != 200:
+                raise RuntimeError(
+                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
+                )
+
+            data = resp.json()
+            # 解析 base64 图片数据
+            image_bytes = _extract_image(data, log)
+            log("[Gemini] 生成成功 ✓")
+            return (image_bytes, f"Gemini/{model}")
+
+        except (ValueError, RuntimeError) as e:
+            last_err = e
+            log(f"[Gemini] 错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(3 * attempt)
+        except requests.RequestException as e:
+            last_err = RuntimeError(str(e))
+            log(f"[Gemini] 网络错误：{e}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(3 * attempt)
+
+    raise RuntimeError(f"Gemini 全部重试失败：{last_err}")
 
 
 def _extract_image(data: dict, log: Callable) -> bytes:
