@@ -27,7 +27,7 @@ Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "A
 
 [Files]
 Source: "{SRC_DIR}\{APP_EXE_NAME}.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{SRC_DIR}\2image_updater.exe"; DestDir: "{app}"; Flags: ignoreversion skipifdoesntexist
+Source: "{SRC_DIR}\2image_updater.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{ICON_PATH}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
