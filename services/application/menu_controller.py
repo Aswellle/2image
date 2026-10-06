@@ -140,7 +140,7 @@ class MenuController:
         m_set = self._menu(menubar)
         menubar.add_cascade(label=_("menu_settings"), menu=m_set)
 
-        # 界面语言（zh-CN / zh-TW / en）——切换后重启生效
+        # 界面语言（zh-CN / en）——切换后重启生效
         m_lang = self._menu(m_set)
         m_set.add_cascade(label="  🌐  " + _("settings_language"), menu=m_lang)
         for code, native in self.app.SUPPORTED_LANGUAGES.items():
@@ -153,3 +153,8 @@ class MenuController:
                           command=self.app._open_app_settings)
         m_set.add_command(label="  ⌨  " + _("settings_shortcuts_title") + "…",
                           command=self.app._show_shortcuts)
+        m_set.add_separator()
+        m_set.add_command(label="  " + _("menu_check_update"),
+                          command=self.app._check_update_menu)
+        m_set.add_command(label="  " + _("menu_about"),
+                          command=self.app._open_about)

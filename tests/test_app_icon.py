@@ -1,6 +1,6 @@
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock, call
+from unittest.mock import ANY, Mock, call
 
 import ctypes
 import main
@@ -68,6 +68,8 @@ def test_main_keeps_root_hidden_until_app_is_built(monkeypatch):
         call.withdraw(),
         call.app_built(),
         call.deiconify(),
+        # deferred in-app update confirmation (pending.json marker check)
+        call.after(1200, ANY),
         call.mainloop(),
     ]
 

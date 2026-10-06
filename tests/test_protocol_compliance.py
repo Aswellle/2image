@@ -30,6 +30,7 @@ PANEL_FILES = [
     "wizard_free.py",
     "wizard_paid.py",
     "stats_dashboard.py",
+    "about_dialog.py",
 ]
 
 

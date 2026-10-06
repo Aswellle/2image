@@ -120,6 +120,10 @@ class SettingsController:
         tk.Checkbutton(body, text=_("settings_show_wizard"),
                        variable=wiz_var, font=F["body"], bg=C["bg"], fg=C["text"],
                        activebackground=C["bg"], selectcolor=C["entry"]).pack(anchor="w")
+        upd_var = tk.BooleanVar(value=self.app.cfg.get("update_check_on_start", True))
+        tk.Checkbutton(body, text=_("settings_update_on_start"),
+                       variable=upd_var, font=F["body"], bg=C["bg"], fg=C["text"],
+                       activebackground=C["bg"], selectcolor=C["entry"]).pack(anchor="w")
 
         st = tk.Label(body, text="", font=F["body"], bg=C["bg"], fg=C["ok"])
         st.pack(anchor="w", pady=(12, 0))
@@ -127,6 +131,7 @@ class SettingsController:
         def _save() -> None:
             self.app.cfg["default_size"] = sz_var.get()
             self.app.cfg["show_wizard_on_start"] = wiz_var.get()
+            self.app.cfg["update_check_on_start"] = upd_var.get()
             save_config(self.app.cfg)
             self.app.content.szv.set(sz_var.get())
             if lang_var.get() != self.app.cfg.get("language", "zh-CN"):

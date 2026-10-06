@@ -98,6 +98,7 @@ class App:
         self._prompt_wizard = None
         self._phrase_panel = None
         self._stats_win = None
+        self._about_win = None
         self._cur_bytes = None
         self.toasts = ToastManager(root)
 
@@ -127,6 +128,8 @@ class App:
 
         if self.cfg.get("show_wizard_on_start", True):
             root.after(300, self._open_wizard)
+        # 启动后台检查更新（仅打包版；静默失败，仅提示绝不自动下载）
+        root.after(4000, self._startup_update_check)
 
     # ── 转发属性（供 HistorySidebar / MainContent 通过 self.app.xxx 访问）──
 
@@ -616,6 +619,68 @@ class App:
     # ══════════════════════════════════════════════════════════
     #   📊 统计看板  v2  —  GitHub 风格全年热力图 + 完整重设计
     # ══════════════════════════════════════════════════════════
+    def _open_about(self):
+        """Open the About window (lazy singleton)."""
+        from ui.about_dialog import AboutDialog
+        if self._about_win is None or not self._about_win.winfo_exists():
+            self._about_win = AboutDialog(self)
+        else:
+            self._about_win.lift()
+            self._about_win.focus_force()
+
+    def _check_update_menu(self):
+        """Menu entry: open About window and start the check right away."""
+        self._open_about()
+        if self._about_win is not None and self._about_win.winfo_exists():
+            self._about_win.start_check()
+
+    def _startup_update_check(self):
+        """Background update check at startup: packaged builds only,
+        throttled to once per 24h, fails silently and only toasts when a
+        newer stable release exists (never auto-downloads)."""
+        import threading as _threading
+        from services.updater import state as _upd_state
+        from services.updater import version as _upd_ver
+        from services.updater.manifest import fetch_manifest
+        if (not _upd_ver.is_packaged()
+                or not self.cfg.get("update_check_on_start", True)):
+            return
+        if not _upd_state.should_auto_check():
+            return
+
+        def _worker():
+            try:
+                manifest = fetch_manifest(_upd_ver.get_current_version())
+            except Exception:
+                return  # silent: a failed startup check never disturbs
+            _upd_state.mark_checked(
+                manifest.version if manifest else None)
+            if manifest is None or _upd_state.is_dismissed(manifest.version):
+                return
+            self.root.after(0, lambda: self._toast(
+                _("update_toast_found", tag=manifest.tag), "info"))
+
+        _threading.Thread(target=_worker, daemon=True,
+                          name="startup-update-check").start()
+
+    def _has_active_tasks(self) -> bool:
+        """True while a generation or a queue run is in flight.
+
+        The update flow uses this to warn before exiting the app
+        (doc §18: never silently interrupt running tasks).
+        """
+        try:
+            if str(self.content.gb["state"]) == "disabled":
+                return True
+        except Exception:
+            pass
+        try:
+            if bool(getattr(self._queue_panel, "_running", False)):
+                return True
+        except Exception:
+            pass
+        return False
+
     def _show_stats(self):
         from ui.stats_dashboard import StatsDashboard
         # 懒单例：与其他覆盖窗口一致，避免重复堆叠

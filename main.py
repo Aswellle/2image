@@ -76,6 +76,20 @@ def main():
     _configure_window_icon(root)
     App(root)
     root.deiconify()
+
+    # ── 更新确认（独立更新器等待的完成标记，见 services/updater/state.py）──
+    def _confirm_pending_update():
+        try:
+            from services.updater import state as upd_state
+            from services.updater.version import get_current_version
+            upd_state.purge_runtime_dirs()
+            if upd_state.confirm_pending_update(get_current_version()):
+                log_to_file(f"[更新] 新版本 v{get_current_version()} 运行正常，"
+                            f"已写入完成标记")
+        except Exception as exc:
+            log_to_file(f"[更新] 确认标记处理失败: {type(exc).__name__}")
+
+    root.after(1200, _confirm_pending_update)
     root.mainloop()
 
 

@@ -453,6 +453,202 @@ STRINGS = {
         "zh-CN": "请先在主输入框填写提示词",
         "en":    "Enter a prompt in the main input box first",
     },
+    "settings_update_on_start": {
+        "zh-CN": "启动时自动检查更新（仅提示，不自动下载）",
+        "en":    "Check for updates on startup (notify only, never auto-download)",
+    },
+    "menu_check_update": {
+        "zh-CN": "🔄  检查更新…",
+        "en":    "🔄  Check for Updates…",
+    },
+    "menu_about": {
+        "zh-CN": "ℹ  关于 2image…",
+        "en":    "ℹ  About 2image…",
+    },
+    "about_title": {
+        "zh-CN": "关于 2image",
+        "en":    "About 2image",
+    },
+    "about_repo_hint": {
+        "zh-CN": "开源仓库：github.com/Aswellle/2image（发行版由 GitHub Releases 托管）",
+        "en":    "Source: github.com/Aswellle/2image (releases hosted on GitHub Releases)",
+    },
+    "about_version_label": {
+        "zh-CN": "当前版本",
+        "en":    "Current version",
+    },
+    "about_check_update": {
+        "zh-CN": "🔄 检查更新",
+        "en":    "🔄 Check for Updates",
+    },
+    "about_checking": {
+        "zh-CN": "正在检查更新…",
+        "en":    "Checking for updates…",
+    },
+    "about_up_to_date": {
+        "zh-CN": "已是最新版本（v{version}）",
+        "en":    "Up to date (v{version})",
+    },
+    "about_no_releases": {
+        "zh-CN": "仓库暂无正式发行版",
+        "en":    "No stable release published yet",
+    },
+    "about_new_found": {
+        "zh-CN": "发现新版本 {tag}（当前 v{current}）",
+        "en":    "New version {tag} available (current v{current})",
+    },
+    "about_released_at": {
+        "zh-CN": "发布于 {date}",
+        "en":    "Published {date}",
+    },
+    "about_check_failed": {
+        "zh-CN": "检查更新失败：{err}",
+        "en":    "Check for updates failed: {err}",
+    },
+    "about_download_install": {
+        "zh-CN": "⬇ 下载并安装",
+        "en":    "⬇ Download && Install",
+    },
+    "about_downloading": {
+        "zh-CN": "下载中 {tag}：{pct}%（{done} / {total} MB · {speed} MB/s）",
+        "en":    "Downloading {tag}: {pct}% ({done} / {total} MB · {speed} MB/s)",
+    },
+    "about_downloading_nolen": {
+        "zh-CN": "下载中（已接收 {done} MB）",
+        "en":    "Downloading ({done} MB received)",
+    },
+    "about_verifying": {
+        "zh-CN": "校验 SHA256 中…",
+        "en":    "Verifying SHA256…",
+    },
+    "about_ready": {
+        "zh-CN": "下载完成，SHA256 校验通过：\n{path}",
+        "en":    "Downloaded and verified: \n{path}",
+    },
+    "about_confirm_install_body": {
+        "zh-CN": "更新包已准备完成并通过校验。\n\n安装更新需要关闭 2image：正在生成的任务应先完成或取消。\n独立更新器将退出本应用、原位升级到新版本，并自动重启新版；\n若安装失败会自动恢复旧版本。\n\n现在安装吗？",
+        "en":    "The update package is downloaded and verified.\n\nInstalling requires closing 2image; running generation tasks should finish or be cancelled first.\nThe independent updater will exit this app, upgrade in place and start the new build automatically;\nif installation fails the previous version is restored.\n\nInstall now?",
+    },
+    "about_installing": {
+        "zh-CN": "独立更新器已启动，应用即将退出并安装新版本…",
+        "en":    "Updater started; exiting the app to install the new version…",
+    },
+    "about_install_failed": {
+        "zh-CN": "更新失败",
+        "en":    "Update failed",
+    },
+    "about_download_cancelled": {
+        "zh-CN": "已取消下载",
+        "en":    "Download cancelled",
+    },
+    "about_cancel_download": {
+        "zh-CN": "取消下载",
+        "en":    "Cancel download",
+    },
+    "about_open_releases": {
+        "zh-CN": "🌐 打开发布页",
+        "en":    "🌐 Open Releases Page",
+    },
+    "about_dev_hint": {
+        "zh-CN": "开发环境不支持应用内安装，将打开发布页供手动下载。",
+        "en":    "In-app install is disabled in dev environment; opening the releases page instead.",
+    },
+    "about_asset_missing": {
+        "zh-CN": "该发行版未附带所需的安装资产，请前往发布页下载。",
+        "en":    "This release has no required asset; please download from the releases page.",
+    },
+    "about_portable_flow": {
+        "zh-CN": "检测到便携版运行：将下载新便携版，下载完成后请退出应用并用其替换当前 exe。",
+        "en":    "Running as portable: the new portable exe will be downloaded; exit the app and replace the current one with it.",
+    },
+    "about_portable_hint": {
+        "zh-CN": "新便携版已下载并通过校验：\n{path}\n请退出应用后，用它替换当前 exe 即可完成更新。",
+        "en":    "New portable build downloaded and verified: \n{path}\nExit the app and replace your current exe with it to finish the update.",
+    },
+    "update_toast_found": {
+        "zh-CN": "发现新版本 {tag}！可在 设置 → 关于 2image 中下载安装",
+        "en":    "New version {tag} available! See Settings → About 2image to install",
+    },
+    "about_check_failed_hint": {
+        "zh-CN": "可能原因：网络连接失败 / GitHub 暂时不可访问 / 更新清单无效",
+        "en":    "Possible causes: network failure / GitHub temporarily unreachable / invalid update manifest",
+    },
+    "about_size_line": {
+        "zh-CN": "安装包：Windows x64 · 约 {size} MB",
+        "en":    "Installer: Windows x64 · ~{size} MB",
+    },
+    "about_view_notes": {
+        "zh-CN": "📄 查看更新内容",
+        "en":    "📄 View Release Notes",
+    },
+    "about_install_ready": {
+        "zh-CN": "⬇ 安装并重启",
+        "en":    "⬇ Install && Restart",
+    },
+    "about_tasks_running_title": {
+        "zh-CN": "当前有任务运行",
+        "en":    "A task is still running",
+    },
+    "about_tasks_running_body": {
+        "zh-CN": "检测到正在进行的生成任务或队列任务，安装更新会退出应用并中断任务。\n\n[是] 仍要退出并更新\n[否] 等待任务完成后自行重试\n[取消] 暂不更新",
+        "en":    "A generation or queue task is running; installing exits the app and interrupts it.\n\n[Yes] exit and install anyway\n[No] wait for the task to finish, retry later\n[Cancel] do not update now",
+    },
+    "about_tasks_wait_hint": {
+        "zh-CN": "已保留更新包，可稍后在此窗口继续安装。",
+        "en":    "The update package is kept; you can install it later from this window.",
+    },
+    "about_portable_ready_body": {
+        "zh-CN": "更新包已下载并通过校验：\n{path}\n\n是否立即运行安装包安装正式版？（选「否」将打开发布页）",
+        "en":    "The installer is downloaded and verified:\n{path}\n\nRun it now to install the full version? (\"No\" opens the releases page)",
+    },
+    "about_portable_launched": {
+        "zh-CN": "已启动安装程序，请按向导完成新版安装。",
+        "en":    "Installer launched; follow its wizard to install the new version.",
+    },
+    "about_updater_missing": {
+        "zh-CN": "未找到独立更新器（2image_updater.exe），将直接静默运行安装程序（无校验回滚保护）。",
+        "en":    "The independent updater (2image_updater.exe) was not found; falling back to a direct silent install (without verify/rollback protection).",
+    },
+    "upd_err_network": {
+        "zh-CN": "网络连接失败",
+        "en":    "Network request failed",
+    },
+    "upd_err_http": {
+        "zh-CN": "服务器返回错误",
+        "en":    "Server returned an error",
+    },
+    "upd_err_manifest": {
+        "zh-CN": "更新清单无效",
+        "en":    "Invalid update manifest",
+    },
+    "upd_err_version": {
+        "zh-CN": "版本号无效",
+        "en":    "Invalid version number",
+    },
+    "upd_err_size": {
+        "zh-CN": "下载文件大小与清单不符",
+        "en":    "Downloaded size does not match the manifest",
+    },
+    "upd_err_hash": {
+        "zh-CN": "SHA-256 校验失败，已删除下载文件",
+        "en":    "SHA-256 verification failed; the download was deleted",
+    },
+    "upd_err_launch": {
+        "zh-CN": "无法启动安装程序",
+        "en":    "Could not launch the installer",
+    },
+    "upd_err_install": {
+        "zh-CN": "安装程序执行失败",
+        "en":    "The installer did not finish successfully",
+    },
+    "upd_err_cancel": {
+        "zh-CN": "已取消",
+        "en":    "Cancelled",
+    },
+    "upd_err_unknown": {
+        "zh-CN": "未知错误",
+        "en":    "Unknown error",
+    },
     "dlg_compare_empty": {
         "zh-CN": "暂无历史图片可用于对比",
         "en":    "No history images available for comparison",
