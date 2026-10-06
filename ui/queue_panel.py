@@ -320,13 +320,13 @@ class QueuePanel(tk.Frame):
         prompt = self.app.pt.get("1.0", "end").strip()
         if not prompt:
             messagebox.showwarning(
-                "提示", "请先在主输入框填写提示词",
+                _("dlg_tip"), _("dlg_queue_empty_prompt"),
                 parent=self.app.root)
             return
         sz    = self.app.szv.get()
         psel  = self.app.pv.get()
         if psel.startswith("───"):
-            messagebox.showinfo("提示", "请选择一个具体接口，而非分隔线。",
+            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"),
                                 parent=self.app.root)
             return
         # 自动档判断走 i18n 键（与 sidebar 一致），硬编码中文文案在
