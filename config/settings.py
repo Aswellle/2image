@@ -124,6 +124,8 @@ DEFAULT_CONFIG: dict = {
     "default_provider":     "自动（按优先级）",
     "default_size":         "1024x1024",
     "show_wizard_on_start": True,
+    # 启动时后台检查 GitHub 最新发行版（仅提示，绝不自动下载）
+    "update_check_on_start": True,
     "sidebar_width": 360,
     # ── 付费边界（PAY-001）─────────────────────────────────────
     # False = 自动路由绝不使用付费接口（即使已配置 Key）；
