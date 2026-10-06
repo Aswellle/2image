@@ -1,4 +1,12 @@
 [Setup]
+; Fixed install identity.  All shipped releases (v<=2.6.x) derived their
+; AppId from the old AppName "text2image_pro"; the product now renames
+; to "2image", so the AppId is pinned to that legacy value to keep every
+; past and future installer treating this as ONE application — a new
+; version upgrades the existing install in place (same directory, same
+; uninstaller) instead of creating a parallel instance.
+; NEVER change this value and NEVER embed the version number in it.
+AppId=text2image_pro
 AppName={APP_NAME}
 AppVersion={APP_VERSION}
 AppVerName={APP_NAME} v{APP_VERSION}
@@ -19,6 +27,7 @@ Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "A
 
 [Files]
 Source: "{SRC_DIR}\{APP_EXE_NAME}.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{SRC_DIR}\2image_updater.exe"; DestDir: "{app}"; Flags: ignoreversion skipifdoesntexist
 Source: "{ICON_PATH}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]

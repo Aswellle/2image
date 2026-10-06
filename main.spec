@@ -8,7 +8,8 @@ _provider_modules = collect_submodules("services.providers")
 
 # SUP-001: 随安装包分发字体（构建前由 tools/fetch_fonts.py 获取；
 # 目录为空时跳过，运行时回退系统字体）
-_datas = [(os.path.join(_root, 'ICON_256x256.ico'), '.')]
+_datas = [(os.path.join(_root, 'ICON_256x256.ico'), '.'),
+          (os.path.join(_root, 'version.json'), '.')]
 _fonts_dir = os.path.join(_root, 'assets', 'fonts')
 if os.path.isdir(_fonts_dir):
     for _f in os.listdir(_fonts_dir):
@@ -44,7 +45,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='text2image_pro',
+    name='2image',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

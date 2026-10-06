@@ -15,8 +15,9 @@ INSTALLER_OUTPUT_DIR = INSTALLER_DIR / "Output"
 VERSION_FILE = PROJECT_DIR / "version.json"
 INNO_TEMPLATE = INSTALLER_DIR / "template.iss"
 ISCC_PATH = "ISCC"
-APP_EXE_NAME = "text2image_pro"
-APP_NAME = "text2image_pro"
+APP_EXE_NAME = "2image"
+APP_NAME = "2image"
+INSTALLER_BASE = "2image-setup"        # installer asset: 2image-setup-v<ver>.exe
 
 
 def get_version() -> str:
@@ -80,13 +81,32 @@ def pyinstaller_build() -> Path:
     return _require_file(DIST_DIR / f"{APP_EXE_NAME}.exe", "便携版可执行文件")
 
 
+def pyinstaller_updater_build() -> Path:
+    """Build the standalone update runner into dist/ so the Inno Setup
+    installer bundles it (template.iss picks it up from SRC_DIR)."""
+    _run(
+        [
+            sys.executable,
+            "-m",
+            "PyInstaller",
+            "--noconfirm",
+            "--clean",
+            f"--distpath={DIST_DIR}",
+            f"--workpath={BUILD_DIR / 'updater'}",
+            str(PROJECT_DIR / "tools" / "updater" / "updater.spec"),
+        ],
+        "运行 PyInstaller（独立更新器）",
+    )
+    return _require_file(DIST_DIR / "2image_updater.exe", "独立更新器")
+
+
 def render_installer_script(version: str) -> str:
     template = INNO_TEMPLATE.read_text(encoding="utf-8")
     values = {
         "APP_NAME": APP_NAME,
         "APP_VERSION": version,
         "APP_EXE_NAME": APP_EXE_NAME,
-        "OUTPUT_BASE": f"{APP_NAME}_v{version}",
+        "OUTPUT_BASE": f"{INSTALLER_BASE}-v{version}",
         "OUTPUT_DIR": str(INSTALLER_OUTPUT_DIR),
         "SRC_DIR": str(DIST_DIR),
         "ICON_PATH": str(ICON),
@@ -107,7 +127,7 @@ def inno_setup_build(version: str) -> Path:
     script = write_installer_script(version)
     _run([ISCC_PATH, str(script)], "运行 Inno Setup")
     return _require_file(
-        INSTALLER_OUTPUT_DIR / f"{APP_NAME}_v{version}.exe",
+        INSTALLER_OUTPUT_DIR / f"{INSTALLER_BASE}-v{version}.exe",
         "Windows 安装程序",
     )
 
@@ -115,9 +135,11 @@ def inno_setup_build(version: str) -> Path:
 def main() -> None:
     version = get_version()
     portable_exe = pyinstaller_build()
+    updater_exe = pyinstaller_updater_build()
     installer_exe = inno_setup_build(version)
     print("全部打包流程完成！")
     print(f"便携版: {portable_exe}")
+    print(f"独立更新器: {updater_exe}")
     print(f"安装版: {installer_exe}")
 
 
