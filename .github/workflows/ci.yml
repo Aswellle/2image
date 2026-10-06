@@ -94,6 +94,12 @@ jobs:
       - name: Install Inno Setup 6
         run: choco install innosetup -y --no-progress
 
+      - name: Verify release version consistency
+        shell: pwsh
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: python tools/verify_release_version.py
+
       - name: Read version
         id: ver
         shell: pwsh
@@ -107,6 +113,14 @@ jobs:
           PYTHONUTF8: "1"
         run: python auto_build.py
 
+      - name: Rename portable exe with version
+        shell: pwsh
+        run: |
+          # Installer was already built from dist/2image.exe by auto_build;
+          # the release asset carries the version in its name.
+          Move-Item dist/2image.exe "dist/2image-portable-v${{ steps.ver.outputs.version }}.exe" -Force
+          Get-ChildItem dist/*.exe, installer/Output/*.exe | Select-Object Name, Length
+
       - name: Verify bundled font
         shell: pwsh
         run: |
@@ -116,11 +130,22 @@ jobs:
           }
           Write-Host "Bundled font present: assets/fonts/JetBrainsMono-Regular.ttf"
 
-      - name: Generate checksums + SBOM
+      - name: Generate update manifest, checksums + SBOM
         shell: pwsh
+        env:
+          PYTHONUTF8: "1"
         run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $installer = "installer/Output/2image-setup-v$v.exe"
+          if (-not (Test-Path $installer)) {
+            Write-Error "Installer missing: $installer"
+            exit 1
+          }
+          # update.json is the in-app updater's only channel; its SHA256
+          # and size are computed from the real built installer.
+          python tools/generate_update_manifest.py --version $v --tag "v$v" --installer $installer --out dist/update.json
           $Output = @()
-          Get-ChildItem dist/*.exe, installer/Output/*.exe -ErrorAction SilentlyContinue | ForEach-Object {
+          Get-ChildItem dist/*.exe, installer/Output/*.exe, dist/update.json -ErrorAction SilentlyContinue | ForEach-Object {
             $hash = Get-FileHash $_.FullName -Algorithm SHA256
             $Output += "$($hash.Hash)  $($_.Name)"
           }
@@ -128,26 +153,49 @@ jobs:
           Get-Content SHA256SUMS.txt
           python tools/generate_sbom.py
 
+      - name: Verify release assets exist
+        shell: pwsh
+        run: |
+          # A release must never be created first and assets patched in
+          # later — every required file must already be on disk here.
+          $required = @(
+            "dist/2image-portable-v${{ steps.ver.outputs.version }}.exe",
+            "dist/2image_updater.exe",
+            "dist/update.json",
+            "SHA256SUMS.txt",
+            "dist/SBOM.spdx.json",
+            "dist/build-metadata.json"
+          )
+          Get-ChildItem installer/Output/*.exe | ForEach-Object { $required += $_.FullName }
+          foreach ($f in $required) {
+            if (-not (Test-Path $f)) {
+              Write-Error "Release asset missing: $f"
+              exit 1
+            }
+          }
+          Write-Host "All release assets present:"; $required
+
       - name: Upload portable EXE
         uses: actions/upload-artifact@v4
         with:
-          name: text2image-pro-v${{ steps.ver.outputs.version }}-portable
-          path: dist/text2image_pro.exe
-          if-no-files-found: warn
+          name: 2image-v${{ steps.ver.outputs.version }}-portable
+          path: dist/2image-portable-v${{ steps.ver.outputs.version }}.exe
+          if-no-files-found: error
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: text2image-pro-v${{ steps.ver.outputs.version }}-installer
+          name: 2image-v${{ steps.ver.outputs.version }}-installer
           path: installer/Output/*.exe
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Upload checksums + SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: text2image-pro-v${{ steps.ver.outputs.version }}-artifacts
+          name: 2image-v${{ steps.ver.outputs.version }}-artifacts
           path: |
             SHA256SUMS.txt
+            dist/update.json
             dist/SBOM.spdx.json
             dist/build-metadata.json
 
@@ -171,8 +219,9 @@ jobs:
           prerelease: false
           body_path: release-notes/v${{ steps.ver.outputs.version }}.md
           files: |
-            dist/text2image_pro.exe
+            dist/2image-portable-v${{ steps.ver.outputs.version }}.exe
             installer/Output/*.exe
+            dist/update.json
             SHA256SUMS.txt
             dist/SBOM.spdx.json
             dist/build-metadata.json

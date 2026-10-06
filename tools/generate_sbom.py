@@ -97,19 +97,19 @@ def generate_sbom(src_dir: str = ".", out_dir: str = "dist") -> dict:
         "spdxVersion": "SPDX-2.3",
         "dataLicense": "CC0-1.0",
         "SPDXID": "SPDXRef-DOCUMENT",
-        "name": f"text2image-pro-{version}",
+        "name": f"2image-{version}",
         "documentNamespace": f"https://github.com/Aswellle/2image/{version}",
         "creationInfo": {
             "created": datetime.now(timezone.utc).isoformat(),
             "creators": [
-                "Tool: text2image-build",
+                "Tool: 2image-build",
                 f"Person: build@{os.environ.get('COMPUTERNAME', 'ci')}",
             ],
         },
         "packages": [
             {
                 "SPDXID": "SPDXRef-RootPackage",
-                "name": "text2image-pro",
+                "name": "2image",
                 "versionInfo": version,
                 "downloadLocation": "https://github.com/Aswellle/2image",
                 "filesAnalyzed": False,
