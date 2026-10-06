@@ -83,7 +83,7 @@
 ### 方式一：下载安装包（推荐）
 
 1. 前往 [Releases 页面](https://github.com/Aswellle/2image/releases/latest)
-2. 下载 `text2image_pro_v*.exe`（安装包）或 `text2image_pro.exe`（便携版）
+2. 下载 `2image-setup-v*.exe`（安装包）或 `2image-portable-v*.exe`（便携版）
 3. 运行，首次启动会弹出配置向导
 4. 不配置任何 Key 也可直接生成（Pollinations.AI 免费无限额）
 
@@ -187,7 +187,7 @@ def try_my_api(prompt, w, h, seed, cfg, log):
 # 一键打包（需要 PyInstaller + Inno Setup）
 pip install pyinstaller
 python auto_build.py
-# → dist/text2image_pro.exe        便携版
+# → dist/2image.exe               便携版
 # → installer/Output/*.exe         安装包
 ```
 

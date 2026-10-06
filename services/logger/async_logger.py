@@ -91,7 +91,7 @@ class AsyncLogger:
                 cls._initialized = False
 
 
-def get_logger(name: str = "text2image") -> logging.Logger:
+def get_logger(name: str = "2image") -> logging.Logger:
     """Get a configured logger."""
     if not AsyncLogger._initialized:
         AsyncLogger.setup()

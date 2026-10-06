@@ -84,7 +84,7 @@ All images, history, and configuration are saved on your machine (`~/2image/`). 
 ### Option A: Download Installer (Recommended)
 
 1. Go to the [Releases page](https://github.com/Aswellle/2image/releases/latest)
-2. Download `text2image_pro_v*.exe` (installer) or `text2image_pro.exe` (portable)
+2. Download `2image-setup-v*.exe` (installer) or `2image-portable-v*.exe` (portable)
 3. Run — a configuration wizard appears on first launch
 4. No API key required to start generating (Pollinations.AI is free and unlimited)
 
@@ -188,7 +188,7 @@ Free and paid APIs automatically appear in the UI dropdown and smart routing. Co
 # One-command build (requires PyInstaller + Inno Setup)
 pip install pyinstaller
 python auto_build.py
-# → dist/text2image_pro.exe         Portable version
+# → dist/2image.exe                 Portable version
 # → installer/Output/*.exe          Installer
 ```
 

@@ -7,7 +7,7 @@ Desktop text-to-image generation tool (文字生图工具) — a Python + Tkinte
 - **Language**: Python 3.11+
 - **GUI**: tkinter + ttk (stdlib, no external GUI framework)
 - **Packaging**: PyInstaller → Inno Setup → Windows `.exe` installer
-- **Version**: 2.5.0 (managed via `version.json`)
+- **Version**: 2.6.0 (managed via `version.json`)
 - **Platform**: Windows-only (uses `ctypes.windll` for DPI awareness)
 - **Dependencies**: `pillow`, `requests` (plus stdlib: `tkinter`, `sqlite3`, `threading`, `json`, `ctypes`, `pathlib`, `base64`, `io`, `os`, `re`, `time`, `datetime`, `random`, `hashlib`, `collections`, `concurrent.futures`, `functools`, `webbrowser`, `shutil`, `html`, `queue`, `urllib`, `ipaddress`, `subprocess`, `argparse`, `tempfile`)
 - **No package management files exist**: no `requirements.txt`, `pyproject.toml`, `setup.py`, or `setup.cfg`
@@ -32,6 +32,7 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
           │   ├── smart_router.py   ← scene-aware provider selection
           │   ├── providers/*.py    ← individual API clients (auto-discovered)
           │   ├── generation/       ← orchestrator, router, budget, cancellation, downloader
+          │   ├── updater/          ← in-app self-update: manifest / downloader / installer / state
           │   ├── prompt_assistant.py ← AI prompt generation (DeepSeek V3)
           │   ├── phrase_library.py ← built-in + custom phrase snippets
           │   ├── translation.py    ← zh→en via MyMemory API
@@ -47,6 +48,7 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
               ├── phrase_panel.py    ← phrase snippet browser
               ├── wizard_free.py     ← free API key config
               ├── wizard_paid.py     ← paid API key config
+              ├── about_dialog.py    ← About window + state-machine update flow
               └── stats_dashboard.py ← yearly heatmap and statistics
 ```
 
@@ -74,7 +76,7 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
 |`services/`|Business logic — image generation dispatch, AI assistants, translation|
 |`services/providers/`|One file per API provider, each exporting a `try_xxx()` function; auto-discovered at import|
 |`ui/`|All Tkinter UI — App controller + 10 panel/window modules + Protocol interfaces|
-|`tools/`|Build/installer CLI scripts (standalone, not imported by app)|
+|`tools/`|Build/installer CLI scripts + `tools/updater/`（独立更新器源与 spec）(standalone, not imported by app)|
 |`installer/`|Inno Setup template + rendered ISS files + output `.exe`|
 |`tests/`|pytest test suite with fixtures for in-memory DB, mock app, and tk root|
 |`docs/`|Architecture analysis and code review documentation|
@@ -334,12 +336,13 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`config/settings.py`|Path constants (`APP_DIR`, `IMAGES_DIR`, `DB_FILE`), `DEFAULT_CONFIG` dict (all API keys + defaults), `load_config()`/`save_config()`, config v1→v2 migration|
 |`config/fonts.py`|Font loading/caching, `F` dict, `init_fonts()`|
 |`config/theme.py`|`DARK_THEME` (single dark theme), `tag_color()`, global `C`|
-|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (154 keys, 2 locales), `init_language()`|
+|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (226 keys, 2 locales), `init_language()`|
 |`data/repository.py`|SQLite schema (`history` table: id, timestamp, prompt, translated, image_path, provider, nickname, favorited), tags via junction table (`entry_tags`), full CRUD API, stats, heatmap, JSON→SQLite migration, `_set_test_db()` for in-memory testing|
 |`services/image_service.py`|`generate_image()` — iterates providers in order, catches `ValueError`, falls back; `save_image_file()` — saves bytes to disk|
 |`services/smart_router.py`|`get_provider_order()` — scene-aware routing: template→scene→providers, keyword detection, filters unavailable paid providers|
 |`services/providers/__init__.py`|Auto-discovers all `try_*` functions via `pkgutil.iter_modules`, populates `FREE_PROVIDERS`, `PAID_PROVIDERS`, `COMMERCIAL_PROVIDERS`, `ALL_PROVIDERS`, `DEFAULT_ORDER`|
 |`services/generation/orchestrator.py`|Task-level generation orchestration — cancellation/deadline/health/retry/fallback|
+|`services/updater/`|应用内自更新协议包 — `version.py` SemVer 比较与当前版本源、`manifest.py` update.json 清单校验（唯一更新通道，域名白名单）、`downloader.py` 流式下载 partial→原子改名+大小/SHA256 门禁、`installer.py` Inno 静默原位升级参数、`state.py` 更新状态机/pending 确认标记/24h 节流/备份回滚/审计日志、`errors.py` UPDATE_* 错误码|
 |`services/prompt_assistant.py`|`generate_prompt()` — calls DeepSeek V3 via SiliconFlow API; `apply_template()` — template-based prompt; `TEMPLATES` dict (~600 lines)|
 |`services/phrase_library.py`|Built-in + custom phrase management, `BUILTIN_PHRASES` (45 phrases, 7 categories)|
 |`services/translation.py`|`has_chinese()`, `translate_zh_to_en()` via MyMemory API|
@@ -351,9 +354,10 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`ui/batch_panel.py`|6-cell variant grid for multi-parameter exploration|
 |`ui/queue_panel.py`|Sequential job queue for batch generation|
 |`ui/viewer.py`|`ImageViewerWindow` — zoom, pan, crop, save, copy image|
+|`ui/about_dialog.py`|About 窗口 — 状态机驱动的检查更新/下载/安装流程，任务运行守卫与便携版分支（懒单例）|
 |`main.spec`|PyInstaller spec (console=False, icon set, upx enabled, hiddenimports via `collect_submodules`)|
 |`auto_build.py`|Build orchestrator: version read → PyInstaller → Inno Setup → .exe installer|
-|`version.json`|`{"version": "2.5.0"}`|
+|`version.json`|`{"version": "2.6.0"}`|
 |`tests/conftest.py`|pytest fixtures: `tk_root` (real Tk), `in_memory_db` (SQLite :memory:), `mock_app` (hand-rolled AppProtocol mock)|
 
 ---
@@ -364,7 +368,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 - **Package manager**: pip (no poetry/pipenv/uv)
 - **GUI**: tkinter + ttk (stdlib) — no Qt, wx, or web-based UI
 - **Database**: SQLite via stdlib `sqlite3` (no ORM, raw SQL, WAL mode)
-- **Packaging**: PyInstaller → single `.exe` → Inno Setup → Windows installer (`text2image_pro_v<ver>.exe`, ~37 MB)
+- **Packaging**: PyInstaller → single `.exe` → Inno Setup → Windows installer (`2image-setup-v<ver>.exe`, ~37 MB)
 - **Configuration**: JSON file at `~/2image/config.json`
 - **Image storage**: `~/2image/images/` (generated images saved as PNG files)
 - **Logs**: `~/2image/debug.log`
@@ -376,7 +380,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 ## Testing & QA
 
 - **Framework**: pytest（CI 矩阵 3.11/3.12 双版本 + coverage 上报）
-- **Test count**: ~514 items across 36 test files（`pytest tests/` 全量约 3 分钟）
+- **Test count**: ~617 items across 41 test files（`pytest tests/` 全量约 4 分钟）
 - **GUI**: 真实 Tk 会话级共享 root（`tk_session_root`），App 以 Toplevel 承载——规避 Windows 下反复创建/销毁解释器的 Tcl 崩溃
 
 ### Test Layout
@@ -385,6 +389,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |---|---|---|
 |Data|`test_repository.py`, `test_search.py`, `test_file_ownership.py`|CRUD、FTS5 搜索、标签、路径穿越防护|
 |Generation|`test_orchestrator.py`, `test_router.py`, `test_budget.py`, `test_job_queue.py`, `test_metrics.py`, `test_integration_orchestrator_e2e.py`|编排状态机、场景路由、预算、取消/超时/重试|
+|Updater|`tests/updater/test_version.py`, `test_manifest.py`, `test_downloader.py`, `test_state.py`, `test_installer.py`, `test_updater_script.py`|SemVer 矩阵、清单校验、下载完整性门禁、状态机/确认标记、静默安装参数、独立更新器回滚|
 |Providers|`test_providers.py`, `test_provider_contract.py`, `test_provider_contract2.py`, `test_new_providers.py`, `test_adapter.py`|契约签名、Key 守卫、SSRF、错误映射|
 |UI|`test_protocol_compliance.py`, `test_sidebar_ux.py`, `test_app_layout.py`, `test_language.py`, `test_thumbnail.py`, `test_toast.py` 等|协议一致性 AST 护栏、交互回归、缩略图管线、i18n|
 |Infra|`test_config.py`, `test_design_tokens.py`, `test_gap_fixes.py`, `test_fault_injection.py`, `test_performance.py`|配置、令牌、故障注入、性能门槛|
@@ -493,9 +498,9 @@ python tools/build_inno_installer.py \
 
 |Artifact|Location|
 |---|---|
-|PyInstaller .exe|`dist/main.exe`|
+|PyInstaller .exe|`dist/2image.exe` (portable asset in CI: `2image-portable-v<version>.exe`)|
 |Inno Setup .iss|`installer/auto_<version>.iss`|
-|Windows installer|`installer/Output/text2image_pro_v<version>.exe` (~37 MB)|
+|Windows installer|`installer/Output/2image-setup-v<version>.exe` (~37 MB)|
 
 ### Known Build Gaps
 

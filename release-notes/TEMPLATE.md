@@ -41,8 +41,8 @@
 
 ## 下载与安装
 
-- **安装包**：下载 `text2image_pro_v<version>.exe`，运行后按向导安装。
-- **便携版**：下载 `text2image_pro.exe`，无需安装即可直接运行。
+- **安装包**：下载 `2image-setup-v<version>.exe`，运行后按向导安装。
+- **便携版**：下载 `2image-portable-v<version>.exe`，无需安装即可直接运行。
 - <升级注意事项，如有。旧版配置/数据兼容性说明。>
 
 ## 验证
