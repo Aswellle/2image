@@ -103,7 +103,12 @@ class ThumbnailLoader:
     调用 shutdown()，否则线程随测试/窗口重建不断累积。
     """
     _PUMP_MS = 30
-    _STOP = object()   # 哨兵：worker 取到即退出
+    # Sentinel handed to workers on shutdown.  It MUST be a _Job (lowest
+    # priority, fully orderable): a plain object() in the heap makes
+    # heappop compare it against real jobs and crash the worker thread
+    # with TypeError whenever both sit in the queue at once.
+    _STOP = _Job(priority=-1, seq=-1, gen=-1, path="", thumb_size=0,
+                 on_ready=None, on_missing=None)
 
     def __init__(self, root, workers: int = 4,
                  pil_cache: PilThumbCache | None = None):

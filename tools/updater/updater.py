@@ -61,7 +61,18 @@ _PROCESS_QUERY_LIMITED = 0x1000
 # ── small helpers ────────────────────────────────────────────
 
 def _fatal(title: str, text: str) -> None:
-    """Show a blocking error dialog (windowed build: no console)."""
+    """Show a blocking error dialog (windowed build: no console).
+
+    Source runs (dev/tests) have a console and no user watching for
+    dialogs — log to stderr instead so nothing can block on a hidden
+    MessageBox.
+    """
+    if not getattr(sys, "frozen", False):
+        try:
+            print(f"[updater] {title}: {text}", file=sys.stderr)
+        except OSError:
+            pass
+        return
     try:
         import ctypes
         ctypes.windll.user32.MessageBoxW(0, text, title, 0x10)  # MB_ICONERROR

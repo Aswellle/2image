@@ -150,3 +150,20 @@ def test_loader_uses_l2_cache(tk_root, make_loader, png_file):
     assert len(results) == 3
     assert len(loader._pil) == 1     # 三次请求共用一份解码
     assert results[0] is results[1]  # 同一 PIL 对象（L2 命中）
+
+
+def test_loader_shutdown_with_pending_jobs_is_crash_free(tk_root, make_loader,
+                                                         png_file):
+    """Regression: shutdown() used to push a bare object() sentinel into
+    the PriorityQueue; with workers busy and jobs still queued, heappop
+    then compared the unorderable sentinel against _Job and killed the
+    worker threads with TypeError.  The sentinel is now a lowest-priority
+    _Job, so mixed-queue shutdown drains cleanly."""
+    loader = make_loader(workers=4)
+    loader.set_generation(1)
+    for i in range(40):   # far more work than 4 workers can drain at once
+        loader.submit(png_file, 90, i, 1,
+                      on_ready=lambda im: None, on_missing=lambda: None)
+    loader.shutdown()     # sentinel lands while real jobs are queued
+    for t in loader._threads:
+        assert not t.is_alive()

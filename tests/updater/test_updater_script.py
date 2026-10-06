@@ -71,12 +71,15 @@ def test_wait_for_confirmation_checks_success_marker(upd):
 
 # ── child flow ───────────────────────────────────────────────
 
-def test_child_rejects_bad_sha_length(upd, tmp_path):
+def test_child_rejects_bad_sha_length(upd, tmp_path, monkeypatch):
+    # _fatal opens a real blocking MessageBox — never allowed in tests
+    monkeypatch.setattr(upd, "_fatal", lambda *a, **k: None)
     args = _args(tmp_path, expected_sha256="abc")
     assert upd.run_child(args) == upd.EXIT_ARGS
 
 
-def test_child_rejects_missing_installer(upd, tmp_path):
+def test_child_rejects_missing_installer(upd, tmp_path, monkeypatch):
+    monkeypatch.setattr(upd, "_fatal", lambda *a, **k: None)
     args = _args(tmp_path)
     assert upd.run_child(args) == upd.EXIT_ARGS
 
