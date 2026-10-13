@@ -2,23 +2,23 @@
 
 ## Project Overview
 
-Desktop text-to-image generation tool (文字生图工具) — a Python + Tkinter application that aggregates 17+ AI image generation APIs (free, paid, and commercial tiers) into a unified local GUI. Supports batch variants, AI prompt optimization via LLM (DeepSeek V3), phrase snippet library, translation (zh→en), and full history management with SQLite backend. Runs entirely locally with no server dependencies.
+Desktop text-to-image generation tool (文字生图工具, app name: **2image**) — a Python + Tkinter application that aggregates 23 AI image generation APIs (free, paid, and commercial tiers) into a unified local GUI. Supports batch variants, AI prompt optimization via LLM (DeepSeek V3), phrase snippet library, translation (zh→en), and full history management with SQLite backend. Runs entirely locally with no server dependencies.
 
 - **Language**: Python 3.11+
 - **GUI**: tkinter + ttk (stdlib, no external GUI framework)
 - **Packaging**: PyInstaller → Inno Setup → Windows `.exe` installer
-- **Version**: 2.6.0 (managed via `version.json`)
+- **Version**: 2.7.0 (managed via `version.json`)
 - **Platform**: Windows-only (uses `ctypes.windll` for DPI awareness)
-- **Dependencies**: `pillow`, `requests` (plus stdlib: `tkinter`, `sqlite3`, `threading`, `json`, `ctypes`, `pathlib`, `base64`, `io`, `os`, `re`, `time`, `datetime`, `random`, `hashlib`, `collections`, `concurrent.futures`, `functools`, `webbrowser`, `shutil`, `html`, `queue`, `urllib`, `ipaddress`, `subprocess`, `argparse`, `tempfile`)
-- **No package management files exist**: no `requirements.txt`, `pyproject.toml`, `setup.py`, or `setup.cfg`
-- **CI/CD**: GitHub Actions (`.github/workflows/ci.yml`) — quality gates + pytest matrix (3.11/3.12) + tag-driven build & release
+- **Dependencies**: `requirements.txt` — runtime: `Pillow>=10,<11`, `requests>=2.31,<3`; dev: `pytest`, `pytest-cov`, `ruff`. Everything else is stdlib (`tkinter`, `sqlite3`, `threading`, `json`, `ctypes`, `pathlib`, `concurrent.futures`, …)
+- **Package management**: `requirements.txt` (pip) + `pyproject.toml` (ruff: target py311, line-length 120, isort/pyflakes rules; pytest `--tb=short`; coverage `fail_under = 68`). No poetry/uv/setup.py
+- **CI/CD**: GitHub Actions (`.github/workflows/ci.yml`) — ruff gates (F821/E9 → F401/F841/E402 → format check), non-blocking mypy + pip-audit, pytest matrix (3.11/3.12, `--cov-fail-under=68`) + tag-driven build & release with update.json/update 协议门禁
 
 ---
 
 ## Architecture & Data Flow
 
 ```
-main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
+main.py  (entry: DPI → fonts → legacy-data migration → DB init → tk.Tk → App)
    │
    └── ui/app.py  (App class — owns tk.Tk root, self.cfg dict, panel lifecycle)
           │
@@ -30,13 +30,14 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
           ├── services/
           │   ├── image_service.py  ← dispatch to providers
           │   ├── smart_router.py   ← scene-aware provider selection
+          │   ├── application/      ← Generation/Menu/Settings controllers (App delegates here)
           │   ├── providers/*.py    ← individual API clients (auto-discovered)
           │   ├── generation/       ← orchestrator, router, budget, cancellation, downloader
           │   ├── updater/          ← in-app self-update: manifest / downloader / installer / state
           │   ├── prompt_assistant.py ← AI prompt generation (DeepSeek V3)
           │   ├── phrase_library.py ← built-in + custom phrase snippets
-          │   ├── translation.py    ← zh→en via MyMemory API
-          │   └── logger.py         ← file + UI callback logger
+          │   ├── translation/      ← zh→en via MyMemory API + cache
+          │   └── logger/           ← file + UI callback logger (async_logger)
           └── ui/
               ├── sidebar.py         ← left panel: history list, search, tags
               ├── main_content.py    ← right panel: prompt input, preview, variants
@@ -47,8 +48,11 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
               ├── prompt_wizard.py   ← AI prompt engineering UI
               ├── phrase_panel.py    ← phrase snippet browser
               ├── wizard_free.py     ← free API key config
+              ├── wizard_llm.py      ← LLM credentials for prompt assistant (separate from image wizards)
               ├── wizard_paid.py     ← paid API key config
               ├── about_dialog.py    ← About window + state-machine update flow
+              ├── components/        ← toast notifications, state label widgets
+              ├── history/           ← sidebar thumbnail pipeline
               └── stats_dashboard.py ← yearly heatmap and statistics
 ```
 
@@ -59,6 +63,7 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
 **v5.2 Architecture**: App class has been split into modular panels:
 - `SidebarProtocol` / `MainContentProtocol` (`ui/app_protocol.py`) define the interfaces panels depend on — decoupling `ui/sidebar.py` and `ui/main_content.py` from `App`'s full surface
 - `App` implements both protocols via method forwarding
+- `App` delegates to three controllers in `services/application/` — `GenerationController` (single-image generation), `MenuController`, `SettingsController`. Put new business logic there, not in `ui/app.py`
 
 **End-to-end generation flow**:
 1. Read prompt from `self.pt` Text widget, provider from dropdown, size from controls
@@ -73,10 +78,10 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
 |---|---|
 |`config/`|Path constants, default config dict, font management, theme colors, i18n translations|
 |`data/`|SQLite repository — history CRUD, migration from JSON, stats, heatmap|
-|`services/`|Business logic — image generation dispatch, AI assistants, translation|
+|`services/`|Business logic — generation dispatch & orchestration, application controllers, AI assistants, updater, translation|
 |`services/providers/`|One file per API provider, each exporting a `try_xxx()` function; auto-discovered at import|
-|`ui/`|All Tkinter UI — App controller + 10 panel/window modules + Protocol interfaces|
-|`tools/`|Build/installer CLI scripts + `tools/updater/`（独立更新器源与 spec）(standalone, not imported by app)|
+|`ui/`|All Tkinter UI — App controller + panel/window modules + shared components (`components/`, `history/`) + Protocol interfaces|
+|`tools/`|Build/installer CLI scripts, release gates (`verify_release_version.py`, `generate_update_manifest.py`, `generate_sbom.py`), i18n baseline check (`check_i18n.py`), font fetcher + `tools/updater/`（独立更新器源与 spec，standalone, not imported by app）|
 |`installer/`|Inno Setup template + rendered ISS files + output `.exe`|
 |`tests/`|pytest test suite with fixtures for in-memory DB, mock app, and tk root|
 |`docs/`|Architecture analysis and code review documentation|
@@ -88,31 +93,32 @@ main.py  (entry: DPI → fonts → DB init → tk.Tk → App)
 
 ```bash
 # Install dependencies (Python 3.11+)
-pip install pillow requests
+pip install -r requirements.txt
 
 # Run the application
-cd text_to_image
 python main.py
 
-# Run all tests
-pytest tests/ -v
+# Run all tests (full suite ≈ 4 min)
+pytest tests/ -v --tb=short
 
 # Run specific test file
 pytest tests/test_repository.py -v
 
-# Build Windows installer (requires Inno Setup ISCC on PATH)
+# Lint — mirror the CI gates
+ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F821,E9
+ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F401,F841,E402
+ruff format --check main.py config/ data/ services/ ui/ tools/ tests/
+
+# Build Windows installer (requires PyInstaller + Inno Setup ISCC on PATH)
 python auto_build.py
 
 # Or build installer with custom parameters
 python tools/build_inno_installer.py \
-  --app-name "Text2Image" --version 2.5.0 \
+  --app-name "2image" --version 2.7.0 \
   --src-dir . --out-dir dist --iscc-path ISCC
-
-# Run pip check (no requirements.txt — list what you have)
-pip list
 ```
 
-**Note**: No `requirements.txt` or `pyproject.toml`. Dependencies are `pillow` (PIL) and `requests`. `tkinter` is stdlib.
+**Note**: `requirements.txt` pins runtime deps (`Pillow`, `requests`) plus dev tools; `pyproject.toml` carries ruff/pytest/coverage config. `tkinter` is stdlib.
 
 ---
 
@@ -224,7 +230,7 @@ with _LOCK:
     _LAST_DONE[0] = time.time()
 ```
 
-Each provider and `translation.py` has its own lock — calls to different providers do not block each other.
+Each provider and `services/translation/` has its own lock — calls to different providers do not block each other.
 
 ### Config Flow
 
@@ -297,7 +303,7 @@ Font keys: `_sans`, `disp`, `title`, `h1`, `h2`, `btn`, `body`, `body_b`, `body_
 
 ### i18n System
 
-`config/i18n.py` provides a `_(key, **kwargs)` function with 154 translation keys across 2 locales (`zh-CN`, `en`). Initialize at startup with `init_language(cfg)`. Usage:
+`config/i18n.py` provides a `_(key, **kwargs)` function with 658 translation keys across 2 locales (`zh-CN`, `en`). Initialize at startup with `init_language(cfg)`. Key parity is guarded by `tools/check_i18n.py` + `tools/i18n_baseline.json`. Usage:
 
 ```python
 from config.i18n import _
@@ -342,11 +348,12 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`services/smart_router.py`|`get_provider_order()` — scene-aware routing: template→scene→providers, keyword detection, filters unavailable paid providers|
 |`services/providers/__init__.py`|Auto-discovers all `try_*` functions via `pkgutil.iter_modules`, populates `FREE_PROVIDERS`, `PAID_PROVIDERS`, `COMMERCIAL_PROVIDERS`, `ALL_PROVIDERS`, `DEFAULT_ORDER`|
 |`services/generation/orchestrator.py`|Task-level generation orchestration — cancellation/deadline/health/retry/fallback|
+|`services/application/`|`GenerationController` / `MenuController` / `SettingsController` — business logic behind `App`'s forwarding methods|
 |`services/updater/`|应用内自更新协议包 — `version.py` SemVer 比较与当前版本源、`manifest.py` update.json 清单校验（唯一更新通道，域名白名单）、`downloader.py` 流式下载 partial→原子改名+大小/SHA256 门禁、`installer.py` Inno 静默原位升级参数、`state.py` 更新状态机/pending 确认标记/24h 节流/备份回滚/审计日志、`errors.py` UPDATE_* 错误码|
 |`services/prompt_assistant.py`|`generate_prompt()` — calls DeepSeek V3 via SiliconFlow API; `apply_template()` — template-based prompt; `TEMPLATES` dict (~600 lines)|
 |`services/phrase_library.py`|Built-in + custom phrase management, `BUILTIN_PHRASES` (45 phrases, 7 categories)|
-|`services/translation.py`|`has_chinese()`, `translate_zh_to_en()` via MyMemory API|
-|`services/logger.py`|`log_to_file()`, `make_log_callback()`|
+|`services/translation/`|`has_chinese()`, `translate_zh_to_en()` via MyMemory API + response cache|
+|`services/logger/`|`log_to_file()`, `make_log_callback()`, async logger|
 |`ui/app.py`|`App` class — main window controller, owns tk.Tk root, sidebar history, generation orchestration, tag/favorite management|
 |`ui/app_protocol.py`|`SidebarProtocol`, `MainContentProtocol` (ABC-like via `typing.Protocol`)|
 |`ui/sidebar.py`|`HistorySidebar` — left panel: search, history list with thumbnails, tag editor, favorite toggle|
@@ -355,9 +362,9 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`ui/queue_panel.py`|Sequential job queue for batch generation|
 |`ui/viewer.py`|`ImageViewerWindow` — zoom, pan, crop, save, copy image|
 |`ui/about_dialog.py`|About 窗口 — 状态机驱动的检查更新/下载/安装流程，任务运行守卫与便携版分支（懒单例）|
-|`main.spec`|PyInstaller spec (console=False, icon set, upx enabled, hiddenimports via `collect_submodules`)|
+|`main.spec`|PyInstaller spec (console=False, icon + fonts in `datas`, provider modules auto-populated as `hiddenimports`)|
 |`auto_build.py`|Build orchestrator: version read → PyInstaller → Inno Setup → .exe installer|
-|`version.json`|`{"version": "2.6.0"}`|
+|`version.json`|`{"version": "2.7.0"}`|
 |`tests/conftest.py`|pytest fixtures: `tk_root` (real Tk), `in_memory_db` (SQLite :memory:), `mock_app` (hand-rolled AppProtocol mock)|
 
 ---
@@ -402,7 +409,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`tk_session_root` / `tk_root`|session / alias|会话级共享真实 Tk root|
 |`app`|function|Toplevel 承载的完整 App（内存库 + mock 配置读写）|
 |`mock_app`|function|手写 AppProtocol mock（`_log_calls`/`_st_calls` 记录）|
-|`in_memory_db`|autouse per module|repository 切换 `:memory:` SQLite|
+|`in_memory_db`|function|repository 切换 `:memory:` SQLite|
 
 ### Testing Patterns
 
@@ -432,6 +439,7 @@ pytest tests/ -v --cov=services --cov=config --cov=data --cov-report=term-missin
 Registry auto-discovers 23 active providers（`services/providers/__init__.py`）。
 可用性判断由 `PROVIDER_KEYS` / `OPTIONAL_KEY_PROVIDERS` / `MULTI_KEY_PROVIDERS` 驱动；
 manifest 一致性由 `tests/test_registry_consistency.py` 护栏锁定。
+`services/providers/adapter.py` 定义 `ImageProvider` Protocol（新式适配器接口 + `services/generation/errors.py` 错误分类），本身不是 provider——现有 `try_*` 函数继续原样工作。
 
 |Tier|Provider|Key in cfg|File|
 |---|---|---|---|
@@ -490,7 +498,7 @@ python auto_build.py
 
 # Custom build
 python tools/build_inno_installer.py \
-  --app-name "Text2Image" --version 2.5.0 \
+  --app-name "2image" --version 2.7.0 \
   --src-dir . --out-dir dist --iscc-path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 ```
 
@@ -504,9 +512,7 @@ python tools/build_inno_installer.py \
 
 ### Known Build Gaps
 
-- `main.spec` has empty `hiddenimports` — may miss `PIL._imagingtk` on some systems
-
-- `main.spec` has empty `datas` — no non-Python assets bundled
+- `main.spec` already populates `hiddenimports` from provider modules and bundles icon + fonts in `datas`; when adding a new top-level package, verify the packaged exe actually imports it
 
 - `console=False` — release builds are windowed; `print()` output in `main.py` is invisible in packaged builds (write to LOG_FILE instead)
 
