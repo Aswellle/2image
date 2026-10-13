@@ -322,7 +322,7 @@ def main(argv: list[str] | None = None) -> int:
         shutil.copy2(sys.executable, runtime_exe)
         upd_state.append_update_log(
             f"updater copied to runtime: {runtime_exe}")
-        upd_installer.launch_detached(runtime_exe)
+        upd_installer.launch_detached(runtime_exe, sys.argv[1:] + ["--runtime"])
     except OSError as exc:
         upd_state.append_update_log(
             f"runtime copy failed ({exc}); running in place")

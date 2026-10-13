@@ -60,6 +60,19 @@ _ERR_KEYS = {
     UpdateErrorCode.CANCELLED: "upd_err_cancel",
 }
 
+REPO_URL = "https://github.com/Aswellle/2image"
+
+_progress_style = ttk.Style()
+_progress_style.theme_use("default")
+_progress_style.configure(
+    "Update.Horizontal.TProgressbar",
+    troughcolor=C["panel"],
+    background=C["ok"],
+    bordercolor=C["panel"],
+    lightcolor=C["ok"],
+    darkcolor=C["ok"],
+)
+
 
 def _err_text(code: UpdateErrorCode) -> str:
     key = _ERR_KEYS.get(code, "upd_err_unknown")
@@ -74,7 +87,7 @@ class AboutDialog(tk.Toplevel):
         self.app = parent_app
         self.root = parent_app.root
         self.title(_("about_title"))
-        self.geometry("560x560")
+        self.geometry("640x680")
         self.resizable(False, True)
         self.configure(bg=C["bg"])
         self.transient(self.root)
@@ -116,6 +129,13 @@ class AboutDialog(tk.Toplevel):
             activebackground=C["acc"], activeforeground="white")
         self._check_btn.pack(side="left")
 
+        self._github_btn = tk.Button(
+            row, text="🐙 GitHub", font=F["btn"],
+            bg=C["panel"], fg=C["text"], bd=0, padx=16, pady=8,
+            cursor="hand2",
+            command=lambda: webbrowser.open(REPO_URL))
+        self._github_btn.pack(side="left", padx=(10, 0))
+
         self._open_btn = tk.Button(
             row, text=_("about_open_releases"), font=F["btn"],
             bg=C["panel"], fg=C["text"], bd=0, padx=16, pady=8,
@@ -136,7 +156,8 @@ class AboutDialog(tk.Toplevel):
             cursor="hand2", command=self._open_notes)
         # packed only in UPDATE_AVAILABLE state
 
-        self._progress = ttk.Progressbar(body, maximum=100, length=500)
+        self._progress = ttk.Progressbar(body, maximum=100, length=560,
+                                        style="Update.Horizontal.TProgressbar")
         self._cancel_btn = tk.Button(
             body, text=_("about_cancel_download"), font=F["small"],
             bg=C["panel"], fg=C["sub"], bd=0, padx=10, pady=4,
