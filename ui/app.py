@@ -6,6 +6,7 @@ ui/app.py — 主应用窗口  v5.2
   · 右侧主区控件提取至 MainContent (ui/main_content.py)
   · App 保留协调/编排逻辑
 """
+
 import io
 import html
 import os
@@ -21,17 +22,31 @@ from PIL import Image, ImageTk
 
 from config.settings import load_config, save_config
 from config.fonts import F
-from data.repository import (add_entry, clear_all_entries, count_entries,
-                             delete_entry, get_all_entries, get_all_tags,
-                             get_entry, get_stats, get_year_heatmap,
-                             get_available_years, get_year_stats,
-                             rename_entry, toggle_favorite, update_tags)
+from data.repository import (
+    add_entry,
+    clear_all_entries,
+    count_entries,
+    delete_entry,
+    get_all_entries,
+    get_all_tags,
+    get_entry,
+    get_stats,
+    get_year_heatmap,
+    get_available_years,
+    get_year_stats,
+    rename_entry,
+    toggle_favorite,
+    update_tags,
+)
 from services.image_service import generate_image, save_image_file
 from services.logger import log_to_file
 from services.translation import has_chinese, translate_zh_to_en
 from services.providers import (
-    FREE_PROVIDERS, MULTI_KEY_PROVIDERS, OPTIONAL_KEY_PROVIDERS,
-    PAID_PROVIDERS, PROVIDER_KEYS,
+    FREE_PROVIDERS,
+    MULTI_KEY_PROVIDERS,
+    OPTIONAL_KEY_PROVIDERS,
+    PAID_PROVIDERS,
+    PROVIDER_KEYS,
 )
 
 
@@ -53,10 +68,10 @@ from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color, init_theme
 from config.i18n import _, init_language, get_language
 
 
-SIDEBAR_DEF  = 360
-SIDEBAR_MIN  = 240
-SIDEBAR_MAX  = 600
-SASH_W       = 6
+SIDEBAR_DEF = 360
+SIDEBAR_MIN = 240
+SIDEBAR_MAX = 600
+SASH_W = 6
 
 
 # ══════════════════════════════════════════════════════════════
@@ -103,8 +118,9 @@ class App:
         self.toasts = ToastManager(root)
 
         # Sidebar width（§41：持久化；§42：可折叠）
-        self._sidebar_w = max(SIDEBAR_MIN, min(SIDEBAR_MAX,
-            int(self.cfg.get("sidebar_width", SIDEBAR_DEF) or SIDEBAR_DEF)))
+        self._sidebar_w = max(
+            SIDEBAR_MIN, min(SIDEBAR_MAX, int(self.cfg.get("sidebar_width", SIDEBAR_DEF) or SIDEBAR_DEF))
+        )
         self._sidebar_w_saved = self._sidebar_w
         self._sidebar_collapsed = False
         self.MAX_NICK_LEN = MAX_NICK_LEN
@@ -197,6 +213,7 @@ class App:
 
     def _set_cmp_from_entry(self, e: dict):
         self.content._set_cmp_from_entry(e)
+
     # ── 意图方法（增量改进：提供语义化入口，保留 @property 兼容）──
 
     def _get_prompt_text(self) -> str:
@@ -226,57 +243,75 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _bind_hotkeys(self):
         r = self.root
-        r.bind("<Control-Return>",   lambda e: (self._gen(), "break")[1])
+        r.bind("<Control-Return>", lambda e: (self._gen(), "break")[1])
         r.bind("<Control-KP_Enter>", lambda e: (self._gen(), "break")[1])
-        r.bind("<Control-s>",        lambda e: self._save())
-        r.bind("<Control-S>",        lambda e: self._save())
-        r.bind("<Control-e>",        lambda e: self._export())
-        r.bind("<Control-E>",        lambda e: self._export())
-        r.bind("<Control-o>",        lambda e: self._open_viewer())
-        r.bind("<Control-O>",        lambda e: self._open_viewer())
-        r.bind("<Control-r>",        lambda e: self._gen())
+        r.bind("<Control-s>", lambda e: self._save())
+        r.bind("<Control-S>", lambda e: self._save())
+        r.bind("<Control-e>", lambda e: self._export())
+        r.bind("<Control-E>", lambda e: self._export())
+        r.bind("<Control-o>", lambda e: self._open_viewer())
+        r.bind("<Control-O>", lambda e: self._open_viewer())
+        r.bind("<Control-r>", lambda e: self._gen())
         r.bind("<Control-backslash>", lambda e: self._toggle_sidebar())  # §42 折叠侧栏
         # §58 键盘工作流补全（输入焦点在文本控件时不劫持编辑键）
-        r.bind("<Control-Shift-P>",  lambda e: self._open_prompt_wizard())
-        r.bind("<Control-Shift-p>",  lambda e: self._open_prompt_wizard())
-        r.bind("<Escape>",           self._esc_overlay)
-        r.bind("<Delete>",           self._delete_selected_guarded)
-        r.bind("<Left>",             lambda e: self._nav_history_guarded(e, -1))
-        r.bind("<Right>",            lambda e: self._nav_history_guarded(e, +1))
+        r.bind("<Control-Shift-P>", lambda e: self._open_prompt_wizard())
+        r.bind("<Control-Shift-p>", lambda e: self._open_prompt_wizard())
+        r.bind("<Escape>", self._esc_overlay)
+        r.bind("<Delete>", self._delete_selected_guarded)
+        r.bind("<Left>", lambda e: self._nav_history_guarded(e, -1))
+        r.bind("<Right>", lambda e: self._nav_history_guarded(e, +1))
 
     # ── Controllers delegate menu/settings/build ─────────────────────
     def _build_menu(self) -> None:
         """Delegated to MenuController."""
         self.menu_controller.build()
 
-
     # ══════════════════════════════════════════════════════════
     #   主框架
     # ══════════════════════════════════════════════════════════
     def _build(self):
         bar = tk.Frame(self.root, bg=C["acc"], height=50)
-        bar.pack(fill="x"); bar.pack_propagate(False)
-        tk.Label(bar, text=_("app_title"),
-                 font=F["title"], bg=C["acc"], fg="white"
-                 ).pack(side="left", padx=16)
+        bar.pack(fill="x")
+        bar.pack_propagate(False)
+        tk.Label(bar, text=_("app_title"), font=F["title"], bg=C["acc"], fg="white").pack(side="left", padx=16)
         # 付费接口数量
-        self._top_paid_lbl = tk.Label(bar, text=_("status_paid_count", n=0, total=len(PAID_PROVIDERS)),
-                                       font=F["body"], bg=C["acc"], fg=C["sub"])
+        self._top_paid_lbl = tk.Label(
+            bar, text=_("status_paid_count", n=0, total=len(PAID_PROVIDERS)), font=F["body"], bg=C["acc"], fg=C["sub"]
+        )
         self._top_paid_lbl.pack(side="right", padx=(0, 16))
         # 分隔线
         tk.Frame(bar, bg="#2a4a8a", width=1).pack(side="right", fill="y", pady=10)
         # 免费接口数量
-        self._top_free_lbl = tk.Label(bar, text=_("status_free_count", n=0, total=len(FREE_PROVIDERS)),
-                                       font=F["body"], bg=C["acc"], fg=C["warn"])
+        self._top_free_lbl = tk.Label(
+            bar, text=_("status_free_count", n=0, total=len(FREE_PROVIDERS)), font=F["body"], bg=C["acc"], fg=C["warn"]
+        )
         self._top_free_lbl.pack(side="right", padx=(4, 8))
         # 接口配置按钮（原位于主内容区接口状态栏，移至顶栏节省垂直空间）
         tk.Frame(bar, bg="#2a4a8a", width=1).pack(side="right", fill="y", pady=10)
-        tk.Button(bar, text=_("btn_paid_config"), font=F["small_b"],
-                  bg="#7c3aed", fg="white", bd=0, padx=10, pady=4, cursor="hand2",
-                  command=self._open_paid_wizard).pack(side="right", padx=(0, 4), pady=8)
-        tk.Button(bar, text=_("btn_free_config"), font=F["small_b"],
-                  bg=C["hl"], fg="white", bd=0, padx=10, pady=4, cursor="hand2",
-                  command=self._open_wizard).pack(side="right", padx=(0, 4), pady=8)
+        tk.Button(
+            bar,
+            text=_("btn_paid_config"),
+            font=F["small_b"],
+            bg="#7c3aed",
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=self._open_paid_wizard,
+        ).pack(side="right", padx=(0, 4), pady=8)
+        tk.Button(
+            bar,
+            text=_("btn_free_config"),
+            font=F["small_b"],
+            bg=C["hl"],
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=self._open_wizard,
+        ).pack(side="right", padx=(0, 4), pady=8)
 
         self._body = tk.Frame(self.root, bg=C["bg"])
         self._body.pack(fill="both", expand=True)
@@ -284,12 +319,11 @@ class App:
         self._L = tk.Frame(self._body, bg=C["panel"])
         self.sidebar = HistorySidebar(self._L, self)
 
-        self._sash = tk.Frame(self._body, bg=C["sash"],
-                              cursor="sb_h_double_arrow", width=SASH_W)
-        self._sash.bind("<Enter>",           self._sash_enter)
-        self._sash.bind("<Leave>",           self._sash_leave)
-        self._sash.bind("<ButtonPress-1>",   self._sash_start)
-        self._sash.bind("<B1-Motion>",       self._sash_move)
+        self._sash = tk.Frame(self._body, bg=C["sash"], cursor="sb_h_double_arrow", width=SASH_W)
+        self._sash.bind("<Enter>", self._sash_enter)
+        self._sash.bind("<Leave>", self._sash_leave)
+        self._sash.bind("<ButtonPress-1>", self._sash_start)
+        self._sash.bind("<B1-Motion>", self._sash_move)
         self._sash.bind("<ButtonRelease-1>", self._sash_end)
         self._sash.bind("<Double-Button-1>", self._sash_reset)
 
@@ -300,13 +334,16 @@ class App:
         self._place_panels()
 
     def _place_panels(self):
-        bw = self._body.winfo_width();  bh = self._body.winfo_height()
-        if bw < 10: bw = 1380
-        if bh < 10: bh = 870
+        bw = self._body.winfo_width()
+        bh = self._body.winfo_height()
+        if bw < 10:
+            bw = 1380
+        if bh < 10:
+            bh = 870
         sw = self._sidebar_w
-        self._L.place(x=0,          y=0, width=sw,            height=bh)
-        self._sash.place(x=sw,      y=0, width=SASH_W,        height=bh)
-        self._R.place(x=sw+SASH_W,  y=0, width=bw-sw-SASH_W, height=bh)
+        self._L.place(x=0, y=0, width=sw, height=bh)
+        self._sash.place(x=sw, y=0, width=SASH_W, height=bh)
+        self._R.place(x=sw + SASH_W, y=0, width=bw - sw - SASH_W, height=bh)
         pass  # deferred to _finish_resize
 
     def _on_body_resize(self, event):
@@ -318,29 +355,39 @@ class App:
     def _finish_resize(self):
         self._resize_timer = None
         self.sidebar._update_card_wraplength(self._sidebar_w)
-    def _sash_enter(self, e): self._sash.config(bg=C["sash_hl"])
+
+    def _sash_enter(self, e):
+        self._sash.config(bg=C["sash_hl"])
+
     def _sash_leave(self, e):
-        if self._sash_drag_x is None: self._sash.config(bg=C["sash"])
+        if self._sash_drag_x is None:
+            self._sash.config(bg=C["sash"])
+
     def _sash_start(self, e):
         self._sash_drag_x = e.x_root
         self._sash_drag_w = self._sidebar_w
-        if self._sidebar_collapsed:      # 拖动即视为重新展开
+        if self._sidebar_collapsed:  # 拖动即视为重新展开
             self._sidebar_collapsed = False
+
     def _sash_move(self, e):
-        if self._sash_drag_x is None: return
-        self._sidebar_w = max(SIDEBAR_MIN, min(SIDEBAR_MAX,
-            self._sash_drag_w + e.x_root - self._sash_drag_x))
+        if self._sash_drag_x is None:
+            return
+        self._sidebar_w = max(SIDEBAR_MIN, min(SIDEBAR_MAX, self._sash_drag_w + e.x_root - self._sash_drag_x))
         # 拖动期间只做轻量布局（跳过卡片 wraplength 遍历），保证丝滑
         bw = self._body.winfo_width()
         bh = self._body.winfo_height()
-        if bw < 10: bw = 1380
-        if bh < 10: bh = 870
+        if bw < 10:
+            bw = 1380
+        if bh < 10:
+            bh = 870
         sw = self._sidebar_w
-        self._L.place(x=0,         y=0, width=sw,            height=bh)
-        self._sash.place(x=sw,     y=0, width=SASH_W,        height=bh)
-        self._R.place(x=sw+SASH_W, y=0, width=bw-sw-SASH_W, height=bh)
+        self._L.place(x=0, y=0, width=sw, height=bh)
+        self._sash.place(x=sw, y=0, width=SASH_W, height=bh)
+        self._R.place(x=sw + SASH_W, y=0, width=bw - sw - SASH_W, height=bh)
+
     def _sash_end(self, e):
-        self._sash_drag_x = None; self._sash_drag_w = None
+        self._sash_drag_x = None
+        self._sash_drag_w = None
         self._sash.config(bg=C["sash"])
         # 松手后补全 wraplength 更新并持久化宽度（§41）
         self.sidebar._update_card_wraplength(self._sidebar_w)
@@ -382,12 +429,12 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _load_entry(self, e: dict):
         # ── 1. 立即更新界面状态（全部非破坏性操作）──────────────
-        self.sel_id   = e["id"]
+        self.sel_id = e["id"]
         self.cur_path = e.get("image_path", "")
         self.content.pt.delete("1.0", "end")
         self.content.pt.insert("1.0", e["prompt"])
         self.content._show_file(self.cur_path)
-        self._st(_("status_history_entry", ts=e['timestamp'], prov=e.get('provider','')), "ok")
+        self._st(_("status_history_entry", ts=e["timestamp"], prov=e.get("provider", "")), "ok")
 
         # ── 2. 更新侧栏选中高亮（仅改两张卡片颜色，不重建任何 widget）
         self.sidebar._update_sidebar_selection(e["id"])
@@ -395,10 +442,14 @@ class App:
         # ── 3. 若查看器已打开，异步加载新图片（与选中高亮完全解耦）
         if self._viewer_win is not None and self.cur_path:
             snap = self.cur_path
+
             def _update_viewer():
                 if self._viewer_win is not None:
-                    try: self._viewer_win.load_file(snap)
-                    except tk.TclError: self._viewer_win = None
+                    try:
+                        self._viewer_win.load_file(snap)
+                    except tk.TclError:
+                        self._viewer_win = None
+
             # after(50)：给 Tkinter 足够时间完成本次点击事件的所有内部处理
             self.root.after(50, _update_viewer)
 
@@ -407,7 +458,8 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _st(self, msg: str, k: str = "ok"):
         m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"], "err": C["hl"]}
-        self.content.stv.set(msg); self.content.stl.config(fg=m.get(k, C["ok"]))
+        self.content.stv.set(msg)
+        self.content.stl.config(fg=m.get(k, C["ok"]))
 
     # ── §58 键盘工作流 ────────────────────────────────────────
     def _typing_focus(self) -> bool:
@@ -420,9 +472,11 @@ class App:
 
     def _esc_overlay(self, event=None):
         """Esc 关闭最上层覆盖窗口（查看器/提示词助手/词库）。"""
-        for attr, win in (("_viewer_win", self._viewer_win),
-                          ("_prompt_wizard", self._prompt_wizard),
-                          ("_phrase_panel", self._phrase_panel)):
+        for attr, win in (
+            ("_viewer_win", self._viewer_win),
+            ("_prompt_wizard", self._prompt_wizard),
+            ("_phrase_panel", self._phrase_panel),
+        ):
             if win is not None:
                 try:
                     closer = getattr(win, "_on_close", None)
@@ -473,7 +527,7 @@ class App:
     def _reset_view(self):
         # 重置全部过滤状态，确保"重置视图"能恢复完整列表
         self.sidebar._tag_filter = ""
-        self.sidebar._fav_only   = False
+        self.sidebar._fav_only = False
         try:
             self.sidebar._btn_all.config(bg=C["acc"], fg="white")
             self.sidebar._btn_fav.config(bg=C["panel"], fg=C["star_off"])
@@ -484,12 +538,13 @@ class App:
         self.sel_id = self.cur_path = None
         self._cur_bytes = self.content._prev_orig = None
         self.content.pt.delete("1.0", "end")
-        self.content._prev_cv.delete("prev"); self.content._prev_item = None
+        self.content._prev_cv.delete("prev")
+        self.content._prev_item = None
         self.content._clear_compare()
         self.content._prev_cv.update_idletasks()
-        cw = self.content._prev_cv.winfo_width() or 600; ch = self.content._prev_cv.winfo_height() or 400
-        self.content._prev_cv.itemconfig(self.content._prev_ph,
-            text=_("preview_placeholder"))
+        cw = self.content._prev_cv.winfo_width() or 600
+        ch = self.content._prev_cv.winfo_height() or 400
+        self.content._prev_cv.itemconfig(self.content._prev_ph, text=_("preview_placeholder"))
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
         self._refresh_hist()
         self._st(_("status_ready"), "ok")
@@ -499,10 +554,15 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _open_viewer(self):
         if self._cur_bytes is None and self.cur_path is None:
-            messagebox.showinfo(_("dlg_tip"), _("dlg_need_generate_first")); return
+            messagebox.showinfo(_("dlg_tip"), _("dlg_need_generate_first"))
+            return
         if self._viewer_win is not None:
-            try: self._viewer_win.lift(); self._viewer_win.focus_force(); return
-            except tk.TclError: self._viewer_win = None
+            try:
+                self._viewer_win.lift()
+                self._viewer_win.focus_force()
+                return
+            except tk.TclError:
+                self._viewer_win = None
         self._viewer_win = ImageViewerWindow(self)
         if self._cur_bytes:
             self._viewer_win.load_bytes(self._cur_bytes, self.cur_path or "")
@@ -511,8 +571,12 @@ class App:
 
     def _push_to_viewer(self, data: bytes, path: str):
         if self._viewer_win is not None:
-            try: self._viewer_win.load_bytes(data, path); self._viewer_win.lift(); return
-            except tk.TclError: self._viewer_win = None
+            try:
+                self._viewer_win.load_bytes(data, path)
+                self._viewer_win.lift()
+                return
+            except tk.TclError:
+                self._viewer_win = None
         self._viewer_win = ImageViewerWindow(self)
         self._viewer_win.load_bytes(data, path)
 
@@ -521,8 +585,12 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _open_phrase_panel(self):
         if self._phrase_panel is not None:
-            try: self._phrase_panel.lift(); self._phrase_panel.focus_force(); return
-            except tk.TclError: self._phrase_panel = None
+            try:
+                self._phrase_panel.lift()
+                self._phrase_panel.focus_force()
+                return
+            except tk.TclError:
+                self._phrase_panel = None
         self._phrase_panel = PhrasePanel(self)
 
     def _switch_to_variant_tab(self):
@@ -535,8 +603,6 @@ class App:
         """Delegated to GenerationController."""
         self.gen_controller.generate_variants()
 
-
-
     def _on_variant_kept(self, entry: dict):
         """
         保留变体后刷新历史列表并自动预览。
@@ -547,15 +613,17 @@ class App:
             用户无需再次点击历史条目即可看到预览。
         """
         if self._load_entry_job is not None:
-            try: self.root.after_cancel(self._load_entry_job)
-            except Exception: pass
+            try:
+                self.root.after_cancel(self._load_entry_job)
+            except Exception:
+                pass
             self._load_entry_job = None
 
         def _do():
             self.sidebar._refresh_hist()
             self.sidebar._refresh_tag_chips()
             self.content._refresh_tag_stats()
-            self._st("✅ 已保留变体到历史记录", "ok")
+            self._st(_("variant_kept"), "ok")
 
             # ── 自动预览刚保留的图片 ──────────────────────────────
             if not entry:
@@ -564,6 +632,7 @@ class App:
             if not img_path:
                 return
             import os as _os
+
             if not _os.path.exists(img_path):
                 self._log(f"⚠ 保留后找不到图片文件: {img_path}")
                 return
@@ -574,9 +643,9 @@ class App:
                 self._log(f"⚠ 读取保留图片失败: {e}")
                 return
             # 更新主界面当前图片状态
-            self.cur_path    = img_path
-            self._cur_bytes  = data
-            self.sel_id      = entry.get("id")
+            self.cur_path = img_path
+            self._cur_bytes = data
+            self.sel_id = entry.get("id")
             self.content._set_preview(data)
             # 高亮侧栏选中项（refresh 已建好 card，直接更新颜色即可）
             if self.sel_id:
@@ -586,8 +655,12 @@ class App:
 
     def _open_prompt_wizard(self):
         if self._prompt_wizard is not None:
-            try: self._prompt_wizard.lift(); self._prompt_wizard.focus_force(); return
-            except tk.TclError: self._prompt_wizard = None
+            try:
+                self._prompt_wizard.lift()
+                self._prompt_wizard.focus_force()
+                return
+            except tk.TclError:
+                self._prompt_wizard = None
         self._prompt_wizard = PromptWizard(self)
 
     # ══════════════════════════════════════════════════════════
@@ -595,12 +668,16 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _open_wizard(self):
         def on_save(new_cfg):
-            self.cfg = new_cfg; self._update_status_bar_tokens()
+            self.cfg = new_cfg
+            self._update_status_bar_tokens()
+
         ConfigWizard(self.root, self.cfg, on_save)
 
     def _open_paid_wizard(self):
         def on_save(new_cfg):
-            self.cfg = new_cfg; self._update_status_bar_tokens()
+            self.cfg = new_cfg
+            self._update_status_bar_tokens()
+
         PaidWizard(self.root, self.cfg, on_save)
 
     # ══════════════════════════════════════════════════════════
@@ -614,14 +691,13 @@ class App:
     def _open_app_settings(self) -> None:
         self.settings_controller.show_app_settings()
 
-
-
     # ══════════════════════════════════════════════════════════
     #   📊 统计看板  v2  —  GitHub 风格全年热力图 + 完整重设计
     # ══════════════════════════════════════════════════════════
     def _open_about(self):
         """Open the About window (lazy singleton)."""
         from ui.about_dialog import AboutDialog
+
         if self._about_win is None or not self._about_win.winfo_exists():
             self._about_win = AboutDialog(self)
         else:
@@ -642,8 +718,8 @@ class App:
         from services.updater import state as _upd_state
         from services.updater import version as _upd_ver
         from services.updater.manifest import fetch_manifest
-        if (not _upd_ver.is_packaged()
-                or not self.cfg.get("update_check_on_start", True)):
+
+        if not _upd_ver.is_packaged() or not self.cfg.get("update_check_on_start", True):
             return
         if not _upd_state.should_auto_check():
             return
@@ -653,15 +729,12 @@ class App:
                 manifest = fetch_manifest(_upd_ver.get_current_version())
             except Exception:
                 return  # silent: a failed startup check never disturbs
-            _upd_state.mark_checked(
-                manifest.version if manifest else None)
+            _upd_state.mark_checked(manifest.version if manifest else None)
             if manifest is None or _upd_state.is_dismissed(manifest.version):
                 return
-            self.root.after(0, lambda: self._toast(
-                _("update_toast_found", tag=manifest.tag), "info"))
+            self.root.after(0, lambda: self._toast(_("update_toast_found", tag=manifest.tag), "info"))
 
-        _threading.Thread(target=_worker, daemon=True,
-                          name="startup-update-check").start()
+        _threading.Thread(target=_worker, daemon=True, name="startup-update-check").start()
 
     def _has_active_tasks(self) -> bool:
         """True while a generation or a queue run is in flight.
@@ -683,12 +756,14 @@ class App:
 
     def _show_stats(self):
         from ui.stats_dashboard import StatsDashboard
+
         # 懒单例：与其他覆盖窗口一致，避免重复堆叠
         if self._stats_win is None or not self._stats_win.winfo_exists():
             self._stats_win = StatsDashboard(self.root, self)
         else:
             self._stats_win.lift()
             self._stats_win.focus_force()
+
     # ══════════════════════════════════════════════════════════
     #   接口状态栏
     # ══════════════════════════════════════════════════════════
@@ -728,17 +803,19 @@ class App:
             fg="#a78bfa" if paid_count else C["sub"],
         )
 
-
     # ══════════════════════════════════════════════════════════
     #   日志
     # ══════════════════════════════════════════════════════════
     def _log(self, msg: str):
         log_to_file(msg)
+
         def _a():
-            safe_msg = msg.replace('\n', '\\n').replace('\r', '\\r')
+            safe_msg = msg.replace("\n", "\\n").replace("\r", "\\r")
             self.content.logt.configure(state="normal")
             self.content.logt.insert("end", f"[{datetime.now().strftime('%H:%M:%S')}] {safe_msg}\n")
-            self.content.logt.see("end"); self.content.logt.configure(state="disabled")
+            self.content.logt.see("end")
+            self.content.logt.configure(state="disabled")
+
         self.root.after(0, _a)
 
     def _clr_log(self):
@@ -751,7 +828,6 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _gen(self, event=None) -> None:
         self.gen_controller.generate(event)
-
 
     def _ok(self, data: bytes, path: str, prov: str) -> None:
         """单张生成成功回调：恢复按钮、刷新预览/历史/查看器。
@@ -783,7 +859,7 @@ class App:
             friendly = _("err_rate_limit")
         elif "401" in err or "403" in err:
             friendly = _("err_api_key")
-        elif "402" in err or "额度" in err or "balance" in err.lower():
+        elif "402" in err or _("err_balance_word") in err or "balance" in err.lower():
             friendly = _("err_balance")
         elif "timeout" in err.lower() or "timed out" in err.lower():
             friendly = _("err_timeout")
@@ -796,14 +872,14 @@ class App:
         ch = self.content._prev_cv.winfo_height() or 400
         self.content._prev_cv.itemconfig(self.content._prev_ph, text=_("preview_error"))
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
-        if any(k in err for k in ["API Key", "Key", "Token", "token", "401", "402", "403", "额度"]):
-            self.root.after(100, lambda: messagebox.showwarning(
-                _("dlg_err_key_title"),
-                _("dlg_err_key_body", err=err[:200])))
+        if any(k in err for k in ["API Key", "Key", "Token", "token", "401", "402", "403", _("err_balance_word")]):
+            self.root.after(
+                100, lambda: messagebox.showwarning(_("dlg_err_key_title"), _("dlg_err_key_body", err=err[:200]))
+            )
 
     def _export(self):
         """导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"""
-        d = filedialog.askdirectory(title="选择导出位置")
+        d = filedialog.askdirectory(title=_("export_choose_dir"))
         if not d:
             return
         items = get_all_entries()
@@ -823,49 +899,57 @@ class App:
     def _finish_export(self, out: str, items: list):
         rows = ""
         for i, e in enumerate(items, 1):
-            ib   = os.path.basename(e.get("image_path", ""))
-            it   = (f'<img src="{i:03d}_{ib}" style="max-width:260px;border-radius:6px">'
-                    if ib else "无图")
+            ib = os.path.basename(e.get("image_path", ""))
+            it = f'<img src="{i:03d}_{ib}" style="max-width:260px;border-radius:6px">' if ib else _("export_no_image")
             title = html.escape(App._display_title(e), quote=True)
-            tags  = e.get("tags", "") or ""
+            tags = e.get("tags", "") or ""
             tag_html = "".join(
                 f'<span style="background:{tag_color(t)};color:white;'
                 f'padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">'
-                f'{html.escape(t, quote=True)}</span>'
-                for t in tags.split(",") if t.strip())
-            rows += (f"<tr><td style='color:#888;font-size:11px'>{e['timestamp']}</td>"
-                     f"<td><b>{title}</b>{('<br>' + tag_html) if tag_html else ''}"
-                     f"<br><span style='color:#aaa;font-size:10px'>{html.escape(e['prompt'], quote=True)}</span><br>"
-                     f"<span style='color:#f0a500;font-size:11px'>{html.escape(e.get('translated',''), quote=True)}</span></td>"
-                     f"<td style='color:#4ecca3;font-size:11px'>{html.escape(e.get('provider',''), quote=True)}</td>"
-                     f"<td>{'⭐' if e.get('favorited') else ''}</td>"
-                     f"<td>{it}</td></tr>")
-        html_str = (f"<!DOCTYPE html><html lang='zh'><head><meta charset='UTF-8'>"
-                f"<title>AI生图记录</title>"
-                f"<style>body{{font-family:Arial;background:#1a1a2e;color:#eaeaea;padding:24px}}"
-                f"h1{{color:#e94560}}table{{width:100%;border-collapse:collapse}}"
-                f"th{{background:#0f3460;padding:10px;text-align:left}}"
-                f"td{{border-bottom:1px solid #2a3a5a;padding:10px;vertical-align:top}}"
-                f"tr:hover{{background:#16213e}}</style>"
-                f"</head><body><h1>✨ AI 文字生图记录本</h1>"
-                f"<p>{len(items)} 条 · {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>"
-                f"<table><tr><th>时间</th><th>提示词</th><th>接口</th>"
-                f"<th>收藏</th><th>图片</th></tr>{rows}</table></body></html>")
-        open(os.path.join(out, "记录本.html"), "w", encoding="utf-8").write(html_str)
+                f"{html.escape(t, quote=True)}</span>"
+                for t in tags.split(",")
+                if t.strip()
+            )
+            rows += (
+                f"<tr><td style='color:#888;font-size:11px'>{e['timestamp']}</td>"
+                f"<td><b>{title}</b>{('<br>' + tag_html) if tag_html else ''}"
+                f"<br><span style='color:#aaa;font-size:10px'>{html.escape(e['prompt'], quote=True)}</span><br>"
+                f"<span style='color:#f0a500;font-size:11px'>{html.escape(e.get('translated', ''), quote=True)}</span></td>"
+                f"<td style='color:#4ecca3;font-size:11px'>{html.escape(e.get('provider', ''), quote=True)}</td>"
+                f"<td>{'⭐' if e.get('favorited') else ''}</td>"
+                f"<td>{it}</td></tr>"
+            )
+        html_str = (
+            f"<!DOCTYPE html><html lang='zh'><head><meta charset='UTF-8'>"
+            f"<title>{_('export_html_title')}</title>"
+            f"<style>body{{font-family:Arial;background:#1a1a2e;color:#eaeaea;padding:24px}}"
+            f"h1{{color:#e94560}}table{{width:100%;border-collapse:collapse}}"
+            f"th{{background:#0f3460;padding:10px;text-align:left}}"
+            f"td{{border-bottom:1px solid #2a3a5a;padding:10px;vertical-align:top}}"
+            f"tr:hover{{background:#16213e}}</style>"
+            f"</head><body><h1>{_('export_html_heading')}</h1>"
+            f"<p>{len(items)}{_('export_html_count')} · {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>"
+            f"<table><tr><th>{_('export_html_col_time')}</th><th>{_('export_html_col_prompt')}</th><th>{_('export_html_col_provider')}</th>"
+            f"<th>{_('export_html_col_favorite')}</th><th>{_('export_html_col_image')}</th></tr>{rows}</table></body></html>"
+        )
+        open(os.path.join(out, _("export_html_filename")), "w", encoding="utf-8").write(html_str)
         messagebox.showinfo(_("dlg_export_done"), _("dlg_export_done_body", n=len(items), out=out))
 
     def _save(self):
         if not self.cur_path or not os.path.exists(self.cur_path):
-            messagebox.showwarning("提示", "暂无图片"); return
+            messagebox.showwarning(_("dlg_tip"), _("dlg_no_image_body"))
+            return
         d = filedialog.asksaveasfilename(
             defaultextension=".png",
-            filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg"), ("所有文件", "*.*")],
-            initialfile=os.path.basename(self.cur_path))
+            filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg"), (_("filetype_all"), "*.*")],
+            initialfile=os.path.basename(self.cur_path),
+        )
         if d:
             Image.open(self.cur_path).save(d)
-            messagebox.showinfo("完成", f"已保存：{d}")
+            messagebox.showinfo(_("dlg_export_done"), f"{_('dlg_saved_body')}{d}")
 
     def _copy_path(self):
         if self.cur_path:
-            self.root.clipboard_clear(); self.root.clipboard_append(self.cur_path)
-            self._toast("📋 路径已复制", "success")
+            self.root.clipboard_clear()
+            self.root.clipboard_append(self.cur_path)
+            self._toast(_("path_copied"), "success")

@@ -2,6 +2,7 @@
 ui/sidebar.py — History sidebar extracted from App  v5.1
 ─────────────────────────────────────────────────
 """
+
 import threading
 import os
 import subprocess
@@ -11,13 +12,23 @@ from PIL import ImageTk
 from config.fonts import F
 from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color
 from config.i18n import _
-from data.repository import (get_all_entries, get_all_tags, count_entries,
-                             get_entries_keyset,
-                             get_stats, update_tags, rename_entry,
-                             toggle_favorite, delete_entry, clear_all_entries)
+from data.repository import (
+    get_all_entries,
+    get_all_tags,
+    count_entries,
+    get_entries_keyset,
+    get_stats,
+    update_tags,
+    rename_entry,
+    toggle_favorite,
+    delete_entry,
+    clear_all_entries,
+)
 from ui.app_protocol import SidebarProtocol
 from ui.history.thumbnail import ThumbnailLoader
-THUMB_SIZE   = 90
+
+THUMB_SIZE = 90
+
 
 # ══════════════════════════════════════════════════════════════
 #   Fix-1: 平滑淡入气泡提示
@@ -29,19 +40,20 @@ class _Tooltip:
     · 所有实例共享一个 Toplevel 窗口，避免每次 hover 创建/销毁 Toplevel
     · 100 张卡片 × 5 个按钮 = 500 实例，但只有 1 个 Toplevel 对象
     """
-    _tip_win: tk.Toplevel | None = None   # 共享 Toplevel 单例
-    _tip_lbl: tk.Label | None = None      # 共享文本标签
-    _active: '_Tooltip | None' = None     # 当前正在显示的实例
+
+    _tip_win: tk.Toplevel | None = None  # 共享 Toplevel 单例
+    _tip_lbl: tk.Label | None = None  # 共享文本标签
+    _active: "_Tooltip | None" = None  # 当前正在显示的实例
 
     def __init__(self, widget: tk.Widget, text: str, delay_ms: int = 450):
-        self._w     = widget
-        self._text  = text
+        self._w = widget
+        self._text = text
         self._delay = delay_ms
-        self._job   = None
+        self._job = None
         self._alpha = 0.0
-        widget.bind("<Enter>",       self._schedule,  add="+")
-        widget.bind("<Leave>",       self._cancel,    add="+")
-        widget.bind("<ButtonPress>", self._cancel,    add="+")
+        widget.bind("<Enter>", self._schedule, add="+")
+        widget.bind("<Leave>", self._cancel, add="+")
+        widget.bind("<ButtonPress>", self._cancel, add="+")
 
     def _schedule(self, _=None):
         self._cancel_job()
@@ -54,16 +66,20 @@ class _Tooltip:
 
     def _cancel_job(self):
         if self._job:
-            try: self._w.after_cancel(self._job)
-            except Exception: pass
+            try:
+                self._w.after_cancel(self._job)
+            except Exception:
+                pass
             self._job = None
 
     @classmethod
     def _hide_shared(cls):
         cls._active = None
         if cls._tip_win:
-            try: cls._tip_win.wm_attributes("-alpha", 0.0)
-            except Exception: pass
+            try:
+                cls._tip_win.wm_attributes("-alpha", 0.0)
+            except Exception:
+                pass
 
     def _show(self):
         self._job = None
@@ -77,21 +93,23 @@ class _Tooltip:
                 win = tk.Toplevel(self._w)
                 win.wm_overrideredirect(True)
                 win.wm_attributes("-topmost", True)
-                try: win.wm_attributes("-alpha", 0.0)
-                except Exception: pass
-                frm = tk.Frame(win, bg="#1e3a5f",
-                               highlightbackground="#4a7adf", highlightthickness=1)
+                try:
+                    win.wm_attributes("-alpha", 0.0)
+                except Exception:
+                    pass
+                frm = tk.Frame(win, bg="#1e3a5f", highlightbackground="#4a7adf", highlightthickness=1)
                 frm.pack()
-                lbl = tk.Label(frm, font=F["small"], bg="#1e3a5f",
-                               fg="#eaeaea", padx=9, pady=5)
+                lbl = tk.Label(frm, font=F["small"], bg="#1e3a5f", fg="#eaeaea", padx=9, pady=5)
                 lbl.pack()
                 _Tooltip._tip_win = win
                 _Tooltip._tip_lbl = lbl
 
             _Tooltip._tip_lbl.config(text=self._text)
             _Tooltip._tip_win.wm_geometry(f"+{wx}+{wy}")
-            try: _Tooltip._tip_win.wm_attributes("-alpha", 0.0)
-            except Exception: pass
+            try:
+                _Tooltip._tip_win.wm_attributes("-alpha", 0.0)
+            except Exception:
+                pass
             _Tooltip._tip_win.lift()
 
             self._alpha = 0.0
@@ -106,9 +124,10 @@ class _Tooltip:
         try:
             _Tooltip._tip_win.wm_attributes("-alpha", self._alpha)
         except Exception:
-            _Tooltip._active = None; return
+            _Tooltip._active = None
+            return
         if self._alpha < 1.0:
-            self._w.after(16, self._fade_in)   # ~60 fps
+            self._w.after(16, self._fade_in)  # ~60 fps
 
 
 # ══════════════════════════════════════════════════════════════
@@ -120,9 +139,9 @@ class HistorySidebar:
         self.parent = parent
 
         self._thumbs: dict = {}
-        self._fav_only      = False
-        self._inline_frame  = None
-        self._ctx_menu: tk.Menu | None = None   # 共享右键菜单单例
+        self._fav_only = False
+        self._inline_frame = None
+        self._ctx_menu: tk.Menu | None = None  # 共享右键菜单单例
 
         self._tag_filter = ""
         self._hist_gen = 0
@@ -145,40 +164,67 @@ class HistorySidebar:
     #   侧栏构建
     # ══════════════════════════════════════════════════════════
     def _build(self, L):
-        lh = tk.Frame(L, bg=C["acc"]); lh.pack(fill="x")
-        tk.Label(lh, text="📒 " + _("menu_history").strip(), font=F["btn"],
-                 bg=C["acc"], fg="white").pack(side="left", padx=10, pady=8)
-        tk.Button(lh, text=_("btn_export"), bg=C["hl"], fg="white", bd=0,
-                  font=F["body"], padx=8, pady=2, cursor="hand2",
-                  command=self.app._export).pack(side="right", padx=8, pady=8)
+        lh = tk.Frame(L, bg=C["acc"])
+        lh.pack(fill="x")
+        tk.Label(lh, text="📒 " + _("menu_history").strip(), font=F["btn"], bg=C["acc"], fg="white").pack(
+            side="left", padx=10, pady=8
+        )
+        tk.Button(
+            lh,
+            text=_("btn_export"),
+            bg=C["hl"],
+            fg="white",
+            bd=0,
+            font=F["body"],
+            padx=8,
+            pady=2,
+            cursor="hand2",
+            command=self.app._export,
+        ).pack(side="right", padx=8, pady=8)
 
-        sf = tk.Frame(L, bg=C["panel"], pady=2); sf.pack(fill="x", padx=6)
+        sf = tk.Frame(L, bg=C["panel"], pady=2)
+        sf.pack(fill="x", padx=6)
         self.sv = tk.StringVar()
+
         def _on_search(*_):
             if self._search_timer:
                 self.app.root.after_cancel(self._search_timer)
-            self._search_timer = self.app.root.after(
-                250, lambda: self.app._refresh_hist(keep_scroll=True))
+            self._search_timer = self.app.root.after(250, lambda: self.app._refresh_hist(keep_scroll=True))
+
         self.sv.trace("w", _on_search)
-        _srf = tk.Frame(sf, bg=C["entry"],
-                        highlightbackground=C["ok"], highlightthickness=1)
+        _srf = tk.Frame(sf, bg=C["entry"], highlightbackground=C["ok"], highlightthickness=1)
         _srf.pack(fill="x", padx=2, pady=(4, 4))
         # P0-08: 清除搜索按钮（有输入时显示）
-        _clr_btn = tk.Button(_srf, text="✕", font=F["small"], bd=0,
-                             bg=C["entry"], fg=C["sub"], cursor="hand2",
-                             padx=4, command=self._clear_search)
+        _clr_btn = tk.Button(
+            _srf,
+            text="✕",
+            font=F["small"],
+            bd=0,
+            bg=C["entry"],
+            fg=C["sub"],
+            cursor="hand2",
+            padx=4,
+            command=self._clear_search,
+        )
         _clr_btn.pack(side="right", padx=(0, 4))
-        _sre = tk.Entry(_srf, textvariable=self.sv, bg=C["entry"], fg=C["text"],
-                        insertbackground="white", font=F["body"],
-                        bd=0, relief="flat")
+        _sre = tk.Entry(
+            _srf,
+            textvariable=self.sv,
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            font=F["body"],
+            bd=0,
+            relief="flat",
+        )
         _sre.pack(fill="x", ipady=5, padx=2)
-        _sre.bind("<FocusIn>",  lambda _: _srf.config(highlightbackground=C["entry"]), add="+")
-        _sre.bind("<FocusOut>", lambda _: _srf.config(highlightbackground=C["ok"]),    add="+")
+        _sre.bind("<FocusIn>", lambda _: _srf.config(highlightbackground=C["entry"]), add="+")
+        _sre.bind("<FocusOut>", lambda _: _srf.config(highlightbackground=C["ok"]), add="+")
 
         # 占位符覆盖层：place() 在 Entry 上方，输入内容或获焦时隐藏（不影响 sv）
-        _ph_lbl = tk.Label(_srf, text=_("search_placeholder"),
-                           font=F["body"], bg=C["entry"], fg="#6a7a9a",
-                           bd=0, padx=6)
+        _ph_lbl = tk.Label(
+            _srf, text=_("search_placeholder"), font=F["body"], bg=C["entry"], fg="#6a7a9a", bd=0, padx=6
+        )
         _ph_lbl.place(x=2, y=0, relheight=1.0)
         # 点击占位符文字也能获焦到输入框
         _ph_lbl.bind("<Button-1>", lambda _: _sre.focus_set())
@@ -191,84 +237,150 @@ class HistorySidebar:
                 _ph_lbl.place(x=2, y=0, relheight=1.0)
                 _clr_btn.pack_forget()
 
-        _sre.bind("<FocusIn>",  lambda _: _ph_lbl.place_forget(), add="+")
-        _sre.bind("<FocusOut>", lambda _: _upd_ph(),              add="+")
+        _sre.bind("<FocusIn>", lambda _: _ph_lbl.place_forget(), add="+")
+        _sre.bind("<FocusOut>", lambda _: _upd_ph(), add="+")
         self.sv.trace("w", _upd_ph)
 
-        flt = tk.Frame(L, bg=C["panel"]); flt.pack(fill="x", padx=6, pady=(0, 2))
-        self._btn_all = tk.Button(flt, text=_("btn_show_all"), font=F["small_b"],
-            bg=C["acc"], fg="white", bd=0, padx=10, pady=3, cursor="hand2",
-            relief="flat", command=self._filter_all)
+        flt = tk.Frame(L, bg=C["panel"])
+        flt.pack(fill="x", padx=6, pady=(0, 2))
+        self._btn_all = tk.Button(
+            flt,
+            text=_("btn_show_all"),
+            font=F["small_b"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=3,
+            cursor="hand2",
+            relief="flat",
+            command=self._filter_all,
+        )
         self._btn_all.pack(side="left", padx=(0, 4))
-        self._btn_fav = tk.Button(flt, text=_("btn_favorites_only"), font=F["small_b"],
-            bg=C["panel"], fg=C["star_off"], bd=0, padx=10, pady=3, cursor="hand2",
-            relief="flat", command=self._filter_fav)
+        self._btn_fav = tk.Button(
+            flt,
+            text=_("btn_favorites_only"),
+            font=F["small_b"],
+            bg=C["panel"],
+            fg=C["star_off"],
+            bd=0,
+            padx=10,
+            pady=3,
+            cursor="hand2",
+            relief="flat",
+            command=self._filter_fav,
+        )
         self._btn_fav.pack(side="left")
 
         # P0-08: 筛选状态条 —— 让当前过滤条件显式可见，无需用户猜测
         self._filter_status = tk.Frame(flt, bg=C["panel"])
-        self._filter_status_lbl = tk.Label(self._filter_status, text="",
-            font=F["small"], bg=C["panel"], fg=C["sub"])
+        self._filter_status_lbl = tk.Label(self._filter_status, text="", font=F["small"], bg=C["panel"], fg=C["sub"])
         self._filter_status_lbl.pack(side="left", padx=(8, 2))
-        tk.Button(self._filter_status, text="✕ " + _("btn_clear_filter"),
-                  font=F["tiny_b"], bg=C["panel"], fg=C["hl"], bd=0,
-                  cursor="hand2", command=self._clear_filters
-                  ).pack(side="left")
+        tk.Button(
+            self._filter_status,
+            text="✕ " + _("btn_clear_filter"),
+            font=F["tiny_b"],
+            bg=C["panel"],
+            fg=C["hl"],
+            bd=0,
+            cursor="hand2",
+            command=self._clear_filters,
+        ).pack(side="left")
 
         self._tag_bar_outer = tk.Frame(L, bg=C["panel"])
         self._tag_bar_outer.pack(fill="x", padx=6, pady=(0, 3))
-        self._tag_bar_lbl   = tk.Label(self._tag_bar_outer, text=_("btn_tag") + ":",
-            font=F["small"], bg=C["panel"], fg=C["sub"])
+        self._tag_bar_lbl = tk.Label(
+            self._tag_bar_outer, text=_("btn_tag") + ":", font=F["small"], bg=C["panel"], fg=C["sub"]
+        )
         self._tag_bar_inner = tk.Frame(self._tag_bar_outer, bg=C["panel"])
         self.app.root.after(150, self._refresh_tag_chips)
 
-        hf2 = tk.Frame(L, bg=C["panel"]); hf2.pack(fill="both", expand=True, padx=2, pady=2)
+        hf2 = tk.Frame(L, bg=C["panel"])
+        hf2.pack(fill="both", expand=True, padx=2, pady=2)
         self.hc = tk.Canvas(hf2, bg=C["panel"], bd=0, highlightthickness=0)
         sb = ttk.Scrollbar(hf2, orient="vertical", command=self.hc.yview)
         self.hc.configure(yscrollcommand=sb.set)
-        sb.pack(side="right", fill="y"); self.hc.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        self.hc.pack(side="left", fill="both", expand=True)
         self.hi = tk.Frame(self.hc, bg=C["panel"])
         self._hw = self.hc.create_window((0, 0), window=self.hi, anchor="nw")
         self.hi.bind("<Configure>", lambda e: self.hc.configure(scrollregion=self.hc.bbox("all")))
         self.hc.bind("<Configure>", lambda e: self.hc.itemconfig(self._hw, width=e.width))
         self._scroll_widgets = set()
-        self._bind_scroll(self.hc); self._bind_scroll(self.hi)
+        self._bind_scroll(self.hc)
+        self._bind_scroll(self.hi)
 
-        tk.Button(L, text=_("btn_reset"), bg=C["acc"], fg=C["text"],
-                  bd=0, pady=5, font=F["body"], cursor="hand2",
-                  command=self.app._reset_view).pack(fill="x", padx=6, pady=(0, 3))
-        tk.Button(L, text=_("btn_clear_history"), bg="#2a1018", fg=C["hl"],
-                  bd=0, pady=5, font=F["body"], cursor="hand2",
-                  command=self._clear_hist).pack(fill="x", padx=6, pady=(0, 6))
+        tk.Button(
+            L,
+            text=_("btn_reset"),
+            bg=C["acc"],
+            fg=C["text"],
+            bd=0,
+            pady=5,
+            font=F["body"],
+            cursor="hand2",
+            command=self.app._reset_view,
+        ).pack(fill="x", padx=6, pady=(0, 3))
+        tk.Button(
+            L,
+            text=_("btn_clear_history"),
+            bg="#2a1018",
+            fg=C["hl"],
+            bd=0,
+            pady=5,
+            font=F["body"],
+            cursor="hand2",
+            command=self._clear_hist,
+        ).pack(fill="x", padx=6, pady=(0, 6))
 
     def _refresh_tag_chips(self):
-        for w in self._tag_bar_inner.winfo_children(): w.destroy()
+        for w in self._tag_bar_inner.winfo_children():
+            w.destroy()
         tags = get_all_tags()
         if not tags:
-            self._tag_bar_lbl.pack_forget(); self._tag_bar_inner.pack_forget(); return
+            self._tag_bar_lbl.pack_forget()
+            self._tag_bar_inner.pack_forget()
+            return
         self._tag_bar_lbl.pack(side="left", padx=(0, 4))
         self._tag_bar_inner.pack(side="left", fill="x", expand=True)
-        all_active = (self._tag_filter == "")
-        tk.Button(self._tag_bar_inner, text=_("btn_show_all"), font=F["tiny_b"],
-                  bg=C["hl"] if all_active else C["acc"], fg="white",
-                  bd=0, padx=6, pady=2, cursor="hand2",
-                  command=lambda: self._set_tag_filter("")
-                  ).pack(side="left", padx=(0, 2), pady=2)
+        all_active = self._tag_filter == ""
+        tk.Button(
+            self._tag_bar_inner,
+            text=_("btn_show_all"),
+            font=F["tiny_b"],
+            bg=C["hl"] if all_active else C["acc"],
+            fg="white",
+            bd=0,
+            padx=6,
+            pady=2,
+            cursor="hand2",
+            command=lambda: self._set_tag_filter(""),
+        ).pack(side="left", padx=(0, 2), pady=2)
         for tag in tags[:8]:
-            active = (self._tag_filter == tag)
+            active = self._tag_filter == tag
             bg = tag_color(tag)
-            tk.Button(self._tag_bar_inner, text=tag, font=F["tiny_b"],
-                      bg=bg if active else C["acc"], fg="white",
-                      bd=0, padx=6, pady=2, cursor="hand2",
-                      command=lambda t=tag: self._set_tag_filter(t)
-                      ).pack(side="left", padx=(0, 2), pady=2)
+            tk.Button(
+                self._tag_bar_inner,
+                text=tag,
+                font=F["tiny_b"],
+                bg=bg if active else C["acc"],
+                fg="white",
+                bd=0,
+                padx=6,
+                pady=2,
+                cursor="hand2",
+                command=lambda t=tag: self._set_tag_filter(t),
+            ).pack(side="left", padx=(0, 2), pady=2)
 
     def _set_tag_filter(self, tag: str):
         self._tag_filter = tag
-        self._refresh_tag_chips(); self._update_filter_status(); self._debounced_refresh()
+        self._refresh_tag_chips()
+        self._update_filter_status()
+        self._debounced_refresh()
 
     def _bind_scroll(self, widget):
-        if widget in self._scroll_widgets: return
+        if widget in self._scroll_widgets:
+            return
         self._scroll_widgets.add(widget)
         # P0-06: 统一滚动事件处理（Windows MouseWheel / X11 Button-4/5）
         widget.bind("<MouseWheel>", self._on_wheel, add="+")
@@ -309,8 +421,7 @@ class HistorySidebar:
         if self._tag_filter:
             parts.append("#" + self._tag_filter)
         if parts:
-            self._filter_status_lbl.config(
-                text=_("filter_viewing", filters=" · ".join(parts)))
+            self._filter_status_lbl.config(text=_("filter_viewing", filters=" · ".join(parts)))
             self._filter_status.pack(side="left", padx=(6, 0))
         else:
             self._filter_status.pack_forget()
@@ -324,7 +435,8 @@ class HistorySidebar:
                         for lbl in right.winfo_children():
                             if isinstance(lbl, tk.Label):
                                 lbl.config(wraplength=wl)
-        except Exception: pass
+        except Exception:
+            pass
 
     def _card_wraplength(self, _sidebar_w: int):
         return max(80, _sidebar_w - THUMB_SIZE - 44)
@@ -341,11 +453,11 @@ class HistorySidebar:
         self.app._refresh_tag_stats()
 
     def _filter_all(self):
-        self._fav_only   = False
-        self._tag_filter = ""          # ← Bug4 修复：清除标签过滤器
+        self._fav_only = False
+        self._tag_filter = ""  # ← Bug4 修复：清除标签过滤器
         self._btn_all.config(bg=C["acc"], fg="white")
         self._btn_fav.config(bg=C["panel"], fg=C["star_off"])
-        self._refresh_tag_chips()      # ← 同步刷新标签栏高亮状态
+        self._refresh_tag_chips()  # ← 同步刷新标签栏高亮状态
         self._update_filter_status()
         self._debounced_refresh()
 
@@ -373,29 +485,34 @@ class HistorySidebar:
         # 误操作已不存在的旧卡片
         self._prev_sel_id = self.app.sel_id
 
-        for w in self.hi.winfo_children(): w.destroy()
+        for w in self.hi.winfo_children():
+            w.destroy()
         self._scroll_widgets.discard(self.hi)
         kw = self.sv.get().strip()
         HIST_PAGE_SIZE = 100
         if not load_all:
             # Fetch one extra row to detect "has more" without loading all rows
-            items = get_all_entries(keyword=kw, only_favorites=self._fav_only,
-                                    tag_filter=self._tag_filter,
-                                    limit=HIST_PAGE_SIZE + 1)
+            items = get_all_entries(
+                keyword=kw, only_favorites=self._fav_only, tag_filter=self._tag_filter, limit=HIST_PAGE_SIZE + 1
+            )
             _has_more = len(items) > HIST_PAGE_SIZE
             if _has_more:
                 items = items[:HIST_PAGE_SIZE]
         else:
-            items = get_all_entries(keyword=kw, only_favorites=self._fav_only,
-                                    tag_filter=self._tag_filter)
+            items = get_all_entries(keyword=kw, only_favorites=self._fav_only, tag_filter=self._tag_filter)
             _has_more = False
         self._update_filter_status()
         if not items:
-            msg = ("暂无收藏" if self._fav_only else
-                   f"🏷 无「{self._tag_filter}」标签" if self._tag_filter else
-                   "无匹配" if kw else "暂无记录")
-            tk.Label(self.hi, text=msg, font=F["body"],
-                     bg=C["panel"], fg=C["sub"]).pack(pady=30)
+            msg = (
+                _("empty_no_favorites")
+                if self._fav_only
+                else _("empty_no_tag_results", tag=self._tag_filter)
+                if self._tag_filter
+                else _("empty_no_match")
+                if kw
+                else _("status_no_records")
+            )
+            tk.Label(self.hi, text=msg, font=F["body"], bg=C["panel"], fg=C["sub"]).pack(pady=30)
             return
         for i, e in enumerate(items):
             self._card(e, cur_gen, prio=i)  # P0-02: 页首优先加载
@@ -407,10 +524,17 @@ class HistorySidebar:
     def _append_more_btn(self, gen: int, after_id: int):
         """DATA-003: keyset 分页「加载更多」—— 追加下一页，不全量重载。"""
         self._more_btn = tk.Button(
-            self.hi, text=_("btn_show_more", count=count_entries()),
-            font=F["body"], bg=C["acc"], fg=C["text"],
-            bd=0, padx=12, pady=6, cursor="hand2",
-            command=lambda: self._load_more(gen, after_id))
+            self.hi,
+            text=_("btn_show_more", count=count_entries()),
+            font=F["body"],
+            bg=C["acc"],
+            fg=C["text"],
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=lambda: self._load_more(gen, after_id),
+        )
         self._more_btn.pack(fill="x", padx=8, pady=4)
 
     def _load_more(self, gen: int, after_id: int):
@@ -426,9 +550,13 @@ class HistorySidebar:
             self._more_btn = None
         kw = self.sv.get().strip()
         HIST_PAGE_SIZE = 100
-        items = get_entries_keyset(after_id=after_id, limit=HIST_PAGE_SIZE + 1,
-                                   keyword=kw, tag_filter=self._tag_filter,
-                                   only_favorites=self._fav_only)
+        items = get_entries_keyset(
+            after_id=after_id,
+            limit=HIST_PAGE_SIZE + 1,
+            keyword=kw,
+            tag_filter=self._tag_filter,
+            only_favorites=self._fav_only,
+        )
         has_more = len(items) > HIST_PAGE_SIZE
         if has_more:
             items = items[:HIST_PAGE_SIZE]
@@ -445,15 +573,16 @@ class HistorySidebar:
         gen: 当前 _hist_gen 值，传给 _load_thumb 以支持过期检测。
         Fix-1: 每个操作图标均绑定 _Tooltip 悬浮说明。
         """
-        sel    = (e["id"] == self.app.sel_id)
+        sel = e["id"] == self.app.sel_id
         is_fav = bool(e.get("favorited", 0))
-        cbg    = C["card_sel"] if sel else (C["card_fav"] if is_fav else C["panel"])
+        cbg = C["card_sel"] if sel else (C["card_fav"] if is_fav else C["panel"])
         border = C["hl"] if sel else (C["star_on"] if is_fav else "#2a3a5a")
-        wl     = self._card_wraplength(self.app._sidebar_w)
+        wl = self._card_wraplength(self.app._sidebar_w)
 
         card = tk.Frame(self.hi, bg=cbg, highlightbackground=border, highlightthickness=1)
         card.pack(fill="x", padx=5, pady=3)
-        inn  = tk.Frame(card, bg=cbg); inn.pack(fill="x", padx=8, pady=8)
+        inn = tk.Frame(card, bg=cbg)
+        inn.pack(fill="x", padx=8, pady=8)
 
         # ── 缩略图（Fix-6: 外套固定像素 Frame + pack_propagate=False）──
         # tk.Label(width=N, height=N) 在无图片时 N 是字符单位（≈630px），
@@ -461,113 +590,162 @@ class HistorySidebar:
         # 用 Frame 固定像素尺寸，Label 填满 Frame，彻底消除字符单位问题。
         _thumb_f = tk.Frame(inn, bg=cbg, width=THUMB_SIZE, height=THUMB_SIZE)
         _thumb_f.pack(side="left", padx=(0, 10))
-        _thumb_f.pack_propagate(False)   # 不让子控件撑大 Frame
+        _thumb_f.pack_propagate(False)  # 不让子控件撑大 Frame
         thumb_lbl = tk.Label(_thumb_f, bg=cbg, relief="flat", bd=0)
         thumb_lbl.pack(fill="both", expand=True)
         # Fix-5: 传入 gen 参数
         self._load_thumb(e.get("image_path", ""), thumb_lbl, gen, priority=prio)
-        thumb_lbl.bind("<Button-1>",
-                       lambda ev, en=e: (self.app._load_entry(en), "break")[1])
+        thumb_lbl.bind("<Button-1>", lambda ev, en=e: (self.app._load_entry(en), "break")[1])
         self._bind_scroll(_thumb_f)
         self._bind_scroll(thumb_lbl)
 
-        right = tk.Frame(inn, bg=cbg); right.pack(side="left", fill="both", expand=True)
+        right = tk.Frame(inn, bg=cbg)
+        right.pack(side="left", fill="both", expand=True)
 
         title = self.app._display_title(e)
-        title_lbl = tk.Label(right, text=title, font=F["body_b"],
-                             bg=cbg, fg=C["text"], wraplength=wl, justify="left", anchor="nw")
+        title_lbl = tk.Label(
+            right, text=title, font=F["body_b"], bg=cbg, fg=C["text"], wraplength=wl, justify="left", anchor="nw"
+        )
         title_lbl.pack(anchor="nw", fill="x")
-        title_lbl.bind("<Button-1>",
-                       lambda ev, en=e: (self.app._load_entry(en), "break")[1])
+        title_lbl.bind("<Button-1>", lambda ev, en=e: (self.app._load_entry(en), "break")[1])
         self._bind_scroll(title_lbl)
 
-        ts   = e.get("timestamp", "")[:16]
+        ts = e.get("timestamp", "")[:16]
         prov = e.get("provider", "")
-        sub_lbl = tk.Label(right, text=f"{ts}\n{prov}",
-                           font=F["mono_sm"], bg=cbg, fg=C["sub"],
-                           wraplength=wl, justify="left", anchor="nw")
+        sub_lbl = tk.Label(
+            right,
+            text=f"{ts}\n{prov}",
+            font=F["mono_sm"],
+            bg=cbg,
+            fg=C["sub"],
+            wraplength=wl,
+            justify="left",
+            anchor="nw",
+        )
         sub_lbl.pack(anchor="nw", pady=(2, 0), fill="x")
-        sub_lbl.bind("<Button-1>",
-                     lambda ev, en=e: (self.app._load_entry(en), "break")[1])
+        sub_lbl.bind("<Button-1>", lambda ev, en=e: (self.app._load_entry(en), "break")[1])
         self._bind_scroll(sub_lbl)
 
         # ── 标签芯片 ─────────────────────────────────────────
-        tags_str  = e.get("tags", "") or ""
+        tags_str = e.get("tags", "") or ""
         tags_list = [t.strip() for t in tags_str.split(",") if t.strip()]
         if tags_list:
-            tf = tk.Frame(right, bg=cbg); tf.pack(anchor="nw", pady=(3, 0), fill="x")
+            tf = tk.Frame(right, bg=cbg)
+            tf.pack(anchor="nw", pady=(3, 0), fill="x")
             for tag in tags_list[:4]:
                 tc = tag_color(tag)
-                tl = tk.Label(tf, text=tag, font=F["tiny_b"],
-                              bg=tc, fg="white", padx=5, pady=1)
+                tl = tk.Label(tf, text=tag, font=F["tiny_b"], bg=tc, fg="white", padx=5, pady=1)
                 tl.pack(side="left", padx=(0, 3))
                 tl.bind("<Button-1>", lambda ev, t=tag: self._set_tag_filter(t))
                 self._bind_scroll(tl)
             self._bind_scroll(tf)
 
         # ── 操作按钮行（Fix-1: 每个按钮绑定 _Tooltip）─────────
-        btn_row = tk.Frame(right, bg=cbg); btn_row.pack(anchor="nw", pady=(6, 0))
+        btn_row = tk.Frame(right, bg=cbg)
+        btn_row.pack(anchor="nw", pady=(6, 0))
         self._bind_scroll(btn_row)
 
         # ✏ 重命名
-        edit_btn = tk.Button(btn_row, text="✏", font=F["input"],
-                             bg=cbg, fg=C["sub"], bd=0, padx=4, cursor="hand2",
-                             activebackground=C["acc"],
-                             command=lambda en=e, r=right, t=title_lbl:
-                                 self._rename_inline(en, card, r, t))
+        edit_btn = tk.Button(
+            btn_row,
+            text="✏",
+            font=F["input"],
+            bg=cbg,
+            fg=C["sub"],
+            bd=0,
+            padx=4,
+            cursor="hand2",
+            activebackground=C["acc"],
+            command=lambda en=e, r=right, t=title_lbl: self._rename_inline(en, card, r, t),
+        )
         edit_btn.pack(side="left", padx=(0, 2))
         _Tooltip(edit_btn, _("btn_rename"))
 
         # ★ 收藏
-        star_fg  = C["star_on"] if is_fav else C["star_off"]
+        star_fg = C["star_on"] if is_fav else C["star_off"]
         star_txt = "★" if is_fav else "☆"
-        star_tip = "取消收藏" if is_fav else "添加到收藏"
-        star_btn = tk.Button(btn_row, text=star_txt, font=F["label"],
-                             bg=cbg, fg=star_fg, bd=0, padx=4, cursor="hand2",
-                             activebackground=C["acc"],
-                             command=lambda en=e: self._toggle_fav(en))
+        star_tip = _("tip_remove_from_favorites") if is_fav else _("tip_add_to_favorites")
+        star_btn = tk.Button(
+            btn_row,
+            text=star_txt,
+            font=F["label"],
+            bg=cbg,
+            fg=star_fg,
+            bd=0,
+            padx=4,
+            cursor="hand2",
+            activebackground=C["acc"],
+            command=lambda en=e: self._toggle_fav(en),
+        )
         star_btn.pack(side="left", padx=(0, 2))
         _Tooltip(star_btn, star_tip)
 
         # 🏷 标签
-        tag_btn = tk.Button(btn_row, text="🏷", font=F["input"],
-                            bg=cbg, fg=C["sub"], bd=0, padx=4, cursor="hand2",
-                            activebackground=C["acc"],
-                            command=lambda en=e: self._open_tag_editor(en))
+        tag_btn = tk.Button(
+            btn_row,
+            text="🏷",
+            font=F["input"],
+            bg=cbg,
+            fg=C["sub"],
+            bd=0,
+            padx=4,
+            cursor="hand2",
+            activebackground=C["acc"],
+            command=lambda en=e: self._open_tag_editor(en),
+        )
         tag_btn.pack(side="left", padx=(0, 2))
         _Tooltip(tag_btn, _("btn_tag"))
 
         # ⚖ 对比
-        cmp_btn = tk.Button(btn_row, text="⚖", font=F["input"],
-                            bg=cbg, fg="#a78bfa", bd=0, padx=4, cursor="hand2",
-                            activebackground="#4a1d96",
-                            command=lambda en=e: self.app._set_cmp_from_entry(en))
+        cmp_btn = tk.Button(
+            btn_row,
+            text="⚖",
+            font=F["input"],
+            bg=cbg,
+            fg="#a78bfa",
+            bd=0,
+            padx=4,
+            cursor="hand2",
+            activebackground="#4a1d96",
+            command=lambda en=e: self.app._set_cmp_from_entry(en),
+        )
         cmp_btn.pack(side="left", padx=(0, 2))
-        _Tooltip(cmp_btn, "设为右侧对比图")
+        _Tooltip(cmp_btn, _("tip_set_as_right_compare"))
 
         # 🗑 删除
-        del_btn = tk.Button(btn_row, text="🗑", font=F["input"],
-                            bg=cbg, fg="#e05555", bd=0, padx=4, cursor="hand2",
-                            activebackground=C["hl"],
-                            command=lambda en=e: self._del_entry(en["id"]))
+        del_btn = tk.Button(
+            btn_row,
+            text="🗑",
+            font=F["input"],
+            bg=cbg,
+            fg="#e05555",
+            bd=0,
+            padx=4,
+            cursor="hand2",
+            activebackground=C["hl"],
+            command=lambda en=e: self._del_entry(en["id"]),
+        )
         del_btn.pack(side="left")
         _Tooltip(del_btn, _("btn_delete"))
 
         for w in [card, inn, right]:
             # "break" 阻止事件向父控件冒泡，确保 _load_entry 每次点击只调用一次
-            w.bind("<Button-1>",
-                   lambda ev, en=e: (self.app._load_entry(en), "break")[1])
+            w.bind("<Button-1>", lambda ev, en=e: (self.app._load_entry(en), "break")[1])
             self._bind_scroll(w)
 
         # ── 右键菜单（快速操作，减少操作层级）────────────────
         def _show_ctx(ev, en=e):
             """弹出右键上下文菜单（使用共享单例，避免每次右键创建新 Menu widget）"""
             if self._ctx_menu is None:
-                self._ctx_menu = tk.Menu(self.app.root, tearoff=0,
-                                         bg=C["panel"], fg=C["text"],
-                                         activebackground=C["acc"],
-                                         activeforeground="white",
-                                         font=F["body"])
+                self._ctx_menu = tk.Menu(
+                    self.app.root,
+                    tearoff=0,
+                    bg=C["panel"],
+                    fg=C["text"],
+                    activebackground=C["acc"],
+                    activeforeground="white",
+                    font=F["body"],
+                )
             menu = self._ctx_menu
             menu.delete(0, "end")
 
@@ -575,7 +753,7 @@ class HistorySidebar:
             def _copy_prompt():
                 self.app.root.clipboard_clear()
                 self.app.root.clipboard_append(en["prompt"])
-                self.app._st("📋 提示词已复制", "ok")
+                self.app._st(_("status_copied_prompt"), "ok")
 
             # 📁 复制图片路径
             def _copy_path():
@@ -583,7 +761,7 @@ class HistorySidebar:
                 if p:
                     self.app.root.clipboard_clear()
                     self.app.root.clipboard_append(p)
-                    self.app._toast("📁 路径已复制", "success")
+                    self.app._toast(_("path_copied"), "success")
 
             # 🔁 一键重新生成（填入输入框并立即生成）
             def _regen():
@@ -595,39 +773,38 @@ class HistorySidebar:
             def _open_viewer_ctx():
                 p = en.get("image_path", "")
                 if p and os.path.exists(p):
-                    self.app.cur_path   = p
+                    self.app.cur_path = p
                     with open(p, "rb") as _fh:
                         self.app._cur_bytes = _fh.read()
                     self.app._open_viewer()
 
             # ➕ 加入生成队列
             def _add_to_queue():
-                sz    = self.app.szv.get()
-                psel  = self.app.pv.get()
-                pord  = None if psel == _("provider_auto") else [psel]
+                sz = self.app.szv.get()
+                psel = self.app.pv.get()
+                pord = None if psel == _("provider_auto") else [psel]
                 self.app._queue_panel.add_task(en["prompt"], sz, pord)
                 self.app._switch_to_queue_tab()
-                self.app._toast("📋 已加入队列", "success")
+                self.app._toast(_("toast_added_to_queue"), "success")
 
             # 📂 在文件夹中显示（§62：资源管理器定位并选中文件）
             def _show_in_folder():
                 p = en.get("image_path", "")
                 if p and os.path.exists(p):
-                    subprocess.Popen(["explorer", "/select,",
-                                      os.path.normpath(p)])
+                    subprocess.Popen(["explorer", "/select,", os.path.normpath(p)])
 
             # §61：高频动作在上，危险操作永远最后
-            menu.add_command(label="🔍  在查看器中打开",  command=_open_viewer_ctx)
-            menu.add_command(label="🔁  一键重新生成",    command=_regen)
+            menu.add_command(label=_("ctx_open_in_viewer"), command=_open_viewer_ctx)
+            menu.add_command(label=_("ctx_regen"), command=_regen)
             menu.add_separator()
-            menu.add_command(label="📋  复制提示词",      command=_copy_prompt)
-            menu.add_command(label="📁  复制图片路径",    command=_copy_path)
+            menu.add_command(label=_("ctx_copy_prompt"), command=_copy_prompt)
+            menu.add_command(label=_("ctx_copy_path"), command=_copy_path)
             menu.add_command(label=_("ctx_show_in_folder"), command=_show_in_folder)
-            menu.add_command(label="➕  加入生成队列",    command=_add_to_queue)
+            menu.add_command(label=_("ctx_add_to_queue"), command=_add_to_queue)
             menu.add_separator()
-            menu.add_command(label="🗑  删除此记录",
-                             command=lambda en_=en: self._del_entry(en_["id"]),
-                             foreground="#e05555")
+            menu.add_command(
+                label=_("ctx_delete_entry"), command=lambda en_=en: self._del_entry(en_["id"]), foreground="#e05555"
+            )
             menu.post(ev.x_root, ev.y_root)
 
         for w in [card, inn, right, _thumb_f, thumb_lbl, title_lbl, sub_lbl]:
@@ -635,32 +812,43 @@ class HistorySidebar:
 
         # ── 卡片颜色注册表（轻量选中态切换，无需重建列表）──────
         # 收集所有使用 cbg 的控件（用于选中/取消选中时更新背景色）
-        _cbg_widgets = [inn, right, title_lbl, sub_lbl, btn_row,
-                        edit_btn, star_btn, tag_btn, cmp_btn, del_btn, _thumb_f]
+        _cbg_widgets = [
+            inn,
+            right,
+            title_lbl,
+            sub_lbl,
+            btn_row,
+            edit_btn,
+            star_btn,
+            tag_btn,
+            cmp_btn,
+            del_btn,
+            _thumb_f,
+        ]
         if tags_list:
             # tf 是 right 的子 Frame，bg 也是 cbg
             for _w in right.winfo_children():
                 if isinstance(_w, tk.Frame) and _w not in _cbg_widgets:
                     _cbg_widgets.append(_w)
 
-        def _sel_updater(is_selected, _is_fav, _card=card,
-                         _cbg_w=list(_cbg_widgets)):
-            new_cbg    = (C["card_sel"] if is_selected
-                          else (C["card_fav"] if _is_fav else C["panel"]))
-            new_border = (C["hl"]       if is_selected
-                          else (C["star_on"] if _is_fav else "#2a3a5a"))
+        def _sel_updater(is_selected, _is_fav, _card=card, _cbg_w=list(_cbg_widgets)):
+            new_cbg = C["card_sel"] if is_selected else (C["card_fav"] if _is_fav else C["panel"])
+            new_border = C["hl"] if is_selected else (C["star_on"] if _is_fav else "#2a3a5a")
             try:
                 _card.config(highlightbackground=new_border)
                 for w in _cbg_w:
-                    try: w.config(bg=new_cbg)
-                    except Exception: pass
-            except Exception: pass
+                    try:
+                        w.config(bg=new_cbg)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
         # 存储 card 和 star_btn 引用，支持原地更新（避免单条操作触发全量重建）
         self._card_widgets[e["id"]] = {
-            "fn":       _sel_updater,
-            "is_fav":   is_fav,
-            "card":     card,
+            "fn": _sel_updater,
+            "is_fav": is_fav,
+            "card": card,
             "star_btn": star_btn,
         }
 
@@ -677,13 +865,17 @@ class HistorySidebar:
         if old_id is not None and old_id != new_id:
             cd = self._card_widgets.get(old_id)
             if cd:
-                try: cd["fn"](False, cd["is_fav"])
-                except Exception: pass
+                try:
+                    cd["fn"](False, cd["is_fav"])
+                except Exception:
+                    pass
         # 设置新选中态
         cd = self._card_widgets.get(new_id)
         if cd:
-            try: cd["fn"](True, cd["is_fav"])
-            except Exception: pass
+            try:
+                cd["fn"](True, cd["is_fav"])
+            except Exception:
+                pass
         self._prev_sel_id = new_id
 
     # ══════════════════════════════════════════════════════════
@@ -699,8 +891,9 @@ class HistorySidebar:
         解码/合成在工作线程（ThumbnailLoader），UI 操作严格经 after(0) 回主线程。
         """
         import uuid as _uuid
+
         token = _uuid.uuid4().hex
-        label._thumb_token = token   # type: ignore[attr-defined]
+        label._thumb_token = token  # type: ignore[attr-defined]
 
         def _apply(ci, tok=token, lbl=label, g=gen):
             # 双重校验：gen 代号 + widget token
@@ -713,8 +906,7 @@ class HistorySidebar:
                     return
                 ph = ImageTk.PhotoImage(ci)
                 self._thumbs[path] = ph
-                lbl.config(image=ph, text="",
-                           width=THUMB_SIZE, height=THUMB_SIZE)
+                lbl.config(image=ph, text="", width=THUMB_SIZE, height=THUMB_SIZE)
             except tk.TclError:
                 pass
 
@@ -726,168 +918,292 @@ class HistorySidebar:
                     return
                 if getattr(lbl, "_thumb_token", None) != tok:
                     return
-                lbl.config(text="🖼", font=F["display"],
-                           width=6, height=3)
+                lbl.config(text="🖼", font=F["display"], width=6, height=3)
             except tk.TclError:
                 pass
 
-        self._thumb_loader.submit(path, THUMB_SIZE, priority, gen,
-                                  on_ready=_apply, on_missing=_apply_missing)
-
+        self._thumb_loader.submit(path, THUMB_SIZE, priority, gen, on_ready=_apply, on_missing=_apply_missing)
 
     # ══════════════════════════════════════════════════════════
     #   标签编辑器
     # ══════════════════════════════════════════════════════════
     def _open_tag_editor(self, entry: dict):
-        title_str   = self.app._display_title(entry)
-        cur_tags    = [t.strip() for t in (entry.get("tags") or "").split(",") if t.strip()]
+        title_str = self.app._display_title(entry)
+        cur_tags = [t.strip() for t in (entry.get("tags") or "").split(",") if t.strip()]
         all_db_tags = [t for t in get_all_tags() if t not in cur_tags]
 
         win = tk.Toplevel(self.app.root)
-        win.title(f"🏷 编辑标签 — {title_str[:30]}")
-        win.configure(bg=C["bg"]); win.resizable(False, False); win.grab_set()
+        win.title(_("dlg_edit_tag_title", name=title_str[:30]))
+        win.configure(bg=C["bg"])
+        win.resizable(False, False)
+        win.grab_set()
         win.update_idletasks()
-        x = self.app.root.winfo_x() + (self.app.root.winfo_width()  - 440) // 2
+        x = self.app.root.winfo_x() + (self.app.root.winfo_width() - 440) // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() - 460) // 2
-        win.geometry(f"440x460+{max(0,x)}+{max(0,y)}")
+        win.geometry(f"440x460+{max(0, x)}+{max(0, y)}")
 
-        hdr = tk.Frame(win, bg=C["acc"]); hdr.pack(fill="x")
-        tk.Label(hdr, text="🏷  编辑标签", font=F["h2"],
-                 bg=C["acc"], fg="white").pack(side="left", padx=14, pady=8)
-        tk.Label(hdr, text=f"「{title_str[:24]}」",
-                 font=F["body"], bg=C["acc"], fg="#c0d8ff").pack(side="right", padx=14)
+        hdr = tk.Frame(win, bg=C["acc"])
+        hdr.pack(fill="x")
+        tk.Label(hdr, text=_("lbl_edit_tag"), font=F["h2"], bg=C["acc"], fg="white").pack(side="left", padx=14, pady=8)
+        tk.Label(
+            hdr, text=_("dlg_edit_tag_entry", name=title_str[:24]), font=F["body"], bg=C["acc"], fg="#c0d8ff"
+        ).pack(side="right", padx=14)
 
-        body = tk.Frame(win, bg=C["bg"]); body.pack(fill="both", expand=True, padx=14, pady=10)
-        tk.Label(body, text="当前标签（点击移除）",
-                 font=F["body_b"], bg=C["bg"], fg=C["sub"]).pack(anchor="w")
-        cur_f    = tk.Frame(body, bg=C["bg"], height=36); cur_f.pack(fill="x", pady=(4, 8))
+        body = tk.Frame(win, bg=C["bg"])
+        body.pack(fill="both", expand=True, padx=14, pady=10)
+        tk.Label(body, text=_("lbl_current_tags"), font=F["body_b"], bg=C["bg"], fg=C["sub"]).pack(anchor="w")
+        cur_f = tk.Frame(body, bg=C["bg"], height=36)
+        cur_f.pack(fill="x", pady=(4, 8))
         live_tags = list(cur_tags)
 
         def _rebuild_cur():
-            for w in cur_f.winfo_children(): w.destroy()
+            for w in cur_f.winfo_children():
+                w.destroy()
             if not live_tags:
-                tk.Label(cur_f, text=_("status_no_records"), font=F["small_i"],
-                         bg=C["bg"], fg=C["sub"]).pack(side="left"); return
+                tk.Label(cur_f, text=_("status_no_records"), font=F["small_i"], bg=C["bg"], fg=C["sub"]).pack(
+                    side="left"
+                )
+                return
             for tag in live_tags:
                 tc = tag_color(tag)
-                fr = tk.Frame(cur_f, bg=tc); fr.pack(side="left", padx=(0, 4))
-                tk.Label(fr, text=tag, font=F["small_b"],
-                         bg=tc, fg="white", padx=5, pady=2).pack(side="left")
-                tk.Button(fr, text="✕", font=F["tiny"], bg=tc, fg="white", bd=0,
-                          padx=2, pady=1, cursor="hand2",
-                          command=lambda t=tag: (_remove(t))).pack(side="left")
+                fr = tk.Frame(cur_f, bg=tc)
+                fr.pack(side="left", padx=(0, 4))
+                tk.Label(fr, text=tag, font=F["small_b"], bg=tc, fg="white", padx=5, pady=2).pack(side="left")
+                tk.Button(
+                    fr,
+                    text="✕",
+                    font=F["tiny"],
+                    bg=tc,
+                    fg="white",
+                    bd=0,
+                    padx=2,
+                    pady=1,
+                    cursor="hand2",
+                    command=lambda t=tag: _remove(t),
+                ).pack(side="left")
 
         def _remove(tag):
-            if tag in live_tags: live_tags.remove(tag)
+            if tag in live_tags:
+                live_tags.remove(tag)
             _rebuild_cur()
 
         def _add(tag):
-            if tag and tag not in live_tags: live_tags.append(tag)
+            if tag and tag not in live_tags:
+                live_tags.append(tag)
             _rebuild_cur()
 
         _rebuild_cur()
 
         tk.Frame(body, bg=C["sep"], height=1).pack(fill="x", pady=(0, 6))
-        tk.Label(body, text="从历史标签选择", font=F["body_b"],
-                 bg=C["bg"], fg=C["sub"]).pack(anchor="w")
-        sug_f = tk.Frame(body, bg=C["bg"]); sug_f.pack(fill="x", pady=(4, 8))
+        tk.Label(body, text=_("lbl_select_from_history"), font=F["body_b"], bg=C["bg"], fg=C["sub"]).pack(anchor="w")
+        sug_f = tk.Frame(body, bg=C["bg"])
+        sug_f.pack(fill="x", pady=(4, 8))
         if all_db_tags:
             for tag in all_db_tags[:16]:
-                tk.Button(sug_f, text=tag, font=F["small"],
-                          bg=C["acc"], fg="white", bd=0, padx=7, pady=2, cursor="hand2",
-                          command=lambda t=tag: _add(t)
-                          ).pack(side="left", padx=(0, 4), pady=2)
+                tk.Button(
+                    sug_f,
+                    text=tag,
+                    font=F["small"],
+                    bg=C["acc"],
+                    fg="white",
+                    bd=0,
+                    padx=7,
+                    pady=2,
+                    cursor="hand2",
+                    command=lambda t=tag: _add(t),
+                ).pack(side="left", padx=(0, 4), pady=2)
         else:
-            tk.Label(sug_f, text="（无历史标签）", font=F["small_i"],
-                     bg=C["bg"], fg=C["sub"]).pack(side="left")
+            tk.Label(sug_f, text=_("lbl_no_history_tags"), font=F["small_i"], bg=C["bg"], fg=C["sub"]).pack(side="left")
 
         tk.Frame(body, bg=C["sep"], height=1).pack(fill="x", pady=(0, 6))
-        tk.Label(body, text="新建标签", font=F["body_b"],
-                 bg=C["bg"], fg=C["sub"]).pack(anchor="w")
-        nr = tk.Frame(body, bg=C["bg"]); nr.pack(fill="x", pady=(4, 0))
+        tk.Label(body, text=_("lbl_new_tag"), font=F["body_b"], bg=C["bg"], fg=C["sub"]).pack(anchor="w")
+        nr = tk.Frame(body, bg=C["bg"])
+        nr.pack(fill="x", pady=(4, 0))
         nv = tk.StringVar()
-        nef = tk.Frame(nr, bg=C["entry"]); nef.pack(side="left", fill="x", expand=True)
-        ne  = tk.Entry(nef, textvariable=nv, bg=C["entry"], fg=C["text"],
-                       insertbackground="white", font=F["body"], bd=0, relief="flat")
+        nef = tk.Frame(nr, bg=C["entry"])
+        nef.pack(side="left", fill="x", expand=True)
+        ne = tk.Entry(
+            nef,
+            textvariable=nv,
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            font=F["body"],
+            bd=0,
+            relief="flat",
+        )
         ne.pack(fill="x", padx=8, ipady=5)
 
         def _confirm_new(ev=None):
             val = nv.get().strip()
-            if val: _add(val); nv.set("")
+            if val:
+                _add(val)
+                nv.set("")
 
-        tk.Button(nr, text=_("btn_confirm"), font=F["body"],
-                  bg=C["ok"], fg="#0a1a0a", bd=0, padx=12, pady=5,
-                  cursor="hand2", command=_confirm_new).pack(side="left", padx=(6, 0))
+        tk.Button(
+            nr,
+            text=_("btn_confirm"),
+            font=F["body"],
+            bg=C["ok"],
+            fg="#0a1a0a",
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=_confirm_new,
+        ).pack(side="left", padx=(6, 0))
         ne.bind("<Return>", _confirm_new)
 
-        bot = tk.Frame(win, bg=C["panel"]); bot.pack(fill="x", side="bottom")
+        bot = tk.Frame(win, bg=C["panel"])
+        bot.pack(fill="x", side="bottom")
 
         def _save():
             update_tags(entry["id"], ",".join(live_tags))
-            self.app._refresh_hist(keep_scroll=True); self._refresh_tag_chips(); self.app._refresh_tag_stats()
+            self.app._refresh_hist(keep_scroll=True)
+            self._refresh_tag_chips()
+            self.app._refresh_tag_stats()
             self.app._log(f"🏷 更新标签 id={entry['id']} → {','.join(live_tags)}")
             win.destroy()
 
-        tk.Button(bot, text="✅  " + _("btn_save").strip(), font=F["btn"],
-                  bg=C["ok"], fg="#0a1a0a", bd=0, padx=22, pady=8,
-                  cursor="hand2", command=_save).pack(side="right", padx=14, pady=10)
-        tk.Button(bot, text=_("btn_cancel"), font=F["body"],
-                  bg=C["panel"], fg=C["sub"], bd=0, padx=14, pady=8,
-                  cursor="hand2", command=win.destroy).pack(side="right", pady=10)
+        tk.Button(
+            bot,
+            text="✅  " + _("btn_save").strip(),
+            font=F["btn"],
+            bg=C["ok"],
+            fg="#0a1a0a",
+            bd=0,
+            padx=22,
+            pady=8,
+            cursor="hand2",
+            command=_save,
+        ).pack(side="right", padx=14, pady=10)
+        tk.Button(
+            bot,
+            text=_("btn_cancel"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=14,
+            pady=8,
+            cursor="hand2",
+            command=win.destroy,
+        ).pack(side="right", pady=10)
 
     # ══════════════════════════════════════════════════════════
     #   重命名 / 收藏 / 删除
     # ══════════════════════════════════════════════════════════
     def _rename_inline(self, entry, card, right, title_lbl):
         if self._inline_frame is not None:
-            try: self._inline_frame.destroy()
-            except Exception: pass
+            try:
+                self._inline_frame.destroy()
+            except Exception:
+                pass
             self._inline_frame = None
-        cbg    = card.cget("bg")
+        cbg = card.cget("bg")
         inline = tk.Frame(right, bg=cbg)
         inline.pack(anchor="nw", fill="x", pady=(4, 0))
         self._inline_frame = inline
         nick_var = tk.StringVar(value=entry.get("nickname") or "")
-        ent = tk.Entry(inline, textvariable=nick_var, width=18,
-                       bg=C["entry"], fg=C["text"], insertbackground="white",
-                       font=F["body"], bd=1, relief="solid",
-                       highlightbackground=C["acc"], highlightthickness=1)
-        ent.pack(fill="x", ipady=4); ent.focus_set(); ent.icursor("end")
-        tip = tk.Label(inline, text=f"0/{self.app.MAX_NICK_LEN} 字",
-                       font=F["tiny"], bg=cbg, fg=C["sub"]); tip.pack(anchor="e")
+        ent = tk.Entry(
+            inline,
+            textvariable=nick_var,
+            width=18,
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            font=F["body"],
+            bd=1,
+            relief="solid",
+            highlightbackground=C["acc"],
+            highlightthickness=1,
+        )
+        ent.pack(fill="x", ipady=4)
+        ent.focus_set()
+        ent.icursor("end")
+        tip = tk.Label(
+            inline, text=_("lbl_char_count", cur=0, max=self.app.MAX_NICK_LEN), font=F["tiny"], bg=cbg, fg=C["sub"]
+        )
+        tip.pack(anchor="e")
+
         def _on_key(*_):
             v = nick_var.get()
-            if len(v) > self.app.MAX_NICK_LEN: nick_var.set(v[:self.app.MAX_NICK_LEN])
-            tip.config(text=f"{len(nick_var.get())}/{self.app.MAX_NICK_LEN} 字")
-        nick_var.trace("w", _on_key); _on_key()
-        btn2 = tk.Frame(inline, bg=cbg); btn2.pack(fill="x", pady=(3, 0))
+            if len(v) > self.app.MAX_NICK_LEN:
+                nick_var.set(v[: self.app.MAX_NICK_LEN])
+            tip.config(text=_("lbl_char_count", cur=len(nick_var.get()), max=self.app.MAX_NICK_LEN))
+
+        nick_var.trace("w", _on_key)
+        _on_key()
+        btn2 = tk.Frame(inline, bg=cbg)
+        btn2.pack(fill="x", pady=(3, 0))
+
         def _confirm():
             nn = nick_var.get().strip()
-            if not messagebox.askyesno(_("dlg_confirm_rename"), _("dlg_confirm_rename_body", name=nn or "(清除)"), parent=self.app.root): return
+            if not messagebox.askyesno(
+                _("dlg_confirm_rename"), _("dlg_confirm_rename_body", name=nn or _("lbl_cleared")), parent=self.app.root
+            ):
+                return
             rename_entry(entry["id"], nn)
-            try: inline.destroy(); self._inline_frame = None
-            except Exception: pass
-            disp = nn if nn else (entry["prompt"][:self.app.MAX_NICK_LEN] + ("…" if len(entry["prompt"]) > self.app.MAX_NICK_LEN else ""))
+            try:
+                inline.destroy()
+                self._inline_frame = None
+            except Exception:
+                pass
+            disp = (
+                nn
+                if nn
+                else (
+                    entry["prompt"][: self.app.MAX_NICK_LEN]
+                    + ("…" if len(entry["prompt"]) > self.app.MAX_NICK_LEN else "")
+                )
+            )
             title_lbl.config(text=disp)
+
         def _cancel():
-            try: inline.destroy(); self._inline_frame = None
-            except Exception: pass
-        tk.Button(btn2, text=_("btn_confirm"), font=F["small"], bg=C["ok"], fg="#0a1a0a",
-                  bd=0, padx=8, pady=2, cursor="hand2", command=_confirm).pack(side="left", padx=(0, 4))
-        tk.Button(btn2, text=_("btn_cancel"), font=F["small"], bg=C["panel"], fg=C["sub"],
-                  bd=0, padx=8, pady=2, cursor="hand2", command=_cancel).pack(side="left")
+            try:
+                inline.destroy()
+                self._inline_frame = None
+            except Exception:
+                pass
+
+        tk.Button(
+            btn2,
+            text=_("btn_confirm"),
+            font=F["small"],
+            bg=C["ok"],
+            fg="#0a1a0a",
+            bd=0,
+            padx=8,
+            pady=2,
+            cursor="hand2",
+            command=_confirm,
+        ).pack(side="left", padx=(0, 4))
+        tk.Button(
+            btn2,
+            text=_("btn_cancel"),
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=8,
+            pady=2,
+            cursor="hand2",
+            command=_cancel,
+        ).pack(side="left")
         ent.bind("<Return>", lambda ev: _confirm())
         ent.bind("<Escape>", lambda ev: _cancel())
 
     def _toggle_fav(self, entry):
         is_fav = bool(entry.get("favorited", 0))
-        title  = self.app._display_title(entry)
+        title = self.app._display_title(entry)
         if is_fav:
-            if not messagebox.askyesno(_("dlg_tip"), _("dlg_unfavorite_body", name=title), parent=self.app.root): return
+            if not messagebox.askyesno(_("dlg_tip"), _("dlg_unfavorite_body", name=title), parent=self.app.root):
+                return
             toggle_favorite(entry["id"], False)
             new_fav = False
         else:
-            if not messagebox.askyesno(_("dlg_tip"), _("dlg_favorite_body", name=title), parent=self.app.root): return
+            if not messagebox.askyesno(_("dlg_tip"), _("dlg_favorite_body", name=title), parent=self.app.root):
+                return
             toggle_favorite(entry["id"], True)
             new_fav = True
 
@@ -896,10 +1212,7 @@ class HistorySidebar:
             # 原地更新：仅改星号颜色 + 卡片背景，不重建列表
             cd["is_fav"] = new_fav
             try:
-                cd["star_btn"].config(
-                    text="★" if new_fav else "☆",
-                    fg=C["star_on"] if new_fav else C["star_off"]
-                )
+                cd["star_btn"].config(text="★" if new_fav else "☆", fg=C["star_on"] if new_fav else C["star_off"])
                 cd["fn"](entry["id"] == self.app.sel_id, new_fav)
             except Exception:
                 self.app._refresh_hist()  # 退化：widget 已销毁则全量刷新
@@ -908,9 +1221,8 @@ class HistorySidebar:
             self.app._refresh_hist()
 
     def _del_entry(self, eid):
-        if not messagebox.askyesno(_("dlg_tip"),
-                _("dlg_confirm_delete"),
-                parent=self.app.root): return
+        if not messagebox.askyesno(_("dlg_tip"), _("dlg_confirm_delete"), parent=self.app.root):
+            return
         delete_entry(eid, remove_file=True)
 
         # 原地移除卡片，不重建整个列表
@@ -935,6 +1247,8 @@ class HistorySidebar:
 
     def _clear_hist(self):
         n = count_entries()
-        if not n: return
-        if messagebox.askyesno(_("dlg_confirm_clear"), f"清空全部 {n} 条记录？\n（不删除磁盘图片文件）"):
-            clear_all_entries(); self.app._refresh_hist()
+        if not n:
+            return
+        if messagebox.askyesno(_("dlg_confirm_clear"), _("dlg_confirm_clear_n_body", n=n)):
+            clear_all_entries()
+            self.app._refresh_hist()

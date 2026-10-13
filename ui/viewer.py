@@ -7,6 +7,7 @@ ui/viewer.py  v4 — 单图渲染架构图片查看器
   · 后台线程异步准备缩放图，主线程轮询提交到 Canvas
   · OrderedDict zoom 缓存（最多3个级别），16ms 防抖
 """
+
 import io
 import os
 import tkinter as tk
@@ -47,35 +48,35 @@ class ImageViewerWindow(tk.Toplevel):
         self.app = parent_app
 
         # 图片状态
-        self._img_orig   = None
-        self._img_bytes  = None
-        self._cur_path   = ""
-        self._zoom       = 1.0
-        self._photo      = None
-        self._img_cx     = 0
-        self._img_cy     = 0
-        self._img_item   = None
-        self._pan_last   = None
+        self._img_orig = None
+        self._img_bytes = None
+        self._cur_path = ""
+        self._zoom = 1.0
+        self._photo = None
+        self._img_cx = 0
+        self._img_cy = 0
+        self._img_item = None
+        self._pan_last = None
 
         # 裁剪状态
-        self._crop_mode    = False
+        self._crop_mode = False
         self._crop_drawing = False
         self._crop_x0 = self._crop_y0 = 0
-        self._crop_rect    = None
-        self._crop_coords  = None
+        self._crop_rect = None
+        self._crop_coords = None
 
         # 待渲染数据
         self._pending_load = None
 
         # ── 性能优化：单图渲染状态 ────────────────────────────────
-        self._zoom_cache = OrderedDict()        # {round(zoom,2): PhotoImage}
+        self._zoom_cache = OrderedDict()  # {round(zoom,2): PhotoImage}
         self._render_queue = Queue(maxsize=50)  # round_zoom float
-        self._done_queue   = Queue(maxsize=50)  # (round_zoom, PIL_Image)
-        self._pending_job  = None               # round(zoom,2) currently in flight
-        self._render_timer = None               # after() id for debounce
-        self._stop_event   = Event()
-        self._bg_thread    = None
-        self._polling      = False
+        self._done_queue = Queue(maxsize=50)  # (round_zoom, PIL_Image)
+        self._pending_job = None  # round(zoom,2) currently in flight
+        self._render_timer = None  # after() id for debounce
+        self._stop_event = Event()
+        self._bg_thread = None
+        self._polling = False
 
         self.title(_("viewer_title"))
         self.geometry("1020x740")
@@ -87,59 +88,64 @@ class ImageViewerWindow(tk.Toplevel):
 
         # 居中
         self.update_idletasks()
-        px = parent_app.root.winfo_x() + (parent_app.root.winfo_width()  - 1020) // 2
-        py = parent_app.root.winfo_y() + (parent_app.root.winfo_height() -  740) // 2
+        px = parent_app.root.winfo_x() + (parent_app.root.winfo_width() - 1020) // 2
+        py = parent_app.root.winfo_y() + (parent_app.root.winfo_height() - 740) // 2
         self.geometry(f"1020x740+{max(0, px)}+{max(0, py)}")
 
         self.bind("<Map>", self._on_mapped)
 
     # ── UI 构建 ───────────────────────────────────────────────
     def _build_ui(self):
-        
 
         # 顶部工具栏
         tb = tk.Frame(self, bg=C["tb"], height=46)
-        tb.pack(fill="x"); tb.pack_propagate(False)
+        tb.pack(fill="x")
+        tb.pack_propagate(False)
 
         def tbtn(txt, cmd, color=None, side="left"):
-            b = tk.Button(tb, text=txt, font=F["body"],
-                          command=cmd, bg=color or C["acc"], fg="white",
-                          bd=0, padx=10, pady=5, cursor="hand2",
-                          activebackground="#1a4a7a")
+            b = tk.Button(
+                tb,
+                text=txt,
+                font=F["body"],
+                command=cmd,
+                bg=color or C["acc"],
+                fg="white",
+                bd=0,
+                padx=10,
+                pady=5,
+                cursor="hand2",
+                activebackground="#1a4a7a",
+            )
             b.pack(side=side, padx=2, pady=6)
             return b
 
         def sep():
-            tk.Frame(tb, bg="#2a3a5a", width=1).pack(
-                side="left", fill="y", padx=5, pady=8)
+            tk.Frame(tb, bg="#2a3a5a", width=1).pack(side="left", fill="y", padx=5, pady=8)
 
-        tbtn(_("viewer_zoom_in"),   self._zoom_in)
-        tbtn(_("viewer_zoom_out"),   self._zoom_out)
+        tbtn(_("viewer_zoom_in"), self._zoom_in)
+        tbtn(_("viewer_zoom_out"), self._zoom_out)
         tbtn(_("viewer_fit"), self._zoom_fit)
-        tbtn(_("viewer_100"),   self._zoom_100)
+        tbtn(_("viewer_100"), self._zoom_100)
         sep()
         self._crop_btn = tbtn(_("viewer_crop"), self._crop_toggle, color="#7c3aed")
         sep()
         tbtn(_("viewer_save"), self._save_overwrite)
-        tbtn("📁 另存为",   self._save_as)
-        tbtn("📋 复制路径", self._copy_path)
+        tbtn(_("viewer_save_as"), self._save_as)
+        tbtn(_("btn_copy_path"), self._copy_path)
         sep()
 
-        self._zoom_badge = tk.Label(tb, text="--",
-                                     font=F["badge"],
-                                     bg=C["tb"], fg=C["ok"], width=6)
+        self._zoom_badge = tk.Label(tb, text="--", font=F["badge"], bg=C["tb"], fg=C["ok"], width=6)
         self._zoom_badge.pack(side="left", padx=(4, 0))
-        tk.Label(tb, text="滚轮缩放  拖拽平移  +/- 键  Esc 退出裁剪",
-                 font=F["body"], bg=C["tb"], fg=C["sub"]
-                 ).pack(side="right", padx=14)
+        tk.Label(tb, text=_("viewer_shortcuts_hint"), font=F["body"], bg=C["tb"], fg=C["sub"]).pack(
+            side="right", padx=14
+        )
 
         # 画布
-        self.cv = tk.Canvas(self, bg="#111827", cursor="hand2",
-                             bd=0, highlightthickness=0)
+        self.cv = tk.Canvas(self, bg="#111827", cursor="hand2", bd=0, highlightthickness=0)
         self.cv.pack(fill="both", expand=True)
         self._ph_text = self.cv.create_text(
-            500, 340, text="", font=(F["_sans"], 16),
-            fill="#9ab4cc", anchor="center", tags="placeholder")
+            500, 340, text="", font=(F["_sans"], 16), fill="#9ab4cc", anchor="center", tags="placeholder"
+        )
 
         # 底部信息栏
         info_bar = tk.Frame(self, bg=C["panel"], height=30)
@@ -147,22 +153,23 @@ class ImageViewerWindow(tk.Toplevel):
         info_bar.pack_propagate(False)
 
         def infolbl(text, fg=None):
-            return tk.Label(info_bar, text=text, font=F["mono"],
-                            bg=C["panel"], fg=fg or C["ok"])
+            return tk.Label(info_bar, text=text, font=F["mono"], bg=C["panel"], fg=fg or C["ok"])
 
         def vsep():
-            tk.Frame(info_bar, bg="#2a3a5a", width=1).pack(
-                side="left", fill="y", pady=5, padx=6)
+            tk.Frame(info_bar, bg="#2a3a5a", width=1).pack(side="left", fill="y", pady=5, padx=6)
 
-        self._info_res  = infolbl(_("lbl_size") + " --");  self._info_res.pack(side="left", padx=(14, 0))
+        self._info_res = infolbl(_("lbl_size") + " --")
+        self._info_res.pack(side="left", padx=(14, 0))
         vsep()
-        self._info_kb   = infolbl("大小: --", fg=C["sub"]); self._info_kb.pack(side="left")
+        self._info_kb = infolbl(_("lbl_size_kb") + " --", fg=C["sub"])
+        self._info_kb.pack(side="left")
         vsep()
-        self._info_zoom = infolbl("缩放: --", fg=C["sub"]); self._info_zoom.pack(side="left")
+        self._info_zoom = infolbl(_("lbl_zoom") + " --", fg=C["sub"])
+        self._info_zoom.pack(side="left")
         vsep()
-        self._info_file = infolbl("文件: --", fg=C["sub"]); self._info_file.pack(side="left")
-        self._info_tip  = tk.Label(info_bar, text="",
-                                    font=F["body"], bg=C["panel"], fg=C["warn"])
+        self._info_file = infolbl(_("lbl_file") + " --", fg=C["sub"])
+        self._info_file.pack(side="left")
+        self._info_tip = tk.Label(info_bar, text="", font=F["body"], bg=C["panel"], fg=C["warn"])
         self._info_tip.pack(side="right", padx=14)
 
         # ── 元信息浮层（左上角，place() 子控件永远在所有 canvas item 之上）──
@@ -170,36 +177,49 @@ class ImageViewerWindow(tk.Toplevel):
         # placed widgets 渲染层级高于所有 canvas items（含图片），固定不跟随移动。
         self._meta_visible = False
         self._meta_toggle_btn = tk.Button(
-            self.cv, text="ℹ", font=F["body"],
-            bg="#1a2540", fg="#4a7adf",
-            bd=0, padx=6, pady=2, cursor="hand2",
-            relief="flat", command=self._toggle_meta)
-        self._meta_toggle_btn.place(x=8, y=8)   # 固定左上角，不跟随图片
+            self.cv,
+            text="ℹ",
+            font=F["body"],
+            bg="#1a2540",
+            fg="#4a7adf",
+            bd=0,
+            padx=6,
+            pady=2,
+            cursor="hand2",
+            relief="flat",
+            command=self._toggle_meta,
+        )
+        self._meta_toggle_btn.place(x=8, y=8)  # 固定左上角，不跟随图片
 
         # 元信息文本 Label（与 canvas 背景色一致，最小化遮挡感）
         # 默认隐藏（place_forget），点击 ℹ 后 place 显示
         self._meta_text_lbl = tk.Label(
-            self.cv, text="",
+            self.cv,
+            text="",
             font=F["mono_tiny"],
-            bg="#111827",   # 与 canvas bg 融合
+            bg="#111827",  # 与 canvas bg 融合
             fg="#c8d8f0",
-            anchor="nw", justify="left",
-            bd=0, padx=4, pady=2)
+            anchor="nw",
+            justify="left",
+            bd=0,
+            padx=4,
+            pady=2,
+        )
 
         # 事件绑定
-        self.cv.bind("<MouseWheel>",      self._on_wheel)
-        self.cv.bind("<Button-4>",        self._on_wheel)
-        self.cv.bind("<Button-5>",        self._on_wheel)
-        self.cv.bind("<ButtonPress-1>",   self._on_down)
-        self.cv.bind("<B1-Motion>",        self._on_drag)
-        self.cv.bind("<ButtonRelease-1>",  self._on_up)
-        self.cv.bind("<Configure>",        self._on_canvas_resize)
-        self.bind("<plus>",  lambda e: self._zoom_in())
+        self.cv.bind("<MouseWheel>", self._on_wheel)
+        self.cv.bind("<Button-4>", self._on_wheel)
+        self.cv.bind("<Button-5>", self._on_wheel)
+        self.cv.bind("<ButtonPress-1>", self._on_down)
+        self.cv.bind("<B1-Motion>", self._on_drag)
+        self.cv.bind("<ButtonRelease-1>", self._on_up)
+        self.cv.bind("<Configure>", self._on_canvas_resize)
+        self.bind("<plus>", lambda e: self._zoom_in())
         self.bind("<equal>", lambda e: self._zoom_in())
         self.bind("<minus>", lambda e: self._zoom_out())
-        self.bind("<f>",     lambda e: self._zoom_fit())
-        self.bind("<F>",     lambda e: self._zoom_fit())
-        self.bind("<Home>",  lambda e: self._zoom_fit())
+        self.bind("<f>", lambda e: self._zoom_fit())
+        self.bind("<F>", lambda e: self._zoom_fit())
+        self.bind("<Home>", lambda e: self._zoom_fit())
         self.bind("<Escape>", lambda e: self._crop_cancel() if self._crop_mode else None)
 
     # ── 后台线程 ───────────────────────────────────────────────
@@ -269,13 +289,14 @@ class ImageViewerWindow(tk.Toplevel):
         self._photo = photo  # 保持强引用，防止被 GC 导致画布空白
         if self._img_item is None:
             self._img_item = self.cv.create_image(
-                self._img_cx, self._img_cy, image=photo, anchor="center", tags="main_img")
+                self._img_cx, self._img_cy, image=photo, anchor="center", tags="main_img"
+            )
         else:
             self.cv.itemconfig(self._img_item, image=photo)
             self.cv.coords(self._img_item, self._img_cx, self._img_cy)
         z = self._zoom
-        self._info_zoom.config(text=f"缩放: {z*100:.0f}%")
-        self._zoom_badge.config(text=f"{z*100:.0f}%")
+        self._info_zoom.config(text=f"{_('lbl_zoom')} {z * 100:.0f}%")
+        self._zoom_badge.config(text=f"{z * 100:.0f}%")
 
     def _do_zoom(self):
         self._render_timer = None
@@ -306,7 +327,7 @@ class ImageViewerWindow(tk.Toplevel):
             self._pending_load = None
             self._img_orig = Image.open(io.BytesIO(data)).convert("RGBA")
             self._img_bytes = data
-            self._cur_path  = path
+            self._cur_path = path
             self._update_info()
             self._show_metadata()
             self._zoom_fit()
@@ -314,8 +335,8 @@ class ImageViewerWindow(tk.Toplevel):
     # ── 图片加载 ───────────────────────────────────────────────
     def load_bytes(self, data: bytes, path: str = "") -> None:
         self._img_bytes = data
-        self._cur_path  = path
-        self._img_orig  = Image.open(io.BytesIO(data)).convert("RGBA")
+        self._cur_path = path
+        self._img_orig = Image.open(io.BytesIO(data)).convert("RGBA")
         self._zoom_cache.clear()
         self._pending_job = None
         self._update_info()
@@ -337,18 +358,19 @@ class ImageViewerWindow(tk.Toplevel):
 
     # ── 信息更新 ───────────────────────────────────────────────
     def _update_info(self):
-        if self._img_orig is None: return
+        if self._img_orig is None:
+            return
         ow, oh = self._img_orig.size
-        self._info_res.config(text=f'{_("lbl_size")} {ow} × {oh} px')
+        self._info_res.config(text=f"{_('lbl_size')} {ow} × {oh} px")
         if self._img_bytes:
             kb = len(self._img_bytes) / 1024
-            self._info_kb.config(text=f"大小: {kb:.1f} KB")
+            self._info_kb.config(text=f"{_('lbl_size_kb')} {kb:.1f} KB")
         if self._cur_path:
-            self._info_file.config(text=f"文件: {os.path.basename(self._cur_path)}")
+            self._info_file.config(text=f"{_('lbl_file')} {os.path.basename(self._cur_path)}")
 
     def _show_metadata(self):
         """更新元信息文本（只保留 Provider 和 Seed）。"""
-        if not hasattr(self, '_meta_text_lbl'):
+        if not hasattr(self, "_meta_text_lbl"):
             return
         if self._img_orig is None:
             self._meta_text_lbl.config(text="")
@@ -359,7 +381,7 @@ class ImageViewerWindow(tk.Toplevel):
             val = meta.get(key, "")
             if val:
                 lines.append(f"{key}: {val}")
-        self._meta_text_lbl.config(text="\n".join(lines) if lines else "无元数据")
+        self._meta_text_lbl.config(text="\n".join(lines) if lines else _("viewer_no_metadata"))
         # 保持用户当前显示/隐藏状态
         if self._meta_visible:
             self._meta_text_lbl.place(x=8, y=52)
@@ -368,7 +390,7 @@ class ImageViewerWindow(tk.Toplevel):
         """切换元信息显示/隐藏。"""
         self._meta_visible = not self._meta_visible
         if self._meta_visible:
-            self._meta_text_lbl.place(x=8, y=52)   # 按钮下方 52px，留出间距
+            self._meta_text_lbl.place(x=8, y=52)  # 按钮下方 52px，留出间距
             self._meta_toggle_btn.config(fg=C["ok"])
         else:
             self._meta_text_lbl.place_forget()
@@ -386,7 +408,7 @@ class ImageViewerWindow(tk.Toplevel):
             self._pending_load = (self._img_bytes, self._cur_path)
             return
         ow, oh = self._img_orig.size
-        self._zoom  = min((cw - 4) / ow, (ch - 4) / oh)
+        self._zoom = min((cw - 4) / ow, (ch - 4) / oh)
         # 确保缩放值有效
         if self._zoom <= 0:
             self._zoom = 1.0
@@ -405,7 +427,7 @@ class ImageViewerWindow(tk.Toplevel):
         ch = self.cv.winfo_height()
         if cw < 10 or ch < 10:
             return
-        self._zoom   = 1.0
+        self._zoom = 1.0
         self._img_cx = cw // 2
         self._img_cy = ch // 2
         self._pending_job = None
@@ -438,7 +460,8 @@ class ImageViewerWindow(tk.Toplevel):
         self._render_timer = self.after(16, self._do_zoom)
 
     def _on_wheel(self, event):
-        if self._img_orig is None: return
+        if self._img_orig is None:
+            return
         if event.num == 4 or (hasattr(event, "delta") and event.delta > 0):
             factor = 1.15
         else:
@@ -461,7 +484,8 @@ class ImageViewerWindow(tk.Toplevel):
             self._crop_drawing = True
             self._crop_x0, self._crop_y0 = event.x, event.y
             if self._crop_rect:
-                self.cv.delete(self._crop_rect); self._crop_rect = None
+                self.cv.delete(self._crop_rect)
+                self._crop_rect = None
         else:
             self._pan_last = (event.x, event.y)
             self.cv.config(cursor="fleur")
@@ -471,8 +495,8 @@ class ImageViewerWindow(tk.Toplevel):
             if self._crop_rect:
                 self.cv.delete(self._crop_rect)
             self._crop_rect = self.cv.create_rectangle(
-                self._crop_x0, self._crop_y0, event.x, event.y,
-                outline="#e94560", width=2, dash=(6, 3), tags="crop")
+                self._crop_x0, self._crop_y0, event.x, event.y, outline="#e94560", width=2, dash=(6, 3), tags="crop"
+            )
         elif self._pan_last and self._img_item:
             dx = event.x - self._pan_last[0]
             dy = event.y - self._pan_last[1]
@@ -498,12 +522,13 @@ class ImageViewerWindow(tk.Toplevel):
     # ── 裁剪 ───────────────────────────────────────────────────
     def _crop_toggle(self):
         if self._img_orig is None:
-            messagebox.showinfo("提示", "请先加载图片", parent=self); return
+            messagebox.showinfo(_("dlg_tip"), _("viewer_please_load"), parent=self)
+            return
         self._crop_mode = not self._crop_mode
         if self._crop_mode:
-            self._crop_btn.config(bg="#dc2626", text="✂ 取消裁剪")
+            self._crop_btn.config(bg="#dc2626", text=_("viewer_cancel_crop"))
             self.cv.config(cursor="crosshair")
-            self._info_tip.config(text="裁剪模式：拖拽鼠标选区，Esc 取消")
+            self._info_tip.config(text=_("viewer_crop_mode_tip"))
         else:
             self._crop_cancel()
 
@@ -511,141 +536,195 @@ class ImageViewerWindow(tk.Toplevel):
         self._crop_mode = self._crop_drawing = False
         self._crop_coords = None
         if self._crop_rect:
-            self.cv.delete(self._crop_rect); self._crop_rect = None
+            self.cv.delete(self._crop_rect)
+            self._crop_rect = None
         if hasattr(self, "_crop_btn"):
             self._crop_btn.config(bg="#7c3aed", text=_("viewer_crop"))
         self.cv.config(cursor="hand2")
         self._info_tip.config(text="")
 
     def _crop_confirm(self):
-        if self._img_orig is None or self._crop_coords is None: return
+        if self._img_orig is None or self._crop_coords is None:
+            return
         cx0, cy0, cx1, cy1 = self._crop_coords
         ow, oh = self._img_orig.size
         nw, nh = int(ow * self._zoom), int(oh * self._zoom)
         img_left = self._img_cx - nw // 2
-        img_top  = self._img_cy - nh // 2
+        img_top = self._img_cy - nh // 2
         sx = int((cx0 - img_left) / self._zoom)
-        sy = int((cy0 - img_top)  / self._zoom)
+        sy = int((cy0 - img_top) / self._zoom)
         ex = int((cx1 - img_left) / self._zoom)
-        ey = int((cy1 - img_top)  / self._zoom)
+        ey = int((cy1 - img_top) / self._zoom)
         sx, sy = max(0, sx), max(0, sy)
         ex, ey = min(ow, ex), min(oh, ey)
         if ex - sx < 8 or ey - sy < 8:
-            messagebox.showwarning("裁剪", "选区太小，请重新选择", parent=self); return
+            messagebox.showwarning(_("viewer_crop_title"), _("viewer_crop_too_small"), parent=self)
+            return
         self._crop_preview(sx, sy, ex, ey)
 
     def _crop_preview(self, sx, sy, ex, ey):
-        
+
         win = tk.Toplevel(self)
-        win.title("裁剪预览"); win.configure(bg=C["bg"])
-        win.grab_set(); win.resizable(True, True); win.minsize(520, 480)
+        win.title(_("viewer_crop_preview_title"))
+        win.configure(bg=C["bg"])
+        win.grab_set()
+        win.resizable(True, True)
+        win.minsize(520, 480)
 
         cropped = self._img_orig.crop((sx, sy, ex, ey))
 
-        bot_f = tk.Frame(win, bg=C["panel"]); bot_f.pack(fill="x", side="bottom")
+        bot_f = tk.Frame(win, bg=C["panel"])
+        bot_f.pack(fill="x", side="bottom")
         ow_var = tk.BooleanVar(value=False)
 
         def do_apply():
-            buf = io.BytesIO(); cropped.save(buf, "PNG"); new_bytes = buf.getvalue()
+            buf = io.BytesIO()
+            cropped.save(buf, "PNG")
+            new_bytes = buf.getvalue()
             if ow_var.get() and self._cur_path:
                 cropped.save(self._cur_path, "PNG")
-                self._info_tip.config(text="✂ 裁剪完成，原图已覆盖保存")
+                self._info_tip.config(text=_("viewer_crop_saved_overwrite"))
             else:
-                self._info_tip.config(text="✂ 裁剪完成（原图未修改）")
-            self._crop_cancel(); win.destroy()
+                self._info_tip.config(text=_("viewer_crop_saved_no_modify"))
+            self._crop_cancel()
+            win.destroy()
             self.load_bytes(new_bytes, self._cur_path)
             if self._cur_path:
                 self.app.cur_path = self._cur_path
-            self.app._log(f"✂ 裁剪: {ex-sx}×{ey-sy}px")
+            self.app._log(f"✂ 裁剪: {ex - sx}×{ey - sy}px")
 
-        tk.Button(bot_f, text="✅ 应用裁剪",
-                  font=F["h2"], bg=C["ok"], fg="#0a1a0a",
-                  bd=0, padx=28, pady=10, cursor="hand2",
-                  command=do_apply).pack(side="right", padx=16, pady=10)
-        tk.Button(bot_f, text=_("btn_cancel"),
-                  font=F["input"], bg=C["panel"], fg=C["sub"],
-                  bd=0, padx=16, pady=10, cursor="hand2",
-                  command=win.destroy).pack(side="right", pady=10)
+        tk.Button(
+            bot_f,
+            text=_("viewer_apply_crop"),
+            font=F["h2"],
+            bg=C["ok"],
+            fg="#0a1a0a",
+            bd=0,
+            padx=28,
+            pady=10,
+            cursor="hand2",
+            command=do_apply,
+        ).pack(side="right", padx=16, pady=10)
+        tk.Button(
+            bot_f,
+            text=_("btn_cancel"),
+            font=F["input"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=16,
+            pady=10,
+            cursor="hand2",
+            command=win.destroy,
+        ).pack(side="right", pady=10)
 
         opt_f = tk.Frame(win, bg=C["bg"])
         opt_f.pack(fill="x", side="bottom", padx=16)
-        tk.Button(opt_f, text="📁 另存为新文件…",
-                  font=F["body"], bg=C["acc"], fg="white", bd=0,
-                  padx=10, pady=4, cursor="hand2",
-                  command=lambda: self._crop_saveas(cropped, win)
-                  ).pack(side="left", pady=(0, 6))
-        tk.Radiobutton(opt_f,
-                       text="同时覆盖保存原图文件（此操作不可撤销）",
-                       variable=ow_var, value=True, font=F["body"],
-                       bg=C["bg"], fg=C["warn"],
-                       activebackground=C["bg"], selectcolor=C["entry"]
-                       ).pack(anchor="w", pady=(4, 2))
-        tk.Radiobutton(opt_f,
-                       text="仅在查看器中显示裁剪结果（不修改原图文件）",
-                       variable=ow_var, value=False, font=F["body"],
-                       bg=C["bg"], fg=C["text"],
-                       activebackground=C["bg"], selectcolor=C["entry"]
-                       ).pack(anchor="w", pady=(0, 6))
+        tk.Button(
+            opt_f,
+            text=_("viewer_save_new_file"),
+            font=F["body"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=lambda: self._crop_saveas(cropped, win),
+        ).pack(side="left", pady=(0, 6))
+        tk.Radiobutton(
+            opt_f,
+            text=_("viewer_overwrite_original"),
+            variable=ow_var,
+            value=True,
+            font=F["body"],
+            bg=C["bg"],
+            fg=C["warn"],
+            activebackground=C["bg"],
+            selectcolor=C["entry"],
+        ).pack(anchor="w", pady=(4, 2))
+        tk.Radiobutton(
+            opt_f,
+            text=_("viewer_preview_only"),
+            variable=ow_var,
+            value=False,
+            font=F["body"],
+            bg=C["bg"],
+            fg=C["text"],
+            activebackground=C["bg"],
+            selectcolor=C["entry"],
+        ).pack(anchor="w", pady=(0, 6))
 
-        info_f = tk.Frame(win, bg=C["panel"]); info_f.pack(fill="x", side="bottom")
-        tk.Label(info_f, text=f"裁剪后尺寸：{ex-sx} × {ey-sy} px",
-                 font=F["body"], bg=C["panel"], fg=C["ok"]
-                 ).pack(side="left", padx=14, pady=6)
+        info_f = tk.Frame(win, bg=C["panel"])
+        info_f.pack(fill="x", side="bottom")
+        tk.Label(
+            info_f, text=_("viewer_crop_dimensions", w=ex - sx, h=ey - sy), font=F["body"], bg=C["panel"], fg=C["ok"]
+        ).pack(side="left", padx=14, pady=6)
 
-        screen_h   = win.winfo_screenheight()
+        screen_h = win.winfo_screenheight()
         max_prev_h = min(420, int(screen_h * 0.45))
-        preview    = cropped.copy(); preview.thumbnail((660, max_prev_h), Image.LANCZOS)
+        preview = cropped.copy()
+        preview.thumbnail((660, max_prev_h), Image.LANCZOS)
         ph = ImageTk.PhotoImage(preview)
-        img_frame = tk.Frame(win, bg="#111827"); img_frame.pack(fill="both", expand=True)
-        img_lbl   = tk.Label(img_frame, image=ph, bg="#111827")
-        img_lbl.image = ph; img_lbl.pack(expand=True)
+        img_frame = tk.Frame(win, bg="#111827")
+        img_frame.pack(fill="both", expand=True)
+        img_lbl = tk.Label(img_frame, image=ph, bg="#111827")
+        img_lbl.image = ph
+        img_lbl.pack(expand=True)
 
         win.update_idletasks()
         w_req = max(660, win.winfo_reqwidth())
         h_req = min(int(screen_h * 0.9), win.winfo_reqheight() + 20)
-        wx = max(0, self.winfo_x() + (self.winfo_width()  - w_req) // 2)
+        wx = max(0, self.winfo_x() + (self.winfo_width() - w_req) // 2)
         wy = max(0, self.winfo_y() + (self.winfo_height() - h_req) // 2)
         win.geometry(f"{w_req}x{h_req}+{wx}+{wy}")
 
     def _crop_saveas(self, cropped_img, parent_win):
         dest = filedialog.asksaveasfilename(
-            parent=parent_win, defaultextension=".png",
-            filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg"), ("所有文件", "*.*")],
-            title="裁剪另存为")
+            parent=parent_win,
+            defaultextension=".png",
+            filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg"), (_("filetype_all"), "*.*")],
+            title=_("viewer_crop_save_as_title"),
+        )
         if dest:
             cropped_img.save(dest)
             self.app._log(f"✂ 裁剪另存为: {dest}")
-            self._info_tip.config(text=f"另存: {os.path.basename(dest)}")
-            messagebox.showinfo("保存成功", f"已保存至：\n{dest}", parent=parent_win)
+            self._info_tip.config(text=_("viewer_saved_as", name=os.path.basename(dest)))
+            messagebox.showinfo(_("viewer_save_success"), _("viewer_saved_to", path=dest), parent=parent_win)
 
     # ── 保存操作 ───────────────────────────────────────────────
     def _save_overwrite(self):
         if self._img_orig is None:
-            messagebox.showwarning("提示", "暂无图片", parent=self); return
+            messagebox.showwarning(_("dlg_tip"), _("viewer_no_image"), parent=self)
+            return
         if self._cur_path:
             self._img_orig.save(self._cur_path, "PNG")
-            self._info_tip.config(text=f"💾 已保存: {os.path.basename(self._cur_path)}")
+            self._info_tip.config(text=_("viewer_saved", name=os.path.basename(self._cur_path)))
             self.app._log(f"💾 覆盖保存: {self._cur_path}")
         else:
             self._save_as()
 
     def _save_as(self):
         if self._img_orig is None:
-            messagebox.showwarning("提示", "暂无图片", parent=self); return
+            messagebox.showwarning(_("dlg_tip"), _("viewer_no_image"), parent=self)
+            return
         d = filedialog.asksaveasfilename(
-            parent=self, defaultextension=".png",
-            filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg"), ("所有文件", "*.*")],
-            initialfile=os.path.basename(self._cur_path) if self._cur_path else "image.png")
+            parent=self,
+            defaultextension=".png",
+            filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg"), (_("filetype_all"), "*.*")],
+            initialfile=os.path.basename(self._cur_path) if self._cur_path else "image.png",
+        )
         if d:
             self._img_orig.save(d)
-            self._info_tip.config(text=f"💾 另存: {os.path.basename(d)}")
+            self._info_tip.config(text=_("viewer_saved_as", name=os.path.basename(d)))
             self.app._log(f"💾 另存为: {d}")
-            messagebox.showinfo("完成", f"已保存：{d}", parent=self)
+            messagebox.showinfo(_("dlg_export_done"), _("viewer_saved_to", path=d), parent=self)
 
     def _copy_path(self):
         if self._cur_path:
-            self.clipboard_clear(); self.clipboard_append(self._cur_path)
-            self._info_tip.config(text="📋 路径已复制")
+            self.clipboard_clear()
+            self.clipboard_append(self._cur_path)
+            self._info_tip.config(text=_("viewer_path_copied"))
             self.app._log("📋 路径已复制")
 
     def _on_close(self):

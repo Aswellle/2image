@@ -4,6 +4,7 @@ services/application/settings_controller.py — Settings window controller
 Extracts settings/preferences windows from App to slim down
 the main window class.
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -47,33 +48,45 @@ class SettingsController:
 
         hdr = tk.Frame(win, bg=C["acc"])
         hdr.pack(fill="x")
-        tk.Label(hdr, text="⌨  " + _("settings_shortcuts_title"), font=F["h1"],
-                 bg=C["acc"], fg="white").pack(side="left", padx=16, pady=10)
+        tk.Label(hdr, text="⌨  " + _("settings_shortcuts_title"), font=F["h1"], bg=C["acc"], fg="white").pack(
+            side="left", padx=16, pady=10
+        )
 
         body = tk.Frame(win, bg=C["bg"])
         body.pack(fill="both", expand=True, padx=20, pady=16)
 
         rows = [
-            ("生成 / 重新生成", "Ctrl + Enter  /  Ctrl + R"),
-            ("AI 提示词助手", "Ctrl + P"),
-            ("📚 提示词片段库", "Ctrl + B"),
-            ("另存为", "Ctrl + S"),
-            ("导出历史记录", "Ctrl + E"),
-            ("打开独立查看器", "Ctrl + O"),
-            ("清空调试日志", "Ctrl + L"),
+            (_("shortcut_generate"), "Ctrl + Enter  /  Ctrl + R"),
+            (_("shortcut_wizard"), "Ctrl + P"),
+            (_("shortcut_phrase"), "Ctrl + B"),
+            (_("shortcut_save_as"), "Ctrl + S"),
+            (_("shortcut_export_history"), "Ctrl + E"),
+            (_("shortcut_open_viewer"), "Ctrl + O"),
+            (_("shortcut_clear_log"), "Ctrl + L"),
         ]
         for i, (action, keys) in enumerate(rows):
             rb = C["panel"] if i % 2 == 0 else C["bg"]
             row = tk.Frame(body, bg=rb)
             row.pack(fill="x", pady=1)
-            tk.Label(row, text=action, font=F["input"], bg=rb, fg=C["text"],
-                     width=20, anchor="w").pack(side="left", padx=(10, 0), pady=6)
-            tk.Label(row, text=keys, font=F["mono_lg"],
-                     bg=rb, fg=C["ok"], anchor="w").pack(side="left", padx=12, pady=6)
+            tk.Label(row, text=action, font=F["input"], bg=rb, fg=C["text"], width=20, anchor="w").pack(
+                side="left", padx=(10, 0), pady=6
+            )
+            tk.Label(row, text=keys, font=F["mono_lg"], bg=rb, fg=C["ok"], anchor="w").pack(
+                side="left", padx=12, pady=6
+            )
 
-        tk.Button(win, text=_("btn_close"), font=F["input"], bg=C["acc"], fg="white",
-                  bd=0, padx=24, pady=6, cursor="hand2", command=win.destroy
-                  ).pack(pady=(8, 16))
+        tk.Button(
+            win,
+            text=_("btn_close"),
+            font=F["input"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=24,
+            pady=6,
+            cursor="hand2",
+            command=win.destroy,
+        ).pack(pady=(8, 16))
 
     def show_app_settings(self) -> None:
         """Show application preferences dialog."""
@@ -89,41 +102,77 @@ class SettingsController:
 
         hdr = tk.Frame(win, bg=C["acc"])
         hdr.pack(fill="x")
-        tk.Label(hdr, text="🖼  " + _("settings_prefs_title"), font=F["h1"],
-                 bg=C["acc"], fg="white").pack(side="left", padx=16, pady=10)
+        tk.Label(hdr, text="🖼  " + _("settings_prefs_title"), font=F["h1"], bg=C["acc"], fg="white").pack(
+            side="left", padx=16, pady=10
+        )
 
         body = tk.Frame(win, bg=C["bg"])
         body.pack(fill="both", expand=True, padx=24, pady=16)
 
-        tk.Label(body, text=_("settings_language"), font=F["btn"],
-                 bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
+        tk.Label(body, text=_("settings_language"), font=F["btn"], bg=C["bg"], fg=C["sub"]).pack(
+            anchor="w", pady=(0, 4)
+        )
         lang_var = tk.StringVar(value=self.app.cfg.get("language", "zh-CN"))
         lang_frame = tk.Frame(body, bg=C["bg"])
         lang_frame.pack(fill="x", pady=(0, 14))
         for code, native in self.app.SUPPORTED_LANGUAGES.items():
-            tk.Radiobutton(lang_frame, text=native, variable=lang_var,
-                           value=code, font=F["body"], bg=C["bg"], fg=C["text"],
-                           activebackground=C["bg"], selectcolor=C["entry"]
-                           ).pack(side="left", padx=(0, 14))
+            tk.Radiobutton(
+                lang_frame,
+                text=native,
+                variable=lang_var,
+                value=code,
+                font=F["body"],
+                bg=C["bg"],
+                fg=C["text"],
+                activebackground=C["bg"],
+                selectcolor=C["entry"],
+            ).pack(side="left", padx=(0, 14))
 
-        tk.Label(body, text=_("settings_default_size"), font=F["btn"],
-                 bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
+        tk.Label(body, text=_("settings_default_size"), font=F["btn"], bg=C["bg"], fg=C["sub"]).pack(
+            anchor="w", pady=(0, 4)
+        )
         sz_var = tk.StringVar(value=self.app.cfg.get("default_size", "1024x1024").replace("×", "x"))
-        ttk.Combobox(body, textvariable=sz_var, state="readonly", width=20,
-                     values=["512x512", "768x768", "1024x1024", "1024x576", "1280x720",
-                             "1920x1080", "576x1024", "720x1280", "768x1024"]
-                     ).pack(anchor="w", pady=(0, 14))
+        ttk.Combobox(
+            body,
+            textvariable=sz_var,
+            state="readonly",
+            width=20,
+            values=[
+                "512x512",
+                "768x768",
+                "1024x1024",
+                "1024x576",
+                "1280x720",
+                "1920x1080",
+                "576x1024",
+                "720x1280",
+                "768x1024",
+            ],
+        ).pack(anchor="w", pady=(0, 14))
 
-        tk.Label(body, text=_("settings_startup"), font=F["btn"],
-                 bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
+        tk.Label(body, text=_("settings_startup"), font=F["btn"], bg=C["bg"], fg=C["sub"]).pack(anchor="w", pady=(0, 4))
         wiz_var = tk.BooleanVar(value=self.app.cfg.get("show_wizard_on_start", True))
-        tk.Checkbutton(body, text=_("settings_show_wizard"),
-                       variable=wiz_var, font=F["body"], bg=C["bg"], fg=C["text"],
-                       activebackground=C["bg"], selectcolor=C["entry"]).pack(anchor="w")
+        tk.Checkbutton(
+            body,
+            text=_("settings_show_wizard"),
+            variable=wiz_var,
+            font=F["body"],
+            bg=C["bg"],
+            fg=C["text"],
+            activebackground=C["bg"],
+            selectcolor=C["entry"],
+        ).pack(anchor="w")
         upd_var = tk.BooleanVar(value=self.app.cfg.get("update_check_on_start", True))
-        tk.Checkbutton(body, text=_("settings_update_on_start"),
-                       variable=upd_var, font=F["body"], bg=C["bg"], fg=C["text"],
-                       activebackground=C["bg"], selectcolor=C["entry"]).pack(anchor="w")
+        tk.Checkbutton(
+            body,
+            text=_("settings_update_on_start"),
+            variable=upd_var,
+            font=F["body"],
+            bg=C["bg"],
+            fg=C["text"],
+            activebackground=C["bg"],
+            selectcolor=C["entry"],
+        ).pack(anchor="w")
 
         st = tk.Label(body, text="", font=F["body"], bg=C["bg"], fg=C["ok"])
         st.pack(anchor="w", pady=(12, 0))
@@ -145,9 +194,27 @@ class SettingsController:
 
         bot = tk.Frame(win, bg=C["panel"])
         bot.pack(fill="x", side="bottom")
-        tk.Button(bot, text=_("btn_save"), font=F["btn"], bg=C["ok"], fg="#0a1a0a",
-                  bd=0, padx=24, pady=8, cursor="hand2", command=_save
-                  ).pack(side="right", padx=16, pady=10)
-        tk.Button(bot, text=_("btn_cancel"), font=F["body"], bg=C["panel"], fg=C["sub"],
-                  bd=0, padx=16, pady=8, cursor="hand2", command=win.destroy
-                  ).pack(side="right", pady=10)
+        tk.Button(
+            bot,
+            text=_("btn_save"),
+            font=F["btn"],
+            bg=C["ok"],
+            fg="#0a1a0a",
+            bd=0,
+            padx=24,
+            pady=8,
+            cursor="hand2",
+            command=_save,
+        ).pack(side="right", padx=16, pady=10)
+        tk.Button(
+            bot,
+            text=_("btn_cancel"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=16,
+            pady=8,
+            cursor="hand2",
+            command=win.destroy,
+        ).pack(side="right", pady=10)

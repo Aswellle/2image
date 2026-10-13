@@ -4,6 +4,7 @@ ui/main_content.py — Main content / right-panel extracted from App.
 Mechanical extraction from ui/app.py v5.1.
 All App-level methods and state accessed through self.app.
 """
+
 import io
 import os
 import random
@@ -24,6 +25,7 @@ from ui.batch_panel import BatchPanel
 from ui.queue_panel import QueuePanel
 from ui.app_protocol import MainContentProtocol
 
+
 # ══════════════════════════════════════════════════════════════
 #   自定义强度滑块（Canvas 渐变轨道 + 可拖拽圆形手柄）
 # ══════════════════════════════════════════════════════════════
@@ -32,37 +34,51 @@ class _StrengthSlider:
     Canvas 绘制的强度滑块。
     范围 0.1~0.9；轨道颜色渐变：蓝（微调） → 紫（融合） → 红（重构）。
     """
-    W = 260; H = 58
-    TX = 12; TW = 236; TY = 22; TH = 6
-    HR = 9   # 手柄半径
+
+    W = 260
+    H = 58
+    TX = 12
+    TW = 236
+    TY = 22
+    TH = 6
+    HR = 9  # 手柄半径
     # 三段渐变颜色锚点
     _STOPS = [(0.1, "#1d4ed8"), (0.5, "#7c3aed"), (0.9, "#dc2626")]
 
-    def __init__(self, parent: tk.Frame, variable: tk.DoubleVar,
-                 *, w: int = 0, h: int = 0, marks: bool = True):
+    def __init__(self, parent: tk.Frame, variable: tk.DoubleVar, *, w: int = 0, h: int = 0, marks: bool = True):
         # Allow compact mode: pass w/h to override defaults
         if w and h:
-            self.W = w; self.H = h
-            self.TX = 10; self.TW = w - 20
-            self.TY = max(12, h // 3); self.TH = 5; self.HR = 7
+            self.W = w
+            self.H = h
+            self.TX = 10
+            self.TW = w - 20
+            self.TY = max(12, h // 3)
+            self.TH = 5
+            self.HR = 7
         else:
-            self.W = self.__class__.W; self.H = self.__class__.H
-            self.TX = self.__class__.TX; self.TW = self.__class__.TW
-            self.TY = self.__class__.TY; self.TH = self.__class__.TH
+            self.W = self.__class__.W
+            self.H = self.__class__.H
+            self.TX = self.__class__.TX
+            self.TW = self.__class__.TW
+            self.TY = self.__class__.TY
+            self.TH = self.__class__.TH
             self.HR = self.__class__.HR
         self.marks = marks
         self.var = variable
-        self.cv = tk.Canvas(parent, width=self.W, height=self.H,
-                            bg="#0a1628", bd=0, highlightthickness=0,
-                            cursor="hand2")
+        self.cv = tk.Canvas(
+            parent, width=self.W, height=self.H, bg="#0a1628", bd=0, highlightthickness=0, cursor="hand2"
+        )
         self._gradient = self._build_gradient(60)
         self._draw()
-        self.cv.bind("<ButtonPress-1>",  self._on_press)
-        self.cv.bind("<B1-Motion>",      self._on_drag)
+        self.cv.bind("<ButtonPress-1>", self._on_press)
+        self.cv.bind("<B1-Motion>", self._on_drag)
         self.var.trace("w", lambda *_: self._draw())
 
-    def pack(self, **kw): self.cv.pack(**kw)
-    def grid(self, **kw): self.cv.grid(**kw)
+    def pack(self, **kw):
+        self.cv.pack(**kw)
+
+    def grid(self, **kw):
+        self.cv.grid(**kw)
 
     # ── 工具 ──────────────────────────────────────────────────
     def _val_to_x(self, v: float) -> int:
@@ -74,21 +90,21 @@ class _StrengthSlider:
 
     @staticmethod
     def _lerp(c1: str, c2: str, t: float) -> str:
-        r1,g1,b1 = int(c1[1:3],16), int(c1[3:5],16), int(c1[5:7],16)
-        r2,g2,b2 = int(c2[1:3],16), int(c2[3:5],16), int(c2[5:7],16)
-        return (f"#{int(r1+(r2-r1)*t):02x}"
-                f"{int(g1+(g2-g1)*t):02x}"
-                f"{int(b1+(b2-b1)*t):02x}")
+        r1, g1, b1 = int(c1[1:3], 16), int(c1[3:5], 16), int(c1[5:7], 16)
+        r2, g2, b2 = int(c2[1:3], 16), int(c2[3:5], 16), int(c2[5:7], 16)
+        return f"#{int(r1 + (r2 - r1) * t):02x}{int(g1 + (g2 - g1) * t):02x}{int(b1 + (b2 - b1) * t):02x}"
 
     def _build_gradient(self, n: int) -> list:
         stops = self._STOPS
         colors = []
         for i in range(n):
-            t = i / (n - 1)   # 0..1 对应 0.1..0.9
+            t = i / (n - 1)  # 0..1 对应 0.1..0.9
             # 找区间
             for j in range(len(stops) - 1):
-                v0, c0 = stops[j]; v1, c1 = stops[j+1]
-                seg_t0 = (v0 - 0.1) / 0.8; seg_t1 = (v1 - 0.1) / 0.8
+                v0, c0 = stops[j]
+                v1, c1 = stops[j + 1]
+                seg_t0 = (v0 - 0.1) / 0.8
+                seg_t1 = (v1 - 0.1) / 0.8
                 if t <= seg_t1:
                     local = (t - seg_t0) / (seg_t1 - seg_t0)
                     colors.append(self._lerp(c0, c1, local))
@@ -99,41 +115,46 @@ class _StrengthSlider:
 
     # ── 绘制 ──────────────────────────────────────────────────
     def _draw(self):
-        cv = self.cv; cv.delete("all")
+        cv = self.cv
+        cv.delete("all")
         W, TX, TW, TY, TH, HR = self.W, self.TX, self.TW, self.TY, self.TH, self.HR
         val = self.var.get()
         hx = self._val_to_x(val)
         n = len(self._gradient)
-        sw = TW / n   # 每段宽度
+        sw = TW / n  # 每段宽度
 
         # ── 渐变轨道 ──────────────────────────────────────────
         for i, col in enumerate(self._gradient):
-            x0 = TX + i * sw; x1 = x0 + sw + 1
+            x0 = TX + i * sw
+            x1 = x0 + sw + 1
             cv.create_rectangle(x0, TY, x1, TY + TH, fill=col, outline="")
 
         # ── 手柄 ─────────────────────────────────────────────
         cy = TY + TH // 2
-        cv.create_oval(hx - HR - 1, cy - HR - 1, hx + HR + 1, cy + HR + 1,
-                       fill="#0a1628", outline="#5c6470", width=1)
-        cv.create_oval(hx - HR, cy - HR, hx + HR, cy + HR,
-                       fill="white", outline="#4a7adf", width=2)
+        cv.create_oval(hx - HR - 1, cy - HR - 1, hx + HR + 1, cy + HR + 1, fill="#0a1628", outline="#5c6470", width=1)
+        cv.create_oval(hx - HR, cy - HR, hx + HR, cy + HR, fill="white", outline="#4a7adf", width=2)
 
         # ── 数值标签（仅完整滑块显示，紧凑模式已在外部显示数值）────
         if self.marks:
-            cv.create_text(hx, TY - 5, text=f"{val:.1f}",
-                           font=F["small_b"], fill=C["ok"], anchor="s")
+            cv.create_text(hx, TY - 5, text=f"{val:.1f}", font=F["small_b"], fill=C["ok"], anchor="s")
 
         # ── 锚点刻度 + 标签（轨道下方，紧凑模式下省略）──────────
         if self.marks:
-            for mv, mt in [(0.1, "微调"), (0.5, "融合"), (0.9, "重构")]:
+            for mv, mt in [
+                (0.1, _("strength_fine_tune")),
+                (0.5, _("strength_blend")),
+                (0.9, _("strength_reconstruct")),
+            ]:
                 mx = self._val_to_x(mv)
                 cv.create_line(mx, TY + TH, mx, TY + TH + 4, fill="#3a5a8a", width=1)
-                cv.create_text(mx, TY + TH + 14, text=mt,
-                               font=F["small"], fill="#4a6a9a", anchor="n")
+                cv.create_text(mx, TY + TH + 14, text=mt, font=F["small"], fill="#4a6a9a", anchor="n")
 
     # ── 事件 ──────────────────────────────────────────────────
-    def _on_press(self, e): self.var.set(self._x_to_val(e.x))
-    def _on_drag(self,  e): self.var.set(self._x_to_val(e.x))
+    def _on_press(self, e):
+        self.var.set(self._x_to_val(e.x))
+
+    def _on_drag(self, e):
+        self.var.set(self._x_to_val(e.x))
 
 
 class MainContent:
@@ -164,7 +185,7 @@ class MainContent:
         # 图生图参考图状态
         self._ref_image: bytes | None = None
         self._ref_strength = tk.DoubleVar(value=0.6)
-        self._ref_thumb_photo = None   # 预览缩略图 PhotoImage（防 GC）
+        self._ref_thumb_photo = None  # 预览缩略图 PhotoImage（防 GC）
 
         # Resize timers
         self._prev_resize_timer = None
@@ -179,92 +200,111 @@ class MainContent:
     #   右侧主区
     # ══════════════════════════════════════════════════════════
 
-
     def _build(self, R):
         # ── ttk 暗色主题配置（全局，对整个 Tk 实例生效）─────────────
         style = ttk.Style()
         style.theme_use("clam")
 
         # ── Notebook / Tab ────────────────────────────────────────
-        style.configure("TNotebook",
-                        background=C["bg"], borderwidth=0,
-                        bordercolor=C["sep"],
-                        lightcolor=C["bg"], darkcolor=C["bg"])
-        style.configure("TNotebook.Tab",
-                        background=C["panel"], foreground=C["sub"],
-                        padding=[12, 4], font=F["small_b"],
-                        bordercolor=C["sep"],
-                        lightcolor=C["panel"], darkcolor=C["panel"])
-        style.map("TNotebook.Tab",
-                  background=[("selected", C["acc"]),
-                               ("active",   C["hl"])],
-                  foreground=[("selected", "white"),
-                               ("active",   "white")],
-                  lightcolor=[("selected", C["acc"])],
-                  darkcolor=[("selected",  C["acc"])])
+        style.configure(
+            "TNotebook", background=C["bg"], borderwidth=0, bordercolor=C["sep"], lightcolor=C["bg"], darkcolor=C["bg"]
+        )
+        style.configure(
+            "TNotebook.Tab",
+            background=C["panel"],
+            foreground=C["sub"],
+            padding=[12, 4],
+            font=F["small_b"],
+            bordercolor=C["sep"],
+            lightcolor=C["panel"],
+            darkcolor=C["panel"],
+        )
+        style.map(
+            "TNotebook.Tab",
+            background=[("selected", C["acc"]), ("active", C["hl"])],
+            foreground=[("selected", "white"), ("active", "white")],
+            lightcolor=[("selected", C["acc"])],
+            darkcolor=[("selected", C["acc"])],
+        )
 
         # ── Combobox 字段及箭头区完整状态映射 ────────────────────────
         # 覆盖 clam 主题默认状态，防止 focus/hover 时字段变回系统色
-        style.configure("TCombobox",
-                        fieldbackground=C["entry"],
-                        background=C["acc"],
-                        foreground=C["text"],
-                        arrowcolor=C["text"],
-                        selectbackground=C["acc"],
-                        selectforeground="white",
-                        insertcolor=C["text"],
-                        bordercolor=C["sep"],
-                        lightcolor=C["entry"],
-                        darkcolor=C["entry"])
-        style.map("TCombobox",
-                  fieldbackground=[
-                      ("readonly", "focus",  C["entry"]),
-                      ("readonly", "!focus", C["entry"]),
-                      ("focus",              C["entry"]),
-                      ("!focus",             C["entry"]),
-                      ("disabled",           C["panel"]),
-                  ],
-                  foreground=[
-                      ("readonly",  C["text"]),
-                      ("focus",     C["text"]),
-                      ("disabled",  C["sub"]),
-                  ],
-                  selectbackground=[
-                      ("focus",  C["acc"]),
-                      ("!focus", C["acc"]),
-                  ],
-                  selectforeground=[
-                      ("focus",  "white"),
-                      ("!focus", "white"),
-                  ],
-                  background=[
-                      ("active",  C["hl"]),   # 箭头按钮 hover
-                      ("!active", C["acc"]),  # 箭头按钮常态
-                  ],
-                  arrowcolor=[
-                      ("disabled", C["sub"]),
-                      ("active",   "white"),
-                      ("!active",  C["text"]),
-                  ])
+        style.configure(
+            "TCombobox",
+            fieldbackground=C["entry"],
+            background=C["acc"],
+            foreground=C["text"],
+            arrowcolor=C["text"],
+            selectbackground=C["acc"],
+            selectforeground="white",
+            insertcolor=C["text"],
+            bordercolor=C["sep"],
+            lightcolor=C["entry"],
+            darkcolor=C["entry"],
+        )
+        style.map(
+            "TCombobox",
+            fieldbackground=[
+                ("readonly", "focus", C["entry"]),
+                ("readonly", "!focus", C["entry"]),
+                ("focus", C["entry"]),
+                ("!focus", C["entry"]),
+                ("disabled", C["panel"]),
+            ],
+            foreground=[
+                ("readonly", C["text"]),
+                ("focus", C["text"]),
+                ("disabled", C["sub"]),
+            ],
+            selectbackground=[
+                ("focus", C["acc"]),
+                ("!focus", C["acc"]),
+            ],
+            selectforeground=[
+                ("focus", "white"),
+                ("!focus", "white"),
+            ],
+            background=[
+                ("active", C["hl"]),  # 箭头按钮 hover
+                ("!active", C["acc"]),  # 箭头按钮常态
+            ],
+            arrowcolor=[
+                ("disabled", C["sub"]),
+                ("active", "white"),
+                ("!active", C["text"]),
+            ],
+        )
 
         # ── 弹出下拉列表（Listbox）颜色 ───────────────────────────
         # ttk.Combobox 的弹出框是 tk.Listbox，须用 option_add 设置
-        self.app.root.option_add("*TCombobox*Listbox.background",       C["entry"])
-        self.app.root.option_add("*TCombobox*Listbox.foreground",       C["text"])
+        self.app.root.option_add("*TCombobox*Listbox.background", C["entry"])
+        self.app.root.option_add("*TCombobox*Listbox.foreground", C["text"])
         self.app.root.option_add("*TCombobox*Listbox.selectBackground", C["acc"])
         self.app.root.option_add("*TCombobox*Listbox.selectForeground", "white")
-        self.app.root.option_add("*TCombobox*Listbox.relief",           "flat")
-        self.app.root.option_add("*TCombobox*Listbox.borderWidth",      "0")
+        self.app.root.option_add("*TCombobox*Listbox.relief", "flat")
+        self.app.root.option_add("*TCombobox*Listbox.borderWidth", "0")
         # 增大弹出 Listbox 的行高和字体，让长名称清晰可读
-        self.app.root.option_add("*TCombobox*Listbox.font",             F["body"])
-        self.app.root.option_add("*TCombobox*Listbox.selectBorderWidth","0")
-        tk.Label(R, text=_("app_input_label"),
-                 font=F["btn"], bg=C["bg"], fg=C["text"]
-                 ).pack(anchor="w", pady=(12, 4), padx=14)
+        self.app.root.option_add("*TCombobox*Listbox.font", F["body"])
+        self.app.root.option_add("*TCombobox*Listbox.selectBorderWidth", "0")
+        tk.Label(R, text=_("app_input_label"), font=F["btn"], bg=C["bg"], fg=C["text"]).pack(
+            anchor="w", pady=(12, 4), padx=14
+        )
 
-        pf = tk.Frame(R, bg=C["entry"]); pf.pack(fill="x", padx=14, pady=(0, 0))
-        self.pt = tk.Text(pf, height=4, font=F["label"], bg=C["entry"], fg=C["text"],
-                          insertbackground="white", wrap="word", bd=0, padx=10, pady=8, relief="flat")
+        pf = tk.Frame(R, bg=C["entry"])
+        pf.pack(fill="x", padx=14, pady=(0, 0))
+        self.pt = tk.Text(
+            pf,
+            height=4,
+            font=F["label"],
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            wrap="word",
+            bd=0,
+            padx=10,
+            pady=8,
+            relief="flat",
+        )
         self.pt.pack(fill="x")
         self.pt.bind("<Control-Return>", lambda e: (self.app._gen(), "break")[1])
 
@@ -272,16 +312,20 @@ class MainContent:
         _pt_foot = tk.Frame(R, bg="#0d1a30")
         _pt_foot.pack(fill="x", padx=14)
 
-        self._char_lbl = tk.Label(
-            _pt_foot, text="0 字符",
-            font=F["mono_tiny"], bg="#0d1a30", fg="#4a5a7a")
+        self._char_lbl = tk.Label(_pt_foot, text=_("lbl_chars", n=0), font=F["mono_tiny"], bg="#0d1a30", fg="#4a5a7a")
         self._char_lbl.pack(side="left", padx=6, pady=2)
 
         tk.Button(
-            _pt_foot, text="📋 复制提示词",
-            font=F["tiny"], bg="#1e3060", fg="#93c5fd",
-            bd=0, padx=8, pady=2, cursor="hand2",
-            command=self._copy_prompt
+            _pt_foot,
+            text=_("btn_copy_prompt"),
+            font=F["tiny"],
+            bg="#1e3060",
+            fg="#93c5fd",
+            bd=0,
+            padx=8,
+            pady=2,
+            cursor="hand2",
+            command=self._copy_prompt,
         ).pack(side="right", padx=4, pady=2)
 
         # Bug3 修复：
@@ -299,80 +343,159 @@ class MainContent:
 
         self.pt.bind("<<Modified>>", _on_text_modified)
 
-
         # ── 生成行 ────────────────────────────────────────────
-        opt = tk.Frame(R, bg=C["bg"]); opt.pack(fill="x", padx=14, pady=(0, 4))
+        opt = tk.Frame(R, bg=C["bg"])
+        opt.pack(fill="x", padx=14, pady=(0, 4))
         tk.Label(opt, text=_("lbl_size"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
         sz_default = self.app.cfg.get("default_size", "1024x1024").replace("×", "x")
         self.szv = tk.StringVar(value=sz_default)
-        ttk.Combobox(opt, textvariable=self.szv, width=12, state="readonly",
-                     values=["512x512","768x768","1024x1024","1024x576","1280x720",
-                             "1920x1080","576x1024","720x1280","768x1024"]
-                     ).pack(side="left", padx=(2, 8))
+        ttk.Combobox(
+            opt,
+            textvariable=self.szv,
+            width=12,
+            state="readonly",
+            values=[
+                "512x512",
+                "768x768",
+                "1024x1024",
+                "1024x576",
+                "1280x720",
+                "1920x1080",
+                "576x1024",
+                "720x1280",
+                "768x1024",
+            ],
+        ).pack(side="left", padx=(2, 8))
         tk.Label(opt, text=_("lbl_provider"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
         self.pv = tk.StringVar(value=_("provider_auto"))
-        self._t2i_provider_list = ([_("provider_auto"),_("provider_free_section")]
-                         + list(FREE_PROVIDERS.keys())
-                         + [_("provider_paid_section")]
-                         + list(PAID_PROVIDERS.keys()))
-        self._provider_cb = ttk.Combobox(opt, textvariable=self.pv, width=26, state="readonly",
-                     values=self._t2i_provider_list,
-                     postcommand=self._expand_provider_popup)
+        self._t2i_provider_list = (
+            [_("provider_auto"), _("provider_free_section")]
+            + list(FREE_PROVIDERS.keys())
+            + [_("provider_paid_section")]
+            + list(PAID_PROVIDERS.keys())
+        )
+        self._provider_cb = ttk.Combobox(
+            opt,
+            textvariable=self.pv,
+            width=26,
+            state="readonly",
+            values=self._t2i_provider_list,
+            postcommand=self._expand_provider_popup,
+        )
         self._provider_cb.pack(side="left", padx=(2, 8))
-        self.gb = tk.Button(opt, text=_("btn_generate"),
-                            font=F["btn"], bg=C["hl"], fg="white",
-                            bd=0, padx=16, pady=6, cursor="hand2",
-                            activebackground="#c73652", command=self.app._gen)
+        self.gb = tk.Button(
+            opt,
+            text=_("btn_generate"),
+            font=F["btn"],
+            bg=C["hl"],
+            fg="white",
+            bd=0,
+            padx=16,
+            pady=6,
+            cursor="hand2",
+            activebackground="#c73652",
+            command=self.app._gen,
+        )
         self.gb.pack(side="left")
 
         # ── 工具行 ────────────────────────────────────────────
-        opt2 = tk.Frame(R, bg=C["bg"]); opt2.pack(fill="x", padx=14, pady=(0, 6))
-        tk.Button(opt2, text=_("btn_phrase_lib"),
-                  font=F["body_b"], bg="#065f46", fg="white",
-                  bd=0, padx=12, pady=5, cursor="hand2",
-                  command=self.app._open_phrase_panel).pack(side="left")
-        tk.Button(opt2, text=_("btn_prompt_wizard"),
-                  font=F["body_b"], bg="#7c3aed", fg="white",
-                  bd=0, padx=12, pady=5, cursor="hand2",
-                  command=self.app._open_prompt_wizard).pack(side="left", padx=(6, 0))
+        opt2 = tk.Frame(R, bg=C["bg"])
+        opt2.pack(fill="x", padx=14, pady=(0, 6))
+        tk.Button(
+            opt2,
+            text=_("btn_phrase_lib"),
+            font=F["body_b"],
+            bg="#065f46",
+            fg="white",
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=self.app._open_phrase_panel,
+        ).pack(side="left")
+        tk.Button(
+            opt2,
+            text=_("btn_prompt_wizard"),
+            font=F["body_b"],
+            bg="#7c3aed",
+            fg="white",
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=self.app._open_prompt_wizard,
+        ).pack(side="left", padx=(6, 0))
         tk.Frame(opt2, bg=C["sep"], width=1).pack(side="left", fill="y", padx=8, pady=4)
-        tk.Label(opt2, text=_("lbl_variant_count"), font=F["body"],
-                 bg=C["bg"], fg=C["sub"]).pack(side="left")
+        tk.Label(opt2, text=_("lbl_variant_count"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
 
         # ── 圆形 ➖ / 数字 / ➕ 控件（Issue-1 修复：大点击面积）────
         def _dec_n():
             v = max(1, self.variant_n_var.get() - 1)
-            self.variant_n_var.set(v); _n_lbl.config(text=str(v))
+            self.variant_n_var.set(v)
+            _n_lbl.config(text=str(v))
+
         def _inc_n():
             v = min(6, self.variant_n_var.get() + 1)
-            self.variant_n_var.set(v); _n_lbl.config(text=str(v))
+            self.variant_n_var.set(v)
+            _n_lbl.config(text=str(v))
 
-        _n_grp = tk.Frame(opt2, bg=C["bg"]); _n_grp.pack(side="left", padx=(2, 4))
-        tk.Button(_n_grp, text="⊖", font=F["btn"],
-                  bg=C["acc"], fg="#a0c8ff", bd=0,
-                  width=2, pady=2, cursor="hand2",
-                  activebackground=C["hl"], activeforeground="white",
-                  command=_dec_n).pack(side="left")
-        _n_lbl = tk.Label(_n_grp,
-                           text=str(self.variant_n_var.get()),
-                           font=F["body_b"],
-                           bg=C["entry"], fg=C["ok"],
-                           width=2, pady=2, relief="flat")
+        _n_grp = tk.Frame(opt2, bg=C["bg"])
+        _n_grp.pack(side="left", padx=(2, 4))
+        tk.Button(
+            _n_grp,
+            text="⊖",
+            font=F["btn"],
+            bg=C["acc"],
+            fg="#a0c8ff",
+            bd=0,
+            width=2,
+            pady=2,
+            cursor="hand2",
+            activebackground=C["hl"],
+            activeforeground="white",
+            command=_dec_n,
+        ).pack(side="left")
+        _n_lbl = tk.Label(
+            _n_grp,
+            text=str(self.variant_n_var.get()),
+            font=F["body_b"],
+            bg=C["entry"],
+            fg=C["ok"],
+            width=2,
+            pady=2,
+            relief="flat",
+        )
         _n_lbl.pack(side="left", padx=2)
-        tk.Button(_n_grp, text="⊕", font=F["btn"],
-                  bg=C["acc"], fg="#a0c8ff", bd=0,
-                  width=2, pady=2, cursor="hand2",
-                  activebackground="#4ecca3", activeforeground="#0a1a0a",
-                  command=_inc_n).pack(side="left")
+        tk.Button(
+            _n_grp,
+            text="⊕",
+            font=F["btn"],
+            bg=C["acc"],
+            fg="#a0c8ff",
+            bd=0,
+            width=2,
+            pady=2,
+            cursor="hand2",
+            activebackground="#4ecca3",
+            activeforeground="#0a1a0a",
+            command=_inc_n,
+        ).pack(side="left")
 
-        self._variant_gen_btn = tk.Button(opt2, text=_("btn_variant_gen"),
-                  font=F["body_b"], bg="#4a1d96", fg="white",
-                  bd=0, padx=12, pady=5, cursor="hand2",
-                  command=self.app._gen_variants)
+        self._variant_gen_btn = tk.Button(
+            opt2,
+            text=_("btn_variant_gen"),
+            font=F["body_b"],
+            bg="#4a1d96",
+            fg="white",
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=self.app._gen_variants,
+        )
         self._variant_gen_btn.pack(side="left")
-        self._variant_gen_btn_bg = "#4a1d96"   # 恢复用：禁用态会覆盖 bg
-        tk.Label(opt2, text=_("shortcut_hint"),
-                 font=F["small"], bg=C["bg"], fg="#6a7a9a").pack(side="left", padx=6)
+        self._variant_gen_btn_bg = "#4a1d96"  # 恢复用：禁用态会覆盖 bg
+        tk.Label(opt2, text=_("shortcut_hint"), font=F["small"], bg=C["bg"], fg="#6a7a9a").pack(side="left", padx=6)
 
         # ── 生成模式切换行（分段控件样式）───────────────────────────
         # 用一个带描边的容器把两个按钮"焊"在一起，视觉上读作一个控件
@@ -382,35 +505,57 @@ class MainContent:
         # 预览 Tab 内部（_build_preview_tab 的 _prev_host 第 0 列），
         # 见 _build_i2i_ref_column。这样切换模式不会让下方状态栏 /
         # Notebook 整体下移，详见 _switch_mode 的说明。
-        mode_row = tk.Frame(R, bg=C["bg"]); mode_row.pack(fill="x", padx=14, pady=(0, 3))
+        mode_row = tk.Frame(R, bg=C["bg"])
+        mode_row.pack(fill="x", padx=14, pady=(0, 3))
         self._mode_row = mode_row
 
-        _seg = tk.Frame(mode_row, bg=C["sep"],
-                         highlightbackground=C["sep"], highlightthickness=1)
+        _seg = tk.Frame(mode_row, bg=C["sep"], highlightbackground=C["sep"], highlightthickness=1)
         _seg.pack(side="left")
-        self._mode_t2i_btn = tk.Button(_seg, text="📝 文生图", font=F["small_b"],
-            bg=C["hl"], fg="white", bd=0, padx=16, pady=6, cursor="hand2", relief="flat",
-            activebackground="#c73652", activeforeground="white",
-            command=lambda: self._switch_mode("t2i"))
+        self._mode_t2i_btn = tk.Button(
+            _seg,
+            text=_("mode_t2i"),
+            font=F["small_b"],
+            bg=C["hl"],
+            fg="white",
+            bd=0,
+            padx=16,
+            pady=6,
+            cursor="hand2",
+            relief="flat",
+            activebackground="#c73652",
+            activeforeground="white",
+            command=lambda: self._switch_mode("t2i"),
+        )
         self._mode_t2i_btn.pack(side="left", padx=(1, 0), pady=1)
-        self._mode_i2i_btn = tk.Button(_seg, text="🖼 图生图", font=F["small_b"],
-            bg=C["panel"], fg=C["sub"], bd=0, padx=16, pady=6, cursor="hand2", relief="flat",
-            activebackground="#1e3a5f", activeforeground="white",
-            command=lambda: self._switch_mode("i2i"))
+        self._mode_i2i_btn = tk.Button(
+            _seg,
+            text=_("mode_i2i"),
+            font=F["small_b"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=16,
+            pady=6,
+            cursor="hand2",
+            relief="flat",
+            activebackground="#1e3a5f",
+            activeforeground="white",
+            command=lambda: self._switch_mode("i2i"),
+        )
         self._mode_i2i_btn.pack(side="left", padx=(1, 1), pady=1)
 
         # 状态栏
         self.stv = tk.StringVar(value=_("status_ready"))
-        self.stl = tk.Label(R, textvariable=self.stv, font=F["body"],
-                            bg=C["panel"], fg=C["ok"], anchor="w", padx=10, pady=5)
+        self.stl = tk.Label(
+            R, textvariable=self.stv, font=F["body"], bg=C["panel"], fg=C["ok"], anchor="w", padx=10, pady=5
+        )
         self.stl.pack(fill="x", padx=14, pady=(0, 4))
         self.pb = ttk.Progressbar(R, mode="indeterminate")
 
         # ── Notebook（外围加强调色线框，便于视觉定位边界）────────
-        _nb_border = tk.Frame(R, bg=C["bg"],
-                              highlightbackground=C["sash"],
-                              highlightcolor=C["sash_hl"],
-                              highlightthickness=2)
+        _nb_border = tk.Frame(
+            R, bg=C["bg"], highlightbackground=C["sash"], highlightcolor=C["sash_hl"], highlightthickness=2
+        )
         _nb_border.pack(fill="both", expand=True, padx=12, pady=(4, 8))
 
         self._nb = ttk.Notebook(_nb_border)
@@ -434,12 +579,21 @@ class MainContent:
         lf2 = tk.Frame(self._nb, bg=C["bg"])
         self._nb.add(lf2, text=_("tab_debug_log"))
         self.logt = scrolledtext.ScrolledText(
-            lf2, font=F["mono"], bg="#080818", fg="#4ecca3",
-            insertbackground="white", bd=0, state="disabled")
+            lf2, font=F["mono"], bg="#080818", fg="#4ecca3", insertbackground="white", bd=0, state="disabled"
+        )
         self.logt.pack(fill="both", expand=True, padx=4, pady=4)
-        tk.Button(lf2, text=_("btn_clear_log"), font=F["body"], bg=C["acc"],
-                  fg="white", bd=0, padx=8, pady=2, cursor="hand2",
-                  command=self.app._clr_log).pack(anchor="e", padx=4, pady=2)
+        tk.Button(
+            lf2,
+            text=_("btn_clear_log"),
+            font=F["body"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=8,
+            pady=2,
+            cursor="hand2",
+            command=self.app._clr_log,
+        ).pack(anchor="e", padx=4, pady=2)
 
     # ══════════════════════════════════════════════════════════
     #   标签统计（已移除独立行；统计数据仍可在顶部菜单统计看板中查看）
@@ -452,32 +606,88 @@ class MainContent:
     # ══════════════════════════════════════════════════════════
     def _build_preview_tab(self):
         tb = tk.Frame(self.imf, bg="#0d1b2a", height=36)
-        tb.pack(fill="x"); tb.pack_propagate(False)
+        tb.pack(fill="x")
+        tb.pack_propagate(False)
 
-        tk.Button(tb, text=_("btn_open_viewer") + "  (Ctrl+O)",
-                  font=F["small_b"], bg=C["hl"], fg="white",
-                  bd=0, padx=10, pady=4, cursor="hand2",
-                  command=self.app._open_viewer).pack(side="left", padx=6, pady=4)
-        tk.Button(tb, text=_("btn_save"), font=F["small"],
-                  bg=C["acc"], fg="white", bd=0, padx=8, pady=4,
-                  cursor="hand2", command=self.app._save).pack(side="left", padx=2, pady=4)
-        tk.Button(tb, text="📋 复制路径", font=F["small"],
-                  bg=C["acc"], fg="white", bd=0, padx=8, pady=4,
-                  cursor="hand2", command=self.app._copy_path).pack(side="left", padx=2, pady=5)
-        tk.Button(tb, text="🔄 重新生成", font=F["small"],
-                  bg=C["acc"], fg="white", bd=0, padx=8, pady=4,
-                  cursor="hand2", command=self.app._gen).pack(side="left", padx=2, pady=5)
+        tk.Button(
+            tb,
+            text=_("btn_open_viewer") + "  (Ctrl+O)",
+            font=F["small_b"],
+            bg=C["hl"],
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=self.app._open_viewer,
+        ).pack(side="left", padx=6, pady=4)
+        tk.Button(
+            tb,
+            text=_("btn_save"),
+            font=F["small"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2",
+            command=self.app._save,
+        ).pack(side="left", padx=2, pady=4)
+        tk.Button(
+            tb,
+            text=_("btn_copy_path"),
+            font=F["small"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2",
+            command=self.app._copy_path,
+        ).pack(side="left", padx=2, pady=5)
+        tk.Button(
+            tb,
+            text=_("btn_regenerate"),
+            font=F["small"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2",
+            command=self.app._gen,
+        ).pack(side="left", padx=2, pady=5)
         tk.Frame(tb, bg=C["sep"], width=1).pack(side="left", fill="y", padx=6, pady=6)
-        self._cmp_btn = tk.Button(tb, text="⚖ 选取对比图", font=F["small"],
-                  bg=C["acc"], fg="white", bd=0, padx=8, pady=4, cursor="hand2",
-                  command=self._pick_compare_image)
+        self._cmp_btn = tk.Button(
+            tb,
+            text=_("btn_pick_compare"),
+            font=F["small"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2",
+            command=self._pick_compare_image,
+        )
         self._cmp_btn.pack(side="left", padx=2, pady=5)
-        self._cmp_clear_btn = tk.Button(tb, text="✕ 清空对比", font=F["small"],
-                  bg=C["dis_bg"], fg="white", bd=0, padx=8, pady=4, cursor="hand2",
-                  command=self._clear_compare, state="disabled")
+        self._cmp_clear_btn = tk.Button(
+            tb,
+            text=_("btn_clear_compare"),
+            font=F["small"],
+            bg=C["dis_bg"],
+            fg="white",
+            bd=0,
+            padx=8,
+            pady=4,
+            cursor="hand2",
+            command=self._clear_compare,
+            state="disabled",
+        )
         self._cmp_clear_btn.pack(side="left", padx=2, pady=5)
-        tk.Label(tb, text="双击预览图 → 独立查看器",
-                 font=F["small"], bg="#0d1b2a", fg=C["sub"]).pack(side="right", padx=10)
+        tk.Label(tb, text=_("preview_dblclick_hint"), font=F["small"], bg="#0d1b2a", fg=C["sub"]).pack(
+            side="right", padx=10
+        )
 
         # ── 预览主体 ──────────────────────────────────────────
         # 列 0：图生图参考图侧栏（固定宽度，默认收起 minsize=0）
@@ -491,33 +701,37 @@ class MainContent:
         self._prev_host.columnconfigure(3, weight=1)
         self._prev_host.rowconfigure(0, weight=1)
 
-        self._build_i2i_ref_column()   # 列 0，_switch_mode 按需 grid / grid_remove
+        self._build_i2i_ref_column()  # 列 0，_switch_mode 按需 grid / grid_remove
 
         # 左半（A — 当前图）
         left_wrap = tk.Frame(self._prev_host, bg="#111827")
         left_wrap.grid(row=0, column=1, sticky="nsew")
 
         # Fix-2: A 侧横幅（初始隐藏，activate 时 pack）
-        self._cmp_label_a = tk.Label(left_wrap, text="A →  " + "当前图",
-                                      font=F["small_b"],
-                                      bg=C["cmp_a"], fg="white")
+        self._cmp_label_a = tk.Label(
+            left_wrap, text="A →  " + _("compare_current"), font=F["small_b"], bg=C["cmp_a"], fg="white"
+        )
         # 注：初始不 pack，在 _set_compare_image 中动态 pack
 
         self._prev_cv = tk.Canvas(left_wrap, bg="#111827", bd=0, highlightthickness=0)
         self._prev_cv.pack(fill="both", expand=True)
         self._prev_photo = None
-        self._prev_item  = None
-        self._prev_orig  = None
-        self._prev_ph = self._prev_cv.create_text(400, 200,
-            text=("生成图片后在此处显示缩略预览\n\n"
-                  "双击预览图 → 独立查看器\n"
-                  "点击「⚖ 选取对比图」→ 并排对比"),
-            font=F["body"], fill="#9ab4cc", anchor="center", justify="center")
-        self._prev_cv.bind("<Configure>",       self._on_prev_resize)
+        self._prev_item = None
+        self._prev_orig = None
+        self._prev_ph = self._prev_cv.create_text(
+            400,
+            200,
+            text=_("preview_placeholder_detailed"),
+            font=F["body"],
+            fill="#9ab4cc",
+            anchor="center",
+            justify="center",
+        )
+        self._prev_cv.bind("<Configure>", self._on_prev_resize)
         self._prev_cv.bind("<Double-Button-1>", lambda e: self.app._open_viewer())
-        self._prev_cv.bind("<MouseWheel>",  lambda e: "break")
-        self._prev_cv.bind("<Button-4>",    lambda e: "break")
-        self._prev_cv.bind("<Button-5>",    lambda e: "break")
+        self._prev_cv.bind("<MouseWheel>", lambda e: "break")
+        self._prev_cv.bind("<Button-4>", lambda e: "break")
+        self._prev_cv.bind("<Button-5>", lambda e: "break")
 
         # 分隔线（对比时才 grid）
         self._cmp_divider = tk.Frame(self._prev_host, bg="#4a1d96", width=3)
@@ -526,16 +740,14 @@ class MainContent:
         self._cmp_right_wrap = tk.Frame(self._prev_host, bg="#111827")
 
         # Fix-2: B 侧横幅 —— 在此 pack，跟随 _cmp_right_wrap 一同显示/隐藏
-        self._cmp_label_b = tk.Label(self._cmp_right_wrap, text="B →  " + "对比图",
-                                      font=F["small_b"],
-                                      bg=C["cmp_b"], fg="white")
-        self._cmp_label_b.pack(fill="x")   # ← Fix-2 补充此行
+        self._cmp_label_b = tk.Label(
+            self._cmp_right_wrap, text="B →  " + _("compare_image"), font=F["small_b"], bg=C["cmp_b"], fg="white"
+        )
+        self._cmp_label_b.pack(fill="x")  # ← Fix-2 补充此行
 
-        self._cmp_cv = tk.Canvas(self._cmp_right_wrap, bg="#0a0f1a",
-                                  bd=0, highlightthickness=0)
+        self._cmp_cv = tk.Canvas(self._cmp_right_wrap, bg="#0a0f1a", bd=0, highlightthickness=0)
         self._cmp_cv.pack(fill="both", expand=True)
-        self._cmp_cv.create_text(80, 50, text="选取对比图后显示",
-                                  font=F["input"], fill="#334155", anchor="center")
+        self._cmp_cv.create_text(80, 50, text=_("compare_pick_hint"), font=F["input"], fill="#334155", anchor="center")
         self._cmp_cv.bind("<Configure>", self._on_cmp_resize)
 
     # ── 对比逻辑 ─────────────────────────────────────────────
@@ -543,62 +755,85 @@ class MainContent:
         # DATA-003: 只取最近 200 张，避免大历史库全量加载
         entries = get_all_entries(limit=200)
         if not entries:
-            messagebox.showinfo(_("dlg_tip"), _("dlg_compare_empty")); return
+            messagebox.showinfo(_("dlg_tip"), _("dlg_compare_empty"))
+            return
 
         win = tk.Toplevel(self.app.root)
-        win.title("⚖ 选取对比图"); win.configure(bg=C["bg"])
-        win.resizable(True, True); win.minsize(700, 500)
+        win.title(_("btn_pick_compare"))
+        win.configure(bg=C["bg"])
+        win.resizable(True, True)
+        win.minsize(700, 500)
         win.update_idletasks()
         ww, wh = 980, 720
-        x = self.app.root.winfo_x() + (self.app.root.winfo_width()  - ww) // 2
+        x = self.app.root.winfo_x() + (self.app.root.winfo_width() - ww) // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() - wh) // 2
-        win.geometry(f"{ww}x{wh}+{max(0,x)}+{max(0,y)}")
+        win.geometry(f"{ww}x{wh}+{max(0, x)}+{max(0, y)}")
         win.grab_set()
 
         # ── 标题栏 ───────────────────────────────────────────
-        hdr = tk.Frame(win, bg=C["acc"]); hdr.pack(fill="x")
-        tk.Label(hdr, text="⚖  选取对比图（从历史记录）",
-                 font=F["h2"], bg=C["acc"], fg="white"
-                 ).pack(side="left", padx=14, pady=10)
-        tk.Button(hdr, text="📁 " + _("btn_export").strip(),
-                  font=F["body"], bg=C["hl"], fg="white",
-                  bd=0, padx=12, pady=5, cursor="hand2",
-                  command=lambda: self._pick_cmp_file(win)
-                  ).pack(side="right", padx=12, pady=8)
-        tk.Label(hdr, text=f"最近 {len(entries)} 张 · 滚轮滑动",
-                 font=F["small"], bg=C["acc"], fg="#93c5fd"
-                 ).pack(side="right", padx=4)
+        hdr = tk.Frame(win, bg=C["acc"])
+        hdr.pack(fill="x")
+        tk.Label(hdr, text=_("compare_pick_title"), font=F["h2"], bg=C["acc"], fg="white").pack(
+            side="left", padx=14, pady=10
+        )
+        tk.Button(
+            hdr,
+            text="📁 " + _("btn_export").strip(),
+            font=F["body"],
+            bg=C["hl"],
+            fg="white",
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=lambda: self._pick_cmp_file(win),
+        ).pack(side="right", padx=12, pady=8)
+        tk.Label(hdr, text=_("compare_recent_count", n=len(entries)), font=F["small"], bg=C["acc"], fg="#93c5fd").pack(
+            side="right", padx=4
+        )
 
         # ── 可滚动网格区域 ────────────────────────────────────
-        outer = tk.Frame(win, bg=C["bg"]); outer.pack(fill="both", expand=True)
-        cv    = tk.Canvas(outer, bg=C["bg"], bd=0, highlightthickness=0)
-        vsb   = ttk.Scrollbar(outer, orient="vertical", command=cv.yview)
+        outer = tk.Frame(win, bg=C["bg"])
+        outer.pack(fill="both", expand=True)
+        cv = tk.Canvas(outer, bg=C["bg"], bd=0, highlightthickness=0)
+        vsb = ttk.Scrollbar(outer, orient="vertical", command=cv.yview)
         cv.configure(yscrollcommand=vsb.set)
-        vsb.pack(side="right", fill="y"); cv.pack(side="left", fill="both", expand=True)
+        vsb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
         inner = tk.Frame(cv, bg=C["bg"])
-        _w2   = cv.create_window((0, 0), window=inner, anchor="nw")
+        _w2 = cv.create_window((0, 0), window=inner, anchor="nw")
         inner.bind("<Configure>", lambda e: cv.configure(scrollregion=cv.bbox("all")))
-        cv.bind("<Configure>",    lambda e: cv.itemconfig(_w2, width=e.width))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(_w2, width=e.width))
 
         # 滚轮：绑到 win 级别，在窗口内任意位置均可滚动
         def _wheel(ev):
-            try: cv.yview_scroll(int(-1 * (ev.delta / 120)), "units")
-            except tk.TclError: pass
+            try:
+                cv.yview_scroll(int(-1 * (ev.delta / 120)), "units")
+            except tk.TclError:
+                pass
+
         def _wheel_linux(ev):
-            try: cv.yview_scroll(-1 if ev.num == 4 else 1, "units")
-            except tk.TclError: pass
+            try:
+                cv.yview_scroll(-1 if ev.num == 4 else 1, "units")
+            except tk.TclError:
+                pass
+
         win.bind_all("<MouseWheel>", _wheel)
-        win.bind_all("<Button-4>",   _wheel_linux)
-        win.bind_all("<Button-5>",   _wheel_linux)
-        win.protocol("WM_DELETE_WINDOW", lambda: (
-            win.unbind_all("<MouseWheel>"),
-            win.unbind_all("<Button-4>"),
-            win.unbind_all("<Button-5>"),
-            win.destroy()))
+        win.bind_all("<Button-4>", _wheel_linux)
+        win.bind_all("<Button-5>", _wheel_linux)
+        win.protocol(
+            "WM_DELETE_WINDOW",
+            lambda: (
+                win.unbind_all("<MouseWheel>"),
+                win.unbind_all("<Button-4>"),
+                win.unbind_all("<Button-5>"),
+                win.destroy(),
+            ),
+        )
 
         # ── 网格参数 ──────────────────────────────────────────
-        COLS  = 4
-        THUMB = 160     # 缩略图尺寸
+        COLS = 4
+        THUMB = 160  # 缩略图尺寸
 
         # Bug2 修复：
         # 旧代码 _tc = {} 是方法内局部变量，所有线程回调执行完毕后
@@ -606,12 +841,11 @@ class MainContent:
         # PhotoImage —— Tkinter 的 C 层不计入 Python 引用计数，
         # 因此 Label 图像变黑。
         # 修复：将缓存绑定到 win 对象，生命周期与窗口相同。
-        win._photo_cache = {}   # {path: PhotoImage}，跟随窗口存活
+        win._photo_cache = {}  # {path: PhotoImage}，跟随窗口存活
 
         # 有界线程池加载缩略图：此前每图起一个 daemon 线程，
         # 长历史（200 条）一次弹窗即 churn 200 线程
-        _thumb_pool = ThreadPoolExecutor(max_workers=4,
-                                         thread_name_prefix="cmp-thumb")
+        _thumb_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="cmp-thumb")
 
         def _shutdown_pool(event=None):
             if event is not None and getattr(event, "widget", None) is not win:
@@ -631,14 +865,12 @@ class MainContent:
             dialog.destroy()
 
         for i, e in enumerate(entries):
-            path  = e.get("image_path", "")
+            path = e.get("image_path", "")
             ri, ci = divmod(i, COLS)
             inner.columnconfigure(ci, weight=1)
 
             # 格子容器
-            cell = tk.Frame(inner, bg=C["panel"],
-                            highlightbackground="#2a3a5a",
-                            highlightthickness=1)
+            cell = tk.Frame(inner, bg=C["panel"], highlightbackground="#2a3a5a", highlightthickness=1)
             cell.grid(row=ri, column=ci, padx=5, pady=5, sticky="nsew")
             cell.columnconfigure(0, weight=1)
 
@@ -646,8 +878,7 @@ class MainContent:
             img_host = tk.Frame(cell, bg="#0f172a", width=THUMB, height=THUMB)
             img_host.pack(padx=8, pady=(8, 0))
             img_host.pack_propagate(False)
-            lbl = tk.Label(img_host, bg="#0f172a",
-                           text="⏳", font=F["disp_lg"], fg="#334155")
+            lbl = tk.Label(img_host, bg="#0f172a", text="⏳", font=F["disp_lg"], fg="#334155")
             lbl.pack(expand=True)
 
             # 异步加载缩略图
@@ -659,9 +890,8 @@ class MainContent:
                         if p and os.path.exists(p):
                             img = Image.open(p)
                             img.thumbnail((THUMB - 8, THUMB - 8), Image.LANCZOS)
-                            canvas_img = Image.new(
-                                "RGB", (THUMB - 8, THUMB - 8), (15, 23, 42))
-                            ox = (canvas_img.width  - img.width)  // 2
+                            canvas_img = Image.new("RGB", (THUMB - 8, THUMB - 8), (15, 23, 42))
+                            ox = (canvas_img.width - img.width) // 2
                             oy = (canvas_img.height - img.height) // 2
                             canvas_img.paste(img, (ox, oy))
 
@@ -669,58 +899,70 @@ class MainContent:
                             # 同时写入 win._photo_cache，与窗口共存亡，不被 GC
                             def _apply(ci=canvas_img, l_=l, p_=p):
                                 try:
-                                    if not l_.winfo_exists(): return
-                                    ph = ImageTk.PhotoImage(ci)   # 主线程创建
-                                    win._photo_cache[p_] = ph     # 防 GC
-                                    l_.config(image=ph, text="",
-                                              width=THUMB - 8, height=THUMB - 8)
-                                except Exception: pass
+                                    if not l_.winfo_exists():
+                                        return
+                                    ph = ImageTk.PhotoImage(ci)  # 主线程创建
+                                    win._photo_cache[p_] = ph  # 防 GC
+                                    l_.config(image=ph, text="", width=THUMB - 8, height=THUMB - 8)
+                                except Exception:
+                                    pass
+
                             win.after(0, _apply)
                         else:
+
                             def _empty(l_=l):
                                 try:
                                     if l_.winfo_exists():
                                         l_.config(text="🖼", font=F["display"])
-                                except Exception: pass
+                                except Exception:
+                                    pass
+
                             win.after(0, _empty)
-                    except Exception: pass
+                    except Exception:
+                        pass
+
                 _thumb_pool.submit(_worker)
+
             _load_t()
 
             # 标题（显示更多字符，换行显示）
             title = self.app._display_title(e)
-            ts    = e.get("timestamp", "")[:16]
-            prov  = (e.get("provider") or "")[-22:]
+            ts = e.get("timestamp", "")[:16]
+            prov = (e.get("provider") or "")[-22:]
 
-            tk.Label(cell,
-                     text=title[:36],
-                     font=F["body_b"],
-                     bg=C["panel"], fg=C["text"],
-                     wraplength=THUMB + 10,
-                     justify="center"
-                     ).pack(pady=(6, 0), padx=6)
-            tk.Label(cell,
-                     text=f"{ts}\n{prov}",
-                     font=F["mono_tiny"],
-                     bg=C["panel"], fg=C["sub"],
-                     justify="center"
-                     ).pack(pady=(2, 0))
+            tk.Label(
+                cell,
+                text=title[:36],
+                font=F["body_b"],
+                bg=C["panel"],
+                fg=C["text"],
+                wraplength=THUMB + 10,
+                justify="center",
+            ).pack(pady=(6, 0), padx=6)
+            tk.Label(
+                cell, text=f"{ts}\n{prov}", font=F["mono_tiny"], bg=C["panel"], fg=C["sub"], justify="center"
+            ).pack(pady=(2, 0))
 
             # 选取按钮
-            tk.Button(cell,
-                      text="✅ 选取此图",
-                      font=F["body_b"],
-                      bg="#7c3aed", fg="white",
-                      bd=0, padx=14, pady=5,
-                      cursor="hand2",
-                      activebackground="#5b21b6",
-                      command=lambda p=path: _select(p, win)
-                      ).pack(pady=(6, 10))
+            tk.Button(
+                cell,
+                text=_("btn_pick_this"),
+                font=F["body_b"],
+                bg="#7c3aed",
+                fg="white",
+                bd=0,
+                padx=14,
+                pady=5,
+                cursor="hand2",
+                activebackground="#5b21b6",
+                command=lambda p=path: _select(p, win),
+            ).pack(pady=(6, 10))
 
     def _pick_cmp_file(self, dialog):
         path = filedialog.askopenfilename(
-            title="选取对比图片",
-            filetypes=[("图片", "*.png *.jpg *.jpeg *.webp"), ("所有文件", "*.*")])
+            title=_("compare_pick_file_title"),
+            filetypes=[(_("filetype_images"), "*.png *.jpg *.jpeg *.webp"), (_("filetype_all"), "*.*")],
+        )
         if path:
             with open(path, "rb") as _fh:
                 data = _fh.read()
@@ -741,25 +983,27 @@ class MainContent:
         self._render_cmp()
 
     def _clear_compare(self):
-        self._cmp_orig = None; self._cmp_mode = False
+        self._cmp_orig = None
+        self._cmp_mode = False
         self._cmp_label_a.pack_forget()
         self._cmp_divider.grid_remove()
         self._cmp_right_wrap.grid_remove()
         self._cmp_clear_btn.config(state="disabled")
 
     def _render_cmp(self):
-        if self._cmp_orig is None: return
+        if self._cmp_orig is None:
+            return
         self._cmp_cv.update_idletasks()
-        cw = self._cmp_cv.winfo_width()  or 300
+        cw = self._cmp_cv.winfo_width() or 300
         ch = self._cmp_cv.winfo_height() or 400
-        img = self._cmp_orig.copy(); img.thumbnail((cw - 4, ch - 4), Image.LANCZOS)
+        img = self._cmp_orig.copy()
+        img.thumbnail((cw - 4, ch - 4), Image.LANCZOS)
         self._cmp_photo = ImageTk.PhotoImage(img)
         self._cmp_cv.delete("all")
-        self._cmp_cv.create_image(cw // 2, ch // 2,
-                                   image=self._cmp_photo, anchor="center")
+        self._cmp_cv.create_image(cw // 2, ch // 2, image=self._cmp_photo, anchor="center")
 
     def _on_cmp_resize(self, event):
-        if hasattr(self, '_cmp_resize_timer') and self._cmp_resize_timer:
+        if hasattr(self, "_cmp_resize_timer") and self._cmp_resize_timer:
             self.app.root.after_cancel(self._cmp_resize_timer)
         self._cmp_resize_timer = self.app.root.after(50, self._render_cmp)
 
@@ -773,48 +1017,51 @@ class MainContent:
             self.app._st(f"⚖ 已设置对比图：{self.app._display_title(e)}", "ok")
 
     def _on_prev_resize(self, event):
-        if hasattr(self, '_prev_resize_timer') and self._prev_resize_timer:
+        if hasattr(self, "_prev_resize_timer") and self._prev_resize_timer:
             self.app.root.after_cancel(self._prev_resize_timer)
         self._prev_resize_timer = self.app.root.after(50, self._render_preview)
 
     def _on_ref_resize(self, event):
         """参考图缩略图 Canvas 尺寸随图生图侧栏动画过渡实时变化，
         用与 _on_prev_resize 相同的防抖节流重绘，避免动画期间抖动。"""
-        if getattr(self, '_ref_resize_timer', None):
+        if getattr(self, "_ref_resize_timer", None):
             self.app.root.after_cancel(self._ref_resize_timer)
         self._ref_resize_timer = self.app.root.after(
-            30, self._update_ref_thumb if self._ref_image is not None
-                else self._draw_ref_placeholder)
+            30, self._update_ref_thumb if self._ref_image is not None else self._draw_ref_placeholder
+        )
 
     def _render_preview(self):
-        if self._prev_orig is None: return
+        if self._prev_orig is None:
+            return
         self._prev_cv.update_idletasks()
-        cw = self._prev_cv.winfo_width()  or 600
+        cw = self._prev_cv.winfo_width() or 600
         ch = self._prev_cv.winfo_height() or 400
-        img = self._prev_orig.copy(); img.thumbnail((cw - 4, ch - 4), Image.LANCZOS)
+        img = self._prev_orig.copy()
+        img.thumbnail((cw - 4, ch - 4), Image.LANCZOS)
         self._prev_photo = ImageTk.PhotoImage(img)
         self._prev_cv.delete("prev")
         self._prev_cv.itemconfig(self._prev_ph, text="")
         self._prev_item = self._prev_cv.create_image(
-            cw // 2, ch // 2, image=self._prev_photo, anchor="center", tags="prev")
+            cw // 2, ch // 2, image=self._prev_photo, anchor="center", tags="prev"
+        )
 
     def _set_preview(self, data: bytes):
-        self._prev_orig = Image.open(io.BytesIO(data)); self._render_preview()
+        self._prev_orig = Image.open(io.BytesIO(data))
+        self._render_preview()
 
     def _show_file(self, path: str):
         if path and os.path.exists(path):
             with open(path, "rb") as _fh:
                 data = _fh.read()
-            self.app._cur_bytes = data; self._set_preview(data)
+            self.app._cur_bytes = data
+            self._set_preview(data)
 
     def _update_char_count(self):
         """更新输入框字符计数标签（公开，供 PhrasePanel 等外部调用）。"""
         try:
-            txt = self.pt.get("1.0", "end-1c")   # end-1c 排除末尾隐式换行
-            n   = len(txt)
-            color = (C["ok"]   if n < 200
-                     else C["warn"] if n < 400
-                     else C["hl"])
+            txt = self.pt.get("1.0", "end-1c")  # end-1c 排除末尾隐式换行
+            n = len(txt)
+            color = C["ok"] if n < 200 else C["warn"] if n < 400 else C["hl"]
             self._char_lbl.config(text=_("lbl_chars", n=n), fg=color)
         except Exception:
             pass
@@ -828,7 +1075,7 @@ class MainContent:
             self.app.root.clipboard_clear()
             self.app.root.clipboard_append(text)
             # 短暂显示 "✓ 已复制"，1.5s 后恢复字数统计
-            self._char_lbl.config(text="✓ 已复制", fg=C["ok"])
+            self._char_lbl.config(text=_("copied_feedback"), fg=C["ok"])
             self.app.root.after(1500, self._update_char_count)
         except Exception:
             pass
@@ -836,7 +1083,7 @@ class MainContent:
     # ══════════════════════════════════════════════════════════
     #   生成模式切换 + 图生图参考图侧栏
     # ══════════════════════════════════════════════════════════
-    _I2I_COL_W = 260   # 图生图参考图侧栏固定宽度（预览 Tab 第 0 列）
+    _I2I_COL_W = 260  # 图生图参考图侧栏固定宽度（预览 Tab 第 0 列）
 
     def _build_i2i_ref_column(self):
         """构建图生图参考图侧栏——预览 Tab 内 _prev_host 的第 0 列。
@@ -851,16 +1098,15 @@ class MainContent:
         # 参考图预览与紧凑接口摘要各自使用剩余空间，避免接口列表挤掉控件。
         """
         _BG = "#0d1d35"
-        col = tk.Frame(self._prev_host, bg=_BG,
-            highlightbackground="#1e3a5f", highlightthickness=1)
+        col = tk.Frame(self._prev_host, bg=_BG, highlightbackground="#1e3a5f", highlightthickness=1)
         self._i2i_ref_col = col
         # 注意：此处不 grid，由 _switch_mode 控制
 
         hdr = tk.Frame(col, bg="#122a4d")
         hdr.pack(side="top", fill="x")
-        tk.Label(hdr, text="🖼 图生图参考图", font=F["small_b"],
-                 bg="#122a4d", fg="white", anchor="w"
-                 ).pack(fill="x", padx=12, pady=8)
+        tk.Label(hdr, text=_("i2i_ref_title"), font=F["small_b"], bg="#122a4d", fg="white", anchor="w").pack(
+            fill="x", padx=12, pady=8
+        )
 
         body = tk.Frame(col, bg=_BG)
         body.pack(fill="both", expand=True, padx=10, pady=4)
@@ -869,9 +1115,16 @@ class MainContent:
         body.rowconfigure(5, weight=1, minsize=42)
 
         # ── 参考图预览：最高优先级，可随可用高度伸缩 ─────────────
-        self._ref_prev_cv = tk.Canvas(body, width=200, height=76,
-            bg="#0a1525", bd=0, highlightthickness=1,
-            highlightbackground="#1e3a5f", cursor="hand2")
+        self._ref_prev_cv = tk.Canvas(
+            body,
+            width=200,
+            height=76,
+            bg="#0a1525",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground="#1e3a5f",
+            cursor="hand2",
+        )
         self._ref_prev_cv.grid(row=0, column=0, sticky="nsew", pady=(0, 4))
         self._ref_prev_cv.bind("<Button-1>", lambda _: self._pick_ref_image())
         self._ref_prev_cv.bind("<Configure>", self._on_ref_resize)
@@ -879,43 +1132,76 @@ class MainContent:
 
         btn_row = tk.Frame(body, bg=_BG)
         btn_row.grid(row=1, column=0, sticky="ew", pady=(0, 4))
-        self._ref_pick_btn = tk.Button(btn_row, text="上传参考图", font=F["small_b"],
-            bg="#1d4ed8", fg="white", bd=0, padx=10, pady=5, cursor="hand2",
-            activebackground="#2563eb", command=self._pick_ref_image)
+        self._ref_pick_btn = tk.Button(
+            btn_row,
+            text=_("btn_upload_ref"),
+            font=F["small_b"],
+            bg="#1d4ed8",
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            activebackground="#2563eb",
+            command=self._pick_ref_image,
+        )
         self._ref_pick_btn.pack(side="left", fill="x", expand=True)
-        self._ref_clear_btn = tk.Button(btn_row, text="✕ 清除", font=F["small"],
-            bg="#2a1018", fg="#f87171", bd=0, padx=10, pady=5, cursor="hand2",
-            state="disabled", command=self._clear_ref_image)
+        self._ref_clear_btn = tk.Button(
+            btn_row,
+            text=_("btn_clear"),
+            font=F["small"],
+            bg="#2a1018",
+            fg="#f87171",
+            bd=0,
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            state="disabled",
+            command=self._clear_ref_image,
+        )
         self._ref_clear_btn.pack(side="left", padx=(6, 0))
 
         str_row = tk.Frame(body, bg=_BG)
         str_row.grid(row=2, column=0, sticky="ew", pady=(0, 2))
-        tk.Label(str_row, text="变化强度", font=F["small_b"],
-                 bg=_BG, fg="#7dd3fc").pack(side="left", padx=(0, 8))
-        self._strength_slider = _StrengthSlider(str_row, self._ref_strength,
-                                                 w=120, h=30, marks=False)
+        tk.Label(str_row, text=_("lbl_strength"), font=F["small_b"], bg=_BG, fg="#7dd3fc").pack(
+            side="left", padx=(0, 8)
+        )
+        self._strength_slider = _StrengthSlider(str_row, self._ref_strength, w=120, h=30, marks=False)
         self._strength_slider.pack(side="left")
-        self._strength_val_lbl = tk.Label(str_row,
-            text=f"{self._ref_strength.get():.1f}",
-            font=F["small_b"], bg=_BG, fg=C["ok"], width=3, anchor="w")
+        self._strength_val_lbl = tk.Label(
+            str_row, text=f"{self._ref_strength.get():.1f}", font=F["small_b"], bg=_BG, fg=C["ok"], width=3, anchor="w"
+        )
         self._strength_val_lbl.pack(side="left", padx=(8, 0))
-        self._ref_strength.trace("w", lambda *_: self._strength_val_lbl.config(
-            text=f"{self._ref_strength.get():.1f}"))
+        self._ref_strength.trace("w", lambda *_: self._strength_val_lbl.config(text=f"{self._ref_strength.get():.1f}"))
 
         tk.Label(
             body,
-            text="变化强度仅适用于 Stability AI：0.1–0.3 尽量保留原图；0.4–0.6 平衡改动；0.7–0.9 按提示词重绘更多。\n其他接口会使用参考图，但不读取此数值。",
-            font=F["tiny"], bg="#102743", fg="#a8c7e8", anchor="w",
-            padx=7, pady=3, wraplength=220, justify="left",
-            highlightbackground="#1e4a72", highlightthickness=1
+            text=_("strength_description"),
+            font=F["tiny"],
+            bg="#102743",
+            fg="#a8c7e8",
+            anchor="w",
+            padx=7,
+            pady=3,
+            wraplength=220,
+            justify="left",
+            highlightbackground="#1e4a72",
+            highlightthickness=1,
         ).grid(row=3, column=0, sticky="ew", pady=(0, 3))
 
         # ── 低优先级信息：接口清单只使用预览剩余空间 ───────────
         self._ref_hint_frame = tk.Frame(body, bg=_BG)
         self._ref_hint_frame.grid(row=5, column=0, sticky="nsew")
         self._ref_hint_title = tk.Label(
-            self._ref_hint_frame, text="", font=F["tiny"],
-            bg=_BG, fg="#4a6a8a", anchor="nw", justify="left", wraplength=224)
+            self._ref_hint_frame,
+            text="",
+            font=F["tiny"],
+            bg=_BG,
+            fg="#4a6a8a",
+            anchor="nw",
+            justify="left",
+            wraplength=224,
+        )
         self._ref_hint_title.pack(fill="x")
         # 图生图接口在紧凑侧栏中只显示为摘要，避免多行列表挤掉上传与强度控件。
         self._ref_hint_rows: list = []
@@ -929,8 +1215,7 @@ class MainContent:
         同时出现在 FREE_PROVIDERS / PAID_PROVIDERS（即已有配置入口）
         里的接口，等对应向导补上后它会自动出现，无需再改这里。
         """
-        return [n for n in IMG2IMG_PROVIDERS
-                if n in FREE_PROVIDERS or n in PAID_PROVIDERS]
+        return [n for n in IMG2IMG_PROVIDERS if n in FREE_PROVIDERS or n in PAID_PROVIDERS]
 
     def _update_ref_hint(self, i2i_list: list):
         """把图生图可用接口名称以竖向分行方式填入侧栏提示区。
@@ -942,23 +1227,24 @@ class MainContent:
         self._ref_hint_rows.clear()
 
         if not i2i_list:
-            self._ref_hint_title.config(
-                text="⚠ 暂无可用图生图接口，请先配置密钥", fg="#f87171")
+            self._ref_hint_title.config(text=_("i2i_no_providers"), fg="#f87171")
             return
 
         names = [
-            name.replace("💎 ", "").replace("Black Forest Labs FLUX", "BFL FLUX")
-                .replace("Google Gemini Nano Banana (免费额度)", "Gemini Nano Banana")
-                .replace("Nano Banana Pro (Gemini 3 Pro Image)", "Nano Banana Pro")
-                .replace("OpenAI GPT-Image", "GPT-Image")
-                .replace("MiniMax image-01", "MiniMax")
+            name.replace("💎 ", "")
+            .replace("Black Forest Labs FLUX", "BFL FLUX")
+            .replace("Google Gemini Nano Banana (免费额度)", "Gemini Nano Banana")
+            .replace("Nano Banana Pro (Gemini 3 Pro Image)", "Nano Banana Pro")
+            .replace("OpenAI GPT-Image", "GPT-Image")
+            .replace("MiniMax image-01", "MiniMax")
             for name in i2i_list
         ]
         self._ref_hint_title.config(
-            text=(f"✓ 可用接口 ({len(names)})\n"
-                  + " · ".join(names[:3]) + "\n"
-                  + " · ".join(names[3:])),
-            fg="#86efac")
+            text=(
+                _("i2i_available_providers", n=len(names)) + "\n" + " · ".join(names[:3]) + "\n" + " · ".join(names[3:])
+            ),
+            fg="#86efac",
+        )
 
     def _expand_provider_popup(self):
         """postcommand：让弹出 Listbox 的宽度自动扩展到最长项目的实际像素宽，
@@ -1000,7 +1286,7 @@ class MainContent:
             return
 
         if mode == "t2i":
-            self._mode_t2i_btn.config(bg=C["hl"],    fg="white")
+            self._mode_t2i_btn.config(bg=C["hl"], fg="white")
             self._mode_i2i_btn.config(bg=C["panel"], fg=C["sub"])
 
             self._provider_cb.config(values=self._t2i_provider_list)
@@ -1014,7 +1300,7 @@ class MainContent:
             self._animate_i2i_col(0, on_done=self._i2i_ref_col.grid_remove)
         else:
             self._mode_t2i_btn.config(bg=C["panel"], fg=C["sub"])
-            self._mode_i2i_btn.config(bg="#1d4ed8",  fg="white")
+            self._mode_i2i_btn.config(bg="#1d4ed8", fg="white")
 
             self._i2i_ref_col.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
@@ -1065,8 +1351,7 @@ class MainContent:
                 if on_done:
                     on_done()
             else:
-                self._i2i_col_anim_job = self.app.root.after(
-                    interval, lambda: _step(i + 1))
+                self._i2i_col_anim_job = self.app.root.after(interval, lambda: _step(i + 1))
 
         _step(1)
 
@@ -1075,36 +1360,35 @@ class MainContent:
         入口并给出提示，避免用户以为批量结果也套用了参考图。"""
         if locked:
             self._variant_gen_btn.config(
-                state="disabled", bg=C["dis_bg"],
-                text=_("btn_variant_gen") + "（图生图暂不支持）")
+                state="disabled", bg=C["dis_bg"], text=_("btn_variant_gen") + _("i2i_not_supported")
+            )
         else:
-            self._variant_gen_btn.config(
-                state="normal", bg=self._variant_gen_btn_bg,
-                text=_("btn_variant_gen"))
+            self._variant_gen_btn.config(state="normal", bg=self._variant_gen_btn_bg, text=_("btn_variant_gen"))
         if hasattr(self, "_queue_panel"):
             self._queue_panel.set_img2img_lock(locked)
 
     def _draw_ref_placeholder(self):
         """在参考图预览 Canvas 上绘制占位符（尺寸取实际渲染宽高，
         侧栏展开动画期间会随每一帧的宽度实时重绘）。"""
-        cv = self._ref_prev_cv; cv.delete("all")
-        w = cv.winfo_width() or 200; h = cv.winfo_height() or 160
+        cv = self._ref_prev_cv
+        cv.delete("all")
+        w = cv.winfo_width() or 200
+        h = cv.winfo_height() or 160
         if h < 68:
-            cv.create_text(w // 2, h // 2, text="点击上传参考图",
-                           font=F["tiny"], fill="#4a8ac0")
+            cv.create_text(w // 2, h // 2, text=_("ref_upload_hint"), font=F["tiny"], fill="#4a8ac0")
             return
-        cv.create_text(w // 2, h // 2 - 16, text="🖼",
-                       font=(F["_sans"], 30), fill="#1d3560")
-        cv.create_text(w // 2, h // 2 + 22, text="点击上传参考图",
-                       font=F["small"], fill="#2a4a7a")
+        cv.create_text(w // 2, h // 2 - 16, text="🖼", font=(F["_sans"], 30), fill="#1d3560")
+        cv.create_text(w // 2, h // 2 + 22, text=_("ref_upload_hint"), font=F["small"], fill="#2a4a7a")
 
     def _update_ref_thumb(self):
         """将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"""
         if self._ref_image is None:
-            self._draw_ref_placeholder(); return
+            self._draw_ref_placeholder()
+            return
         try:
             cv = self._ref_prev_cv
-            w = cv.winfo_width() or 200; h = cv.winfo_height() or 160
+            w = cv.winfo_width() or 200
+            h = cv.winfo_height() or 160
             img = Image.open(io.BytesIO(self._ref_image))
             img.thumbnail((max(w - 8, 1), max(h - 8, 1)), Image.LANCZOS)
             self._ref_thumb_photo = ImageTk.PhotoImage(img)
@@ -1116,22 +1400,22 @@ class MainContent:
     def _pick_ref_image(self):
         """弹出文件选择器，读取参考图字节并更新预览和 UI 状态。"""
         path = filedialog.askopenfilename(
-            title="选取参考图（图生图）",
-            filetypes=[("图片", "*.png *.jpg *.jpeg *.webp *.bmp"),
-                       ("所有文件", "*.*")])
+            title=_("ref_pick_title"),
+            filetypes=[(_("filetype_images"), "*.png *.jpg *.jpeg *.webp *.bmp"), (_("filetype_all"), "*.*")],
+        )
         if not path:
             return
         try:
             with open(path, "rb") as _fh:
                 self._ref_image = _fh.read()
             self._ref_clear_btn.config(state="normal")
-            self._ref_pick_btn.config(text="更换参考图")
+            self._ref_pick_btn.config(text=_("btn_change_ref"))
             self._update_ref_thumb()
             self.app._cur_bytes = self._ref_image
             self._set_preview(self._ref_image)
         except Exception as e:
             self._ref_image = None
-            self._ref_pick_btn.config(text="读取失败")
+            self._ref_pick_btn.config(text=_("ref_read_failed"))
             self.app._st(f"参考图读取失败: {e}", "err")
 
     def _clear_ref_image(self):
@@ -1139,5 +1423,5 @@ class MainContent:
         self._ref_image = None
         self._ref_thumb_photo = None
         self._ref_clear_btn.config(state="disabled")
-        self._ref_pick_btn.config(text="上传参考图")
+        self._ref_pick_btn.config(text=_("btn_upload_ref"))
         self._draw_ref_placeholder()

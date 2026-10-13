@@ -10,6 +10,7 @@ ui/queue_panel.py — 顺序生成队列面板  v1
   · 生成完成自动写入历史记录，触发主界面刷新
   · 支持暂停 / 继续 / 单条删除 / 批量清空已完成
 """
+
 import io
 import os
 import random
@@ -26,11 +27,11 @@ from config.i18n import _
 
 
 _STATUS = {
-    "waiting":   (C["sub"],  _("queue_waiting")),
-    "running":   (C["warn"], _("queue_running")),
-    "done":      (C["ok"],   _("queue_done")),
-    "failed":    (C["hl"],   _("queue_failed")),
-    "cancelled": ("#64748b",  _("queue_cancelled")),
+    "waiting": (C["sub"], _("queue_waiting")),
+    "running": (C["warn"], _("queue_running")),
+    "done": (C["ok"], _("queue_done")),
+    "failed": (C["hl"], _("queue_failed")),
+    "cancelled": ("#64748b", _("queue_cancelled")),
 }
 
 
@@ -42,17 +43,17 @@ class _QueueItem:
 
     def __init__(self, prompt: str, size: str, porder):
         _QueueItem._counter += 1
-        self.item_id     = _QueueItem._counter
-        self.prompt      = prompt
-        self.size        = size
-        self.porder      = porder
-        self.status      = "waiting"
+        self.item_id = _QueueItem._counter
+        self.prompt = prompt
+        self.size = size
+        self.porder = porder
+        self.status = "waiting"
         self.result_path = ""
         self.result_data: Optional[bytes] = None
-        self.provider    = ""
-        self.error       = ""
-        self.elapsed     = 0.0
-        self.added_at    = time.strftime("%H:%M:%S")
+        self.provider = ""
+        self.error = ""
+        self.elapsed = 0.0
+        self.added_at = time.strftime("%H:%M:%S")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -61,22 +62,16 @@ class _QueueItem:
 class _ItemWidget(tk.Frame):
     THUMB = 76
 
-    def __init__(self, parent, item: _QueueItem,
-                 on_remove, on_view, **kw):
-        super().__init__(parent, bg=C["panel"],
-                         highlightbackground=C["sep"],
-                         highlightthickness=1, **kw)
+    def __init__(self, parent, item: _QueueItem, on_remove, on_view, **kw):
+        super().__init__(parent, bg=C["panel"], highlightbackground=C["sep"], highlightthickness=1, **kw)
         self._item = item
-        self._ph   = None    # 防 GC
+        self._ph = None  # 防 GC
 
         # ── 左侧缩略图 ────────────────────────────────────────
-        host = tk.Frame(self, bg="#0a0f1a",
-                        width=self.THUMB, height=self.THUMB)
+        host = tk.Frame(self, bg="#0a0f1a", width=self.THUMB, height=self.THUMB)
         host.pack(side="left", padx=(8, 6), pady=8)
         host.pack_propagate(False)
-        self._thumb_lbl = tk.Label(host, bg="#0a0f1a",
-                                    text="⏳", font=F["disp_lg"],
-                                    fg="#334155")
+        self._thumb_lbl = tk.Label(host, bg="#0a0f1a", text="⏳", font=F["disp_lg"], fg="#334155")
         self._thumb_lbl.pack(expand=True)
 
         # ── 右侧信息区 ────────────────────────────────────────
@@ -87,49 +82,61 @@ class _ItemWidget(tk.Frame):
         row1 = tk.Frame(info, bg=C["panel"])
         row1.pack(fill="x", padx=(0, 6), pady=(6, 0))
 
-        self._st_lbl = tk.Label(row1, text="", font=F["small_b"],
-                                 bg=C["panel"], fg=C["warn"], anchor="w")
+        self._st_lbl = tk.Label(row1, text="", font=F["small_b"], bg=C["panel"], fg=C["warn"], anchor="w")
         self._st_lbl.pack(side="left")
 
-        tk.Label(row1,
-                 text=f"  #{item.item_id}  {item.added_at}",
-                 font=F["mono_tiny"], bg=C["panel"], fg=C["sub"]
-                 ).pack(side="left")
+        tk.Label(
+            row1, text=f"  #{item.item_id}  {item.added_at}", font=F["mono_tiny"], bg=C["panel"], fg=C["sub"]
+        ).pack(side="left")
 
-        self._time_lbl = tk.Label(row1, text="", font=F["mono_tiny"],
-                                   bg=C["panel"], fg="#64748b")
+        self._time_lbl = tk.Label(row1, text="", font=F["mono_tiny"], bg=C["panel"], fg="#64748b")
         self._time_lbl.pack(side="left")
 
-        tk.Button(row1, text="✕", font=F["small"],
-                  bg=C["panel"], fg="#e05555", bd=0,
-                  padx=4, cursor="hand2",
-                  command=lambda: on_remove(self)
-                  ).pack(side="right")
+        tk.Button(
+            row1,
+            text="✕",
+            font=F["small"],
+            bg=C["panel"],
+            fg="#e05555",
+            bd=0,
+            padx=4,
+            cursor="hand2",
+            command=lambda: on_remove(self),
+        ).pack(side="right")
 
         # 第二行：提示词
         self._prompt_lbl = tk.Label(
-            info, text=item.prompt[:90],
-            font=F["small"], bg=C["panel"], fg=C["text"],
-            anchor="w", justify="left", wraplength=400)
+            info,
+            text=item.prompt[:90],
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["text"],
+            anchor="w",
+            justify="left",
+            wraplength=400,
+        )
         self._prompt_lbl.pack(anchor="w", padx=(0, 6))
 
         # 第三行：尺寸 + 接口 + 查看按钮
         row3 = tk.Frame(info, bg=C["panel"])
         row3.pack(fill="x", padx=(0, 6), pady=(2, 6))
 
-        self._meta_lbl = tk.Label(row3,
-                                   text=f"📐 {item.size}",
-                                   font=F["mono_tiny"],
-                                   bg=C["panel"], fg=C["sub"])
+        self._meta_lbl = tk.Label(row3, text=f"📐 {item.size}", font=F["mono_tiny"], bg=C["panel"], fg=C["sub"])
         self._meta_lbl.pack(side="left")
 
         self._view_btn = tk.Button(
-            row3, text="🔍 查看结果",
+            row3,
+            text="🔍 查看结果",
             font=F["tiny_b"],
-            bg=C["acc"], fg="white", bd=0,
-            padx=8, pady=2, cursor="hand2",
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=8,
+            pady=2,
+            cursor="hand2",
             state="disabled",
-            command=lambda: on_view(self._item))
+            command=lambda: on_view(self._item),
+        )
         self._view_btn.pack(side="right")
 
         self._refresh()
@@ -138,18 +145,16 @@ class _ItemWidget(tk.Frame):
     def _refresh(self):
         color, text = _STATUS.get(self._item.status, ("#888", self._item.status))
         self._st_lbl.config(text=text, fg=color)
-        border = color if self._item.status in ("done","failed","running") else C["sep"]
+        border = color if self._item.status in ("done", "failed", "running") else C["sep"]
         self.config(highlightbackground=border)
         if self._item.status == "done":
             self._view_btn.config(state="normal")
         if self._item.elapsed > 0:
             self._time_lbl.config(text=f"  ⏱ {self._item.elapsed:.1f}s")
         if self._item.provider:
-            self._meta_lbl.config(
-                text=f"📐 {self._item.size}  ·  {self._item.provider[:28]}")
+            self._meta_lbl.config(text=f"📐 {self._item.size}  ·  {self._item.provider[:28]}")
         if self._item.error:
-            self._prompt_lbl.config(
-                text=f"⚠ {self._item.error[:70]}", fg=C["hl"])
+            self._prompt_lbl.config(text=f"⚠ {self._item.error[:70]}", fg=C["hl"])
 
     def update_status(self, status: str, **kw):
         self._item.status = status
@@ -163,12 +168,10 @@ class _ItemWidget(tk.Frame):
             T = self.THUMB - 6
             pil_img.thumbnail((T, T), Image.LANCZOS)
             bg = Image.new("RGB", (T, T), (10, 15, 26))
-            bg.paste(pil_img, ((T - pil_img.width) // 2,
-                                (T - pil_img.height) // 2))
+            bg.paste(pil_img, ((T - pil_img.width) // 2, (T - pil_img.height) // 2))
             ph = ImageTk.PhotoImage(bg)
-            self._ph = ph          # 防 GC
-            self._thumb_lbl.config(image=ph, text="",
-                                   width=T, height=T)
+            self._ph = ph  # 防 GC
+            self._thumb_lbl.config(image=ph, text="", width=T, height=T)
         except Exception:
             pass
 
@@ -190,10 +193,10 @@ class QueuePanel(tk.Frame):
 
     def __init__(self, parent, app, **kw):
         super().__init__(parent, bg=C["bg"], **kw)
-        self.app        = app
+        self.app = app
         self._widgets: List[_ItemWidget] = []
-        self._running   = False
-        self._paused    = False
+        self._running = False
+        self._paused = False
         self._stop_flag = False
 
         self._build_ui()
@@ -204,97 +207,85 @@ class QueuePanel(tk.Frame):
     def _build_ui(self):
         # ── 顶部标题 + 控制栏 ─────────────────────────────────
         hdr = tk.Frame(self, bg=C["acc"], height=48)
-        hdr.pack(fill="x"); hdr.pack_propagate(False)
+        hdr.pack(fill="x")
+        hdr.pack_propagate(False)
 
-        tk.Label(hdr, text="📋  顺序生成队列",
-                 font=F["h2"],
-                 bg=C["acc"], fg="white"
-                 ).pack(side="left", padx=14, pady=10)
+        tk.Label(hdr, text=_("queue_panel_title"), font=F["h2"], bg=C["acc"], fg="white").pack(
+            side="left", padx=14, pady=10
+        )
 
         btn_f = tk.Frame(hdr, bg=C["acc"])
         btn_f.pack(side="right", padx=8, pady=6)
 
         def _btn(text, cmd, bg=C["acc"]):
-            b = tk.Button(btn_f, text=text,
-                          font=F["body_b"],
-                          bg=bg, fg="white", bd=0,
-                          padx=10, pady=4, cursor="hand2",
-                          command=cmd,
-                          activebackground="#1e3060")
+            b = tk.Button(
+                btn_f,
+                text=text,
+                font=F["body_b"],
+                bg=bg,
+                fg="white",
+                bd=0,
+                padx=10,
+                pady=4,
+                cursor="hand2",
+                command=cmd,
+                activebackground="#1e3060",
+            )
             b.pack(side="left", padx=3)
             return b
 
         self._add_btn = _btn(_("btn_add_queue"), self._add_from_app, "#065f46")
-        self._add_btn_bg = "#065f46"   # 恢复用：图生图锁定态会覆盖 bg
+        self._add_btn_bg = "#065f46"  # 恢复用：图生图锁定态会覆盖 bg
         self._start_btn = _btn(_("queue_btn_start"), self._start, "#1e40af")
         self._pause_btn = _btn(_("queue_btn_pause"), self._toggle_pause, "#7c3aed")
-        _btn("⏹ 停止", self._stop, "#7f1d1d")
+        _btn(_("btn_stop"), self._stop, "#7f1d1d")
         _btn(_("queue_btn_clear_done"), self._clear_done, "#7c2d12")
 
         # ── 状态信息条 ────────────────────────────────────────
         bar = tk.Frame(self, bg="#0a0f1a", height=26)
-        bar.pack(fill="x"); bar.pack_propagate(False)
+        bar.pack(fill="x")
+        bar.pack_propagate(False)
 
-        self._prog_lbl = tk.Label(
-            bar,
-            text="队列为空 · 在主输入框写好提示词后点「➕ 加入队列」",
-            font=F["small"], bg="#0a0f1a", fg=C["sub"])
+        self._prog_lbl = tk.Label(bar, text=_("queue_empty_progress"), font=F["small"], bg="#0a0f1a", fg=C["sub"])
         self._prog_lbl.pack(side="left", padx=10, pady=4)
 
-        self._cnt_lbl = tk.Label(bar, text="",
-                                  font=F["mono_sm_b"],
-                                  bg="#0a0f1a", fg=C["ok"])
+        self._cnt_lbl = tk.Label(bar, text="", font=F["mono_sm_b"], bg="#0a0f1a", fg=C["ok"])
         self._cnt_lbl.pack(side="right", padx=10)
 
         # ── 可滚动列表 ────────────────────────────────────────
         outer = tk.Frame(self, bg=C["bg"])
         outer.pack(fill="both", expand=True)
 
-        self._cv = tk.Canvas(outer, bg=C["bg"],
-                              bd=0, highlightthickness=0)
-        vsb = ttk.Scrollbar(outer, orient="vertical",
-                             command=self._cv.yview)
+        self._cv = tk.Canvas(outer, bg=C["bg"], bd=0, highlightthickness=0)
+        vsb = ttk.Scrollbar(outer, orient="vertical", command=self._cv.yview)
         self._cv.configure(yscrollcommand=vsb.set)
         vsb.pack(side="right", fill="y")
         self._cv.pack(side="left", fill="both", expand=True)
 
         self._inner = tk.Frame(self._cv, bg=C["bg"])
-        _win = self._cv.create_window((0, 0), window=self._inner,
-                                       anchor="nw")
-        self._inner.bind("<Configure>",
-                          lambda e: self._cv.configure(
-                              scrollregion=self._cv.bbox("all")))
-        self._cv.bind("<Configure>",
-                       lambda e: self._cv.itemconfig(_win, width=e.width))
+        _win = self._cv.create_window((0, 0), window=self._inner, anchor="nw")
+        self._inner.bind("<Configure>", lambda e: self._cv.configure(scrollregion=self._cv.bbox("all")))
+        self._cv.bind("<Configure>", lambda e: self._cv.itemconfig(_win, width=e.width))
 
         def _wheel(ev):
-            self._cv.yview_scroll(int(-1*(ev.delta/120)), "units")
+            self._cv.yview_scroll(int(-1 * (ev.delta / 120)), "units")
+
         self._cv.bind("<MouseWheel>", _wheel)
-        self._cv.bind("<Button-4>",
-                       lambda e: self._cv.yview_scroll(-1, "units"))
-        self._cv.bind("<Button-5>",
-                       lambda e: self._cv.yview_scroll(1, "units"))
+        self._cv.bind("<Button-4>", lambda e: self._cv.yview_scroll(-1, "units"))
+        self._cv.bind("<Button-5>", lambda e: self._cv.yview_scroll(1, "units"))
 
         # 空状态提示
         self._empty_lbl = tk.Label(
-            self._inner,
-            text=("📋  队列为空\n\n"
-                  "在主输入框填好提示词，点击「➕ 加入队列」\n"
-                  "连续添加多个不同提示词后，点「▶ 开始」\n"
-                  "程序会按顺序自动逐一生成，无需手动等待"),
-            font=F["input"], bg=C["bg"], fg="#3a4a6a",
-            justify="center")
+            self._inner, text=_("queue_empty_hint"), font=F["input"], bg=C["bg"], fg="#3a4a6a", justify="center"
+        )
         self._empty_lbl.pack(expand=True, pady=60)
 
     # ══════════════════════════════════════════════════════════
     #   公开 API
     # ══════════════════════════════════════════════════════════
-    def add_task(self, prompt: str, size: str = "1024x1024",
-                 porder=None) -> None:
-        item   = _QueueItem(prompt, size, porder)
-        widget = _ItemWidget(self._inner, item,
-                             on_remove=self._remove,
-                             on_view=self._view)
+    def add_task(self, prompt: str, size: str = "1024x1024", porder=None) -> None:
+        item = _QueueItem(prompt, size, porder)
+        widget = _ItemWidget(self._inner, item, on_remove=self._remove, on_view=self._view)
         widget.pack(fill="x", padx=8, pady=3)
         self._widgets.append(widget)
 
@@ -302,7 +293,7 @@ class QueuePanel(tk.Frame):
             self._empty_lbl.pack_forget()
 
         self._update_counts()
-        self._set_prog(f"已加入：{prompt[:40]}…")
+        self._set_prog(_("queue_added", prompt=prompt[:40]))
         # 滚动到底部
         self.after(50, lambda: self._cv.yview_moveto(1.0))
 
@@ -313,25 +304,20 @@ class QueuePanel(tk.Frame):
         # 队列生成链路不接收参考图，图生图模式下直接拦下并提示，
         # 避免任务静默退化成纯文生图（正常情况下按钮已被禁用，这里是兜底）。
         if getattr(self.app.content, "_gen_mode", "t2i") == "i2i":
-            messagebox.showwarning(
-                "提示", "顺序生成队列暂不支持图生图模式\n请切换到「📝 文生图」后再加入队列",
-                parent=self.app.root)
+            messagebox.showwarning(_("dlg_tip"), _("dlg_queue_no_img2img"), parent=self.app.root)
             return
         prompt = self.app.pt.get("1.0", "end").strip()
         if not prompt:
-            messagebox.showwarning(
-                _("dlg_tip"), _("dlg_queue_empty_prompt"),
-                parent=self.app.root)
+            messagebox.showwarning(_("dlg_tip"), _("dlg_queue_empty_prompt"), parent=self.app.root)
             return
-        sz    = self.app.szv.get()
-        psel  = self.app.pv.get()
+        sz = self.app.szv.get()
+        psel = self.app.pv.get()
         if psel.startswith("───"):
-            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"),
-                                parent=self.app.root)
+            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"), parent=self.app.root)
             return
         # 自动档判断走 i18n 键（与 sidebar 一致），硬编码中文文案在
         # 英文界面下匹配不到会导致伪造的供应商顺序被传入
-        pord  = None if (not psel or psel == _("provider_auto")) else [psel]
+        pord = None if (not psel or psel == _("provider_auto")) else [psel]
         self.add_task(prompt, sz, pord)
 
     def set_img2img_lock(self, locked: bool):
@@ -344,28 +330,22 @@ class QueuePanel(tk.Frame):
     def _start(self):
         if self._running:
             return
-        waiting = [w for w in self._widgets
-                   if w._item.status == "waiting"]
+        waiting = [w for w in self._widgets if w._item.status == "waiting"]
         if not waiting:
-            messagebox.showinfo(
-                "提示", "队列中没有等待中的任务\n请先点「➕ 加入队列」添加提示词",
-                parent=self.app.root)
+            messagebox.showinfo(_("dlg_tip"), _("dlg_queue_no_waiting"), parent=self.app.root)
             return
-        self._running   = True
-        self._paused    = False
+        self._running = True
+        self._paused = False
         self._stop_flag = False
-        self._start_btn.config(state="disabled", text="▶ 运行中…")
+        self._start_btn.config(state="disabled", text=_("queue_btn_running"))
         threading.Thread(target=self._run_loop, daemon=True).start()
 
     def _toggle_pause(self):
         if not self._running:
             return
         self._paused = not self._paused
-        self._pause_btn.config(
-            text=_("queue_btn_resume") if self._paused else _("queue_btn_pause"))
-        self._set_prog(
-            "⏸ 已暂停 — 当前任务完成后停止" if self._paused
-            else "▶ 已继续运行…")
+        self._pause_btn.config(text=_("queue_btn_resume") if self._paused else _("queue_btn_pause"))
+        self._set_prog(_("queue_paused") if self._paused else _("queue_resumed"))
 
     def _stop(self):
         """停止队列：立即打断当前任务的等待/轮询（JOB-001），不再等它跑完。"""
@@ -375,12 +355,11 @@ class QueuePanel(tk.Frame):
         token = getattr(self, "_job_token", None)
         if token is not None:
             token.cancel()
-        self._set_prog("⏹ 停止中 — 正在打断当前任务…")
+        self._set_prog(_("queue_stopping"))
 
     def _clear_done(self):
         done_s = {"done", "cancelled", "failed"}
-        dead   = [w for w in self._widgets
-                  if w._item.status in done_s]
+        dead = [w for w in self._widgets if w._item.status in done_s]
         for w in dead:
             w.destroy()
             self._widgets.remove(w)
@@ -390,7 +369,7 @@ class QueuePanel(tk.Frame):
 
     def _remove(self, widget: _ItemWidget):
         if widget._item.status == "running":
-            return   # 正在跑的不让删
+            return  # 正在跑的不让删
         # 先标记 cancelled，防止 _run_loop 在销毁后仍尝试处理该条目
         widget._item.status = "cancelled"
         widget.destroy()
@@ -403,7 +382,7 @@ class QueuePanel(tk.Frame):
     def _view(self, item: _QueueItem):
         if item.result_data and item.result_path:
             self.app._cur_bytes = item.result_data
-            self.app.cur_path   = item.result_path
+            self.app.cur_path = item.result_path
             self.app._push_to_viewer(item.result_data, item.result_path)
 
     # ══════════════════════════════════════════════════════════
@@ -419,8 +398,8 @@ class QueuePanel(tk.Frame):
           · waiting_total 改为实时计算，进度分母始终准确（修复 #7）
         """
         from services.image_service import generate_image, save_image_file
-        from services.translation  import has_chinese, translate_zh_to_en
-        from data.repository       import add_entry
+        from services.translation import has_chinese, translate_zh_to_en
+        from data.repository import add_entry
         from services.generation.cancellation import CancellationToken
         from services.generation.errors import GenerationCancelled
 
@@ -442,52 +421,52 @@ class QueuePanel(tk.Frame):
                     next_widget = w
                     break
             if next_widget is None:
-                break   # 无待处理任务，正常退出
+                break  # 无待处理任务，正常退出
 
             item = next_widget._item
-            t0   = time.time()
+            t0 = time.time()
 
             # JOB-001: 每个任务独立取消令牌，停止时可立即打断当前任务
             self._job_token = CancellationToken()
 
             # 实时计算剩余任务数（修复 #7）
-            remaining_now = sum(1 for w in snapshot
-                                if w._item.status in ("waiting", "running"))
+            remaining_now = sum(1 for w in snapshot if w._item.status in ("waiting", "running"))
+            self.app.root.after(0, lambda w=next_widget: w.update_status("running") if w.winfo_exists() else None)
             self.app.root.after(
-                0, lambda w=next_widget:
-                    w.update_status("running") if w.winfo_exists() else None)
-            self.app.root.after(
-                0, lambda i=done_cnt + 1, t=remaining_now, p=item.prompt:
-                self._set_prog(f"🔄  [{i}/{t}]  {p[:40]}…"))
+                0,
+                lambda i=done_cnt + 1, t=remaining_now, p=item.prompt: self._set_prog(
+                    _("queue_progress_running", done=i, total=t, prompt=p[:40])
+                ),
+            )
 
             try:
-                prompt     = item.prompt
-                w_n, h_n   = [int(x) for x in
-                               item.size.replace("×", "x").split("x")]
+                prompt = item.prompt
+                w_n, h_n = [int(x) for x in item.size.replace("×", "x").split("x")]
                 translated = prompt
                 if has_chinese(prompt):
-                    translated = translate_zh_to_en(
-                        prompt, log_cb=self.app._log, token=self._job_token)
+                    translated = translate_zh_to_en(prompt, log_cb=self.app._log, token=self._job_token)
 
-                seed       = random.randint(0, 2_147_483_647)
+                seed = random.randint(0, 2_147_483_647)
                 data, used = generate_image(
-                    translated, w_n, h_n, seed, self.app.cfg,
+                    translated,
+                    w_n,
+                    h_n,
+                    seed,
+                    self.app.cfg,
                     provider_order=item.porder,
                     log_cb=self.app._log,
-                    token=self._job_token)
+                    token=self._job_token,
+                )
 
-                path    = save_image_file(data, prompt)
+                path = save_image_file(data, prompt)
                 add_entry(prompt, translated, path, used)
                 elapsed = time.time() - t0
                 done_cnt += 1
 
-                def _on_done(w=next_widget, d=data, p=path,
-                             u=used, el=elapsed):
-                    if not w.winfo_exists():   # 修复 #2：控件已销毁则跳过
+                def _on_done(w=next_widget, d=data, p=path, u=used, el=elapsed):
+                    if not w.winfo_exists():  # 修复 #2：控件已销毁则跳过
                         return
-                    w.update_status("done",
-                                    result_path=p, result_data=d,
-                                    provider=u, elapsed=el)
+                    w.update_status("done", result_path=p, result_data=d, provider=u, elapsed=el)
                     try:
                         img = Image.open(io.BytesIO(d))
                         w.set_thumb(img)
@@ -495,7 +474,7 @@ class QueuePanel(tk.Frame):
                         pass
                     self.app._refresh_hist()
                     self.app._refresh_tag_stats()
-                    self.app._st(f"✅ 队列完成一张  {u[:30]}", "ok")
+                    self.app._st(_("queue_status_done_one", provider=u[:30]), "ok")
 
                 self.app.root.after(0, _on_done)
 
@@ -509,11 +488,11 @@ class QueuePanel(tk.Frame):
 
                 self.app.root.after(0, _on_cancel)
                 if self._stop_flag:
-                    break   # 用户主动停止 → 退出整个队列循环
+                    break  # 用户主动停止 → 退出整个队列循环
 
             except Exception as ex:
                 elapsed = time.time() - t0
-                emsg    = str(ex)[:120]
+                emsg = str(ex)[:120]
                 self.app._log(f"❌ 队列任务失败: {emsg}")
 
                 def _on_fail(w=next_widget, e=emsg, el=elapsed):
@@ -525,19 +504,16 @@ class QueuePanel(tk.Frame):
 
         # 循环结束（正常完成或收到停止信号）
         def _finish():
-            self._running   = False
+            self._running = False
             self._stop_flag = False
             self._start_btn.config(state="normal", text=_("queue_btn_start"))
             self._pause_btn.config(text=_("queue_btn_pause"))
             self._paused = False
-            remaining = sum(1 for w in self._widgets
-                            if w._item.status == "waiting")
+            remaining = sum(1 for w in self._widgets if w._item.status == "waiting")
             if remaining:
-                self._set_prog(
-                    f"⏹ 已停止  ·  本轮完成 {done_cnt} 张"
-                    f"  ·  还有 {remaining} 个等待中（可再次点「▶ 开始」）")
+                self._set_prog(_("queue_stopped", done=done_cnt, waiting=remaining))
             else:
-                self._set_prog(f"🎉 全部完成！  共生成 {done_cnt} 张图片")
+                self._set_prog(_("queue_all_done", n=done_cnt))
             self._update_counts()
 
         self.app.root.after(0, _finish)
@@ -549,15 +525,15 @@ class QueuePanel(tk.Frame):
         self._prog_lbl.config(text=msg)
 
     def _update_counts(self):
-        total   = len(self._widgets)
-        waiting = sum(1 for w in self._widgets
-                      if w._item.status == "waiting")
-        done    = sum(1 for w in self._widgets
-                      if w._item.status == "done")
-        failed  = sum(1 for w in self._widgets
-                      if w._item.status == "failed")
-        parts = [f"共 {total}"]
-        if waiting: parts.append(f"⏳{waiting}")
-        if done:    parts.append(f"✅{done}")
-        if failed:  parts.append(f"❌{failed}")
+        total = len(self._widgets)
+        waiting = sum(1 for w in self._widgets if w._item.status == "waiting")
+        done = sum(1 for w in self._widgets if w._item.status == "done")
+        failed = sum(1 for w in self._widgets if w._item.status == "failed")
+        parts = [_("queue_count_total", n=total)]
+        if waiting:
+            parts.append(f"⏳{waiting}")
+        if done:
+            parts.append(f"✅{done}")
+        if failed:
+            parts.append(f"❌{failed}")
         self._cnt_lbl.config(text="  ".join(parts))
