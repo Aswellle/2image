@@ -1,9 +1,8 @@
 <div align="center">
 
-<h1>
-  <img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/banner.png" alt="2image" width="48" align="bottom" />
-  &nbsp;2image
-</h1>
+<img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/banner.png" alt="2image" width="200" />
+
+<h1>2image</h1>
 <p><strong>Desktop AI Image Generator · 22 Built-in Free, Paid & Commercial Image Generation Services</strong></p>
 
 <p>
