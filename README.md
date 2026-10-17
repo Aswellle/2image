@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/banner.png" alt="2image" width="200" />
+<img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/logo.png" alt="2image" width="200" />
 
 <h1>2image · 兔图</h1>
 <p><strong>桌面 AI 图片生成器 · 内置 22 个免费、付费及商用生图服务</strong></p>
