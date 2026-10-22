@@ -29,7 +29,6 @@ DARK_THEME = {
     "empty":    "#0d1a2a",
     # 收藏 / 操作
     "star_on":  "#f59e0b",
-    "star_off": "#4a5a7a",
     "keep_bg":  "#065f46",
     "dis_bg":   "#7f1d1d",
     "purple":   "#7c3aed",

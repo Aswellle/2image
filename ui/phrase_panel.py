@@ -496,7 +496,7 @@ class PhrasePanel(tk.Toplevel):
                     text="🗑",
                     font=F["small"],
                     bg=C["card"],
-                    fg="#e05555",
+                    fg=C["neg_fg"],
                     bd=0,
                     padx=4,
                     cursor="hand2",

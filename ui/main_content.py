@@ -1285,7 +1285,7 @@ class MainContent:
             text="",
             font=F["tiny"],
             bg=_BG,
-            fg="#4a6a8a",
+            fg=C["text_muted"],
             anchor="nw",
             justify="left",
             wraplength=224,

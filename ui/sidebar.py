@@ -224,7 +224,7 @@ class HistorySidebar:
 
         # 占位符覆盖层：place() 在 Entry 上方，输入内容或获焦时隐藏（不影响 sv）
         _ph_lbl = tk.Label(
-            _srf, text=_("search_placeholder"), font=F["body"], bg=C["entry"], fg="#6a7a9a", bd=0, padx=6
+            _srf, text=_("search_placeholder"), font=F["body"], bg=C["entry"], fg=C["text_muted"], bd=0, padx=6
         )
         _ph_lbl.place(x=2, y=0, relheight=1.0)
         # 点击占位符文字也能获焦到输入框
@@ -263,7 +263,7 @@ class HistorySidebar:
             text=_("btn_favorites_only"),
             font=F["small_b"],
             bg=C["panel"],
-            fg=C["star_off"],
+            fg=C["text_secondary"],
             bd=0,
             padx=10,
             pady=3,
@@ -282,7 +282,7 @@ class HistorySidebar:
             text="✕ " + _("btn_clear_filter"),
             font=F["tiny_b"],
             bg=C["panel"],
-            fg=C["hl"],
+            fg=C["neg_fg"],
             bd=0,
             cursor="hand2",
             command=self._clear_filters,
@@ -409,7 +409,7 @@ class HistorySidebar:
         self._fav_only = False
         self._tag_filter = ""
         self._btn_all.config(bg=C["acc"], fg="white")
-        self._btn_fav.config(bg=C["panel"], fg=C["star_off"])
+        self._btn_fav.config(bg=C["panel"], fg=C["text_secondary"])
         self._refresh_tag_chips()
         self._update_filter_status()
         self._debounced_refresh()
@@ -457,14 +457,14 @@ class HistorySidebar:
         self._fav_only = False
         self._tag_filter = ""  # ← Bug4 修复：清除标签过滤器
         self._btn_all.config(bg=C["acc"], fg="white")
-        self._btn_fav.config(bg=C["panel"], fg=C["star_off"])
+        self._btn_fav.config(bg=C["panel"], fg=C["text_secondary"])
         self._refresh_tag_chips()  # ← 同步刷新标签栏高亮状态
         self._update_filter_status()
         self._debounced_refresh()
 
     def _filter_fav(self):
         self._fav_only = True
-        self._btn_fav.config(bg=C["star_on"], fg="white")
+        self._btn_fav.config(bg=C["star_on"], fg=C["bg"])
         self._btn_all.config(bg=C["panel"], fg=C["sub"])
         self._update_filter_status()
         self._debounced_refresh()
@@ -663,7 +663,7 @@ class HistorySidebar:
         _Tooltip(edit_btn, _("btn_rename"))
 
         # ★ 收藏
-        star_fg = C["star_on"] if is_fav else C["star_off"]
+        star_fg = C["star_on"] if is_fav else C["text_muted"]
         star_txt = "★" if is_fav else "☆"
         star_tip = _("tip_remove_from_favorites") if is_fav else _("tip_add_to_favorites")
         star_btn = tk.Button(
@@ -719,7 +719,7 @@ class HistorySidebar:
             text="🗑",
             font=F["input"],
             bg=cbg,
-            fg="#e05555",
+            fg=C["neg_fg"],
             bd=0,
             padx=4,
             cursor="hand2",
@@ -804,7 +804,7 @@ class HistorySidebar:
             menu.add_command(label=_("ctx_add_to_queue"), command=_add_to_queue)
             menu.add_separator()
             menu.add_command(
-                label=_("ctx_delete_entry"), command=lambda en_=en: self._del_entry(en_["id"]), foreground="#e05555"
+                label=_("ctx_delete_entry"), command=lambda en_=en: self._del_entry(en_["id"]), foreground=C["neg_fg"]
             )
             menu.post(ev.x_root, ev.y_root)
 
@@ -1213,7 +1213,7 @@ class HistorySidebar:
             # 原地更新：仅改星号颜色 + 卡片背景，不重建列表
             cd["is_fav"] = new_fav
             try:
-                cd["star_btn"].config(text="★" if new_fav else "☆", fg=C["star_on"] if new_fav else C["star_off"])
+                cd["star_btn"].config(text="★" if new_fav else "☆", fg=C["star_on"] if new_fav else C["text_muted"])
                 cd["fn"](entry["id"] == self.app.sel_id, new_fav)
             except Exception:
                 self.app._refresh_hist()  # 退化：widget 已销毁则全量刷新

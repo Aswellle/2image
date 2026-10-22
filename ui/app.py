@@ -592,7 +592,7 @@ class App:
         self.sidebar._fav_only = False
         try:
             self.sidebar._btn_all.config(bg=C["acc"], fg="white")
-            self.sidebar._btn_fav.config(bg=C["panel"], fg=C["star_off"])
+            self.sidebar._btn_fav.config(bg=C["panel"], fg=C["text_secondary"])
             self.sidebar._refresh_tag_chips()
         except Exception:
             pass

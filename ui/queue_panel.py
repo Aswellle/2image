@@ -98,7 +98,7 @@ class _ItemWidget(tk.Frame):
             text="✕",
             font=F["small"],
             bg=C["panel"],
-            fg="#e05555",
+            fg=C["neg_fg"],
             bd=0,
             padx=4,
             cursor="hand2",
@@ -277,7 +277,7 @@ class QueuePanel(tk.Frame):
 
         # 空状态提示
         self._empty_lbl = tk.Label(
-            self._inner, text=_("queue_empty_hint"), font=F["input"], bg=C["bg"], fg="#3a4a6a", justify="center"
+            self._inner, text=_("queue_empty_hint"), font=F["input"], bg=C["bg"], fg=C["text_muted"], justify="center"
         )
         self._empty_lbl.pack(expand=True, pady=60)
 
