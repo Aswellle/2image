@@ -71,6 +71,14 @@ from config.i18n import _, init_language, get_language
 SIDEBAR_DEF = 360
 SIDEBAR_MIN = 240
 SIDEBAR_MAX = 600
+# 右侧工作区的最小可用宽度。生成行、工具行、预览工具栏都是单行不换行的
+# 横向排列，低于各自需求宽度时末尾控件会被裁出可视区——最严重时
+# 「🎨 生成」按钮完全消失、「✕ 清空对比」被压成 1px。
+# 取值依据实测的按钮组需求宽度（英文界面最宽，已扣掉两条会自适应隐藏的
+# 提示文字）：生成行 591 / 工具行 663 / 预览工具栏按钮 734。
+# 取 760 覆盖最宽一组，并留出内边距余量。
+# 侧栏上限因此必须随窗口收缩，而不是固定 600px。
+CONTENT_MIN = 760
 SASH_W = 6
 
 
@@ -353,10 +361,22 @@ class App:
             bw = 1380
         if bh < 10:
             bh = 870
-        sw = self._sidebar_w
+        # 窗口变窄时按当前允许的上限收缩显示宽度，但不改写 _sidebar_w：
+        # 那是用户选择的偏好值，窗口恢复宽度后应当回到原来的宽度。
+        limit = self._max_sidebar_w()
+        sw = max(SIDEBAR_MIN, min(limit, self._sidebar_w))
+        if getattr(self, "_sidebar_collapsed", False):
+            sw = self._sidebar_w  # 折叠态由 _toggle_sidebar 管理，不参与收缩
         self._L.place(x=0, y=0, width=sw, height=bh)
         self._sash.place(x=sw, y=0, width=SASH_W, height=bh)
         self._R.place(x=sw + SASH_W, y=0, width=bw - sw - SASH_W, height=bh)
+        # <Configure> 在首次布局稳定前就会触发，事件里的宽度不是最终值。
+        # 布局完成后主动复检一次自适应提示的可见性。
+        try:
+            self.content._on_tools_row_resize()
+            self.content._on_preview_toolbar_resize()
+        except Exception:
+            pass
         pass  # deferred to _finish_resize
 
     def _on_body_resize(self, event):
@@ -376,6 +396,24 @@ class App:
         if self._sash_drag_x is None:
             self._sash.config(bg=C["sash"])
 
+    def _max_sidebar_w(self) -> int:
+        """当前窗口下侧栏允许的最大宽度。
+
+        侧栏上限不能是固定值：窗口缩到最小（1000px）时若侧栏仍可拖到
+        600px，右侧工作区只剩 366px，生成行与预览工具栏的末尾控件会被
+        裁掉，「🎨 生成」按钮完全不可见。这里按实际窗口宽度动态收缩，
+        并保证不低于 SIDEBAR_MIN。
+        """
+        bw = self._body.winfo_width() if getattr(self, "_body", None) else 0
+        if bw < 10:  # 布局尚未完成，退回窗口宽度
+            try:
+                bw = self.root.winfo_width()
+            except Exception:
+                bw = 0
+        if bw < 10:
+            return SIDEBAR_MAX
+        return max(SIDEBAR_MIN, min(SIDEBAR_MAX, bw - CONTENT_MIN - SASH_W))
+
     def _sash_start(self, e):
         self._sash_drag_x = e.x_root
         self._sash_drag_w = self._sidebar_w
@@ -385,7 +423,7 @@ class App:
     def _sash_move(self, e):
         if self._sash_drag_x is None:
             return
-        self._sidebar_w = max(SIDEBAR_MIN, min(SIDEBAR_MAX, self._sash_drag_w + e.x_root - self._sash_drag_x))
+        self._sidebar_w = max(SIDEBAR_MIN, min(self._max_sidebar_w(), self._sash_drag_w + e.x_root - self._sash_drag_x))
         # 拖动期间只做轻量布局（跳过卡片 wraplength 遍历），保证丝滑
         bw = self._body.winfo_width()
         bh = self._body.winfo_height()

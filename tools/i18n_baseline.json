@@ -3753,5 +3753,20 @@
   "file": "ui/main_content.py",
   "line": 1288,
   "text": "postcommand：把弹出 Listbox 撑到最长条目的实际像素宽。\n\n        ttk.Combobox "
+ },
+ {
+  "file": "ui/app.py",
+  "line": 400,
+  "text": "当前窗口下侧栏允许的最大宽度。\n\n        侧栏上限不能是固定值：窗口缩到最小（1000px）时若侧栏仍可拖到\n "
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1072,
+  "text": "工具行变窄时收起 Ctrl+Enter 提示，保证按钮不被挤压。\n\n        提示是补充信息，按钮是操作入口。英文"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1089,
+  "text": "工具栏变窄时收起次要提示，把宽度让给按钮。\n\n        提示文字需要约 150px 才能完整显示；工具栏不足时它会"
  }
 ]

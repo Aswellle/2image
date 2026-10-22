@@ -462,7 +462,9 @@ class MainContent:
             cursor="hand2",
             command=self.app._open_prompt_wizard,
         ).pack(side="left", padx=(6, 0))
-        tk.Frame(opt2, bg=C["sep"], width=1).pack(side="left", fill="y", padx=8, pady=4)
+        # 分组间隔须明显大于组内间距（组内 6px），否则分隔线两侧与普通
+        # 按钮间距相同，读起来仍是同一串控件，分隔线没起到分组作用。
+        tk.Frame(opt2, bg=C["sep"], width=1).pack(side="left", fill="y", padx=12, pady=4)
         tk.Label(opt2, text=_("lbl_variant_count"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
 
         # ── 圆形 ➖ / 数字 / ➕ 控件（Issue-1 修复：大点击面积）────
@@ -534,7 +536,13 @@ class MainContent:
         self._variant_gen_btn_bg = "#4a1d96"  # 恢复用：禁用态会覆盖 bg
         # 唯一留在主界面的快捷键说明：Ctrl+Enter 在输入框内触发，
         # 没有对应菜单项，用户无从得知。其余快捷键由菜单栏承载。
-        tk.Label(opt2, text=_("shortcut_hint"), font=F["small"], bg=C["bg"], fg=C["text_muted"]).pack(side="left", padx=6)
+        # 它是补充信息，窗口变窄时先让位给按钮（英文界面下这条要占 137px，
+        # 硬留着会把「变体生成」挤掉）。
+        self._shortcut_lbl = tk.Label(
+            opt2, text=_("shortcut_hint"), font=F["small"], bg=C["bg"], fg=C["text_muted"]
+        )
+        self._shortcut_lbl.pack(side="left", padx=6)
+        opt2.bind("<Configure>", self._on_tools_row_resize)
 
         # ── 生成模式切换行（分段控件样式）───────────────────────────
         # 用一个带描边的容器把两个按钮"焊"在一起，视觉上读作一个控件
@@ -724,9 +732,14 @@ class MainContent:
             state="disabled",
         )
         self._cmp_clear_btn.pack(side="left", padx=2, pady=5)
-        tk.Label(tb, text=_("preview_dblclick_hint"), font=F["small"], bg="#0d1b2a", fg=C["sub"]).pack(
-            side="right", padx=10
+        # 次要提示：窗口够宽时才显示。它是解释性文字，优先级低于按钮，
+        # 但 pack(side="right") 会先占住右侧空间——窄窗口下被压到几像素、
+        # 内容不可读却仍在抢位。改为按工具栏实际宽度决定是否显示。
+        self._dblclick_hint = tk.Label(
+            tb, text=_("preview_dblclick_hint"), font=F["small"], bg="#0d1b2a", fg=C["sub"]
         )
+        self._dblclick_hint.pack(side="right", padx=10)
+        tb.bind("<Configure>", self._on_preview_toolbar_resize)
 
         # ── 预览主体 ──────────────────────────────────────────
         # 列 0：图生图参考图侧栏（固定宽度，默认收起 minsize=0）
@@ -1054,6 +1067,42 @@ class MainContent:
             self._set_compare_image(data)
             self._nb.select(0)
             self.app._st(f"⚖ 已设置对比图：{self.app._display_title(e)}", "ok")
+
+    def _on_tools_row_resize(self, event=None):
+        """工具行变窄时收起 Ctrl+Enter 提示，保证按钮不被挤压。
+
+        提示是补充信息，按钮是操作入口。英文界面下提示占 137px，
+        不收起时「变体生成」会被压到不可读。
+        """
+        lbl = getattr(self, "_shortcut_lbl", None)
+        if lbl is None:
+            return
+        width = event.width if event is not None else lbl.master.winfo_width()
+        need = lbl.winfo_reqwidth() + 12 + 660  # 提示 + 按钮组固定宽度
+        if width >= need:
+            if not lbl.winfo_ismapped():
+                lbl.pack(side="left", padx=6)
+        elif lbl.winfo_ismapped():
+            lbl.pack_forget()
+
+    def _on_preview_toolbar_resize(self, event=None):
+        """工具栏变窄时收起次要提示，把宽度让给按钮。
+
+        提示文字需要约 150px 才能完整显示；工具栏不足时它会挤占按钮空间，
+        自己也被压成几像素的残片——两头不讨好。按钮是可操作内容，优先保留。
+        """
+        hint = getattr(self, "_dblclick_hint", None)
+        if hint is None:
+            return
+        width = event.width if event is not None else hint.master.winfo_width()
+        # 工具栏里按钮占用的固定宽度（实测 579px），提示完整显示另需约 156px。
+        # 两者相加留出余量后，工具栏宽度不足就收起提示。
+        need = hint.winfo_reqwidth() + 10 + 590
+        if width >= need:
+            if not hint.winfo_ismapped():
+                hint.pack(side="right", padx=10)
+        elif hint.winfo_ismapped():
+            hint.pack_forget()
 
     def _on_prev_resize(self, event):
         if hasattr(self, "_prev_resize_timer") and self._prev_resize_timer:
