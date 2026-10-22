@@ -3,7 +3,7 @@
 <img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/logo.png" alt="2image" width="200" />
 
 <h1>2image · 兔图</h1>
-<p><strong>桌面 AI 图片生成器 · 内置 22 个免费、付费及商用生图服务</strong></p>
+<p><strong>桌面 AI 图片生成器 · 内置 23 个免费、付费及商用生图服务</strong></p>
 
 <p>
   一个工具，接入市面上主流的免费与付费生图 API，让创作门槛降到最低。<br/>
@@ -147,7 +147,7 @@ main.py
   └─ config/          配置层：路径 · 主题 · 国际化 · 字体
   └─ data/            数据层：SQLite 历史（WAL 模式，线程安全）
   └─ services/        服务层：调度 · 路由 · 翻译 · 提示词优化
-  │   └─ providers/   22 个接口实现（pkgutil 自动发现，无需手动注册）
+  │   └─ providers/   23 个接口实现（pkgutil 自动发现，无需手动注册）
   └─ ui/              表现层：Tkinter 暗色主题，通过 Protocol 接口解耦
 ```
 

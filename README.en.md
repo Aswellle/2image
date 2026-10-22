@@ -3,7 +3,7 @@
 <img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/logo.png" alt="2image" width="200" />
 
 <h1>2image</h1>
-<p><strong>Desktop AI Image Generator · 22 Built-in Free, Paid & Commercial Image Generation Services</strong></p>
+<p><strong>Desktop AI Image Generator · 23 Built-in Free, Paid & Commercial Image Generation Services</strong></p>
 
 <p>
   One tool, all the major free and paid image generation APIs — minimal barrier to creation.<br/>
@@ -148,7 +148,7 @@ main.py
   └─ config/          Configuration layer: paths · themes · i18n · fonts
   └─ data/            Data layer: SQLite history (WAL mode, thread-safe)
   └─ services/        Service layer: dispatch · routing · translation · prompt optimization
-  │   └─ providers/   22 API implementations (auto-discovered via pkgutil, no manual registration)
+  │   └─ providers/   23 API implementations (auto-discovered via pkgutil, no manual registration)
   └─ ui/              Presentation layer: Tkinter dark theme, decoupled via Protocol interfaces
 ```
 
