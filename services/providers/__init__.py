@@ -29,6 +29,9 @@ MULTI_KEY_PROVIDERS: dict[str, tuple[str, ...]] = {}
 # stable_id → try_fn (img2img providers only)
 IMG2IMG_PROVIDERS: dict[str, callable] = {}
 
+# stable_id → display name (UI only; never use for routing or dispatch)
+PROVIDER_NAMES: dict[str, str] = {}
+
 # Display name → stable_id (for backward compatibility)
 _NAME_TO_ID: dict[str, str] = {}
 
@@ -74,6 +77,7 @@ for loader, module_name, is_pkg in pkgutil.iter_modules(__path__):
     if _extra_keys and _config_key:
         MULTI_KEY_PROVIDERS[stable_id] = (_config_key, *_extra_keys)
     _NAME_TO_ID[display_name] = stable_id
+    PROVIDER_NAMES[stable_id] = display_name
 
     if info.get("supports_img2img"):
         IMG2IMG_PROVIDERS[stable_id] = try_fn
@@ -102,3 +106,15 @@ def resolve_provider_id(name_or_id: str) -> str | None:
     if name_or_id in ALL_PROVIDERS:
         return name_or_id
     return _NAME_TO_ID.get(name_or_id)
+
+
+def display_name_for(provider_id: str) -> str:
+    """Return the UI display name for a stable ID (falls back to the ID)."""
+    return PROVIDER_NAMES.get(provider_id, provider_id)
+
+
+def provider_id_for(display: str) -> str:
+    """Return the stable ID for a UI display name (falls back to the input)."""
+    if display in ALL_PROVIDERS:
+        return display
+    return _NAME_TO_ID.get(display, display)

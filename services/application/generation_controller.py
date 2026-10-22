@@ -15,6 +15,7 @@ from data.repository import add_entry
 from services.generation.cancellation import CancellationToken
 from services.generation.errors import DeadlineExceeded, GenerationCancelled
 from services.image_service import generate_image, save_image_file
+from services.providers import provider_id_for
 from services.generation.router import get_provider_order
 from services.translation import has_chinese, translate_zh_to_en
 
@@ -46,6 +47,8 @@ class GenerationController:
         if psel.startswith("───"):
             messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"))
             return
+        # 下拉框展示 display name，路由/派发需要 stable id
+        psel_id = provider_id_for(psel)
 
         # Check if provider needs API key + budget guard（单图/变体共用）
         if not self._precheck_provider(psel):
@@ -62,7 +65,7 @@ class GenerationController:
                     return
             porder = get_provider_order(prompt, self.app.cfg)
         else:
-            porder = [psel]
+            porder = [psel_id]
 
         self.app._batch_total = 1
         self.app._batch_done = 0
@@ -245,6 +248,7 @@ class GenerationController:
         if psel.startswith("───"):
             messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"))
             return
+        psel_id = provider_id_for(psel)
 
         # 变体与单图共用 Key + 预算前置检查，防止批量路径绕过付费阻断
         if not self._precheck_provider(psel):
@@ -257,7 +261,7 @@ class GenerationController:
         if psel == _("provider_auto"):
             porder = get_provider_order(prompt, self.app.cfg)
         else:
-            porder = [psel]
+            porder = [psel_id]
 
         self.app._batch_params = {"prompt": prompt, "translated": "", "w": w, "h": h,
                                   "porder": porder, "cfg": self.app.cfg}

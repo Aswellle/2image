@@ -12,6 +12,7 @@ from PIL import ImageTk
 from config.fonts import F
 from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color
 from config.i18n import _
+from services.providers import provider_id_for
 from data.repository import (
     get_all_entries,
     get_all_tags,
@@ -782,7 +783,7 @@ class HistorySidebar:
             def _add_to_queue():
                 sz = self.app.szv.get()
                 psel = self.app.pv.get()
-                pord = None if psel == _("provider_auto") else [psel]
+                pord = None if psel == _("provider_auto") else [provider_id_for(psel)]
                 self.app._queue_panel.add_task(en["prompt"], sz, pord)
                 self.app._switch_to_queue_tab()
                 self.app._toast(_("toast_added_to_queue"), "success")

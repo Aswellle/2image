@@ -24,6 +24,7 @@ from PIL import Image, ImageTk
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from services.providers import provider_id_for
 
 
 _STATUS = {
@@ -316,8 +317,9 @@ class QueuePanel(tk.Frame):
             messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"), parent=self.app.root)
             return
         # 自动档判断走 i18n 键（与 sidebar 一致），硬编码中文文案在
-        # 英文界面下匹配不到会导致伪造的供应商顺序被传入
-        pord = None if (not psel or psel == _("provider_auto")) else [psel]
+        # 英文界面下匹配不到会导致伪造的供应商顺序被传入。
+        # 下拉框是 display name，队列存 stable id。
+        pord = None if (not psel or psel == _("provider_auto")) else [provider_id_for(psel)]
         self.add_task(prompt, sz, pord)
 
     def set_img2img_lock(self, locked: bool):

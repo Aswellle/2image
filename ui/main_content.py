@@ -19,11 +19,44 @@ from config.fonts import F
 from config.theme import C, TAG_PALETTE, tag_color
 from config.i18n import _
 from data.repository import get_all_entries, get_stats
-from services.providers import FREE_PROVIDERS, PAID_PROVIDERS, IMG2IMG_PROVIDERS
+from services.providers import (
+    FREE_PROVIDERS,
+    IMG2IMG_PROVIDERS,
+    PAID_PROVIDERS,
+    display_name_for,
+    provider_id_for,
+)
 from services.image_service import generate_image, save_image_file
 from ui.batch_panel import BatchPanel
 from ui.queue_panel import QueuePanel
 from ui.app_protocol import MainContentProtocol
+
+
+# ══════════════════════════════════════════════════════════════
+#   Provider 下拉框显示名
+# ══════════════════════════════════════════════════════════════
+def _provider_display(provider_id: str) -> str:
+    """Stable ID -> dropdown label. Module-level alias so tests can patch it."""
+    return display_name_for(provider_id)
+
+
+# Short labels for the compact img2img hint strip. Keyed by stable ID so
+# they never depend on the (translatable) display name.
+_I2I_SHORT_LABELS: dict[str, str] = {
+    "bfl_flux": "BFL FLUX",
+    "fal_flux": "fal.ai FLUX",
+    "gemini": "Gemini",
+    "gemini_nano_banana_pro": "Nano Banana Pro",
+    "minimax_image": "MiniMax",
+    "openai_image": "GPT-Image",
+    "stability_ai": "Stability AI",
+    "volcengine_ark": "Seedream",
+}
+
+
+def _i2i_short_label(provider_id: str) -> str:
+    """Compact label for the i2i hint; falls back to the display name."""
+    return _I2I_SHORT_LABELS.get(provider_id, _provider_display(provider_id))
 
 
 # ══════════════════════════════════════════════════════════════
@@ -368,11 +401,15 @@ class MainContent:
         ).pack(side="left", padx=(2, 8))
         tk.Label(opt, text=_("lbl_provider"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
         self.pv = tk.StringVar(value=_("provider_auto"))
+        # 下拉框展示 display name，pv 保存的也是 display name；
+        # 传给路由/派发前需用 provider_id_for() 转成 stable id。
+        # v8 把注册表改成 stable id 作 key 后，这里曾直接塞 key，
+        # 导致用户在下拉框里看到 bria_ai / gemini_nano_banana_pro 这类内部 ID。
         self._t2i_provider_list = (
             [_("provider_auto"), _("provider_free_section")]
-            + list(FREE_PROVIDERS.keys())
+            + [_provider_display(n) for n in FREE_PROVIDERS]
             + [_("provider_paid_section")]
-            + list(PAID_PROVIDERS.keys())
+            + [_provider_display(n) for n in PAID_PROVIDERS]
         )
         self._provider_cb = ttk.Combobox(
             opt,
@@ -1210,10 +1247,15 @@ class MainContent:
         """真正支持图生图、且能在现有下拉框/向导里配置密钥的接口。
 
         IMG2IMG_PROVIDERS 里还有 fal.ai 这类 commercial 分类接口——但
-        wizard_free.py / wizard_paid.py 目前都没有它的 Key 配置卡片，
-        选中后只会得到一个无从下手的报错，所以图生图下拉框只收窄到
-        同时出现在 FREE_PROVIDERS / PAID_PROVIDERS（即已有配置入口）
-        里的接口，等对应向导补上后它会自动出现，无需再改这里。
+        wizard_free.py / wizard_paid.py 目前都没有它的 Key 配置卡片
+        （fal_key 在两个向导里都不存在），选中后只会得到一个无从下手的
+        报错，所以图生图下拉框只收窄到同时出现在 FREE_PROVIDERS /
+        PAID_PROVIDERS 里的接口，等对应向导补上后它会自动出现。
+
+        注意：这个判断依据的是「分类」，而真实条件是「向导里有没有该
+        Key 的配置卡片」。volcengine_ark 属于 commercial，但
+        wizard_paid.py 已有完整卡片——它当前被排除属于已知偏差，
+        修正需引入向导覆盖表，不在本次范围。
         """
         return [n for n in IMG2IMG_PROVIDERS if n in FREE_PROVIDERS or n in PAID_PROVIDERS]
 
@@ -1230,15 +1272,9 @@ class MainContent:
             self._ref_hint_title.config(text=_("i2i_no_providers"), fg="#f87171")
             return
 
-        names = [
-            name.replace("💎 ", "")
-            .replace("Black Forest Labs FLUX", "BFL FLUX")
-            .replace("Google Gemini Nano Banana (免费额度)", "Gemini Nano Banana")
-            .replace("Nano Banana Pro (Gemini 3 Pro Image)", "Nano Banana Pro")
-            .replace("OpenAI GPT-Image", "GPT-Image")
-            .replace("MiniMax image-01", "MiniMax")
-            for name in i2i_list
-        ]
+        # 提示区展示的是 stable id，需先映射成简短标签。
+        # （历史实现直接对 id 做 display-name 的 replace，全部落空。）
+        names = [_i2i_short_label(pid) for pid in i2i_list]
         self._ref_hint_title.config(
             text=(
                 _("i2i_available_providers", n=len(names)) + "\n" + " · ".join(names[:3]) + "\n" + " · ".join(names[3:])
@@ -1307,10 +1343,12 @@ class MainContent:
             i2i_list = self._i2i_selectable_providers()
             self._update_ref_hint(i2i_list)
 
+            # pv 保存的是 display name，i2i_list 是 stable id，比较前统一映射。
+            i2i_display = [_provider_display(n) for n in i2i_list]
             self._pre_i2i_provider = self.pv.get()
-            self._provider_cb.config(values=i2i_list)
-            if self.pv.get() not in i2i_list and i2i_list:
-                self.pv.set(i2i_list[0])
+            self._provider_cb.config(values=i2i_display)
+            if self.pv.get() not in i2i_display and i2i_display:
+                self.pv.set(i2i_display[0])
 
             self._set_batch_i2i_lock(True)
             self._animate_i2i_col(self._I2I_COL_W)
