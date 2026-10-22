@@ -21,6 +21,7 @@ from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
 from config.settings import IMAGES_DIR
+from ui.canvas_image import move_outline, outline_bounds, outline_color
 
 
 # 渲染像素预算：限制单帧缩放结果的内存占用（40M 像素 ≈ RGBA 160MB）。
@@ -56,6 +57,7 @@ class ImageViewerWindow(tk.Toplevel):
         self._img_cx = 0
         self._img_cy = 0
         self._img_item = None
+        self._img_outline = None
         self._pan_last = None
 
         # 裁剪状态
@@ -291,9 +293,16 @@ class ImageViewerWindow(tk.Toplevel):
             self._img_item = self.cv.create_image(
                 self._img_cx, self._img_cy, image=photo, anchor="center", tags="main_img"
             )
+            # 描边压在图片最外一圈像素上，必须在图片之后创建
+            self._img_outline = self.cv.create_rectangle(
+                *outline_bounds(self._img_cx, self._img_cy, photo.width(), photo.height()),
+                outline=outline_color("#111827"),
+                width=1,
+            )
         else:
             self.cv.itemconfig(self._img_item, image=photo)
             self.cv.coords(self._img_item, self._img_cx, self._img_cy)
+            move_outline(self.cv, self._img_outline, self._img_cx, self._img_cy, photo)
         z = self._zoom
         self._info_zoom.config(text=f"{_('lbl_zoom')} {z * 100:.0f}%")
         self._zoom_badge.config(text=f"{z * 100:.0f}%")
@@ -476,6 +485,7 @@ class ImageViewerWindow(tk.Toplevel):
             self._img_cy = event.height // 2
             if self._img_item:
                 self.cv.coords(self._img_item, self._img_cx, self._img_cy)
+                move_outline(self.cv, self._img_outline, self._img_cx, self._img_cy, self._photo)
             # 缓存基于 zoom 级别，与 canvas 尺寸无关，无需清除
 
     # ── 拖拽平移 ───────────────────────────────────────────────
@@ -504,6 +514,7 @@ class ImageViewerWindow(tk.Toplevel):
             self._img_cy += dy
             self._pan_last = (event.x, event.y)
             self.cv.coords(self._img_item, self._img_cx, self._img_cy)
+            move_outline(self.cv, self._img_outline, self._img_cx, self._img_cy, self._photo)
             if self._crop_rect:
                 self.cv.tag_raise(self._crop_rect)
 

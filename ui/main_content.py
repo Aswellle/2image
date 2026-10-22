@@ -19,6 +19,7 @@ from config.fonts import F
 from config.theme import C, TAG_PALETTE, tag_color
 from config.i18n import _
 from ui.button_states import set_enabled
+from ui.canvas_image import draw_image
 from data.repository import get_all_entries, get_stats
 from services.providers import (
     FREE_PROVIDERS,
@@ -206,6 +207,7 @@ class MainContent:
         self._prev_orig = None
         self._prev_photo = None
         self._prev_item = None
+        self._prev_outline = None
 
         # Compare state
         self._cmp_orig = None
@@ -770,6 +772,7 @@ class MainContent:
         self._prev_cv.pack(fill="both", expand=True)
         self._prev_photo = None
         self._prev_item = None
+        self._prev_outline = None
         self._prev_orig = None
         self._prev_ph = self._prev_cv.create_text(
             400,
@@ -1053,7 +1056,7 @@ class MainContent:
         img.thumbnail((cw - 4, ch - 4), Image.LANCZOS)
         self._cmp_photo = ImageTk.PhotoImage(img)
         self._cmp_cv.delete("all")
-        self._cmp_cv.create_image(cw // 2, ch // 2, image=self._cmp_photo, anchor="center")
+        draw_image(self._cmp_cv, cw // 2, ch // 2, self._cmp_photo, "#0a0f1a")
 
     def _on_cmp_resize(self, event):
         if hasattr(self, "_cmp_resize_timer") and self._cmp_resize_timer:
@@ -1130,8 +1133,9 @@ class MainContent:
         self._prev_photo = ImageTk.PhotoImage(img)
         self._prev_cv.delete("prev")
         self._prev_cv.itemconfig(self._prev_ph, text="")
-        self._prev_item = self._prev_cv.create_image(
-            cw // 2, ch // 2, image=self._prev_photo, anchor="center", tags="prev"
+        self._prev_item, self._prev_outline = draw_image(
+            self._prev_cv, cw // 2, ch // 2, self._prev_photo, "#111827",
+            tags=("prev",), outline_tags=("prev",),
         )
 
     def _set_preview(self, data: bytes):

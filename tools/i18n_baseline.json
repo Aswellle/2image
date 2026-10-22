@@ -3848,5 +3848,30 @@
   "file": "ui/button_states.py",
   "line": 274,
   "text": "切换按钮可用态，并同步底色/文字/指针。\n\n    `bg` / `fg` 在**启用**时改写常态配色（缓存随之更新）"
+ },
+ {
+  "file": "ui/canvas_image.py",
+  "line": 1,
+  "text": "ui/canvas_image.py — Canvas 图片的描边辅助\n────────────────────────"
+ },
+ {
+  "file": "ui/canvas_image.py",
+  "line": 35,
+  "text": "画布底色 → 叠了白色 10% 的描边色。"
+ },
+ {
+  "file": "ui/canvas_image.py",
+  "line": 45,
+  "text": "居中图片（`anchor=\"center\"`）的 1px 描边矩形坐标。\n\n    右下角各减 1，让描边压住图片最外一"
+ },
+ {
+  "file": "ui/canvas_image.py",
+  "line": 66,
+  "text": "在画布上居中画一张图片并加描边，返回 (图片 id, 描边 id)。\n\n    先画图片再画描边：描边矩形压在图片最外一"
+ },
+ {
+  "file": "ui/canvas_image.py",
+  "line": 84,
+  "text": "图片平移/换帧后同步描边矩形。"
  }
 ]

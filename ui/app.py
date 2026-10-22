@@ -606,6 +606,7 @@ class App:
         self.content.pt.delete("1.0", "end")
         self.content._prev_cv.delete("prev")
         self.content._prev_item = None
+        self.content._prev_outline = None
         self.content._clear_compare()
         self.content._prev_cv.update_idletasks()
         cw = self.content._prev_cv.winfo_width() or 600

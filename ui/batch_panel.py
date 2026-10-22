@@ -23,6 +23,7 @@ from config.theme import DARK_THEME as C
 from config.i18n import _
 from services.generation.errors import GenerationCancelled
 from ui.button_states import set_enabled
+from ui.canvas_image import draw_image
 
 
 CELL_W = 260
@@ -156,7 +157,7 @@ class _Cell:
         img.thumbnail((cw - 4, ch - 4), Image.LANCZOS)
         self._photo = ImageTk.PhotoImage(img)
         self.canvas.delete("all")
-        self.canvas.create_image(cw // 2, ch // 2, image=self._photo, anchor="center", tags="img")
+        draw_image(self.canvas, cw // 2, ch // 2, self._photo, C["empty"], tags=("img",))
         self.canvas.bind("<Double-Button-1>", lambda e: self.bp._open_cell_viewer(self))
 
     # ── 操作 ────────────────────────────────────────────────────
