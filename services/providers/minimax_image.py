@@ -27,6 +27,7 @@ PROVIDER_INFO = {
     "category": "commercial",
     "config_key": "minimax_key",
     "description": "MiniMax image-01 文生图/图生图",
+    "supports_img2img": True,
 }
 
 

@@ -70,3 +70,21 @@ def test_multi_key_providers_declared():
     for pid, keys in registry.MULTI_KEY_PROVIDERS.items():
         for k in keys:
             assert k in DEFAULT_CONFIG, (pid, k)
+
+
+def test_img2img_flags_match_registry():
+    """supports_img2img 必须在两份注册表里一致。
+
+    IMG2IMG_PROVIDERS 只从 PROVIDER_INFO 构建，而路由与 UI 读的是
+    manifest；两者不一致时，实现了参考图逻辑的接口会从图生图下拉框
+    里静默消失（历史事故：gemini / openai_image / minimax_image /
+    volcengine_ark 四个接口因此长期不可选）。
+    """
+    for pid, manifest in ALL_MANIFESTS.items():
+        assert manifest.supports_img2img == (pid in registry.IMG2IMG_PROVIDERS), pid
+
+
+def test_img2img_providers_are_registered():
+    """IMG2IMG_PROVIDERS 的每个 id 都必须真实存在于 provider 注册表。"""
+    unknown = set(registry.IMG2IMG_PROVIDERS) - set(registry.ALL_PROVIDERS)
+    assert not unknown, unknown

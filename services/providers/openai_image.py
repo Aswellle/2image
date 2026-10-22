@@ -30,6 +30,7 @@ PROVIDER_INFO = {
     "category": "paid",
     "config_key": "openai_key",
     "description": "GPT-Image 系列：1/1.5/2/2.5-flare/2.5-sunburst",
+    "supports_img2img": True,
 }
 
 # gpt-image-1 家族仅支持下列预设尺寸（取与请求最接近者）。

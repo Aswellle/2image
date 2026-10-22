@@ -28,6 +28,7 @@ PROVIDER_INFO = {
     "category": "free",
     "config_key": "gemini_key",
     "description": "Nano Banana 系列：v1/v2/v2 Lite/Pro",
+    "supports_img2img": True,
 }
 # ── 串行锁（防批量变体并发触发速率限制）──────────────────────────────
 _LOCK = threading.Lock()

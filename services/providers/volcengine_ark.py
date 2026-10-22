@@ -36,6 +36,7 @@ PROVIDER_INFO = {
     "category": "commercial",
     "config_key": "volcengine_key",
     "description": "豆包 Seedream 3.0/4.0 文生图，SeedEdit 3.0 图生图",
+    "supports_img2img": True,
 }
 
 # ── 串行锁（防批量并发触发速率限制）──────────────────────────────
