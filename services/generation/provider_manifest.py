@@ -252,24 +252,6 @@ LEGACY_NAME_TO_ID: dict[str, str] = {
     "Recraft v3/v4 (设计/插画)": "recraft",
 }
 
-# ─── Free Provider Order (explicit, not pkgutil-dependent) ───────
-
-FREE_PROVIDER_ORDER: list[str] = [
-    "pollinations",
-    "siliconflow",
-    "gemini",
-    "cloudflare_ai",
-    "modelslab",
-    "segmind",
-    "openrouter",
-    "huggingface",
-    "stablehorde",
-    "together_ai",
-    "dashscope_qwen",
-    "bria_ai",
-]
-
-
 def resolve_provider_id(name_or_id: str) -> str | None:
     """Convert a legacy display name or ID to a stable ID."""
     if name_or_id in ALL_MANIFESTS:

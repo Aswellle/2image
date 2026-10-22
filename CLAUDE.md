@@ -109,7 +109,7 @@ Rules that the tests enforce or rely on:
 - **Serial lock per module** — one `_LOCK` + `_LAST_DONE` pair, held across the network call, so concurrent batch calls to the same free tier don't trip rate limits. 18 of 23 providers implement it; `siliconflow`, `openai_image`, `stability_ai`, `replicate_flux`, and `cloudflare_ai` do not, and no test enforces it. New providers must copy the pattern.
 - New config keys go in `DEFAULT_CONFIG` (`config/settings.py`); discovery then populates `PROVIDER_KEYS`, which routing and the UI treat as the source of truth.
 
-`DEFAULT_ORDER` in `services/providers/__init__.py` and `FREE_PROVIDER_ORDER` in `provider_manifest.py` are explicit lists (deliberately not pkgutil order); keep them aligned.
+`DEFAULT_ORDER` in `services/providers/__init__.py` is the sole fallback order — an explicit list, deliberately not pkgutil order. `provider_manifest.py` carries identity/routing metadata only; it has no order list.
 
 ## Configuration and persistence
 

@@ -5,7 +5,7 @@ Provider 注册表  v8 — 自动发现 + stable provider_id
 v8 重构：
   · 使用 stable provider_id 作为 ALL_PROVIDERS / DEFAULT_ORDER 的 key
   · 保留 _NAME_TO_ID 映射，兼容旧的 display-name 查找
-  · DEFAULT_ORDER 改为 FREE_PROVIDER_ORDER 显式列表
+  · DEFAULT_ORDER 改为显式列表（不依赖 pkgutil 发现顺序）
 
 v7 历史：
   · 使用 pkgutil 自动扫描 provider 模块
