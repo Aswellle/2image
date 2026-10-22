@@ -345,7 +345,7 @@ class MainContent:
         _pt_foot = tk.Frame(R, bg="#0d1a30")
         _pt_foot.pack(fill="x", padx=14)
 
-        self._char_lbl = tk.Label(_pt_foot, text=_("lbl_chars", n=0), font=F["mono_tiny"], bg="#0d1a30", fg="#4a5a7a")
+        self._char_lbl = tk.Label(_pt_foot, text=_("lbl_chars", n=0), font=F["mono_tiny"], bg="#0d1a30", fg=C["text_muted"])
         self._char_lbl.pack(side="left", padx=6, pady=2)
 
         tk.Button(
@@ -414,7 +414,7 @@ class MainContent:
         self._provider_cb = ttk.Combobox(
             opt,
             textvariable=self.pv,
-            width=26,
+            width=32,
             state="readonly",
             values=self._t2i_provider_list,
             postcommand=self._expand_provider_popup,
@@ -532,7 +532,9 @@ class MainContent:
         )
         self._variant_gen_btn.pack(side="left")
         self._variant_gen_btn_bg = "#4a1d96"  # 恢复用：禁用态会覆盖 bg
-        tk.Label(opt2, text=_("shortcut_hint"), font=F["small"], bg=C["bg"], fg="#6a7a9a").pack(side="left", padx=6)
+        # 唯一留在主界面的快捷键说明：Ctrl+Enter 在输入框内触发，
+        # 没有对应菜单项，用户无从得知。其余快捷键由菜单栏承载。
+        tk.Label(opt2, text=_("shortcut_hint"), font=F["small"], bg=C["bg"], fg=C["text_muted"]).pack(side="left", padx=6)
 
         # ── 生成模式切换行（分段控件样式）───────────────────────────
         # 用一个带描边的容器把两个按钮"焊"在一起，视觉上读作一个控件
@@ -648,7 +650,7 @@ class MainContent:
 
         tk.Button(
             tb,
-            text=_("btn_open_viewer") + "  (Ctrl+O)",
+            text=_("btn_open_viewer"),
             font=F["small_b"],
             bg=C["hl"],
             fg="white",
@@ -1283,22 +1285,25 @@ class MainContent:
         )
 
     def _expand_provider_popup(self):
-        """postcommand：让弹出 Listbox 的宽度自动扩展到最长项目的实际像素宽，
-        解决 ttk.Combobox width 只控制输入框字符数、弹出框独立固定的问题。
-        实现方式：在弹出发生前把 Combobox 所有当前 values 里最长的那个塞回
-        一下，Tk 内部会把 Listbox 撑到对应宽度；对用户完全透明。
+        """postcommand：把弹出 Listbox 撑到最长条目的实际像素宽。
+
+        ttk.Combobox 的 width 只控制输入框字符数，弹出框（内部 tk.Listbox）
+        的列宽由 Tk 固定为 20，与 values 无关。旧实现试图通过重排 values
+        让 Tk 重算列宽——实测无效，Listbox 的 -width 恒为 20，长名称仍被
+        截断。唯一有效途径是直接配置 popdown 里那个 Listbox 的 -width。
         """
         try:
-            vals = self._provider_cb.cget("values") or []
+            cb = self._provider_cb
+            vals = cb.cget("values") or []
             if not vals:
                 return
-            # 找最长项（含 emoji，len 按 code point 计，对中文/emoji 也够用）
-            widest = max(vals, key=len)
-            # 通过临时插入最长项至首位再还原，触发 Tk 重新计算 Listbox 列宽
-            self._provider_cb.config(values=[widest] + [v for v in vals if v != widest])
-            self._provider_cb.config(values=vals)
+            # 终端列宽：CJK 与 emoji 占 2 列，其余占 1 列
+            widest = max(vals, key=lambda v: sum(2 if ord(ch) > 0x2E80 else 1 for ch in v))
+            cols = sum(2 if ord(ch) > 0x2E80 else 1 for ch in widest) + 2
+            popdown = cb.tk.call("ttk::combobox::PopdownWindow", cb._w)
+            cb.tk.call(popdown + ".f.l", "configure", "-width", str(cols))
         except Exception:
-            pass
+            pass  # 弹出框尚未创建或平台实现不同：退回 Tk 默认宽度
 
     def _switch_mode(self, mode: str):
         """切换文生图/图生图。

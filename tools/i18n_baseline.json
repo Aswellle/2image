@@ -3738,5 +3738,20 @@
   "file": "ui/main_content.py",
   "line": 1247,
   "text": "支持图生图、且能在现有向导里配置 Key 的接口。\n\n        真实条件是「向导里有没有该接口的 Key 配置卡片"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 514,
+  "text": "Ctrl+B 打开词库；焦点在输入框时让给编辑键。"
+ },
+ {
+  "file": "ui/app.py",
+  "line": 520,
+  "text": "Ctrl+L 清空调试日志；焦点在输入框时让给编辑键。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1288,
+  "text": "postcommand：把弹出 Listbox 撑到最长条目的实际像素宽。\n\n        ttk.Combobox "
  }
 ]

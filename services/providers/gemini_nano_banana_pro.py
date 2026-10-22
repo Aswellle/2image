@@ -21,7 +21,7 @@ from services.providers._net import get_session as _get_session, safe_error_text
 
 PROVIDER_INFO = {
     "id": "gemini_nano_banana_pro",
-    "name": "💎 Nano Banana Pro (Gemini 3 Pro Image)",
+    "name": "💎 Nano Banana Pro",
     "category": "paid",
     "config_key": "gemini_key",
     "supports_img2img": True,

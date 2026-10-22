@@ -70,20 +70,34 @@ class MenuController:
     def _build_file_menu(self, menubar: Menu) -> None:
         m_file = self._menu(menubar)
         menubar.add_cascade(label=_("menu_file"), menu=m_file)
-        m_file.add_command(label=_("menu_open_viewer") + "   Ctrl+O", command=self.app._open_viewer)
-        m_file.add_command(label=_("menu_save_as") + "   Ctrl+S", command=self.app._save)
-        m_file.add_command(label=_("menu_export") + "   Ctrl+E", command=self.app._export)
+        # accelerator= 让 Tk 把快捷键右对齐绘制在菜单项右侧，并用系统字体；
+        # 拼进 label 的写法会让快捷键跟着标签字体渲染、无法对齐，翻译后还会错位。
+        m_file.add_command(
+            label=_("menu_open_viewer"), accelerator="Ctrl+O", command=self.app._open_viewer)
+        m_file.add_command(
+            label=_("menu_save_as"), accelerator="Ctrl+S", command=self.app._save)
+        m_file.add_command(
+            label=_("menu_export"), accelerator="Ctrl+E", command=self.app._export)
         m_file.add_separator()
-        m_file.add_command(label=_("menu_clear_log") + "   Ctrl+L", command=self.app._clr_log)
+        m_file.add_command(
+            label=_("menu_clear_log"), accelerator="Ctrl+L", command=self.app._clr_log)
 
     def _build_tools_menu(self, menubar: Menu) -> None:
         m_tools = self._menu(menubar)
         menubar.add_cascade(label=_("menu_tools"), menu=m_tools)
-        m_tools.add_command(label=_("wizard_title") + "…        Ctrl+P", command=self.app._open_prompt_wizard)
+        m_tools.add_command(
+            label=_("wizard_title") + "…", accelerator="Ctrl+P",
+            command=self.app._open_prompt_wizard)
         m_tools.add_separator()
-        m_tools.add_command(label=_("phrase_title") + "…         Ctrl+B", command=self.app._open_phrase_panel)
-        m_tools.add_command(label=_("menu_switch_variants") + "   Ctrl+2", command=self.app._switch_to_variant_tab)
-        m_tools.add_command(label=_("menu_switch_queue") + "   Ctrl+Q", command=self.app._switch_to_queue_tab)
+        m_tools.add_command(
+            label=_("phrase_title") + "…", accelerator="Ctrl+B",
+            command=self.app._open_phrase_panel)
+        m_tools.add_command(
+            label=_("menu_switch_variants"), accelerator="Ctrl+2",
+            command=self.app._switch_to_variant_tab)
+        m_tools.add_command(
+            label=_("menu_switch_queue"), accelerator="Ctrl+Q",
+            command=self.app._switch_to_queue_tab)
 
     def _build_api_menu(self, menubar: Menu) -> None:
         m_api = self._menu(menubar)

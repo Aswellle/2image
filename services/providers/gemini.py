@@ -24,7 +24,7 @@ from services.providers._net import get_session as _get_session, safe_error_text
 
 PROVIDER_INFO = {
     "id": "gemini",
-    "name": "Google Gemini Nano Banana (免费额度)",
+    "name": "Gemini Nano Banana (免费)",
     "category": "free",
     "config_key": "gemini_key",
     "description": "Nano Banana 系列：v1/v2/v2 Lite/Pro",

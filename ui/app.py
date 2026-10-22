@@ -256,6 +256,19 @@ class App:
         # §58 键盘工作流补全（输入焦点在文本控件时不劫持编辑键）
         r.bind("<Control-Shift-P>", lambda e: self._open_prompt_wizard())
         r.bind("<Control-Shift-p>", lambda e: self._open_prompt_wizard())
+        # 菜单与控件标签宣称的快捷键此前只写了文字、没有绑定，
+        # 按下毫无反应。这里补齐，使界面提示与实际行为一致。
+        # Ctrl+B/L 在文本控件内是编辑键（光标后退、清行），必须走守卫版，
+        # 否则用户在输入框里打字时会被弹窗打断。
+        r.bind("<Control-p>", lambda e: self._open_prompt_wizard())
+        r.bind("<Control-P>", lambda e: self._open_prompt_wizard())
+        r.bind("<Control-b>", self._open_phrase_panel_guarded)
+        r.bind("<Control-B>", self._open_phrase_panel_guarded)
+        r.bind("<Control-l>", self._clr_log_guarded)
+        r.bind("<Control-L>", self._clr_log_guarded)
+        r.bind("<Control-q>", lambda e: self._switch_to_queue_tab())
+        r.bind("<Control-Q>", lambda e: self._switch_to_queue_tab())
+        r.bind("<Control-Key-2>", lambda e: self._switch_to_variant_tab())
         r.bind("<Escape>", self._esc_overlay)
         r.bind("<Delete>", self._delete_selected_guarded)
         r.bind("<Left>", lambda e: self._nav_history_guarded(e, -1))
@@ -497,8 +510,19 @@ class App:
         if self.sel_id is not None:
             self.sidebar._del_entry(self.sel_id)
 
+    def _open_phrase_panel_guarded(self, event=None):
+        """Ctrl+B 打开词库；焦点在输入框时让给编辑键。"""
+        if self._typing_focus():
+            return
+        self._open_phrase_panel()
+
+    def _clr_log_guarded(self, event=None):
+        """Ctrl+L 清空调试日志；焦点在输入框时让给编辑键。"""
+        if self._typing_focus():
+            return
+        self._clr_log()
+
     def _nav_history_guarded(self, event=None, delta: int = 1):
-        """←/→ 在历史列表中移动选中项（输入焦点在文本框时忽略）。"""
         if self._typing_focus():
             return
         entries = get_all_entries(limit=500)

@@ -56,12 +56,12 @@ STRINGS = {
         "en": "⏳ Generating…",
     },
     "btn_add_queue": {
-        "zh-CN": "➕ 加入队列 (Ctrl+Q)",
-        "en": "➕ Add to Queue (Ctrl+Q)",
+        "zh-CN": "➕ 加入队列",
+        "en": "➕ Add to Queue",
     },
     "btn_phrase_lib": {
-        "zh-CN": "📚 词库  (Ctrl+B)",
-        "en": "📚 Phrase Library (Ctrl+B)",
+        "zh-CN": "📚 词库",
+        "en": "📚 Phrase Library",
     },
     "btn_prompt_wizard": {
         "zh-CN": "✨ 提示词助手",
@@ -92,8 +92,8 @@ STRINGS = {
         "en": "🔄 Reset",
     },
     "btn_clear_log": {
-        "zh-CN": "清空 (Ctrl+L)",
-        "en": "Clear (Ctrl+L)",
+        "zh-CN": "清空",
+        "en": "Clear",
     },
     "btn_show_more": {
         "zh-CN": "显示更多…（共 {count} 条）",
@@ -277,8 +277,8 @@ STRINGS = {
         "en": "  📋 Queue  ",
     },
     "tab_debug_log": {
-        "zh-CN": "  📋 调试日志  Ctrl+L=清空  ",
-        "en": "  📋 Debug Log  Ctrl+L=Clear  ",
+        "zh-CN": "  📋 调试日志  ",
+        "en": "  📋 Debug Log  ",
     },
     # ── 标签 — 尺寸/接口 —──────────────────────────────────
     "lbl_size": {
@@ -299,8 +299,8 @@ STRINGS = {
     },
     # ── 状态消息 ────────────────────────────────────────────
     "status_ready": {
-        "zh-CN": "就绪  [ Ctrl+Enter=生成  Ctrl+B=词库  Ctrl+O=查看器 ]",
-        "en": "Ready  [ Ctrl+Enter=Generate  Ctrl+B=Phrases  Ctrl+O=Viewer ]",
+        "zh-CN": "就绪",
+        "en": "Ready",
     },
     "status_translating": {
         "zh-CN": "🌐 翻译中…",
@@ -666,9 +666,11 @@ STRINGS = {
         "en": "❌  Generation Failed\n\nCheck Debug Log",
     },
     # ── 快捷键提示 ──────────────────────────────────────────
+    # 只保留 Ctrl+Enter：它在输入框内触发，且没有对应的菜单项可承载说明。
+    # 其余快捷键统一由菜单栏右侧的 accelerator 文本说明。
     "shortcut_hint": {
-        "zh-CN": " Ctrl+Enter=生成  Ctrl+B=词库  Ctrl+P=助手",
-        "en": " Ctrl+Enter=Generate  Ctrl+B=Phrases  Ctrl+P=Wizard",
+        "zh-CN": "Ctrl+Enter 生成",
+        "en": "Ctrl+Enter to generate",
     },
     # ── 错误映射 ────────────────────────────────────────────
     "err_rate_limit": {

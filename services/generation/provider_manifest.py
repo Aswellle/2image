@@ -48,7 +48,7 @@ FREE_MANIFESTS: dict[str, ProviderManifest] = {
     ),
     "gemini": ProviderManifest(
         id="gemini",
-        name="Google Gemini Nano Banana (免费额度)",
+        name="Gemini Nano Banana (免费)",
         category="free",
         config_key="gemini_key",
         description="Google Gemini，免费额度",
@@ -164,7 +164,7 @@ PAID_MANIFESTS: dict[str, ProviderManifest] = {
     ),
     "gemini_nano_banana_pro": ProviderManifest(
         id="gemini_nano_banana_pro",
-        name="💎 Nano Banana Pro (Gemini 3 Pro Image)",
+        name="💎 Nano Banana Pro",
         category="paid",
         config_key="gemini_key",
         description="Gemini 3 Pro Image",
@@ -232,6 +232,7 @@ LEGACY_NAME_TO_ID: dict[str, str] = {
     "Cloudflare AI (免费1万次/天)": "cloudflare_ai",
     "通义万相 Qwen-Image (阿里云免费额度)": "dashscope_qwen",
     "Google Gemini Nano Banana (免费额度)": "gemini",
+    "Gemini Nano Banana (免费)": "gemini",
     "HuggingFace (备用)": "huggingface",
     "ModelsLab (免费100次/天)": "modelslab",
     "OpenRouter (统一 Image API)": "openrouter",
@@ -242,6 +243,7 @@ LEGACY_NAME_TO_ID: dict[str, str] = {
     "Together AI (FLUX Free·免费)": "together_ai",
     "💎 Black Forest Labs FLUX": "bfl_flux",
     "💎 Nano Banana Pro (Gemini 3 Pro Image)": "gemini_nano_banana_pro",
+    "💎 Nano Banana Pro": "gemini_nano_banana_pro",
     "💎 MiniMax image-01": "minimax_image",
     "💎 OpenAI GPT-Image": "openai_image",
     "💎 Replicate FLUX": "replicate_flux",
