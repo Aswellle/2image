@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pip install -r requirements.txt
 python main.py
 
-# Tests (pytest; ~618 tests across 44 files, ~4 min full run)
+# Tests (pytest; ~620 tests across 41 modules, ~4 min full run)
 pytest tests/ -v --tb=short
 pytest tests/test_providers.py -v
 pytest tests/test_providers.py::test_gemini_missing_key_raises_valueerror -v
