@@ -46,7 +46,7 @@ main.py  (DPI awareness → fonts → legacy-data migration → SQLite init → 
   └─ ui/         app.py coordinator + panels/dialogs
 ```
 
-Intended dependency direction is `ui → services → data → config`. One deliberate exception: `services/application/` holds the three UI controllers (`GenerationController`, `MenuController`, `SettingsController`) that were extracted out of `ui/app.py` to slim it down. They import Tkinter and message boxes, so they are UI code living one layer too low — a known, documented item in `docs/structural-refactor-backlog.md`, not an accident to "fix" opportunistically.
+Intended dependency direction is `ui → services → data → config`. One deliberate exception: `services/application/` holds the three UI controllers (`GenerationController`, `MenuController`, `SettingsController`) that were extracted out of `ui/app.py` to slim it down. They import Tkinter and message boxes, so they are UI code living one layer too low. This is a **deliberate, deferred refactor** — the rationale is inlined here because `docs/` is gitignored and therefore absent from a fresh clone: the controllers were extracted to keep `App` navigable, the move back into `ui/` is gated on the functional-stability conditions in `docs/structural-refactor-backlog.md` (local-only), and until that lands, **do not add a fourth controller there** — put new UI code in `ui/`.
 
 ### Key modules
 
