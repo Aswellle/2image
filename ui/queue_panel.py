@@ -24,6 +24,7 @@ from PIL import Image, ImageTk
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from ui.button_states import set_enabled
 from services.providers import provider_id_for
 
 
@@ -149,7 +150,7 @@ class _ItemWidget(tk.Frame):
         border = color if self._item.status in ("done", "failed", "running") else C["sep"]
         self.config(highlightbackground=border)
         if self._item.status == "done":
-            self._view_btn.config(state="normal")
+            set_enabled(self._view_btn, True)
         if self._item.elapsed > 0:
             self._time_lbl.config(text=f"  ⏱ {self._item.elapsed:.1f}s")
         if self._item.provider:
@@ -325,9 +326,9 @@ class QueuePanel(tk.Frame):
     def set_img2img_lock(self, locked: bool):
         """图生图模式下锁定「加入队列」入口（见 MainContent._switch_mode）。"""
         if locked:
-            self._add_btn.config(state="disabled", bg=C["dis_bg"])
+            set_enabled(self._add_btn, False, bg=C["dis_bg"])
         else:
-            self._add_btn.config(state="normal", bg=self._add_btn_bg)
+            set_enabled(self._add_btn, True, bg=self._add_btn_bg)
 
     def _start(self):
         if self._running:
@@ -339,7 +340,7 @@ class QueuePanel(tk.Frame):
         self._running = True
         self._paused = False
         self._stop_flag = False
-        self._start_btn.config(state="disabled", text=_("queue_btn_running"))
+        set_enabled(self._start_btn, False, text=_("queue_btn_running"))
         threading.Thread(target=self._run_loop, daemon=True).start()
 
     def _toggle_pause(self):
@@ -508,7 +509,7 @@ class QueuePanel(tk.Frame):
         def _finish():
             self._running = False
             self._stop_flag = False
-            self._start_btn.config(state="normal", text=_("queue_btn_start"))
+            set_enabled(self._start_btn, True, text=_("queue_btn_start"))
             self._pause_btn.config(text=_("queue_btn_pause"))
             self._paused = False
             remaining = sum(1 for w in self._widgets if w._item.status == "waiting")

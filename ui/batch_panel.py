@@ -22,6 +22,7 @@ from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
 from services.generation.errors import GenerationCancelled
+from ui.button_states import set_enabled
 
 
 CELL_W = 260
@@ -134,9 +135,9 @@ class _Cell:
         self.used = used
         self.img_obj = Image.open(io.BytesIO(data))
         self._render_thumb()
-        self.keep_btn.config(state="normal")
-        self.dis_btn.config(state="normal")
-        self.cmp_btn.config(state="normal")
+        set_enabled(self.keep_btn, True)
+        set_enabled(self.dis_btn, True)
+        set_enabled(self.cmp_btn, True)
         self.frame.config(highlightbackground=C["ok"])
         self.status_lbl.config(text=used[:20])
 
@@ -145,7 +146,7 @@ class _Cell:
         self.canvas.itemconfig(self._ph_id, text=_("batch_error"), fill=C["hl"])
         self.frame.config(highlightbackground=C["hl"])
         self.status_lbl.config(text=msg[:22])
-        self.dis_btn.config(state="normal")  # 允许手动丢弃
+        set_enabled(self.dis_btn, True)  # 允许手动丢弃
 
     def _render_thumb(self):
         self.canvas.update_idletasks()
@@ -164,8 +165,8 @@ class _Cell:
             return
         self.bp._keep_cell(self)
         self.state = "kept"
-        self.keep_btn.config(state="disabled", text="✅ 已保留", bg="#34d399")
-        self.dis_btn.config(state="disabled")
+        set_enabled(self.keep_btn, False, text="✅ 已保留", bg="#34d399")
+        set_enabled(self.dis_btn, False)
         self.frame.config(highlightbackground="#34d399")
 
     def _discard(self):
@@ -175,9 +176,9 @@ class _Cell:
         self.state = "discarded"
         self.canvas.delete("all")
         self.canvas.create_text(CELL_W // 2, CELL_H // 2, text="— 已丢弃 —", font=F["input"], fill="#334155")
-        self.keep_btn.config(state="disabled")
-        self.dis_btn.config(state="disabled")
-        self.cmp_btn.config(state="disabled")
+        set_enabled(self.keep_btn, False)
+        set_enabled(self.dis_btn, False)
+        set_enabled(self.cmp_btn, False)
         self.frame.config(highlightbackground=C["sep"])
 
     def _toggle_compare(self):
@@ -209,9 +210,9 @@ class _Cell:
             fill="#334155",
             anchor="center",
         )
-        self.keep_btn.config(state="disabled", text=_("btn_keep"), bg=C["keep_bg"])
-        self.dis_btn.config(state="disabled")
-        self.cmp_btn.config(state="disabled", text=_("btn_compare"), bg=C["acc"])
+        set_enabled(self.keep_btn, False, text=_("btn_keep"), bg=C["keep_bg"])
+        set_enabled(self.dis_btn, False)
+        set_enabled(self.cmp_btn, False, text=_("btn_compare"), bg=C["acc"])
         self.status_lbl.config(text="等待…")
         self.frame.config(highlightbackground=C["sep"], highlightthickness=1)
         try:
@@ -417,7 +418,7 @@ class BatchPanel(tk.Frame):
             self._gen_accepts_token = "token" in inspect.signature(generate_fn).parameters
         except (TypeError, ValueError):
             self._gen_accepts_token = False
-        self._stop_btn.config(state="normal")
+        set_enabled(self._stop_btn, True)
 
         # Fix-4: 确保先回到网格视图（避免对比面板遮盖网格）
         self._hide_compare()
@@ -520,7 +521,7 @@ class BatchPanel(tk.Frame):
         """取消当前批次：打断所有在飞生成（≤500ms 内停止等待/轮询）。"""
         if self._batch_token is not None:
             self._batch_token.cancel()
-        self._stop_btn.config(state="disabled")
+        set_enabled(self._stop_btn, False)
         self._progress_lbl.config(text=_("batch_progress_cancelling"))
 
     def _on_cell_done(self, cell, data, path, used, gen=None):
@@ -543,7 +544,7 @@ class BatchPanel(tk.Frame):
             self._progress_lbl.config(text=_("batch_progress_generating", done=self._done_cnt, total=self._n))
         else:
             self._running = False
-            self._stop_btn.config(state="disabled")
+            set_enabled(self._stop_btn, False)
             err_cnt = sum(1 for c in self._cells[: self._n] if c.state == "error")
             if err_cnt:
                 self._progress_lbl.config(text=_("batch_progress_partial", ok=self._n - err_cnt, fail=err_cnt))

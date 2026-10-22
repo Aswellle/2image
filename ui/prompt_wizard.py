@@ -34,6 +34,7 @@ from services.prompt_assistant import (
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from ui.button_states import set_enabled
 from ui.wizard_llm import LLMWizard
 
 
@@ -974,38 +975,35 @@ class PromptWizard(tk.Toplevel):
 
         apply_btn = getattr(self, "_tmpl_apply_btn", None)
         if apply_btn is not None:
-            apply_btn.config(
-                state="normal" if is_previewing else "disabled",
-                bg=C["keep_bg"] if is_previewing else C["surface_disabled"],
-                fg="white" if is_previewing else C["text_disabled"],
-            )
+            if is_previewing:
+                set_enabled(apply_btn, True, bg=C["keep_bg"], fg="white")
+            else:
+                set_enabled(apply_btn, False, bg=C["surface_disabled"])
 
         for widget_name in ("_fill_btn", "_use_btn"):
             widget = getattr(self, widget_name, None)
             if widget is not None:
-                widget.config(
-                    state="normal" if is_pending_fill else "disabled",
-                    bg=C["ok"] if is_pending_fill else "#334155",
-                    fg="#0a1a0a" if is_pending_fill else C["text_disabled"],
-                )
+                if is_pending_fill:
+                    set_enabled(widget, True, bg=C["ok"], fg="#0a1a0a")
+                else:
+                    set_enabled(widget, False, bg="#334155")
 
         for widget_name in ("_clear_btn",):
             widget = getattr(self, widget_name, None)
             if widget is not None:
-                widget.config(
-                    state="normal" if is_pending_fill else "disabled",
-                    bg=C["dis_bg"] if is_pending_fill else C["surface_disabled"],
-                    fg=C["neg_fg"] if is_pending_fill else C["text_disabled"],
-                )
+                if is_pending_fill:
+                    set_enabled(widget, True, bg=C["dis_bg"], fg=C["neg_fg"])
+                else:
+                    set_enabled(widget, False, bg=C["surface_disabled"])
 
     # ── 状态管理 ──────────────────────────────────────────────
     def _set_generating(self, on: bool):
         self._generating = on
         if on:
-            self._gen_btn.config(state="disabled", text=_("btn_generating"), bg=C["dpurp"])
+            set_enabled(self._gen_btn, False, text=_("btn_generating"), bg=C["dpurp"])
             self._start_anim()
         else:
-            self._gen_btn.config(state="normal", text=_("wizard_generate_btn"), bg=C["purple"])
+            set_enabled(self._gen_btn, True, text=_("wizard_generate_btn"), bg=C["purple"])
             self._stop_anim()
 
     def _on_done(self, positive: str, label: str):
@@ -1078,7 +1076,7 @@ class PromptWizard(tk.Toplevel):
         # 占位文本时不显示计数
         if not pos or "显示在这里" in pos or "AI 生成" in pos:
             self._budget_lbl.config(text="", fg=C["sub"])
-            self._trim_btn.config(state="disabled")
+            set_enabled(self._trim_btn, False)
             return
 
         info = prompt_budget_info(pos)
@@ -1088,16 +1086,15 @@ class PromptWizard(tk.Toplevel):
 
         # ── 智能压缩按钮 ────────────────────────────────────────
         if info["status"] == "too_long":
-            self._trim_btn.config(
-                state="normal",
+            set_enabled(
+                self._trim_btn, True,
                 text=_("wizard_trim_to_count", count=len(info["trimmed"].split())),
-                bg=C["dis_bg"],
-                fg=C["neg_fg"],
+                bg=C["dis_bg"], fg=C["neg_fg"],
             )
         elif info["status"] == "acceptable":
-            self._trim_btn.config(state="normal", text=_("wizard_trim_suggest"), bg=C["neg_bg"], fg=C["gold"])
+            set_enabled(self._trim_btn, True, text=_("wizard_trim_suggest"), bg=C["neg_bg"], fg=C["gold"])
         else:
-            self._trim_btn.config(state="disabled", text=_("wizard_smart_trim"), bg=C["card"], fg=C["guide"])
+            set_enabled(self._trim_btn, False, text=_("wizard_smart_trim"), bg=C["card"], fg=C["guide"])
 
     def _smart_trim(self):
         """智能压缩按钮处理器：将提示词截断到预算以内。"""

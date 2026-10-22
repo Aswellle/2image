@@ -18,6 +18,7 @@ from PIL import Image, ImageTk
 from config.fonts import F
 from config.theme import C, TAG_PALETTE, tag_color
 from config.i18n import _
+from ui.button_states import set_enabled
 from data.repository import get_all_entries, get_stats
 from services.providers import (
     FREE_PROVIDERS,
@@ -1031,7 +1032,7 @@ class MainContent:
         # 显示分隔线 & B 侧（列 2 / 3——列 0 留给图生图参考图侧栏）
         self._cmp_divider.grid(row=0, column=2, sticky="ns")
         self._cmp_right_wrap.grid(row=0, column=3, sticky="nsew")
-        self._cmp_clear_btn.config(state="normal")
+        set_enabled(self._cmp_clear_btn, True)
         self._render_cmp()
 
     def _clear_compare(self):
@@ -1040,7 +1041,7 @@ class MainContent:
         self._cmp_label_a.pack_forget()
         self._cmp_divider.grid_remove()
         self._cmp_right_wrap.grid_remove()
-        self._cmp_clear_btn.config(state="disabled")
+        set_enabled(self._cmp_clear_btn, False)
 
     def _render_cmp(self):
         if self._cmp_orig is None:
@@ -1451,11 +1452,15 @@ class MainContent:
         """批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个
         入口并给出提示，避免用户以为批量结果也套用了参考图。"""
         if locked:
-            self._variant_gen_btn.config(
-                state="disabled", bg=C["dis_bg"], text=_("btn_variant_gen") + _("i2i_not_supported")
+            set_enabled(
+                self._variant_gen_btn, False,
+                bg=C["dis_bg"], text=_("btn_variant_gen") + _("i2i_not_supported"),
             )
         else:
-            self._variant_gen_btn.config(state="normal", bg=self._variant_gen_btn_bg, text=_("btn_variant_gen"))
+            set_enabled(
+                self._variant_gen_btn, True,
+                bg=self._variant_gen_btn_bg, text=_("btn_variant_gen"),
+            )
         if hasattr(self, "_queue_panel"):
             self._queue_panel.set_img2img_lock(locked)
 
@@ -1500,7 +1505,7 @@ class MainContent:
         try:
             with open(path, "rb") as _fh:
                 self._ref_image = _fh.read()
-            self._ref_clear_btn.config(state="normal")
+            set_enabled(self._ref_clear_btn, True)
             self._ref_pick_btn.config(text=_("btn_change_ref"))
             self._update_ref_thumb()
             self.app._cur_bytes = self._ref_image
@@ -1514,6 +1519,6 @@ class MainContent:
         """清除参考图，恢复占位符。"""
         self._ref_image = None
         self._ref_thumb_photo = None
-        self._ref_clear_btn.config(state="disabled")
+        set_enabled(self._ref_clear_btn, False)
         self._ref_pick_btn.config(text=_("btn_upload_ref"))
         self._draw_ref_placeholder()

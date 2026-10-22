@@ -3768,5 +3768,85 @@
   "file": "ui/main_content.py",
   "line": 1089,
   "text": "工具栏变窄时收起次要提示，把宽度让给按钮。\n\n        提示文字需要约 150px 才能完整显示；工具栏不足时它会"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 1,
+  "text": "ui/button_states.py — Tk button interaction-state defaults\n─"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 71,
+  "text": "WCAG 相对亮度（0–255 的 sRGB 分量）。"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 81,
+  "text": "两色的 WCAG 对比度；解析失败时返回 0（视为不合格）。"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 91,
+  "text": "线性插值：t=0 得到 a，t=1 得到 b。"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 99,
+  "text": "把 Tk 颜色名（SystemButtonFace 等）解析成 #rrggbb。"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 113,
+  "text": "由按钮常态底色派生按压底色。\n\n    暗底压暗 14%，近黑底向白提亮 14% —— 两种情况下按压都有\n    可见"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 130,
+  "text": "禁用态底色：向面板色靠拢，保留一点原色相。"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 135,
+  "text": "禁用态文字色：先压暗，再按需推向白/黑直到满足 4.5:1。\n\n    只压暗不校验会在亮底（`#e94560`、`#3"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 158,
+  "text": "记录按钮的常态配色；已记录过则原样返回。"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 168,
+  "text": "选项是否仍停留在 Tk 的系统默认值。"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 173,
+  "text": "在 `bg` 上尽量保留 `fg`；不达标时改用黑白中更清晰的一极。\n\n    按压态的底色常常与常态不同色相（如卡片上"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 187,
+  "text": "图标按钮按 3:1（图形对象），有文字的按 4.5:1（正文）。\n\n    ✏ ★ 🏷 ⚖ 🗑 这类单字符按钮的「文字」"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 200,
+  "text": "把按钮切成禁用外观：底色压暗 + 文字重新取色。"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 222,
+  "text": "补齐单个按钮没显式设置的按压/禁用态颜色。\n\n    「构造即禁用」的按钮（如批量面板的保留/丢弃、更新对话框的\n   "
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 255,
+  "text": "为整棵控件树安装 `<Map>` 兜底。\n\n    用类绑定而不是遍历控件：对话框 / wizard / 面板都是运行时"
+ },
+ {
+  "file": "ui/button_states.py",
+  "line": 274,
+  "text": "切换按钮可用态，并同步底色/文字/指针。\n\n    `bg` / `fg` 在**启用**时改写常态配色（缓存随之更新）"
  }
 ]

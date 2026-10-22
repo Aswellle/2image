@@ -32,6 +32,7 @@ from tkinter import messagebox, ttk
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from ui.button_states import set_enabled
 
 from services.updater import (
     RELEASES_PAGE,
@@ -187,15 +188,14 @@ class AboutDialog(tk.Toplevel):
         state = self._flow.state
         busy = state in (UpdateState.CHECKING, UpdateState.DOWNLOADING,
                          UpdateState.VERIFYING)
-        self._check_btn.config(
-            state="disabled" if busy else "normal")
-        self._install_btn.config(
-            state="normal" if state in (UpdateState.UPDATE_AVAILABLE,
-                                        UpdateState.READY_TO_INSTALL)
-            else "disabled",
+        set_enabled(self._check_btn, not busy)
+        installable = state in (UpdateState.UPDATE_AVAILABLE, UpdateState.READY_TO_INSTALL)
+        set_enabled(
+            self._install_btn, installable,
             text=_("about_install_ready")
             if state is UpdateState.READY_TO_INSTALL
-            else _("about_download_install"))
+            else _("about_download_install"),
+        )
 
         if state is UpdateState.DOWNLOADING:
             self._progress.pack_forget()

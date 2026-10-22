@@ -56,6 +56,7 @@ MAX_NICK_LEN = 20  # 昵称/提示符显示截断长度
 
 
 from ui.viewer import ImageViewerWindow
+from ui.button_states import install_button_state_defaults
 from ui.components.toast import ToastManager
 from ui.wizard_free import ConfigWizard
 from ui.wizard_paid import PaidWizard
@@ -96,6 +97,9 @@ class App:
         root.geometry(f"{window_w}x{window_h}")
         root.configure(bg=C["bg"])
         root.minsize(min(1000, window_w), min(720, window_h))
+        # 所有按钮的按压/禁用态兜底（详见 ui/button_states.py）。
+        # 必须在建任何控件之前装好，才能覆盖启动即上屏的按钮。
+        install_button_state_defaults(root)
         if screen_w < 1400 or screen_h < 800:
             root.state("zoomed")
 
