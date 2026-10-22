@@ -27,6 +27,8 @@ from data.repository import (
 )
 from ui.app_protocol import SidebarProtocol
 from ui.history.thumbnail import ThumbnailLoader
+from ui.tooltip import DELAY_MS as TIP_DELAY_MS
+from ui.tooltip import FADE_FRAME_MS, FADE_FRAMES, fade_alpha
 
 THUMB_SIZE = 90
 
@@ -37,7 +39,7 @@ THUMB_SIZE = 90
 class _Tooltip:
     """
     鼠标悬停气泡提示（类级 Toplevel 单例）。
-    · 悬停 450ms 后开始显示
+    · 延迟与淡入参数见 ui/tooltip.py（与词条库提示共用一套）
     · 所有实例共享一个 Toplevel 窗口，避免每次 hover 创建/销毁 Toplevel
     · 100 张卡片 × 5 个按钮 = 500 实例，但只有 1 个 Toplevel 对象
     """
@@ -46,12 +48,13 @@ class _Tooltip:
     _tip_lbl: tk.Label | None = None  # 共享文本标签
     _active: "_Tooltip | None" = None  # 当前正在显示的实例
 
-    def __init__(self, widget: tk.Widget, text: str, delay_ms: int = 450):
+    def __init__(self, widget: tk.Widget, text: str, delay_ms: int = TIP_DELAY_MS):
         self._w = widget
         self._text = text
         self._delay = delay_ms
         self._job = None
         self._alpha = 0.0
+        self._fade_step = 0
         widget.bind("<Enter>", self._schedule, add="+")
         widget.bind("<Leave>", self._cancel, add="+")
         widget.bind("<ButtonPress>", self._cancel, add="+")
@@ -114,6 +117,7 @@ class _Tooltip:
             _Tooltip._tip_win.lift()
 
             self._alpha = 0.0
+            self._fade_step = 0
             self._fade_in()
         except Exception:
             _Tooltip._active = None
@@ -121,14 +125,15 @@ class _Tooltip:
     def _fade_in(self):
         if _Tooltip._active is not self or _Tooltip._tip_win is None:
             return
-        self._alpha = min(1.0, self._alpha + 0.15)
+        self._alpha = fade_alpha(self._fade_step)
         try:
             _Tooltip._tip_win.wm_attributes("-alpha", self._alpha)
         except Exception:
             _Tooltip._active = None
             return
-        if self._alpha < 1.0:
-            self._w.after(16, self._fade_in)  # ~60 fps
+        if self._fade_step < FADE_FRAMES - 1:
+            self._fade_step += 1
+            self._w.after(FADE_FRAME_MS, self._fade_in)
 
 
 # ══════════════════════════════════════════════════════════════

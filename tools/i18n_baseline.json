@@ -3873,5 +3873,25 @@
   "file": "ui/canvas_image.py",
   "line": 84,
   "text": "图片平移/换帧后同步描边矩形。"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 201,
+  "text": "缓出曲线淡入（曲线与帧数见 ui/tooltip.py）。"
+ },
+ {
+  "file": "ui/sidebar.py",
+  "line": 40,
+  "text": "鼠标悬停气泡提示（类级 Toplevel 单例）。\n    · 延迟与淡入参数见 ui/tooltip.py（与词条库提"
+ },
+ {
+  "file": "ui/tooltip.py",
+  "line": 1,
+  "text": "ui/tooltip.py — 悬浮提示共用的时间常量\n────────────────────────────────"
+ },
+ {
+  "file": "ui/tooltip.py",
+  "line": 32,
+  "text": "第 `step` 帧（0 起）的不透明度：缓出曲线，先快后慢。"
  }
 ]

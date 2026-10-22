@@ -4,8 +4,7 @@ ui/phrase_panel.py  v2
 提示词片段库对话框（Toplevel，非模态）。
 
   v2 新增 ── 词条悬浮说明提示框（_PhraseTooltip）
-    · 鼠标悬停 300ms 后淡入（避免快速划过触发闪烁）
-    · 10 帧 × 25ms 丝滑淡入动画，缓出曲线（先快后慢）
+    · 悬停延迟与淡入时长见 ui/tooltip.py（与侧栏气泡提示共用）
     · 悬浮窗：紫色细边框 + 深色背景 + 词条英文高亮标题 + 中文正文
     · wraplength=280，最大宽度约 300px，不会遮挡太多内容
     · 鼠标离开 / 点击 → 立即消失（0 延迟）
@@ -26,6 +25,9 @@ from services.phrase_library import (
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
+from ui.tooltip import DELAY_MS as TIP_DELAY_MS
+from ui.tooltip import FADE_FRAME_MS, FADE_FRAMES, MAX_ALPHA as TIP_MAX_ALPHA
+from ui.tooltip import fade_alpha
 
 
 _CAT_COLORS = {
@@ -53,11 +55,11 @@ class _PhraseTooltip:
 
     _current: "_PhraseTooltip | None" = None  # 当前可见的唯一实例
 
-    # ── 动画常量 ─────────────────────────────────────────────
-    _DELAY_MS = 300  # 悬停多久后开始淡入
-    _FRAMES = 10  # 淡入总帧数
-    _FRAME_MS = 25  # 每帧间隔（ms）
-    _MAX_ALPHA = 0.96  # 最终不透明度
+    # ── 动画常量（与侧栏气泡提示共用，见 ui/tooltip.py）────────
+    _DELAY_MS = TIP_DELAY_MS
+    _FRAMES = FADE_FRAMES
+    _FRAME_MS = FADE_FRAME_MS
+    _MAX_ALPHA = TIP_MAX_ALPHA
 
     def __init__(self, root: tk.Misc, widget: tk.Widget, phrase: str, desc: str):
         self._root = root
@@ -196,13 +198,11 @@ class _PhraseTooltip:
         self._fade_step(tip, 0)
 
     def _fade_step(self, tip: tk.Toplevel, step: int):
-        """缓出曲线淡入：progress^0.55，前期快后期慢，共 _FRAMES 帧。"""
+        """缓出曲线淡入（曲线与帧数见 ui/tooltip.py）。"""
         if self._win is not tip:
             return
-        progress = step / (self._FRAMES - 1) if self._FRAMES > 1 else 1.0
-        alpha = min(self._MAX_ALPHA, progress**0.55 * self._MAX_ALPHA)
         try:
-            tip.attributes("-alpha", alpha)
+            tip.attributes("-alpha", fade_alpha(step))
         except Exception:
             return
         if step < self._FRAMES - 1:
