@@ -61,9 +61,9 @@ class _Cell:
         self.canvas = tk.Canvas(self.frame, bg=C["empty"], width=CELL_W, height=CELL_H, bd=0, highlightthickness=0)
         self.canvas.grid(row=0, column=0, sticky="nsew")
 
-        # 占位文字
+        # 占位文字（空态说明，需满足正文 4.5:1）
         self._ph_id = self.canvas.create_text(
-            CELL_W // 2, CELL_H // 2 - 10, text=f"— {idx + 1} —", font=F["body"], fill="#334155", anchor="center"
+            CELL_W // 2, CELL_H // 2 - 10, text=f"— {idx + 1} —", font=F["body"], fill=C["text_muted"], anchor="center"
         )
 
         # 底部操作栏（固定高度，永远在 row=1）
@@ -175,7 +175,7 @@ class _Cell:
         self.bp._discard_cell(self)
         self.state = "discarded"
         self.canvas.delete("all")
-        self.canvas.create_text(CELL_W // 2, CELL_H // 2, text="— 已丢弃 —", font=F["input"], fill="#334155")
+        self.canvas.create_text(CELL_W // 2, CELL_H // 2, text="— 已丢弃 —", font=F["input"], fill=C["text_muted"])
         set_enabled(self.keep_btn, False)
         set_enabled(self.dis_btn, False)
         set_enabled(self.cmp_btn, False)
@@ -207,7 +207,7 @@ class _Cell:
             CELL_H // 2 - 10,
             text=f"— {self.idx + 1} —",
             font=F["label_lg"],
-            fill="#334155",
+            fill=C["text_muted"],
             anchor="center",
         )
         set_enabled(self.keep_btn, False, text=_("btn_keep"), bg=C["keep_bg"])

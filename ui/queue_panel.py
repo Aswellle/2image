@@ -73,7 +73,7 @@ class _ItemWidget(tk.Frame):
         host = tk.Frame(self, bg="#0a0f1a", width=self.THUMB, height=self.THUMB)
         host.pack(side="left", padx=(8, 6), pady=8)
         host.pack_propagate(False)
-        self._thumb_lbl = tk.Label(host, bg="#0a0f1a", text="⏳", font=F["disp_lg"], fg="#334155")
+        self._thumb_lbl = tk.Label(host, bg="#0a0f1a", text="⏳", font=F["disp_lg"], fg=C["text_muted"])
         self._thumb_lbl.pack(expand=True)
 
         # ── 右侧信息区 ────────────────────────────────────────

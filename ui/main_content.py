@@ -800,7 +800,7 @@ class MainContent:
 
         self._cmp_cv = tk.Canvas(self._cmp_right_wrap, bg="#0a0f1a", bd=0, highlightthickness=0)
         self._cmp_cv.pack(fill="both", expand=True)
-        self._cmp_cv.create_text(80, 50, text=_("compare_pick_hint"), font=F["input"], fill="#334155", anchor="center")
+        self._cmp_cv.create_text(80, 50, text=_("compare_pick_hint"), font=F["input"], fill=C["text_muted"], anchor="center")
         self._cmp_cv.bind("<Configure>", self._on_cmp_resize)
 
     # ── 对比逻辑 ─────────────────────────────────────────────
@@ -931,7 +931,7 @@ class MainContent:
             img_host = tk.Frame(cell, bg="#0f172a", width=THUMB, height=THUMB)
             img_host.pack(padx=8, pady=(8, 0))
             img_host.pack_propagate(False)
-            lbl = tk.Label(img_host, bg="#0f172a", text="⏳", font=F["disp_lg"], fg="#334155")
+            lbl = tk.Label(img_host, bg="#0f172a", text="⏳", font=F["disp_lg"], fg=C["text_muted"])
             lbl.pack(expand=True)
 
             # 异步加载缩略图
@@ -1472,10 +1472,12 @@ class MainContent:
         w = cv.winfo_width() or 200
         h = cv.winfo_height() or 160
         if h < 68:
-            cv.create_text(w // 2, h // 2, text=_("ref_upload_hint"), font=F["tiny"], fill="#4a8ac0")
+            cv.create_text(w // 2, h // 2, text=_("ref_upload_hint"), font=F["tiny"], fill=C["text_muted"])
             return
-        cv.create_text(w // 2, h // 2 - 16, text="🖼", font=(F["_sans"], 30), fill="#1d3560")
-        cv.create_text(w // 2, h // 2 + 22, text=_("ref_upload_hint"), font=F["small"], fill="#2a4a7a")
+        # 图标按图形对象算 3:1（#4a8ac0 在此底色上 4.96:1），
+        # 提示文字是正文，用与队列空态一致的前景色
+        cv.create_text(w // 2, h // 2 - 16, text="🖼", font=(F["_sans"], 30), fill="#4a8ac0")
+        cv.create_text(w // 2, h // 2 + 22, text=_("ref_upload_hint"), font=F["small"], fill=C["text_muted"])
 
     def _update_ref_thumb(self):
         """将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"""
