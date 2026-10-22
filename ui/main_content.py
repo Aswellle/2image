@@ -227,8 +227,6 @@ class MainContent:
         self._prev_resize_timer = None
         self._cmp_resize_timer = None
         self._ref_resize_timer = None
-        # 图生图侧栏展开/收起动画
-        self._i2i_col_anim_job = None
 
         self._build(parent)
 
@@ -745,7 +743,7 @@ class MainContent:
         tb.bind("<Configure>", self._on_preview_toolbar_resize)
 
         # ── 预览主体 ──────────────────────────────────────────
-        # 列 0：图生图参考图侧栏（固定宽度，默认收起 minsize=0）
+        # 列 0：图生图参考图侧栏（默认收起 minsize=0）
         # 列 1：主预览画布（一直存在，t2i/i2i 通用）
         # 列 2/3：对比分隔线 / 对比图（仅"选取对比图"后才 grid）
         # 切换模式只改变列 0 的宽度，不影响 Notebook/imf 本身的整体尺寸。
@@ -1176,7 +1174,7 @@ class MainContent:
     # ══════════════════════════════════════════════════════════
     #   生成模式切换 + 图生图参考图侧栏
     # ══════════════════════════════════════════════════════════
-    _I2I_COL_W = 260  # 图生图参考图侧栏固定宽度（预览 Tab 第 0 列）
+    _I2I_COL_W = 260  # 图生图参考图侧栏的宽度下限（预览 Tab 第 0 列）
 
     def _build_i2i_ref_column(self):
         """构建图生图参考图侧栏——预览 Tab 内 _prev_host 的第 0 列。
@@ -1364,11 +1362,14 @@ class MainContent:
 
         图生图的参考图侧栏固定在预览 Tab 内部（_prev_host 第 0 列），
         而不是插在主布局里的额外一行——切换模式只改变这一列的宽度
-        （0 ↔ _I2I_COL_W，经 _animate_i2i_col 平滑过渡），预览/变体/
-        队列/调试日志几个 Notebook Tab 以及查看器窗口的整体尺寸完全
-        不受影响，不会因为切换模式而整体跳动或改变可用画布区域的
-        高度；列宽本身也不再一帧内瞬间跳变，避免右侧预览图跟着
-        "抖一下"式地瞬间缩放。
+        （0 ↔ _I2I_COL_W），预览/变体/队列/调试日志几个 Notebook Tab
+        以及查看器窗口的整体尺寸完全不受影响，不会因为切换模式而
+        整体跳动或改变可用画布区域的高度。
+
+        列宽是瞬时切换的：预览画布会因此收到一次 <Configure>，由
+        _on_prev_resize 的 50ms 防抖合并成一次重绘。逐帧改列宽做不到
+        ——侧栏的自然宽度（约 278px）大于 _I2I_COL_W，grid 会把
+        minsize 顶回去，除非关掉 propagate 并手工维护高度。
 
         图生图模式下，接口下拉框会被强制收窄为真正支持图生图的接口
         （见 _i2i_selectable_providers）——此前选中其他接口时参考图会
@@ -1390,9 +1391,10 @@ class MainContent:
                 self._pre_i2i_provider = None
 
             self._set_batch_i2i_lock(False)
-            # 先播放收起动画，动画结束后再彻底 grid_remove，
-            # 这样收起过程本身也是平滑的，而不是瞬间消失。
-            self._animate_i2i_col(0, on_done=self._i2i_ref_col.grid_remove)
+            # 收起：先把列宽归零再移出网格。列宽归零后预览画布立即拿到
+            # 全部宽度，_on_prev_resize 的 50ms 防抖只重绘一次。
+            self._prev_host.columnconfigure(0, minsize=0)
+            self._i2i_ref_col.grid_remove()
         else:
             self._mode_t2i_btn.config(bg=C["panel"], fg=C["sub"])
             self._mode_i2i_btn.config(bg="#1d4ed8", fg="white")
@@ -1410,47 +1412,9 @@ class MainContent:
                 self.pv.set(i2i_display[0])
 
             self._set_batch_i2i_lock(True)
-            self._animate_i2i_col(self._I2I_COL_W)
-
-    def _animate_i2i_col(self, target_w: int, on_done=None):
-        """图生图参考图侧栏的列宽 0 ↔ _I2I_COL_W 平滑过渡（ease-out，
-        约 220ms，14 帧 ≈ 60fps），取代此前一次性 columnconfigure
-        跳变——那样右侧预览画布的 <Configure> 会在同一帧内被迫瞬间
-        缩放，视觉上就是图片"振荡/跳一下"。分帧过渡后每一帧的宽度
-        变化很小，预览图跟着平滑缩放，观感上不再有跳动。"""
-        job = self._i2i_col_anim_job
-        if job is not None:
-            try:
-                self.app.root.after_cancel(job)
-            except Exception:
-                pass
-            self._i2i_col_anim_job = None
-
-        start_w = self._prev_host.grid_columnconfigure(0, "minsize") or 0
-        if start_w == target_w:
-            self._prev_host.columnconfigure(0, minsize=target_w)
-            if on_done:
-                on_done()
-            return
-
-        steps, duration_ms = 14, 220
-        interval = max(1, duration_ms // steps)
-
-        def _ease_out_cubic(t):
-            return 1 - (1 - t) ** 3
-
-        def _step(i):
-            t = min(1.0, i / steps)
-            w = round(start_w + (target_w - start_w) * _ease_out_cubic(t))
-            self._prev_host.columnconfigure(0, minsize=w)
-            if t >= 1.0:
-                self._i2i_col_anim_job = None
-                if on_done:
-                    on_done()
-            else:
-                self._i2i_col_anim_job = self.app.root.after(interval, lambda: _step(i + 1))
-
-        _step(1)
+            # 展开：侧栏自然宽度由内容决定（约 278px），列 minsize 只需
+            # 覆盖到它；预览画布的 <Configure> 随后触发一次防抖重绘。
+            self._prev_host.columnconfigure(0, minsize=self._I2I_COL_W)
 
     def _set_batch_i2i_lock(self, locked: bool):
         """批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个
