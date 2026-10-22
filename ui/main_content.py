@@ -1244,20 +1244,20 @@ class MainContent:
         self._ref_hint_rows: list = []
 
     def _i2i_selectable_providers(self) -> list:
-        """真正支持图生图、且能在现有下拉框/向导里配置密钥的接口。
+        """支持图生图、且能在现有向导里配置 Key 的接口。
 
-        IMG2IMG_PROVIDERS 里还有 fal.ai 这类 commercial 分类接口——但
-        wizard_free.py / wizard_paid.py 目前都没有它的 Key 配置卡片
-        （fal_key 在两个向导里都不存在），选中后只会得到一个无从下手的
-        报错，所以图生图下拉框只收窄到同时出现在 FREE_PROVIDERS /
-        PAID_PROVIDERS 里的接口，等对应向导补上后它会自动出现。
+        真实条件是「向导里有没有该接口的 Key 配置卡片」，而不是
+        「属于免费/付费分类」。两者并不等价：volcengine_ark 属于
+        commercial，但 wizard_paid.py 已有完整卡片，用户配好即可用；
+        fal_flux 同属 commercial 却没有任何配置入口，选中只会得到
+        一个无从下手的报错。
 
-        注意：这个判断依据的是「分类」，而真实条件是「向导里有没有该
-        Key 的配置卡片」。volcengine_ark 属于 commercial，但
-        wizard_paid.py 已有完整卡片——它当前被排除属于已知偏差，
-        修正需引入向导覆盖表，不在本次范围。
+        因此以 WIZARD_CONFIGURED 为准。新增向导卡片时在注册表登记，
+        这里无需改动。
         """
-        return [n for n in IMG2IMG_PROVIDERS if n in FREE_PROVIDERS or n in PAID_PROVIDERS]
+        from services.providers import WIZARD_CONFIGURED
+
+        return [n for n in IMG2IMG_PROVIDERS if n in WIZARD_CONFIGURED]
 
     def _update_ref_hint(self, i2i_list: list):
         """把图生图可用接口名称以竖向分行方式填入侧栏提示区。

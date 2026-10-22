@@ -88,3 +88,29 @@ def test_img2img_providers_are_registered():
     """IMG2IMG_PROVIDERS 的每个 id 都必须真实存在于 provider 注册表。"""
     unknown = set(registry.IMG2IMG_PROVIDERS) - set(registry.ALL_PROVIDERS)
     assert not unknown, unknown
+
+
+def test_wizard_configured_matches_actual_wizards():
+    """WIZARD_CONFIGURED 必须与两个向导实际写入的配置键一致。
+
+    这张表决定哪些接口会出现在需要先配 Key 的下拉框里。手工维护
+    极易漂移（历史事故：volcengine_ark 有卡片却被排除、xai_grok
+    没有卡片却被列入），因此直接从向导源码里提取写入的键来比对。
+    """
+    import re
+    from pathlib import Path
+
+    from services.providers import MULTI_KEY_PROVIDERS
+
+    ui_dir = Path(__file__).resolve().parent.parent / "ui"
+    written: set[str] = set()
+    for name in ("wizard_free.py", "wizard_paid.py"):
+        src = (ui_dir / name).read_text(encoding="utf-8")
+        written |= set(re.findall(r'cfg\["([a-z_]+)"\]', src))
+
+    infos = _provider_infos()
+    for pid, info in infos.items():
+        keys = MULTI_KEY_PROVIDERS.get(pid) or (
+            (info["config_key"],) if info.get("config_key") else ())
+        covered = all(k in written for k in keys) if keys else True
+        assert (pid in registry.WIZARD_CONFIGURED) == covered, pid

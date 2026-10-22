@@ -3733,5 +3733,10 @@
   "file": "services/application/settings_controller.py",
   "line": 63,
   "text": "清空调试日志"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1247,
+  "text": "支持图生图、且能在现有向导里配置 Key 的接口。\n\n        真实条件是「向导里有没有该接口的 Key 配置卡片"
  }
 ]
