@@ -32,7 +32,7 @@ python auto_build.py
 python tools/verify_release_version.py --tag v2.7.2
 ```
 
-`pyproject.toml` also configures mypy/pip-audit/format checks in CI, but all three are `continue-on-error` — only ruff F821/E9, the two i18n gates, and the coverage floor of 68 actually fail a build.
+`pyproject.toml` configures only pytest, ruff, and coverage. mypy, pip-audit, and `ruff format` are CI-only steps invoked with CLI flags in `.github/workflows/ci.yml`, and all three are `continue-on-error` — only ruff F821/E9, the two i18n gates, and the coverage floor of 68 actually fail a build.
 
 ## Architecture
 
@@ -54,7 +54,7 @@ Intended dependency direction is `ui → services → data → config`. One deli
 |---|---|
 | `main.py` | Entry point only: DPI, fonts, data migration, DB init, `App(root)` |
 | `ui/app.py::App` | Coordinator: layout, sash, hotkeys, viewer/toast wiring, update check |
-| `ui/main_content.py` | Prompt box, provider dropdown, size/quality controls, preview, tabs |
+| `ui/main_content.py` | Prompt box, provider dropdown, size control, preview, tabs |
 | `ui/sidebar.py` | History list, tag filters, favorites, thumbnails |
 | `ui/app_protocol.py` | `SidebarProtocol` / `MainContentProtocol` — panels depend on these, never on `App` |
 | `services/image_service.py` | `generate_image()` — the single generation entry point |
@@ -103,10 +103,10 @@ def try_my_provider(prompt, w, h, seed, cfg, log) -> tuple[bytes, str]:
 
 Rules that the tests enforce or rely on:
 
-- **Two registries must stay in lockstep.** `PROVIDER_INFO` feeds runtime dispatch; `services/generation/provider_manifest.py` feeds routing metadata (category, `supports_img2img`, capabilities). `tests/test_registry_consistency.py` asserts IDs, names, categories, and config keys match. Adding a provider means editing both.
+- **Two registries must stay in lockstep.** `PROVIDER_INFO` feeds runtime dispatch; `services/generation/provider_manifest.py` feeds routing metadata (category, `supports_img2img`, capabilities). `tests/test_registry_consistency.py` asserts IDs, names, categories, config keys, and tier membership match — but **not** `supports_img2img`, which has already drifted: four modules (`gemini`, `openai_image`, `minimax_image`, `volcengine_ark`) read `cfg["_ref_image"]` and are flagged in the manifest, yet omit the key from `PROVIDER_INFO`, so `IMG2IMG_PROVIDERS` (built solely from that key) excludes them and they never reach the img2img UI. Set the flag in both places; the manifest also carries no production reader (`Router` is test-only), so treat `PROVIDER_INFO` as the live source of truth.
 - **Raise `ValueError`** for expected failures; the orchestrator classifies them. Never return `None`.
 - **Use the shared network layer**: `get_session()` (thread-local), `safe_get_image()` (SSRF + 25 MB cap + redirect validation), `safe_error_text()`, `read_bounded()`, `raise_if_cancelled(cfg)`.
-- **Serial lock per module** — one `_LOCK` + `_LAST_DONE` pair, held across the network call, so concurrent batch calls to the same free tier don't trip rate limits.
+- **Serial lock per module** — one `_LOCK` + `_LAST_DONE` pair, held across the network call, so concurrent batch calls to the same free tier don't trip rate limits. 18 of 23 providers implement it; `siliconflow`, `openai_image`, `stability_ai`, `replicate_flux`, and `cloudflare_ai` do not, and no test enforces it. New providers must copy the pattern.
 - New config keys go in `DEFAULT_CONFIG` (`config/settings.py`); discovery then populates `PROVIDER_KEYS`, which routing and the UI treat as the source of truth.
 
 `DEFAULT_ORDER` in `services/providers/__init__.py` and `FREE_PROVIDER_ORDER` in `provider_manifest.py` are explicit lists (deliberately not pkgutil order); keep them aligned.
