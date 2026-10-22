@@ -623,10 +623,20 @@ class BatchPanel(tk.Frame):
         if self._cmp_b is cell:
             self._cmp_b = None
         # 修复 #8：后台线程删除文件，避免主线程同步 I/O 阻塞
+        # 走 safe_delete_file()：图片路径必须校验在 IMAGES_DIR 内才删除，
+        # 直接 os.remove 会绕过路径穿越/符号链接防护。
         if cell.path:
-            import os, threading as _th
+            import threading as _th
 
-            _th.Thread(target=lambda p=cell.path: os.remove(p) if os.path.exists(p) else None, daemon=True).start()
+            from data.file_ownership import safe_delete_file
+
+            def _rm(p=cell.path):
+                try:
+                    safe_delete_file(p)
+                except (ValueError, OSError):
+                    pass  # 越界路径或已被移除：丢弃变体不因删除失败中断
+
+            _th.Thread(target=_rm, daemon=True).start()
         self.app._log(f"✕ 丢弃变体 #{cell.idx + 1}")
 
     def _keep_all(self):
