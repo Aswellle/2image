@@ -58,7 +58,7 @@ Directly select from 19 free and paid image generation services on the main inte
 Once services are configured, entering "banner design" prioritizes Ideogram (excellent for text-in-image); entering "e-commerce product photo" prioritizes fal.ai FLUX Ultra (photorealistic HD). Different scenes try suitable models in priority order, or you can manually specify an API.
 
 ### 🖼 Image-to-Image (img2img)
-After uploading a reference image, the program shows only the img2img-capable APIs that have configuration entries. Use Stability AI's "strength" slider to control modification intensity; other supported models also receive the reference image. Currently supports Stability AI, Google Gemini Nano Banana, Nano Banana Pro, OpenAI GPT-Image, MiniMax image-01, and Black Forest Labs FLUX. Batch variant and queue modes automatically lock to img2img to prevent the reference image from being ignored.
+After uploading a reference image, the program shows only the img2img-capable APIs that have configuration entries. Use Stability AI's "strength" slider to control modification intensity; other supported models also receive the reference image. The main UI currently offers Stability AI, Nano Banana Pro, and Black Forest Labs FLUX; Gemini, OpenAI GPT-Image, MiniMax image-01, and Doubao SeedEdit implement reference-image handling but do not yet appear in the img2img dropdown due to registry declarations and configuration-entry limits. Batch variant and queue modes automatically lock to img2img to prevent the reference image from being ignored.
 
 ### 🎲 Batch Variants — 6 Images at Once
 Automatically generates multiple seed variants from the same prompt, compare and pick the best one — greatly improves creative efficiency. Supports standard mode and higher-quality mode (more steps / better models).
@@ -122,7 +122,6 @@ python main.py
 |---|---|---|
 | **💎 OpenAI GPT-Image** | Text-to-image & reference image editing, supports gpt-image-1 / mini | Per-request |
 | **💎 Nano Banana Pro** | Gemini 3 Pro Image, high-quality img2img, reuses Gemini key | Pay-per-use |
-| **💎 MiniMax image-01** | Text-to-image & subject reference image creation | Pay-per-use |
 | **💎 Black Forest Labs FLUX** | Official FLUX text-to-image & Kontext img2img | Pay-per-use |
 | **💎 Stability AI** | Supports img2img, original Stable Diffusion | Per-request |
 | **💎 Replicate FLUX** | FLUX.1.1 Pro high resolution | Per-request |
@@ -130,13 +129,15 @@ python main.py
 
 ### Commercial APIs
 
-These services are auto-discovered by the registry but are not yet integrated into the main UI dropdown or key configuration wizards — suitable for commercial use cases where you can add your own configuration entry points.
+These services are auto-discovered by the registry but are not yet integrated into the main UI dropdown — suitable for commercial use cases where you can add your own configuration entry points. (Doubao/Volcengine already has a key field in the paid wizard, but its category is `commercial`, so it does not appear in the main dropdown.)
 
 | API | Features |
 |---|---|
 | **Ideogram v3** | Best for text-in-image: banners, logos, posters with readable text |
 | **fal.ai FLUX Ultra** | Up to 4MP ultra-HD photorealistic, best for product photos / portraits |
 | **Recraft v3** | Design / illustration / vector style, ideal for brand VI |
+| **MiniMax image-01** | Text-to-image & subject reference image creation (no dedicated config card) |
+| **Doubao Seedream (Volcengine)** | Seedream text-to-image / SeedEdit img2img |
 
 ---
 

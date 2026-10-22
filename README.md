@@ -57,7 +57,7 @@
 配置可用服务后，输入「banner 设计」会优先排列 Ideogram（擅长文字入图）；输入「电商产品图」会优先排列 fal.ai FLUX Ultra（写实高清）。不同场景按优先序列尝试适合的模型，也可手动指定接口。
 
 ### 🖼 图生图（img2img）
-上传参考图后，程序会只显示已接入且已有配置入口的图生图接口；可使用 Stability AI 的「变化强度」控制改动幅度，其他支持的模型会一并接收参考图。当前可选 Stability AI、Google Gemini Nano Banana、Nano Banana Pro、OpenAI GPT-Image、MiniMax image-01 与 Black Forest Labs FLUX 等服务；批量变体和顺序队列会在图生图模式下自动锁定，避免参考图被忽略。
+上传参考图后，程序会只显示已接入且已有配置入口的图生图接口；可使用 Stability AI 的「变化强度」控制改动幅度，其他支持的模型会一并接收参考图。当前主界面可选 Stability AI、Nano Banana Pro 与 Black Forest Labs FLUX；Gemini、OpenAI GPT-Image、MiniMax image-01 与豆包 SeedEdit 已实现参考图逻辑，但受注册表声明与配置入口限制，暂未出现在图生图下拉框中。批量变体和顺序队列会在图生图模式下自动锁定，避免参考图被忽略。
 
 ### 🎲 批量变体，一次生成 6 张
 同一提示词自动生成多张不同种子的变体，对比挑选最满意的一张，极大提升创作效率。支持标准模式与高质量模式（更高步数 / 更好模型）。
@@ -121,7 +121,6 @@ python main.py
 |---|---|---|
 | **💎 OpenAI GPT-Image** | 文生图与参考图编辑，支持 gpt-image-1 / mini | 按次计费 |
 | **💎 Nano Banana Pro** | Gemini 3 Pro Image，高画质图生图，复用 Gemini Key | 按量计费 |
-| **💎 MiniMax image-01** | 文生图与主体参考图创作 | 按量计费 |
 | **💎 Black Forest Labs FLUX** | 官方 FLUX 文生图与 Kontext 图生图 | 按量计费 |
 | **💎 Stability AI** | 支持图生图，Stable Diffusion 原厂 | 按次计费 |
 | **💎 Replicate FLUX** | FLUX.1.1 Pro 高分辨率 | 按次计费 |
@@ -129,13 +128,15 @@ python main.py
 
 ### 商业变现接口
 
-以下服务已由注册表自动发现；当前尚未接入常规的主界面下拉菜单与密钥配置向导，适合需要自行补充配置入口的商用场景。
+以下服务已由注册表自动发现；当前尚未接入常规的主界面下拉菜单，适合需要自行补充配置入口的商用场景（豆包已在付费配置向导中提供 Key 输入，但分类仍为 commercial，因此不出现在主界面下拉菜单）。
 
 | 接口 | 特点 |
 |---|---|
 | **Ideogram v3** | 文字入图首选，Banner / LOGO / 海报中文字可读 |
 | **fal.ai FLUX Ultra** | 最高 4MP 超清写实，产品图 / 人像首选 |
 | **Recraft v3** | 设计 / 插画 / 矢量风格，品牌 VI 利器 |
+| **MiniMax image-01** | 文生图与主体参考图创作（无独立配置卡片） |
+| **豆包 Seedream（火山引擎）** | Seedream 文生图 / SeedEdit 图生图 |
 
 ---
 
