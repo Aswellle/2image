@@ -57,6 +57,15 @@ Intended dependency direction is `ui → services → data → config`. One deli
 | `ui/main_content.py` | Prompt box, provider dropdown, size control, preview, tabs |
 | `ui/sidebar.py` | History list, tag filters, favorites, thumbnails |
 | `ui/app_protocol.py` | `SidebarProtocol` / `MainContentProtocol` — panels depend on these, never on `App` |
+| `ui/viewer.py` | Standalone image viewer: single-image render, zoom/pan |
+| `ui/batch_panel.py` | Batch variant generation panel |
+| `ui/queue_panel.py` | Sequential generation queue |
+| `ui/phrase_panel.py` | Phrase library panel |
+| `ui/prompt_wizard.py` | AI prompt-optimization wizard |
+| `ui/stats_dashboard.py` | History statistics and heatmap |
+| `ui/wizard_free.py` / `ui/wizard_paid.py` | Image-provider credential wizards — **a new provider's config card goes here** |
+| `ui/wizard_llm.py` | LLM credential UI for prompt optimization — separate from the image-provider wizards |
+| `ui/about_dialog.py` | About dialog: version, update check entry |
 | `services/image_service.py` | `generate_image()` — the single generation entry point |
 | `services/generation/orchestrator.py` | Provider chain: retry, circuit-breaking, fallback decisions |
 | `services/generation/errors.py` | `ProviderError` taxonomy — the only retry/fallback signal |
@@ -68,6 +77,8 @@ Intended dependency direction is `ui → services → data → config`. One deli
 | `services/generation/budget.py` | Paid-spend ledger + daily budget guard |
 | `services/updater/` | Self-update: version → manifest → download → verify → install → confirm |
 | `services/translation/` | zh→en via MyMemory, rate-limited and cancellable |
+| `services/prompt_assistant.py` | Structured wizard input → bounded English prompt (SiliconFlow/DeepSeek/HF) |
+| `services/phrase_library.py` | Phrase library storage |
 | `config/model_catalog.py` | Single source for per-family model lists and defaults |
 
 `services/smart_router.py` is a **backward-compat shim only** — production code imports `services.generation.router`. Likewise `services/generation/job_queue.py` is a state-machine/metrics library whose `_process_job` is a placeholder; the real sequential queue is `ui/queue_panel.py`.
@@ -162,7 +173,7 @@ CI then runs the quality gates → Windows test matrix (3.11/3.12) → build. Th
 - Provider display names are UI-only; `resolve_provider_id()` maps legacy display names to stable IDs. The UI dropdown and all routing now use stable IDs.
 - `auto_build.py` deletes and recreates `build/` and `dist/`; artifacts are `dist/2image.exe` and `installer/Output/2image-setup-v<ver>.exe`.
 - `main.spec` collects provider submodules into `hiddenimports`; a new top-level package needs the same treatment or it will be missing from the packaged exe.
-- `AGENTS.md` is a much longer companion reference (provider quick-reference table, build internals, review history). It drifts more slowly than this file — verify specific numbers against the code.
+- `AGENTS.md` is a much longer companion reference (provider quick-reference table, build internals, review history). It is **not** kept in sync automatically — version numbers and test counts there have gone stale before, so verify any specific number against the code rather than trusting either file.
 
 ## Git rules
 
