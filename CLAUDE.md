@@ -29,7 +29,7 @@ python tools/check_i18n.py --update-baseline tools/i18n_baseline.json   # after 
 python auto_build.py
 
 # Verify a release tag is internally consistent (tag ↔ version.json ↔ release notes)
-python tools/verify_release_version.py --tag v2.7.2
+python tools/verify_release_version.py --tag v2.7.3
 ```
 
 `pyproject.toml` configures only pytest, ruff, and coverage. mypy, pip-audit, and `ruff format` are CI-only steps invoked with CLI flags in `.github/workflows/ci.yml`, and all three are `continue-on-error` — only ruff F821/E9, the two i18n gates, and the coverage floor of 68 actually fail a build.
