@@ -14,8 +14,8 @@ config/i18n.py — 国际化字符串注册表
 STRINGS = {
     # ── 应用主窗口 ──────────────────────────────────────────
     "app_title": {
-        "zh-CN": "✨ 文字生图工具 v10",
-        "en": "✨ Text-to-Image Tool v10",
+        "zh-CN": "2image",
+        "en": "2image",
     },
     "app_input_label": {
         "zh-CN": "📝 输入描述（支持中文，自动翻译）",

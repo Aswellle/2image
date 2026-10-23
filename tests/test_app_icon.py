@@ -5,6 +5,8 @@ from unittest.mock import ANY, Mock, call
 import ctypes
 import main
 
+from config.i18n import _
+
 
 def test_resource_path_uses_pyinstaller_bundle(monkeypatch):
     monkeypatch.setattr(main.sys, "_MEIPASS", r"C:\bundle", raising=False)
@@ -90,7 +92,7 @@ def test_app_initial_geometry_stays_within_screen(monkeypatch):
 
     App(root)
 
-    root.title.assert_called_once_with("✨ 文字生图工具 v10")
+    root.title.assert_called_once_with(_("app_title"))
     root.geometry.assert_called_once_with("1254x684")
     root.minsize.assert_called_once_with(1000, 684)
     root.state.assert_called_once_with("zoomed")
