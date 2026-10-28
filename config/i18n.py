@@ -2692,6 +2692,439 @@ STRINGS = {
         "zh-CN": "暂无项目",
         "en": "No items",
     },
+    # ── 免费配置向导（补齐 4224c2c 替换时遗漏落库的键）─────────
+    "wz_close_title": {
+        "zh-CN": "未保存的更改",
+        "en": "Unsaved changes",
+    },
+    "wz_close_msg": {
+        "zh-CN": "有未保存的更改，确定关闭？",
+        "en": "You have unsaved changes. Close anyway?",
+    },
+    "wz_hdr_title": {
+        "zh-CN": "⚙  配置接口密钥",
+        "en": "⚙  Configure API Keys",
+    },
+    "wz_hdr_subtitle": {
+        "zh-CN": "配置后将自动保存，下次启动无需重填",
+        "en": "Saved automatically — no need to re-enter on next launch",
+    },
+    "wz_sf_title": {
+        "zh-CN": "硅基流动 SiliconFlow",
+        "en": "SiliconFlow",
+    },
+    "wz_sf_tag": {
+        "zh-CN": "★ 强烈推荐 · 国内服务 · 速度快 · 注册送免费额度",
+        "en": "★ Highly recommended · fast · free credits on signup",
+    },
+    "wz_sf_info1": {
+        "zh-CN": "• 中国国产云平台，注册即送免费额度，支持 FLUX.1-schnell / SDXL 等",
+        "en": "• Chinese cloud platform with free credits on signup; FLUX.1-schnell / SDXL and more",
+    },
+    "wz_sf_info2": {
+        "zh-CN": "• 生图速度约 2~5 秒，推理质量高，支持最大 1024×1024",
+        "en": "• Generation in ~2–5 s, high quality, up to 1024×1024",
+    },
+    "wz_sf_info3": {
+        "zh-CN": "• v3 HQ变体模式：优先使用 FLUX.1-dev（28步），画质显著高于 schnell",
+        "en": "• HQ variant mode prefers FLUX.1-dev (28 steps) for markedly better quality",
+    },
+    "wz_sf_key_label": {
+        "zh-CN": "硅基流动 API Key:",
+        "en": "SiliconFlow API Key:",
+    },
+    "wz_sf_register": {
+        "zh-CN": "🌐 注册硅基流动（免费）",
+        "en": "🌐 Sign up for SiliconFlow (free)",
+    },
+    "wz_sf_get_key": {
+        "zh-CN": "🔑 登录后获取 API Key",
+        "en": "🔑 Get API Key (after sign-in)",
+    },
+    "wz_sf_hint": {
+        "zh-CN": "📋 步骤：打开链接 → 注册/登录 → 账户 → API密钥 → 新建 → 复制（格式: sk-xxxxx）",
+        "en": "📋 Steps: open the link → sign up/in → Account → API keys → Create → copy (format: sk-xxxxx)",
+    },
+    "wz_poll_title": {
+        "zh-CN": "Pollinations.AI",
+        "en": "Pollinations.AI",
+    },
+    "wz_poll_tag": {
+        "zh-CN": "🆓 完全免费 · 无需注册 · 无需 Key · FLUX 高质量",
+        "en": "🆓 Completely free · no signup · no key · high-quality FLUX",
+    },
+    "wz_poll_info1": {
+        "zh-CN": "• 完全开源的生成平台（柏林团队），基于 FLUX.1 模型，质量优秀",
+        "en": "• Fully open-source generator (Berlin-based team) built on FLUX.1 with excellent quality",
+    },
+    "wz_poll_info2": {
+        "zh-CN": "• 无需注册、无需 API Key，直接启用即可使用",
+        "en": "• No signup or API key required — enable and use",
+    },
+    "wz_poll_info3": {
+        "zh-CN": "• v2 HQ变体模式：开启 enhance=true（AI 自动丰富提示词），提升画面细节",
+        "en": "• HQ variant mode sets enhance=true (AI enriches the prompt) for finer detail",
+    },
+    "wz_poll_enable": {
+        "zh-CN": "✅ 启用 Pollinations.AI（无需配置，直接使用）",
+        "en": "✅ Enable Pollinations.AI (no setup, works out of the box)",
+    },
+    "wz_poll_enable_desc": {
+        "zh-CN": "勾选后 Pollinations.AI 将在接口列表中出现，可直接选用",
+        "en": "When checked, Pollinations.AI appears in the provider list for direct selection",
+    },
+    "wz_poll_website": {
+        "zh-CN": "🌐 官网：pollinations.ai",
+        "en": "🌐 Website: pollinations.ai",
+    },
+    "wz_poll_key_label": {
+        "zh-CN": "Pollinations Key（可选，遇 401 再填）:",
+        "en": "Pollinations key (optional — fill in only on 401):",
+    },
+    "wz_cf_title": {
+        "zh-CN": "Cloudflare Workers AI",
+        "en": "Cloudflare Workers AI",
+    },
+    "wz_cf_tag": {
+        "zh-CN": "🆓 免费 10,000 neurons/天 · FLUX.1-schnell · SDXL · 全球 CDN 加速",
+        "en": "🆓 10,000 neurons/day free · FLUX.1-schnell · SDXL · global CDN",
+    },
+    "wz_cf_info1": {
+        "zh-CN": "• Cloudflare 全球节点加速，FLUX.1-schnell + SDXL 高质量模型",
+        "en": "• Accelerated by Cloudflare's global network; FLUX.1-schnell + SDXL models",
+    },
+    "wz_cf_info2": {
+        "zh-CN": "• 每天 10,000 free neurons ≈ 约 10~20 张全分辨率图片，完全免费",
+        "en": "• 10,000 free neurons/day ≈ 10–20 full-resolution images, entirely free",
+    },
+    "wz_cf_info3": {
+        "zh-CN": "• 需要：① Cloudflare Account ID  ② API Token（Workers AI Read 权限）",
+        "en": "• Requires: ① Cloudflare Account ID  ② API token (Workers AI Read permission)",
+    },
+    "wz_cf_info4": {
+        "zh-CN": "• 注册免费，无需信用卡；API Token 仅需 Read 权限，安全性高",
+        "en": "• Free signup, no credit card; the token only needs Read permission",
+    },
+    "wz_cf_account_label": {
+        "zh-CN": "Cloudflare Account ID:",
+        "en": "Cloudflare Account ID:",
+    },
+    "wz_cf_token_label": {
+        "zh-CN": "Cloudflare API Token:",
+        "en": "Cloudflare API Token:",
+    },
+    "wz_cf_register": {
+        "zh-CN": "🌐 注册 Cloudflare（免费）",
+        "en": "🌐 Sign up for Cloudflare (free)",
+    },
+    "wz_cf_create_token": {
+        "zh-CN": "🔑 创建 API Token",
+        "en": "🔑 Create API Token",
+    },
+    "wz_cf_docs": {
+        "zh-CN": "📖 查看 Workers AI 文档",
+        "en": "📖 Workers AI docs",
+    },
+    "wz_cf_hint": {
+        "zh-CN": "📋 步骤：① dash.cloudflare.com 注册 → ② 右侧找到 Account ID 并复制 → ③ Profile → API Tokens → Create Token → 选 Workers AI (Read) → 复制 Token",
+        "en": "📋 Steps: ① register at dash.cloudflare.com → ② copy the Account ID on the right → ③ Profile → API Tokens → Create Token → pick Workers AI (Read) → copy the token",
+    },
+    "wz_ml_title": {
+        "zh-CN": "ModelsLab API",
+        "en": "ModelsLab API",
+    },
+    "wz_ml_tag": {
+        "zh-CN": "🆓 免费 100次/天 · FLUX/SDXL/10000+模型 · 无需信用卡",
+        "en": "🆓 100 images/day free · FLUX/SDXL/10,000+ models · no credit card",
+    },
+    "wz_ml_info1": {
+        "zh-CN": "• 印度 AI 平台，注册免费获得每日 100 次 API 配额，无需信用卡",
+        "en": "• Indian AI platform; free daily quota of 100 API calls, no credit card",
+    },
+    "wz_ml_info2": {
+        "zh-CN": "• 支持 FLUX.1-schnell / SDXL / Stable Diffusion 及 10,000+ 社区模型",
+        "en": "• FLUX.1-schnell / SDXL / Stable Diffusion plus 10,000+ community models",
+    },
+    "wz_ml_info3": {
+        "zh-CN": "• 每日 100 次配额适合个人日常使用，次日自动重置",
+        "en": "• The daily quota of 100 suits personal use and resets every day",
+    },
+    "wz_ml_info4": {
+        "zh-CN": "• API 稳定（2~5秒响应），支持异步处理模式",
+        "en": "• Stable API (~2–5 s responses) with an async processing mode",
+    },
+    "wz_ml_key_label": {
+        "zh-CN": "ModelsLab API Key:",
+        "en": "ModelsLab API Key:",
+    },
+    "wz_ml_register": {
+        "zh-CN": "🌐 注册 ModelsLab（免费）",
+        "en": "🌐 Sign up for ModelsLab (free)",
+    },
+    "wz_ml_get_key": {
+        "zh-CN": "🔑 Dashboard → API Keys",
+        "en": "🔑 Dashboard → API Keys",
+    },
+    "wz_ml_hint": {
+        "zh-CN": "📋 步骤：注册 → Dashboard → Account → API Keys → Copy Key",
+        "en": "📋 Steps: register → Dashboard → Account → API Keys → copy key",
+    },
+    "wz_sg_title": {
+        "zh-CN": "Segmind API",
+        "en": "Segmind API",
+    },
+    "wz_sg_tag": {
+        "zh-CN": "注册送 $5 · SDXL/FLUX 高质量 · 印度云平台",
+        "en": "$5 free credits · SDXL/FLUX quality · Indian cloud platform",
+    },
+    "wz_sg_info1": {
+        "zh-CN": "• 印度 AI 云平台，支持 500+ 模型，注册即送 $5 免费额度",
+        "en": "• Indian AI cloud with 500+ models; $5 in free credits on signup",
+    },
+    "wz_sg_info2": {
+        "zh-CN": "• $5 额度约可生成 200~500 张图片（视模型而定）",
+        "en": "• $5 covers roughly 200–500 images depending on the model",
+    },
+    "wz_sg_info3": {
+        "zh-CN": "• 模型：SDXL 1.0（steps=30）/ FLUX Schnell / Stable Diffusion 3",
+        "en": "• Models: SDXL 1.0 (steps=30) / FLUX Schnell / Stable Diffusion 3",
+    },
+    "wz_sg_key_label": {
+        "zh-CN": "Segmind API Key:",
+        "en": "Segmind API Key:",
+    },
+    "wz_sg_register": {
+        "zh-CN": "🌐 注册 Segmind（免费送 $5）",
+        "en": "🌐 Sign up for Segmind ($5 free)",
+    },
+    "wz_sg_get_key": {
+        "zh-CN": "🔑 Dashboard → API Keys",
+        "en": "🔑 Dashboard → API Keys",
+    },
+    "wz_hf_title": {
+        "zh-CN": "HuggingFace Token",
+        "en": "HuggingFace Token",
+    },
+    "wz_hf_tag": {
+        "zh-CN": "备用接口",
+        "en": "Backup provider",
+    },
+    "wz_hf_info1": {
+        "zh-CN": "• 免费注册，作为上述接口的备用",
+        "en": "• Free registration; use as a backup for the providers above",
+    },
+    "wz_hf_info2": {
+        "zh-CN": "• 支持 FLUX.1-schnell / SDXL 等模型，有速率限制",
+        "en": "• FLUX.1-schnell / SDXL and more, subject to rate limits",
+    },
+    "wz_hf_key_label": {
+        "zh-CN": "HuggingFace Token:",
+        "en": "HuggingFace Token:",
+    },
+    "wz_hf_register": {
+        "zh-CN": "🌐 注册 HuggingFace",
+        "en": "🌐 Sign up for HuggingFace",
+    },
+    "wz_hf_create_token": {
+        "zh-CN": "🔑 创建 Token（类型选 Read）",
+        "en": "🔑 Create token (choose Read)",
+    },
+    "wz_sh_title": {
+        "zh-CN": "StableHorde Key",
+        "en": "StableHorde Key",
+    },
+    "wz_sh_tag": {
+        "zh-CN": "兜底接口，队列长时自动跳过",
+        "en": "Fallback provider; skipped automatically when queues are long",
+    },
+    "wz_sh_info1": {
+        "zh-CN": "• 完全免费，无需填写（留空使用匿名 Key）",
+        "en": "• Completely free; leave blank to use the anonymous key",
+    },
+    "wz_sh_info2": {
+        "zh-CN": "• 高峰期队列可能较长，程序检测到队列过长会自动跳过",
+        "en": "• Queues can get long at peak times; the app skips overly long queues",
+    },
+    "wz_sh_key_label": {
+        "zh-CN": "StableHorde Key（可选）:",
+        "en": "StableHorde key (optional):",
+    },
+    "wz_sh_register": {
+        "zh-CN": "🌐 注册 StableHorde（可选）",
+        "en": "🌐 Sign up for StableHorde (optional)",
+    },
+    "wz_ta_title": {
+        "zh-CN": "Together AI",
+        "en": "Together AI",
+    },
+    "wz_ta_tag": {
+        "zh-CN": "🆓 FLUX.1 Free · 免费额度 · 质量高",
+        "en": "🆓 FLUX.1 Free · free credits · high quality",
+    },
+    "wz_ta_info1": {
+        "zh-CN": "• 提供 FLUX.1-schnell-Free 免费图像生成端点，质量媲美付费模型",
+        "en": "• Free FLUX.1-schnell-Free endpoint with quality rivaling paid models",
+    },
+    "wz_ta_info2": {
+        "zh-CN": "• 注册即可使用，赠送初始 $5 额度，免费端点每月有一定配额",
+        "en": "• Works right after signup with $5 initial credit; the free endpoint has a monthly quota",
+    },
+    "wz_ta_info3": {
+        "zh-CN": "• 速度快（通常 3~6 秒），支持最大 1024×1024",
+        "en": "• Fast (typically 3–6 s), up to 1024×1024",
+    },
+    "wz_ta_key_label": {
+        "zh-CN": "Together AI API Key:",
+        "en": "Together AI API Key:",
+    },
+    "wz_ta_register": {
+        "zh-CN": "🌐 注册 Together AI（免费）",
+        "en": "🌐 Sign up for Together AI (free)",
+    },
+    "wz_ta_get_key": {
+        "zh-CN": "🔑 获取 API Key",
+        "en": "🔑 Get API Key",
+    },
+    "wz_ta_hint": {
+        "zh-CN": "📋 步骤：注册 → Settings → API Keys → New Key → 复制（格式: xxxx...）",
+        "en": "📋 Steps: register → Settings → API Keys → New Key → copy (format: xxxx...)",
+    },
+    "wz_gm_title": {
+        "zh-CN": "Google Gemini  Nano Banana",
+        "en": "Google Gemini  Nano Banana",
+    },
+    "wz_gm_tag": {
+        "zh-CN": "🆓 免费额度 · 无需绑卡 · 支持图生图",
+        "en": "🆓 Free tier · no credit card · img2img supported",
+    },
+    "wz_gm_info1": {
+        "zh-CN": "• Google 图像模型 \"Nano Banana\"（Gemini 2.5 Flash Image），免费额度",
+        "en": "• Google's image model \"Nano Banana\" (Gemini 2.5 Flash Image) with a free tier",
+    },
+    "wz_gm_info2": {
+        "zh-CN": "• 通过 Google AI Studio 获取 API Key，登录 Google 账号即可，全程免费",
+        "en": "• Get the key from Google AI Studio — sign in with a Google account, entirely free",
+    },
+    "wz_gm_info3": {
+        "zh-CN": "• 支持图生图（切到「图生图」模式后自动传入参考图）",
+        "en": "• Img2img supported (the reference image is passed automatically in img2img mode)",
+    },
+    "wz_gm_info4": {
+        "zh-CN": "• 同一个 Key 也用于「💎 付费接口配置」里更高画质的 Nano Banana Pro",
+        "en": "• The same key also unlocks higher-quality Nano Banana Pro in the paid settings",
+    },
+    "wz_gm_key_label": {
+        "zh-CN": "Gemini API Key:",
+        "en": "Gemini API Key:",
+    },
+    "wz_gm_register": {
+        "zh-CN": "🌐 打开 Google AI Studio（免费）",
+        "en": "🌐 Open Google AI Studio (free)",
+    },
+    "wz_gm_get_key": {
+        "zh-CN": "🔑 生成 API Key",
+        "en": "🔑 Generate API Key",
+    },
+    "wz_gm_hint": {
+        "zh-CN": "📋 步骤：用 Google 账号登录 AI Studio → Get API Key → Create API Key → 复制",
+        "en": "📋 Steps: sign in to AI Studio with a Google account → Get API Key → Create API Key → copy",
+    },
+    "wz_gm_model_label": {
+        "zh-CN": "图像模型:",
+        "en": "Image model:",
+    },
+    "wz_ds_title": {
+        "zh-CN": "阿里云 通义万相 / Qwen-Image",
+        "en": "Alibaba Tongyi Wanxiang / Qwen-Image",
+    },
+    "wz_ds_tag": {
+        "zh-CN": "🆓 新用户免费额度 · 国内直连速度快",
+        "en": "🆓 Free credits for new users · fast direct connection in China",
+    },
+    "wz_ds_info1": {
+        "zh-CN": "• 阿里云 DashScope 平台，wanx2.1-t2i-turbo 模型，新用户有免费调用额度",
+        "en": "• Alibaba Cloud DashScope, wanx2.1-t2i-turbo model; free quota for new users",
+    },
+    "wz_ds_info2": {
+        "zh-CN": "• 国内网络直连，无需代理，速度稳定",
+        "en": "• Direct connection within China — no proxy needed, stable speed",
+    },
+    "wz_ds_info3": {
+        "zh-CN": "• 提交任务后异步轮询，出图通常在 10~30 秒内完成",
+        "en": "• Async polling after submit; images usually ready in 10–30 s",
+    },
+    "wz_ds_key_label": {
+        "zh-CN": "DashScope API Key:",
+        "en": "DashScope API Key:",
+    },
+    "wz_ds_register": {
+        "zh-CN": "🌐 注册阿里云 DashScope",
+        "en": "🌐 Sign up for Alibaba DashScope",
+    },
+    "wz_ds_get_key": {
+        "zh-CN": "🔑 获取 API Key",
+        "en": "🔑 Get API Key",
+    },
+    "wz_br_title": {
+        "zh-CN": "Bria AI  Fibo",
+        "en": "Bria AI  Fibo",
+    },
+    "wz_br_tag": {
+        "zh-CN": "🆓 注册送 1000 次免费调用 · 商业合规定位",
+        "en": "🆓 1,000 free calls on signup · commercially licensed",
+    },
+    "wz_br_info1": {
+        "zh-CN": "• Fibo 模型，训练数据经授权，主打商业可用/版权合规场景",
+        "en": "• Fibo model trained on licensed data, aimed at commercial/compliance use",
+    },
+    "wz_br_info2": {
+        "zh-CN": "• 新用户注册即送 1000 次免费 API 调用",
+        "en": "• 1,000 free API calls for new accounts",
+    },
+    "wz_br_info3": {
+        "zh-CN": "• 同步返回（sync=true），无需等待轮询",
+        "en": "• Synchronous responses (sync=true) — no polling wait",
+    },
+    "wz_br_key_label": {
+        "zh-CN": "Bria AI API Key:",
+        "en": "Bria AI API Key:",
+    },
+    "wz_br_register": {
+        "zh-CN": "🌐 注册 Bria AI（送 1000 次）",
+        "en": "🌐 Sign up for Bria AI (1,000 free calls)",
+    },
+    "wz_qual_title": {
+        "zh-CN": "变体生成质量模式",
+        "en": "Variant quality mode",
+    },
+    "wz_qual_subtitle": {
+        "zh-CN": "影响批量变体的画质与速度平衡",
+        "en": "Affects the quality/speed trade-off of batch variants",
+    },
+    "wz_qual_high": {
+        "zh-CN": "🎨 高质量模式（推荐）",
+        "en": "🎨 High quality (recommended)",
+    },
+    "wz_qual_high_desc": {
+        "zh-CN": "硅基流动优先 FLUX.1-dev(28步)，Pollinations 开启 enhance，效果更佳，耗时稍长",
+        "en": "SiliconFlow prefers FLUX.1-dev (28 steps) and Pollinations enables enhance — better results, slightly slower",
+    },
+    "wz_qual_std": {
+        "zh-CN": "⚡ 标准模式",
+        "en": "⚡ Standard",
+    },
+    "wz_qual_std_desc": {
+        "zh-CN": "各接口使用默认参数，速度更快，适合快速预览",
+        "en": "Default parameters on every provider — faster, good for quick previews",
+    },
+    "wz_hide_on_startup": {
+        "zh-CN": "下次启动时不再显示此向导（可在「⚙ 设置」中重新打开）",
+        "en": "Don't show this wizard on startup again (reopen from ⚙ Settings)",
+    },
+    "status_cancelled": {
+        "zh-CN": "⏹ 已取消",
+        "en": "⏹ Cancelled",
+    },
 }
 
 

@@ -1,10 +1,13 @@
 """
 tools/check_i18n.py — i18n 质量门（I18N-001）
 ─────────────────────────────────────────────
-两个检查：
+检查项：
 
-1. --missing-keys   各 locale（zh-CN/en/ja/zh-TW）的 key 集合必须一致。
-                    缺失即失败（硬门槛）。
+1. --missing-keys   两个硬门槛：
+                    a) 各 locale（zh-CN/en/...）的 key 集合必须一致；
+                    b) 代码中通过 _("key") 字面量使用的 key 必须存在于
+                       STRINGS —— 拦截"所有 locale 都缺键"的盲区
+                       （??key?? 只在运行时才暴露，静态门禁此前看不见）。
 
 2. --hardcoded      AST 扫描 ui/ 与 services/application/ 中包含中文的
                     字符串字面量（排除注释、日志调用 —— 文档 §35 允许
@@ -27,6 +30,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCAN_DIRS = ["ui", "services/application"]
+USED_KEY_DIRS = ["ui", "services", "config", "data", "main.py"]
 I18N_MODULE = "config/i18n.py"
 
 _CJK_RE = re.compile(r"[\u4e00-\u9fff]")
@@ -78,7 +82,57 @@ def check_missing_keys() -> int:
                 print(f"    … 共 {len(missing)} 个")
     if not failed:
         print(f"[missing-keys] OK — {len(strings)} keys × {len(locales)} locales 一致")
-    return failed
+    used_failed = check_used_keys(strings)
+    return failed or used_failed
+
+
+# ── 代码使用键检查 ────────────────────────────────────────────
+
+def collect_used_keys() -> dict[str, list[str]]:
+    """收集 ui/services/config/data + main.py 中 _(“字面量”) 调用的 key。"""
+    used: dict[str, list[str]] = {}
+    for entry in USED_KEY_DIRS:
+        base = PROJECT_ROOT / entry
+        files = base.rglob("*.py") if base.is_dir() else [base]
+        for py in files:
+            if py.suffix != ".py":
+                continue
+            rel = str(py.relative_to(PROJECT_ROOT)).replace("\\", "/")
+            if "__pycache__" in rel or ".history" in rel:
+                continue
+            try:
+                tree = ast.parse(py.read_text(encoding="utf-8"))
+            except SyntaxError as exc:
+                print(f"[used-keys] 无法解析 {rel}: {exc}", file=sys.stderr)
+                continue
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Call):
+                    continue
+                fn = node.func
+                name = getattr(fn, "id", "") or getattr(fn, "attr", "")
+                if name != "_" or not node.args:
+                    continue
+                arg = node.args[0]
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    used.setdefault(arg.value, []).append(
+                        f"{rel}:{node.lineno}")
+    return used
+
+
+def check_used_keys(strings: dict) -> int:
+    """代码中使用但 STRINGS 不存在的 key → 失败（??key?? 会直接呈现给用户）。"""
+    used = collect_used_keys()
+    missing = {k: locs for k, locs in used.items() if k not in strings}
+    if missing:
+        print(f"[used-keys] 代码使用了 {len(missing)} 个 STRINGS 中不存在的 key:",
+              file=sys.stderr)
+        for k in sorted(missing)[:20]:
+            print(f"    {k}  <- {missing[k][0]}", file=sys.stderr)
+        if len(missing) > 20:
+            print(f"    … 共 {len(missing)} 个", file=sys.stderr)
+        return 1
+    print(f"[used-keys] OK — 代码使用的 {len(used)} 个 key 全部存在")
+    return 0
 
 
 # ── 硬编码扫描 ─────────────────────────────────────────────────
