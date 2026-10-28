@@ -45,6 +45,7 @@ class SettingsController:
         x = self.root.winfo_x() + (self.root.winfo_width() - 520) // 2
         y = self.root.winfo_y() + (self.root.winfo_height() - 460) // 2
         win.geometry(f"520x460+{max(0, x)}+{max(0, y)}")
+        win.bind("<Escape>", lambda _e: win.destroy())
 
         hdr = tk.Frame(win, bg=C["acc"])
         hdr.pack(fill="x")
@@ -99,6 +100,7 @@ class SettingsController:
         x = self.root.winfo_x() + (self.root.winfo_width() - 460) // 2
         y = self.root.winfo_y() + (self.root.winfo_height() - 360) // 2
         win.geometry(f"460x440+{max(0, x)}+{max(0, y)}")
+        win.bind("<Escape>", lambda _e: win.destroy())
 
         hdr = tk.Frame(win, bg=C["acc"])
         hdr.pack(fill="x")

@@ -101,6 +101,7 @@ class AboutDialog(tk.Toplevel):
         self._build()
         self._fill_version()
         self._apply_ui()
+        self.bind("<Escape>", lambda _e: self._on_close())
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.grab_set()
 

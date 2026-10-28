@@ -34,9 +34,12 @@ class ConfigWizard(tk.Toplevel):
         self.grab_set()
         self.focus_set()
         self.update_idletasks()
+        sh = self.winfo_screenheight()
+        h = min(960, sh - 80)
         x = parent.winfo_x() + (parent.winfo_width() - 820) // 2
-        y = parent.winfo_y() + (parent.winfo_height() - 960) // 2
-        self.geometry(f"820x960+{max(0, x)}+{max(0, y)}")
+        y = parent.winfo_y() + (parent.winfo_height() - h) // 2
+        self.geometry(f"820x{h}+{max(0, x)}+{max(0, y)}")
+        self.bind("<Escape>", lambda _e: self._on_close())
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._build()
         for _var in [

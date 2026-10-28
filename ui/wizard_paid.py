@@ -37,13 +37,34 @@ class PaidWizard(tk.Toplevel):
         self._closing = False
         self._dirty = False
         self.title(_("wizard_paid_title"))
-        self.geometry("820x720")
         self.configure(bg=C["bg"])
+        self.resizable(True, True)
+        self.minsize(680, 560)
+        self.focus_set()
+        self.update_idletasks()
+        sh = self.winfo_screenheight()
+        h = min(720, sh - 80)
+        x = parent.winfo_x() + (parent.winfo_width() - 820) // 2
+        y = parent.winfo_y() + (parent.winfo_height() - h) // 2
+        self.geometry(f"820x{h}+{max(0, x)}+{max(0, y)}")
         self._build()
+        for _var in [
+            self.oai_var, self.gpt_image_model_var, self.gpt_image_quality_var,
+            self.stab_var, self.stab_model_var, self.repl_var, self.repl_model_var,
+            self.ark_var, self.ark_model_var, self.bfl_var, self.bfl_model_var,
+        ]:
+            _var.trace("w", lambda *_: setattr(self, "_dirty", True))
+        self.bind("<Escape>", lambda _e: self._on_close())
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.grab_set()
 
     def _on_close(self):
         """关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"""
+        if self._dirty and not self._closing:
+            from tkinter import messagebox
+
+            if not messagebox.askyesno(_("wz_close_title"), _("wz_close_msg")):
+                return
         self._closing = True
         try:
             self.unbind_all("<MouseWheel>")

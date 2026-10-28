@@ -759,14 +759,24 @@ class App:
             self.cfg = new_cfg
             self._update_status_bar_tokens()
 
-        ConfigWizard(self.root, self.cfg, on_save)
+        w = getattr(self, "_free_wizard", None)
+        if w is not None and w.winfo_exists():
+            w.lift()
+            w.focus_force()
+            return
+        self._free_wizard = ConfigWizard(self.root, self.cfg, on_save)
 
     def _open_paid_wizard(self):
         def on_save(new_cfg):
             self.cfg = new_cfg
             self._update_status_bar_tokens()
 
-        PaidWizard(self.root, self.cfg, on_save)
+        w = getattr(self, "_paid_wizard", None)
+        if w is not None and w.winfo_exists():
+            w.lift()
+            w.focus_force()
+            return
+        self._paid_wizard = PaidWizard(self.root, self.cfg, on_save)
 
     # ══════════════════════════════════════════════════════════
     #   ⚙ 设置

@@ -237,6 +237,7 @@ class PhrasePanel(tk.Toplevel):
         self.geometry(f"820x560+{max(0, rx)}+{max(0, ry)}")
 
         self._build()
+        self.bind("<Escape>", lambda _e: self._on_close())
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.lift()
         self.focus_force()
