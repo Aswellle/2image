@@ -285,6 +285,19 @@ class App:
         r.bind("<Delete>", self._delete_selected_guarded)
         r.bind("<Left>", lambda e: self._nav_history_guarded(e, -1))
         r.bind("<Right>", lambda e: self._nav_history_guarded(e, +1))
+        # 退出守卫：生成/队列进行中先确认（doc §18 守则同样适用于关窗）
+        r.protocol("WM_DELETE_WINDOW", self._on_close_request)
+
+    def _on_close_request(self) -> None:
+        """主窗口关闭守卫：任务进行中先确认，防守护线程随窗口静默消失。"""
+        if self._has_active_tasks() and not messagebox.askyesno(
+                _("dlg_exit_busy_title"), _("dlg_exit_busy_body"),
+                parent=self.root, icon="warning"):
+            return
+        try:
+            self.root.destroy()
+        except tk.TclError:
+            pass
 
     # ── Controllers delegate menu/settings/build ─────────────────────
     def _build_menu(self) -> None:
@@ -809,11 +822,10 @@ class App:
         The update flow uses this to warn before exiting the app
         (doc §18: never silently interrupt running tasks).
         """
-        try:
-            if str(self.content.gb["state"]) == "disabled":
-                return True
-        except Exception:
-            pass
+        # 主按钮在生成期间保持 normal（同一颗按钮兼作取消），
+        # 在飞状态以控制器标志为准
+        if getattr(self.gen_controller, "_running", False):
+            return True
         try:
             if bool(getattr(self._queue_panel, "_running", False)):
                 return True

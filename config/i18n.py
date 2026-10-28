@@ -3129,6 +3129,14 @@ STRINGS = {
         "zh-CN": "✕ 取消生成",
         "en": "✕ Cancel",
     },
+    "dlg_exit_busy_title": {
+        "zh-CN": "任务正在进行",
+        "en": "Tasks in progress",
+    },
+    "dlg_exit_busy_body": {
+        "zh-CN": "生成或队列任务仍在进行，退出将中断它们。\n\n确定退出吗？",
+        "en": "A generation or queue run is still in progress and will be interrupted.\n\nQuit anyway?",
+    },
 }
 
 
