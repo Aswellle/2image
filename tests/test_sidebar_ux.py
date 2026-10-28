@@ -231,3 +231,73 @@ def test_nav_history_guarded_loads_visible_entry(app, in_memory_db, tk_root):
     assert real.sel_id == ids[1]  # 继续上移 = 显示列表上一条
     real._nav_history_guarded(delta=+1)
     assert real.sel_id == ids[0]  # 下移折返
+
+
+def _drain_tk(root, rounds=80):
+    """驱动 Tk 事件循环若干轮，让 after(1) 分批物化跑完。"""
+    for _ in range(rounds):
+        root.update()
+        root.after(2)
+
+
+def test_refresh_materializes_first_batch_then_drains(sidebar, in_memory_db, tk_root):
+    """满页 100 条不再一次性同步重建：首批先上屏，其余分批追加。"""
+    from data.repository import add_entry
+
+    for i in range(100):
+        add_entry(f"perf item {i}", f"perf {i}", f"p{i}.png", "P")
+
+    sidebar._refresh_hist()
+    # 同步阶段（尚未驱动事件循环）只物化首批，视口立即可用
+    assert len(sidebar._card_widgets) == sidebar._MATER_FIRST
+    tk_root.update()
+    # 事件循环驱动后全部物化完成
+    _drain_tk(tk_root)
+    assert len(sidebar._card_widgets) == 100
+    # 显示顺序保持 id 倒序（最新在前）
+    ids = list(sidebar._card_widgets.keys())
+    assert ids == sorted(ids, reverse=True)
+
+
+def test_stale_generation_invalidates_pending_queue(sidebar, in_memory_db, tk_root):
+    """分批追加期间再次刷新：旧队列作废，不污染新列表。"""
+    from data.repository import add_entry
+
+    for i in range(40):
+        add_entry(f"stale {i}", f"stale {i}", f"s{i}.png", "P")
+
+    sidebar._refresh_hist()
+    stale_gen = sidebar._hist_gen
+    assert sidebar._pending.get(stale_gen)  # 队列有待物化条目
+
+    from data.repository import add_entry as _add
+
+    _add("zebra unique marker", "zebra", "z.png", "P")
+    sidebar.sv.set("zebra")  # 触发新刷新（唯一命中 1 条）
+    sidebar._refresh_hist()
+    new_gen = sidebar._hist_gen
+    assert stale_gen != new_gen
+    _drain_tk(tk_root)
+    # 旧 gen 队列被丢弃：最终卡片数 == 新查询结果数（1 条）
+    assert len(sidebar._card_widgets) == 1
+    assert new_gen not in sidebar._pending
+
+
+def test_load_more_appends_incrementally(sidebar, in_memory_db, tk_root):
+    """显示更多按钮走同一分批路径，页与页顺序衔接。"""
+    from data.repository import add_entry
+
+    for i in range(120):
+        add_entry(f"more item {i}", f"more {i}", f"m{i}.png", "P")
+
+    sidebar._refresh_hist()
+    _drain_tk(tk_root)
+    assert len(sidebar._card_widgets) == 100
+
+    btn = sidebar._more_btn
+    assert btn is not None
+    btn.invoke()
+    # 第一页 100 张仍在注册表 + 第二页首批 12 张
+    assert len(sidebar._card_widgets) == 100 + sidebar._MATER_FIRST
+    _drain_tk(tk_root)
+    assert len(sidebar._card_widgets) == 120

@@ -157,6 +157,9 @@ class HistorySidebar:
         self._filter_timer = None
         self._wheel_acc = 0.0
         self._thumb_loader = ThumbnailLoader(app.root, workers=4)
+        # 增量物化队列：gen → 待物化条目；调度标志防重复排程
+        self._pending: dict[int, list] = {}
+        self._mater_scheduled = False
         # 宿主 Frame 销毁时关闭加载器，避免常驻线程泄漏
         parent.bind("<Destroy>", self._on_parent_destroy, add="+")
 
@@ -487,6 +490,50 @@ class HistorySidebar:
     # ══════════════════════════════════════════════════════════
     #   历史卡片
     # ══════════════════════════════════════════════════════════
+    # ── 增量物化（PERF-HIST-001）─────────────────────────────
+    # 满页 100 卡 × ~15 widgets 曾在一次同步循环里全部重建：
+    # 搜索防抖、筛选切换、启动刷新都会卡住主线程一整段。
+    # 现在只同步物化首批（填满视口），其余经 after 分批追加，
+    # 每批之间归还事件循环，输入/滚动永不阻塞。
+    _MATER_FIRST = 12  # 首批：约一屏可见量
+    _MATER_BATCH = 8  # 后续每批
+
+    def _materialize(self, gen: int, items: list, prio_offset: int = 0) -> None:
+        """同步物化首批，其余入队等待分批追加。"""
+        if gen != self._hist_gen:
+            return
+        first, rest = items[: self._MATER_FIRST], items[self._MATER_FIRST :]
+        for i, e in enumerate(first):
+            self._card(e, gen, prio=prio_offset + i)
+        if rest:
+            self._pending[gen] = self._pending.get(gen, []) + rest
+            self._schedule_materialize(gen)
+
+    def _schedule_materialize(self, gen: int) -> None:
+        if self._mater_scheduled:
+            return
+        self._mater_scheduled = True
+        self.app.root.after(1, lambda: self._drain_pending(gen))
+
+    def _drain_pending(self, gen: int) -> None:
+        """物化下一批；gen 过期（期间又刷新）则整队作废。"""
+        self._mater_scheduled = False
+        if gen != self._hist_gen:
+            self._pending.pop(gen, None)
+            return
+        queue = self._pending.get(gen)
+        if not queue:
+            self._pending.pop(gen, None)
+            return
+        batch, queue[:] = queue[: self._MATER_BATCH], queue[self._MATER_BATCH :]
+        base = len(self._card_widgets)
+        for i, e in enumerate(batch):
+            self._card(e, gen, prio=base + i)
+        if queue:
+            self._schedule_materialize(gen)
+        else:
+            self._pending.pop(gen, None)
+
     def _refresh_hist(self, load_all: bool = False, keep_scroll: bool = False):
         # §44: 滚动锚点 —— 过滤/搜索触发的刷新保持用户当前查看位置
         anchor = self.hc.yview() if keep_scroll else None
@@ -521,8 +568,7 @@ class HistorySidebar:
         if not items:
             self._render_empty_state(kw)
             return
-        for i, e in enumerate(items):
-            self._card(e, cur_gen, prio=i)  # P0-02: 页首优先加载
+        self._materialize(cur_gen, items)  # P0-02: 页首优先，其余分批
         if _has_more:
             self._append_more_btn(cur_gen, items[-1]["id"])
         if anchor is not None:
@@ -612,8 +658,7 @@ class HistorySidebar:
             items = items[:HIST_PAGE_SIZE]
         if not items:
             return
-        for i, e in enumerate(items):
-            self._card(e, gen, prio=i)
+        self._materialize(gen, items, prio_offset=len(self._card_widgets))
         if has_more:
             self._append_more_btn(gen, items[-1]["id"])
 
