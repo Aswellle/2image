@@ -372,8 +372,216 @@ def get_all_phrases() -> dict[str, list[str]]:
     return merged
 
 
+# ══════════════════════════════════════════════════════════════
+#   分类稳定 ID 与双语展示（DATA-I18N-001）
+# ══════════════════════════════════════════════════════════════
+# 词库以中文分类名为持久化键（自定义词库 JSON 引用它），
+# 词条内容本就是英文生图提示词；翻译面 = 分类展示名 + 词条说明。
+PHRASE_CATEGORY_IDS: dict[str, str] = {
+    "✨ 画质增强": "quality",
+    "💡 光影效果": "lighting",
+    "🎨 艺术风格": "style",
+    "📐 构图方式": "composition",
+    "📷 镜头参数": "camera",
+    "🌙 氛围情绪": "mood",
+    "👤 人物细节": "people",
+}
+
+PHRASE_DESCRIPTIONS_EN: dict[str, str] = {
+    "masterpiece": (
+        "🏆 The master quality switch. Pushes the model toward museum-grade "
+        "artistry — overall refinement and composition improve dramatically. "
+        "Works in almost every scene; the most-used quality booster, worth adding every time."
+    ),
+    "best quality": (
+        "🌟 Generic quality lift. Cuts blur and artifacts noticeably and raises "
+        "detail-rendering priority. Pairs with masterpiece for a compounding effect."
+    ),
+    "ultra-detailed": (
+        "🔬 Ultra detail. Skin pores, fabric weave, leaf veins — micro detail gets "
+        "far richer and survives zooming-in. First pick for refined portraits and still life."
+    ),
+    "8K UHD": (
+        "📺 Simulates 8K ultra-HD sharpness. Raises acuity and information density; "
+        "stacks well with masterpiece. Best for large displays or print output."
+    ),
+    "HDR": (
+        "🌈 High Dynamic Range. Boosts highlight/shadow separation and saturation — "
+        "colors pop with stronger contrast. Ideal for tricky light in landscapes and architecture."
+    ),
+    "RAW photo": (
+        "📷 Simulates straight-out-of-camera RAW. Real, un-graded texture that feels "
+        "documentary and true to life. Great for reportage, honest portraits, street scenes."
+    ),
+    "sharp focus": (
+        "🎯 Crisp subject edges, no soft-focus haze. Best combined with bokeh: "
+        "razor-sharp subject against melted background. Perfect for portraits and product shots."
+    ),
+    "professional photography": (
+        "📸 Professional-grade lighting and composition — reads like commercial or "
+        "editorial photography. Use when the image needs ad-campaign polish."
+    ),
+    "golden hour lighting": (
+        "🌅 Warm, low-angle sunlight in the hour after sunrise or before sunset — "
+        "soft yet directional. The most beloved natural light for portraits and landscapes; "
+        "pure romance."
+    ),
+    "volumetric light rays": (
+        "✨ Visible light shafts (Tyndall effect) cutting through mist or leaves — "
+        "dramatic and almost sacred. Think forest morning light or cathedral windows."
+    ),
+    "Rembrandt lighting": (
+        "🎨 The classic Dutch-master setup: a triangle of light on one cheek, the other "
+        "side in shadow. High-contrast, sculptural — a portrait staple with instant sophistication."
+    ),
+    "neon night lighting": (
+        "🔮 Cyberpunk neon: blue/pink/green signage light washing over people and buildings. "
+        "Perfect for night cityscapes and futuristic characters."
+    ),
+    "soft natural window light": (
+        "🪟 Diffused window light — even, shadowless, flattering skin. The signature light "
+        "of Japanese-style photography and indoor portraits; warm and true."
+    ),
+    "backlit silhouette": (
+        "🌇 Clear rim outline with a dark body and a glowing background flare — poetic and "
+        "theatrical. Sunset shores and backlit woods shine here."
+    ),
+    "cinematic dramatic lighting": (
+        "🎬 Hollywood-grade contrast: blazing highlights against deep shadow. Adds serious "
+        "visual tension — hero shots, thriller moods, epic scenes."
+    ),
+    "photorealistic": (
+        "📸 Photo-real: nearly indistinguishable from a real photograph. The core style word "
+        "for lifelike portraits and product renders."
+    ),
+    "oil painting style": (
+        "🖼 Traditional oil-painting brushwork, layered color and classical texture — "
+        "historic and artistic at once. Suits portraits and landscapes with European flavor."
+    ),
+    "watercolor illustration": (
+        "🎨 Soft translucent washes, gentle edges and a hint of paper grain — tender and "
+        "fresh. Lovely for children's books and emotional illustrations."
+    ),
+    "anime style": (
+        "✨ Japanese anime: big eyes, clean linework, bright palettes — for 2D characters, "
+        "light-novel covers and game art. Note: conflicts with photoreal terms; use alone."
+    ),
+    "cyberpunk aesthetic": (
+        "🤖 Neon versus darkness, body augmentation, dystopian cityscapes — the full "
+        "cyberpunk look for futuristic night scenes."
+    ),
+    "vintage film grain": (
+        "📽 Old-film grain with a yellow-green shift — heavy nostalgia, like a treasured photo from another era."
+    ),
+    "3D octane render": (
+        "💻 Physically-based Octane rendering: glass refraction, metal highlights, subsurface "
+        "scattering — ultra-convincing for product viz and concept art."
+    ),
+    "rule of thirds": (
+        "📐 The classic grid: subject on an intersection for balance with subtle energy. "
+        "The most universally useful composition rule."
+    ),
+    "centered symmetrical composition": (
+        "⚖ Dead-center symmetry — solemn, authoritative, ceremonial. Gateways, frontal portraits, logo-like imagery."
+    ),
+    "wide establishing shot": (
+        "🌄 A vast environmental view that sets scale and epic scope — fantasy worlds, "
+        "cinematic openers, grand landscapes."
+    ),
+    "extreme close-up": (
+        "🔍 Extreme proximity on a tiny area (eyes, lips, fingertips) — intense intimacy and tension."
+    ),
+    "bird's eye view": (
+        "🐦 Straight-down overhead angle revealing layout and geometry — city maps, flat-lays, crowds."
+    ),
+    "low angle worm's eye view": (
+        "🐛 Worm's-eye view looking up — subjects loom tall, powerful and imposing. Heroes, skyscrapers, monuments."
+    ),
+    "85mm portrait lens, f/1.4 bokeh": (
+        "📸 The portrait golden pair: 85mm + f/1.4. Creamy background separation — the most loved portrait recipe."
+    ),
+    "35mm street photography": (
+        "🚶 35mm — near-human-eye field of view that keeps the subject AND the living "
+        "street around them. Documentary and city-life standard."
+    ),
+    "24mm wide angle, f/4": (
+        "🌐 Ultra-wide 84° view with dramatic perspective depth — landscapes and architecture at their most monumental."
+    ),
+    "macro lens extreme close-up": (
+        "🔬 True macro magnification — stamens, insect compound eyes, droplets. Micro-worlds the naked eye misses."
+    ),
+    "fisheye 180° distortion": (
+        "🐟 180° view with strong barrel distortion — warped edges, exaggerated and "
+        "playful. Action cams and creative panoramas."
+    ),
+    "telephoto 200mm compression": (
+        "🔭 200mm compression stacks foreground and background together — wildlife, "
+        "distant portraits, layered mountain ranges."
+    ),
+    "romantic dreamy atmosphere": (
+        "💕 Soft-focus glow, drifting petals, pink-violet pastel — sweet, dreamlike tenderness "
+        "for couples and floral themes."
+    ),
+    "mysterious dark mood": (
+        "🌑 Low-key shadows, cold blue-black palette, half-glimpsed outlines — gothic suspense and mystery."
+    ),
+    "epic cinematic scale": (
+        "🎬 Grand vistas and monumental light — blockbuster-poster storytelling for fantasy, war and sci-fi themes."
+    ),
+    "warm cozy feeling": (
+        "🕯 Warm ambers, homey props, lamp or fireplace glow — safety and lazy comfort. "
+        "Lifestyle imagery at its most relaxing."
+    ),
+    "melancholic solitary tone": (
+        "🌧 Cold blue-grey, empty space, a lone figure facing the sky — poetic loneliness with a hint of sorrow."
+    ),
+    "cheerful vibrant energy": (
+        "☀ Saturated color, dynamic poses, bright sunshine — youthful positive energy for sports and celebration."
+    ),
+    "smooth porcelain skin": (
+        "✨ Flawless porcelain-smooth skin — the highest-frequency skin descriptor in "
+        "beauty advertising and fashion portraits."
+    ),
+    "ultra-detailed hair strands": (
+        "💇 Every strand readable, with natural flow and layering — instantly elevates portrait refinement."
+    ),
+    "fabric texture detail": (
+        "👗 Silk sheen, linen roughness, leather grain, knit weave — fabric realism that sells garments."
+    ),
+    "expressive detailed eyes": (
+        "👁 Iris patterns, lash layers, catchlights — the windows of the soul, and the "
+        "single most expressive detail on a face."
+    ),
+    "natural minimal makeup": (
+        "💋 Barely-there makeup that keeps real skin texture — fresh, approachable, "
+        "honest. Perfect for Japanese-style portraiture."
+    ),
+}
+
+
+def phrase_category_id(cat_zh: str) -> str:
+    """中文分类名 → 稳定 ID。"""
+    return PHRASE_CATEGORY_IDS.get(cat_zh, cat_zh)
+
+
+def phrase_category_display(cat_zh: str) -> str:
+    """分类展示名：按当前语言解析（持久化键仍是中文）。"""
+    from config.i18n import _
+
+    cid = PHRASE_CATEGORY_IDS.get(cat_zh)
+    if cid:
+        return _(f"phrase_cat_{cid}")
+    return cat_zh
+
+
 def get_phrase_desc(phrase: str) -> str:
-    """返回指定词条的中文效果说明，无内置说明时返回空字符串。"""
+    """返回词条效果说明：按当前语言取中/英文版本，无内置说明返回空串。"""
+    from config.i18n import get_language
+
+    if get_language() == "en":
+        en = PHRASE_DESCRIPTIONS_EN.get(phrase)
+        if en:
+            return en
     return PHRASE_DESCRIPTIONS.get(phrase, "")
 
 

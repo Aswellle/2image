@@ -735,6 +735,252 @@ TEMPLATES = {
 
 
 # 按 category 分组（供 UI 渲染）
+# ══════════════════════════════════════════════════════════════
+#   分类稳定 ID 与双语展示（DATA-I18N-001）
+# ══════════════════════════════════════════════════════════════
+# 模板/分类数据以中文键为持久化 ID（历史配置、自定义词库引用它），
+# 英文展示走 TEMPLATES_EN + i18n 分类名；positive_template 本就是
+# 英文生图提示词，无需翻译。
+CATEGORY_IDS: dict[str, str] = {
+    "小红书": "xhs",
+    "情绪爆款": "emotional",
+    "知识干货": "knowledge",
+    "微信公众号": "wechat",
+    "电商产品": "ecom",
+    "视频封面": "video",
+    "AI数字艺术": "ai_art",
+    "品牌营销": "brand",
+    "通用自媒体": "general",
+}
+
+TEMPLATES_EN: dict[str, dict[str, str]] = {
+    "xhs_hot": {
+        "name": "🌸 Xiaohongshu Hit Cover",
+        "desc": "High-saturation sweet style with strong visual impact; ideal for food / beauty / lifestyle",
+        "hint": "Subject (e.g. coffee girl, skincare product, dessert)",
+        "tips": "Suggested 768×1024 or 1024×1365",
+    },
+    "xhs_travel": {
+        "name": "✈️ Xiaohongshu Travel Check-in",
+        "desc": "Travel destination scenery; perfect for city-guide and trip covers",
+        "hint": "Destination / landmark (e.g. Kyoto street, seaside sunset, Yunnan old town)",
+        "tips": "Suggested 1024×1024 square or 768×1024 portrait",
+    },
+    "xhs_food": {
+        "name": "🍜 Xiaohongshu Food Close-up",
+        "desc": "Exquisite food close-ups with strong appetite appeal; great for food bloggers",
+        "hint": "Dish name (e.g. matcha mille crepe, seared wagyu, strawberry tart)",
+        "tips": "Suggested 1024×1024 square for best results",
+    },
+    "xhs_beauty": {
+        "name": "💄 Xiaohongshu Beauty Pick",
+        "desc": "Beauty flat-lays or on-skin looks; ideal for skincare / makeup notes",
+        "hint": "Product / look (e.g. lipstick swatch, serum flat-lay, morning routine)",
+        "tips": "Suggested 1024×1024; generous negative space reads as premium",
+    },
+    "xhs_outfit": {
+        "name": "👗 Xiaohongshu Outfit Share",
+        "desc": "Full-body street-style looks; great for fashion / outfit bloggers",
+        "hint": "Outfit style (e.g. French vintage, minimal commute, Y2K)",
+        "tips": "Suggested 768×1024; full-body portrait suits outfit display best",
+    },
+    "emotion_dramatic": {
+        "name": "🔥 High-CTR Dramatic Cover",
+        "desc": "Intense dramatic emotion, high contrast, striking thumbnail impact",
+        "hint": "Emotion theme (e.g. burning bridges, against the wind, all-in bet)",
+        "tips": "Suggested 1280×720 landscape or 720×1280 portrait",
+    },
+    "emotion_healing": {
+        "name": "💛 Warm Healing Cover",
+        "desc": "Gentle healing atmosphere for emotional / psychology / life-reflection posts",
+        "hint": "Emotional scene (e.g. solo afternoon, reading by the window, rainy-day coffee)",
+        "tips": "Suggested 720×1280; warm tones evoke empathy",
+    },
+    "emotion_aesthetic": {
+        "name": "🌙 Premium Moody Visual",
+        "desc": "Dark premium texture for fashion / art / taste-focused accounts",
+        "hint": "Mood theme (e.g. late-night solitude, urban loneliness, minimalism)",
+        "tips": "Suggested 1024×1280; darker tones make the subject pop",
+    },
+    "emotion_motivation": {
+        "name": "⚡ Motivational Hustle Cover",
+        "desc": "High-drive imagery for career growth / exam prep / side-hustle content",
+        "hint": "Striving scene (e.g. late-night study, dawn run, summit push)",
+        "tips": "Suggested 1280×720; sunrise compositions are most stirring",
+    },
+    "knowledge_clean": {
+        "name": "📚 Clean Knowledge Cover",
+        "desc": "Clear and credible; ideal for education / workplace / knowledge sharing",
+        "hint": "Knowledge topic (e.g. time management, learning methods, communication)",
+        "tips": "Suggested 1024×1024; leave room for text overlay",
+    },
+    "knowledge_tech": {
+        "name": "💻 Tech Knowledge Cover",
+        "desc": "Futuristic tech feel for AI / data / programming content",
+        "hint": "Tech topic (e.g. AI, big data, quantum computing, coding)",
+        "tips": "Suggested 1280×720; landscape suits tech compositions",
+    },
+    "knowledge_finance": {
+        "name": "💰 Finance & Investing Cover",
+        "desc": "Professional and steady; for finance / investing / career growth topics",
+        "hint": "Finance topic (e.g. index funds, side income, promotion)",
+        "tips": "Suggested 1024×1024; strong professional tone",
+    },
+    "knowledge_health": {
+        "name": "🏃 Health & Fitness Cover",
+        "desc": "Energetic healthy vibe for fitness / wellness / weight-loss content",
+        "hint": "Health topic (e.g. morning workout, clean eating, yoga, meal prep)",
+        "tips": "Suggested 1024×1024; square works across platforms",
+    },
+    "wechat_header": {
+        "name": "📰 WeChat Article Header (Wide)",
+        "desc": "Wide professional article header for WeChat official-account posts",
+        "hint": "Article theme (e.g. career tips, industry insight, launch, holiday greeting)",
+        "tips": "Suggested 1440×810 or 900×500; keep the right side clear for text",
+    },
+    "wechat_square": {
+        "name": "🟦 WeChat Square Share Cover",
+        "desc": "Square Moments-share cover that stands out in the feed",
+        "hint": "Content theme (e.g. new product, event teaser, knowledge, life reflection)",
+        "tips": "Suggested 900×900; centered crop shines in Moments thumbnails",
+    },
+    "wechat_narrative": {
+        "name": "✍️ WeChat Story Visual",
+        "desc": "Emotionally resonant imagery for long-form essays and storytelling",
+        "hint": "Story emotion (e.g. startup story, turning point, urban solitude, time passing)",
+        "tips": "Suggested 1440×960; film-tone grading deepens immersion",
+    },
+    "wechat_festive": {
+        "name": "🎉 WeChat Holiday Campaign",
+        "desc": "Festive post imagery for holiday marketing of every kind",
+        "hint": "Holiday name (e.g. Spring Festival, Mid-Autumn, New Year, Valentine Day, 618)",
+        "tips": "Suggested 900×500 or 900×900; reserve the lower area for text",
+    },
+    "wechat_brand": {
+        "name": "🏢 WeChat Brand Visual",
+        "desc": "Premium corporate imagery for brand / official accounts",
+        "hint": "Brand theme (e.g. tech company, restaurant, school, retail store)",
+        "tips": "Suggested 1440×810; landscape presents brand presence best",
+    },
+    "ecom_product": {
+        "name": "🛍️ E-commerce Hero Shot",
+        "desc": "Clean-background product hero image that highlights details",
+        "hint": "Product (e.g. serum bottle, sneakers, wireless earbuds, phone case)",
+        "tips": "Suggested 1024×1024; white-background standard",
+    },
+    "ecom_lifestyle": {
+        "name": "✨ E-commerce Lifestyle Scene",
+        "desc": "Product in a real-life scene to build desire and context",
+        "hint": "Product + scene (e.g. coffee machine + morning kitchen, gear + outdoors)",
+        "tips": "Suggested 1024×768; landscape strengthens the scene feel",
+    },
+    "ecom_detail": {
+        "name": "🔍 E-commerce Detail Macro",
+        "desc": "Extreme macro of texture / craftsmanship that builds trust",
+        "hint": "Material detail (e.g. leather grain, brushed metal, stitching, liquid flow)",
+        "tips": "Suggested 1024×1024; detail shots convey quality",
+    },
+    "ecom_livestream": {
+        "name": "📺 Livestream Room Backdrop",
+        "desc": "Livestream backdrop / cover that pulls clicks for live selling",
+        "hint": "Stream theme (e.g. beauty sale, autumn fashion, snacks, home goods)",
+        "tips": "Suggested 1280×720; landscape livestream standard",
+    },
+    "video_youtube": {
+        "name": "▶️ YouTube/Bilibili Thumbnail",
+        "desc": "High-contrast thumbnail readable at small sizes for YouTube/Bilibili",
+        "hint": "Video topic (e.g. unboxing review, travel vlog, food tour, tech review)",
+        "tips": "Suggested 1280×720; keep the face right, leave text space left",
+    },
+    "video_short": {
+        "name": "📱 Short-video Vertical Cover",
+        "desc": "Vertical mobile-first cover for Douyin / Kuaishou / Reels",
+        "hint": "Video highlight (e.g. street dance, daily vlog, funny challenge, talent)",
+        "tips": "Suggested 720×1280; vertical suits mobile viewing",
+    },
+    "video_podcast": {
+        "name": "🎙️ Podcast / Interview Cover",
+        "desc": "Professional interview setting for podcast / talk shows",
+        "hint": "Show topic (e.g. founder talk, career story, investing views, book club)",
+        "tips": "Suggested 1280×720; centered subject or two-shot",
+    },
+    "art_concept": {
+        "name": "🎨 Concept Art Illustration",
+        "desc": "High-quality concept art for wallpapers / illustrations / showcases",
+        "hint": "Art theme (e.g. cyber city night, fantasy forest, nebula, ink landscape)",
+        "tips": "Suggested 1280×720; landscape shows panoramas best",
+    },
+    "art_portrait": {
+        "name": "🖼️ Artistic Portrait",
+        "desc": "Stylized portrait for avatars / social media / NFT",
+        "hint": "Style + person (e.g. watercolor girl, cyberpunk boy, classic oil portrait)",
+        "tips": "Suggested 1024×1024; square suits avatars",
+    },
+    "art_wallpaper": {
+        "name": "🌌 Desktop Wallpaper",
+        "desc": "Breathtaking wide wallpaper for desktop / phone",
+        "hint": "Wallpaper theme (e.g. starry galaxy, deep-sea whale, cyber city, minimal geometry)",
+        "tips": "Suggested 1920×1080; ultra-wide 2560×1080 supported",
+    },
+    "brand_product_launch": {
+        "name": "🚀 Product Launch Visual",
+        "desc": "Tech-flavored launch poster for new products / keynotes",
+        "hint": "Product + category (e.g. flagship phone, smartwatch, earbuds, EV)",
+        "tips": "Suggested 1280×720; dark background accentuates the product",
+    },
+    "brand_social_ad": {
+        "name": "📣 Social Media Ad Creative",
+        "desc": "Feed ad creative built for clicks across platforms",
+        "hint": "Ad content (e.g. limited offer, membership drive, event signup, course promo)",
+        "tips": "Suggested 1080×1080; square performs best on Instagram/Weibo",
+    },
+    "brand_infographic": {
+        "name": "📊 Data Visualization Graphic",
+        "desc": "Clear data / concept visualization for reports / articles / decks",
+        "hint": "Data topic (e.g. growth trend, market share, user persona, comparison)",
+        "tips": "Suggested 1280×720; landscape suits charts",
+    },
+}
+
+
+def category_id(cat_zh: str) -> str:
+    """中文分类名 → 稳定 ID（颜色映射等以 ID 为键，不随语言漂移）。"""
+    return CATEGORY_IDS.get(cat_zh, cat_zh)
+
+
+def category_display(cat_zh: str) -> str:
+    """分类展示名：按当前语言解析（持久化键仍是中文）。"""
+    from config.i18n import _
+
+    cid = CATEGORY_IDS.get(cat_zh)
+    if cid:
+        return _(f"tmpl_cat_{cid}")
+    return cat_zh
+
+
+def display_template(tid: str) -> dict:
+    """按当前语言返回模板展示视图（positive_template 本就英文，不翻译）。"""
+    t = TEMPLATES[tid]
+    from config.i18n import get_language
+
+    if get_language() != "en":
+        return t
+    en = TEMPLATES_EN.get(tid, {})
+    if not en:
+        return t
+    view = dict(t)
+    for key, en_key in (
+        ("name", "name"),
+        ("desc", "desc"),
+        ("keywords_hint", "hint"),
+        ("tips", "tips"),
+        ("size_hint", "size"),
+    ):
+        if en.get(en_key):
+            view[key] = en[en_key]
+    return view
+
+
 def get_templates_by_category() -> dict:
     cats = {}
     for tid, t in TEMPLATES.items():

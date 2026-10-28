@@ -24,9 +24,11 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from services.prompt_assistant import (
+    category_display,
+    category_id,
+    display_template,
     generate_prompt,
     apply_template,
-    TEMPLATES,
     get_templates_by_category,
     prompt_budget_info,
     _trim_to_budget,
@@ -680,33 +682,33 @@ class PromptWizard(tk.Toplevel):
 
         self._hdivider(parent, PX)
 
-        # 模板卡片列表
+        # 模板卡片列表（分类颜色按稳定 ID 映射，展示名按语言解析）
         cats = get_templates_by_category()
         cat_colors = {
-            "小红书": "#be185d",
-            "情绪爆款": "#b45309",
-            "知识干货": "#1d4ed8",
-            "通用自媒体": "#065f46",
-        }
-        _cat_translate = {
-            "小红书": _("wizard_cat_xiaohongshu"),
-            "情绪爆款": _("wizard_cat_emotional"),
-            "知识干货": _("wizard_cat_knowledge"),
-            "通用自媒体": _("wizard_cat_general"),
+            "xhs": "#be185d",
+            "emotional": "#b45309",
+            "knowledge": "#1d4ed8",
+            "general": "#065f46",
+            "wechat": "#1e40af",
+            "ecom": "#047857",
+            "video": "#7c2d12",
+            "ai_art": "#6d28d9",
+            "brand": "#0e7490",
         }
         self._tmpl_cards = {}
 
         for cat, items in cats.items():
-            cat_color = cat_colors.get(cat, C["acc"])
+            cat_color = cat_colors.get(category_id(cat), C["acc"])
             # 分类条
             ch = tk.Frame(parent, bg=cat_color, height=32)
             ch.pack(fill="x", padx=PX, pady=(10, 0))
             ch.pack_propagate(False)
-            tk.Label(ch, text=f"  {_cat_translate.get(cat, cat)}", font=F["btn"], bg=cat_color, fg="white").pack(
+            tk.Label(ch, text=f"  {category_display(cat)}", font=F["btn"], bg=cat_color, fg="white").pack(
                 side="left", pady=5
             )
 
-            for tid, t in items:
+            for tid, _raw in items:
+                t = display_template(tid)
                 card = tk.Frame(
                     parent, bg=C["card"], highlightbackground=C["sep"], highlightthickness=1, cursor="hand2"
                 )
@@ -752,7 +754,7 @@ class PromptWizard(tk.Toplevel):
                 w.config(bg=C["card_hl"])
             except Exception:
                 pass
-        t = TEMPLATES[tid]
+        t = display_template(tid)
         kw = self.tmpl_kw_var.get().strip() or "a subject"
         pos, _ = apply_template(tid, kw, log_cb=self.app._log)
         self._set_result(pos)
@@ -966,7 +968,7 @@ class PromptWizard(tk.Toplevel):
         if self._template_state != self._TEMPLATE_PREVIEWING or not self._sel_tid:
             return
         kw = self.tmpl_kw_var.get().strip() or "a subject"
-        t = TEMPLATES[self._sel_tid]
+        t = display_template(self._sel_tid)
         pos, _ignored = apply_template(self._sel_tid, kw, log_cb=self.app._log)
         self._on_done(pos, _("wizard_label_template_prefix", text=t["name"]))
         self._tmpl_status.config(text=_("wizard_applied", name=t["name"]), fg=C["ok"])

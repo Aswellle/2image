@@ -16,6 +16,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from services.phrase_library import (
+    phrase_category_display,
     get_all_phrases,
     add_custom_phrase,
     delete_custom_phrase,
@@ -375,10 +376,11 @@ class PhrasePanel(tk.Toplevel):
             w.destroy()
         for cat in self._phrases.keys():
             color = _CAT_COLORS.get(cat, C["acc"])
+            cat_label = phrase_category_display(cat)
             is_sel = cat == self._cur_cat
             tk.Button(
                 self._cat_frame,
-                text=cat,
+                text=cat_label,
                 font=(F["_sans"], 10, "bold" if is_sel else ""),
                 bg=color if is_sel else C["panel"],
                 fg="white",

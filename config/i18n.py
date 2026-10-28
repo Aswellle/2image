@@ -3186,6 +3186,71 @@ STRINGS = {
         "zh-CN": "该接口返回了无法解析的响应，请稍后重试或更换接口",
         "en": "This provider returned an unparsable response — retry later or switch providers",
     },
+    # ── 模板/词库分类展示名（持久化键为中文，展示按语言解析）──
+    "tmpl_cat_xhs": {
+        "zh-CN": "小红书",
+        "en": "Xiaohongshu",
+    },
+    "tmpl_cat_emotional": {
+        "zh-CN": "情绪爆款",
+        "en": "Emotional Impact",
+    },
+    "tmpl_cat_knowledge": {
+        "zh-CN": "知识干货",
+        "en": "Knowledge",
+    },
+    "tmpl_cat_wechat": {
+        "zh-CN": "微信公众号",
+        "en": "WeChat Article",
+    },
+    "tmpl_cat_ecom": {
+        "zh-CN": "电商产品",
+        "en": "E-commerce",
+    },
+    "tmpl_cat_video": {
+        "zh-CN": "视频封面",
+        "en": "Video Cover",
+    },
+    "tmpl_cat_ai_art": {
+        "zh-CN": "AI数字艺术",
+        "en": "AI Art",
+    },
+    "tmpl_cat_brand": {
+        "zh-CN": "品牌营销",
+        "en": "Brand Marketing",
+    },
+    "tmpl_cat_general": {
+        "zh-CN": "通用自媒体",
+        "en": "General Content",
+    },
+    "phrase_cat_quality": {
+        "zh-CN": "✨ 画质增强",
+        "en": "✨ Quality Boost",
+    },
+    "phrase_cat_lighting": {
+        "zh-CN": "💡 光影效果",
+        "en": "💡 Lighting",
+    },
+    "phrase_cat_style": {
+        "zh-CN": "🎨 艺术风格",
+        "en": "🎨 Art Style",
+    },
+    "phrase_cat_composition": {
+        "zh-CN": "📐 构图方式",
+        "en": "📐 Composition",
+    },
+    "phrase_cat_camera": {
+        "zh-CN": "📷 镜头参数",
+        "en": "📷 Camera",
+    },
+    "phrase_cat_mood": {
+        "zh-CN": "🌙 氛围情绪",
+        "en": "🌙 Mood",
+    },
+    "phrase_cat_people": {
+        "zh-CN": "👤 人物细节",
+        "en": "👤 People",
+    },
     "status_compare_set": {
         "zh-CN": "⚖ 已设置对比图：{title}",
         "en": "⚖ Compare image set: {title}",
