@@ -593,7 +593,7 @@ class ImageViewerWindow(tk.Toplevel):
             cropped.save(buf, "PNG")
             new_bytes = buf.getvalue()
             if ow_var.get() and self._cur_path:
-                cropped.save(self._cur_path, "PNG")
+                self._save_to_path(cropped, self._cur_path)
                 self._info_tip.config(text=_("viewer_crop_saved_overwrite"))
             else:
                 self._info_tip.config(text=_("viewer_crop_saved_no_modify"))
@@ -704,12 +704,31 @@ class ImageViewerWindow(tk.Toplevel):
             messagebox.showinfo(_("viewer_save_success"), _("viewer_saved_to", path=dest), parent=parent_win)
 
     # ── 保存操作 ───────────────────────────────────────────────
+    @staticmethod
+    def _save_to_path(img, path: str) -> None:
+        """按扩展名选择保存格式（未知扩展名回落 PNG）。
+
+        此前一律写 PNG 字节：JPEG 文件被换成 .jpg 名的 PNG 内容，
+        体积虚增且依赖扩展名的下游工具行为异常。JPEG/BMP 不支持
+        alpha 通道，先合成到白底再转 RGB。
+        """
+        from PIL import Image as PILImage
+
+        PILImage.init()  # Pillow 10 插件懒加载，EXTENSION 表需先初始化
+        ext = os.path.splitext(path)[1].lower()
+        fmt = PILImage.EXTENSION.get(ext, "PNG")
+        if fmt in ("JPEG", "BMP") and img.mode in ("RGBA", "LA", "P"):
+            base = PILImage.new("RGB", img.size, (255, 255, 255))
+            base.paste(img, mask=img.split()[-1])
+            img = base
+        img.save(path, fmt)
+
     def _save_overwrite(self):
         if self._img_orig is None:
             messagebox.showwarning(_("dlg_tip"), _("viewer_no_image"), parent=self)
             return
         if self._cur_path:
-            self._img_orig.save(self._cur_path, "PNG")
+            self._save_to_path(self._img_orig, self._cur_path)
             self._info_tip.config(text=_("viewer_saved", name=os.path.basename(self._cur_path)))
             self.app._log(f"💾 覆盖保存: {self._cur_path}")
         else:
