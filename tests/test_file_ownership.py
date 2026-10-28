@@ -4,18 +4,26 @@ tests/test_file_ownership.py — Secure file deletion tests
 Validates path traversal prevention, symlink rejection,
 and root containment for the file ownership module.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
 
 import pytest
 
+import data.file_ownership as ownership
 from data.file_ownership import (
     FileOwnershipError,
     is_owned_path,
     safe_delete_file,
     safe_owned_image_path,
 )
+
+
+@pytest.fixture(autouse=True)
+def _no_recycle_bin(monkeypatch):
+    """删除类用例保持密闭：不打桩时 Windows 上文件会被真实移入回收站。"""
+    monkeypatch.setattr(ownership, "_send_to_recycle_bin", lambda path: False)
 
 
 @pytest.fixture
@@ -171,9 +179,7 @@ class TestMigrationTransaction:
         repository.init_db()
 
         json_file = tmp_path / "history.json"
-        json_file.write_text(
-            '[{"id": 1, "prompt": "test", "timestamp": "2024-01-01"}]'
-        )
+        json_file.write_text('[{"id": 1, "prompt": "test", "timestamp": "2024-01-01"}]')
 
         result = repository.migrate_from_json(str(json_file))
         assert result["migrated"] == 1
@@ -231,9 +237,7 @@ class TestUUIDFilenames:
     def test_save_creates_uuid_filename(self, managed_dir, monkeypatch):
         from services import image_service
 
-        monkeypatch.setattr(
-            image_service, "IMAGES_DIR", str(managed_dir)
-        )
+        monkeypatch.setattr(image_service, "IMAGES_DIR", str(managed_dir))
 
         # Create a valid PNG
         from io import BytesIO
@@ -243,9 +247,7 @@ class TestUUIDFilenames:
         buf = BytesIO()
         img.save(buf, format="PNG")
 
-        path = image_service.save_image_file(
-            buf.getvalue(), "test prompt", seed=42, provider="test"
-        )
+        path = image_service.save_image_file(buf.getvalue(), "test prompt", seed=42, provider="test")
 
         # Path should be under managed_dir/YYYY/MM/DD/<uuid>.png
         p = Path(path)
@@ -254,13 +256,12 @@ class TestUUIDFilenames:
         assert len(p.stem) == 32
         # Should have date-based subdirectories (YYYY/MM/DD)
         assert p.parent.parent.parent.parent == Path(managed_dir)
+
     def test_save_no_collision(self, managed_dir, monkeypatch):
         """Two saves with same prompt should not collide."""
         from services import image_service
 
-        monkeypatch.setattr(
-            image_service, "IMAGES_DIR", str(managed_dir)
-        )
+        monkeypatch.setattr(image_service, "IMAGES_DIR", str(managed_dir))
 
         from io import BytesIO
         from PIL import Image
