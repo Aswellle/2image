@@ -74,6 +74,7 @@ class StatsDashboard:
 
         # ── 窗口 ────────────────────────────────────────────────
         win = tk.Toplevel(parent)
+        self.win = win
         win.title(_("stats_title"))
         win.configure(bg=BG)
         win.resizable(True, True)
@@ -562,3 +563,16 @@ class StatsDashboard:
                 ).pack(side="left", padx=8)
         else:
             tk.Label(tf, text=_("stats_no_tags"), font=F["body_i"], bg=BG, fg=SUB).pack(anchor="w", pady=16)
+
+    # ── 单例代理：App._show_stats 以窗口语义管理本实例 ─────────
+    def winfo_exists(self) -> bool:
+        try:
+            return bool(self.win.winfo_exists())
+        except tk.TclError:
+            return False
+
+    def lift(self):
+        self.win.lift()
+
+    def focus_force(self):
+        self.win.focus_force()
