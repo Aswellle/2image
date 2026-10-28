@@ -3137,6 +3137,22 @@ STRINGS = {
         "zh-CN": "生成或队列任务仍在进行，退出将中断它们。\n\n确定退出吗？",
         "en": "A generation or queue run is still in progress and will be interrupted.\n\nQuit anyway?",
     },
+    "empty_first_use_hint": {
+        "zh-CN": "在右侧输入描述并点击「生成」，作品会出现在这里",
+        "en": "Describe an idea on the right and hit Generate — your creations will appear here",
+    },
+    "empty_no_match_hint": {
+        "zh-CN": "换个关键词试试，或清除搜索查看全部记录",
+        "en": "Try a different keyword, or clear the search to see everything",
+    },
+    "empty_no_fav_hint": {
+        "zh-CN": "点击卡片上的 ☆ 收藏图片，方便日后查找",
+        "en": "Tap the ☆ on any card to favorite it for quick access",
+    },
+    "btn_clear_search": {
+        "zh-CN": "清除搜索",
+        "en": "Clear search",
+    },
 }
 
 

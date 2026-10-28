@@ -129,3 +129,53 @@ def test_loader_threads_shutdown_with_sidebar(tk_root, mock_app, in_memory_db):
     time.sleep(0.1)
     assert loader._stopped is True
     assert not any(t.is_alive() for t in loader._threads)
+
+
+def test_empty_search_state_offers_clear_action(sidebar, in_memory_db):
+    """搜索无匹配的空态必须给出恢复路径，而非只有一行死文字。"""
+    from data.repository import add_entry
+    add_entry("a castle", "castle", "x.png", "P")
+
+    sidebar.sv.set("zzz-no-hit")
+    sidebar._refresh_hist()
+    sidebar.app.root.update()
+
+    texts = []
+    for w in sidebar.hi.winfo_children():
+        for c in w.winfo_children():
+            if isinstance(c, tk.Button):
+                texts.append(str(c.cget("text")))
+        if isinstance(w, tk.Button):
+            texts.append(str(w.cget("text")))
+    assert any("清除搜索" in t or "Clear search" in t for t in texts), texts
+
+
+def test_empty_first_use_state_has_guidance(sidebar):
+    """首次使用空态应提示下一步动作，而非仅"暂无记录"。"""
+    from config.i18n import _
+    sidebar._refresh_hist()
+    sidebar.app.root.update()
+    def _walk(w):
+        for c in w.winfo_children():
+            yield c
+            yield from _walk(c)
+
+    labels = " ".join(
+        str(w.cget("text")) for w in _walk(sidebar.hi) if isinstance(w, tk.Label)
+    )
+    assert _("empty_first_use_hint") in labels
+
+
+def test_count_entries_respects_filters(in_memory_db):
+    """count_entries 过滤计数与 get_all_entries 同语义。"""
+    from data.repository import add_entry, count_entries, get_all_entries, update_tags
+    e1 = add_entry("castle on hill", "castle", "x1.png", "P")
+    e2 = add_entry("sunset beach", "sunset", "x2.png", "P")
+    update_tags(e2["id"], "风景")
+
+    assert count_entries() == 2
+    assert count_entries(keyword="castle") == 1
+    assert count_entries(tag_filter="风景") == 1
+    assert count_entries(only_favorites=True) == 0
+    # 与 get_all_entries 的过滤结果交叉验证
+    assert len(get_all_entries(keyword="castle")) == count_entries(keyword="castle")

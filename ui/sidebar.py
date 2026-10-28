@@ -246,6 +246,7 @@ class HistorySidebar:
         _sre.bind("<FocusIn>", lambda _: _ph_lbl.place_forget(), add="+")
         _sre.bind("<FocusOut>", lambda _: _upd_ph(), add="+")
         self.sv.trace("w", _upd_ph)
+        _upd_ph()  # 启动时空查询：隐藏 ✕，避免暗示存在筛选
 
         flt = tk.Frame(L, bg=C["panel"])
         flt.pack(fill="x", padx=6, pady=(0, 2))
@@ -509,16 +510,7 @@ class HistorySidebar:
             _has_more = False
         self._update_filter_status()
         if not items:
-            msg = (
-                _("empty_no_favorites")
-                if self._fav_only
-                else _("empty_no_tag_results", tag=self._tag_filter)
-                if self._tag_filter
-                else _("empty_no_match")
-                if kw
-                else _("status_no_records")
-            )
-            tk.Label(self.hi, text=msg, font=F["body"], bg=C["panel"], fg=C["sub"]).pack(pady=30)
+            self._render_empty_state(kw)
             return
         for i, e in enumerate(items):
             self._card(e, cur_gen, prio=i)  # P0-02: 页首优先加载
@@ -527,11 +519,39 @@ class HistorySidebar:
         if anchor is not None:
             self.hc.yview_moveto(anchor[0])
 
+    def _render_empty_state(self, kw: str):
+        """空态区分四种场景并给出下一步动作（对齐队列/预览空态的指引风格）。"""
+        if self._fav_only:
+            title, hint, show_clear = _("empty_no_favorites"), _("empty_no_fav_hint"), False
+        elif self._tag_filter:
+            title, hint, show_clear = _("empty_no_tag_results", tag=self._tag_filter), _("empty_no_match_hint"), False
+        elif kw:
+            title, hint, show_clear = _("empty_no_match"), _("empty_no_match_hint"), True
+        else:
+            title, hint, show_clear = _("status_no_records"), _("empty_first_use_hint"), False
+        box = tk.Frame(self.hi, bg=C["panel"])
+        box.pack(pady=(36, 12), padx=16)
+        tk.Label(box, text=title, font=F["body"], bg=C["panel"], fg=C["sub"]).pack()
+        tk.Label(
+            box, text=hint, font=F["small"], bg=C["panel"], fg=C["text_muted"],
+            wraplength=260, justify="center",
+        ).pack(pady=(6, 0))
+        if show_clear:
+            tk.Button(
+                box, text=_("btn_clear_search"), font=F["small"], bd=0,
+                bg=C["acc"], fg=C["text"], padx=10, pady=4, cursor="hand2",
+                command=self._clear_search,
+            ).pack(pady=(10, 0))
+
     def _append_more_btn(self, gen: int, after_id: int):
         """DATA-003: keyset 分页「加载更多」—— 追加下一页，不全量重载。"""
         self._more_btn = tk.Button(
             self.hi,
-            text=_("btn_show_more", count=count_entries()),
+            text=_("btn_show_more", count=count_entries(
+                keyword=self.sv.get().strip(),
+                only_favorites=self._fav_only,
+                tag_filter=self._tag_filter,
+            )),
             font=F["body"],
             bg=C["acc"],
             fg=C["text"],

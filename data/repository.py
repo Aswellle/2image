@@ -479,9 +479,29 @@ def clear_all_entries(remove_files: bool = False) -> dict:
     return result
 
 
-def count_entries() -> int:
+def count_entries(keyword: str = "",
+                  only_favorites: bool = False,
+                  tag_filter: str = "") -> int:
+    """统计历史条数；过滤语义与 get_all_entries 完全一致（FTS/LIKE 同源）。
+
+    侧栏「显示更多」用过滤后的计数替代全库总数，避免筛选态下误导。
+    """
+    clauses, params = [], []
+    if only_favorites:
+        clauses.append("favorited = 1")
+    kw_sql, kw_params = _keyword_clause(keyword)
+    if kw_sql:
+        clauses.append(kw_sql)
+        params += kw_params
+    if tag_filter:
+        clauses.append(
+            "id IN (SELECT et.entry_id FROM entry_tag et "
+            "JOIN tag t ON et.tag_id = t.id WHERE t.name = ?)"
+        )
+        params.append(tag_filter)
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     with _conn() as c:
-        return c.execute("SELECT COUNT(*) FROM history").fetchone()[0]
+        return c.execute(f"SELECT COUNT(*) FROM history h {where}", params).fetchone()[0]
 
 
 def migrate_from_json(json_path: str) -> dict:
