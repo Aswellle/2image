@@ -598,7 +598,10 @@ class MainContent:
             R, textvariable=self.stv, font=F["body"], bg=C["panel"], fg=C["ok"], anchor="w", padx=10, pady=5
         )
         self.stl.pack(fill="x", padx=14, pady=(0, 4))
+        # 进度条常驻占位（pack 一次不再撤下）：避免生成开始/结束时
+        # Notebook 区域整体上下跳动两次
         self.pb = ttk.Progressbar(R, mode="indeterminate")
+        self.pb.pack(fill="x", padx=14, pady=(0, 4))
 
         # ── Notebook（外围加强调色线框，便于视觉定位边界）────────
         _nb_border = tk.Frame(

@@ -69,6 +69,12 @@ class GenerationController:
         if not self._precheck_provider(psel):
             return
 
+        # i2i 缺参考图此刻即可判定：不等工作线程，避免闪一轮生成态再报错
+        if (getattr(content, "_gen_mode", "t2i") == "i2i"
+                and getattr(content, "_ref_image", None) is None):
+            self.app._st(_("err_i2i_need_ref"), "err")
+            return
+
         sz = content.szv.get()
         w, h = [int(x) for x in sz.replace("×", "x").split("x")]
 
@@ -89,8 +95,7 @@ class GenerationController:
 
         # Update UI state：主按钮转为"取消生成"（保持可点，经 generate_or_cancel 调度）
         content.gb.config(state="normal", text=_("btn_cancel_generation"))
-        content.pb.pack(fill="x", padx=14, pady=(0, 4))
-        content.pb.start(10)
+        content.pb.start(10)  # 进度条常驻占位，仅启停不撤换
         self.app._st(_("status_translating"), "warn")
         content._prev_cv.delete("prev")
         content._prev_item = None
@@ -207,7 +212,10 @@ class GenerationController:
                 strength = getattr(content, '_ref_strength', None)
                 strength = strength.get() if strength is not None else 0.6
                 if ref_image is None:
-                    self.root.after(0, lambda: self.app._err(_("err_i2i_need_ref")))
+                    self.root.after(
+                        0, lambda: self.app._err(
+                            "i2i: no reference image",
+                            friendly=_("err_i2i_need_ref")))
                     return
             else:
                 ref_image = None

@@ -947,7 +947,9 @@ class App:
         self.cur_path = path
         self._cur_bytes = data
         self.content._set_preview(data)
-        self._push_to_viewer(data, path)
+        # 查看器仅在已打开时同步刷新：首次成功不再强行弹第二个窗口抢焦点
+        if self._viewer_win is not None:
+            self._push_to_viewer(data, path)
         self._st(_("status_success", prov=prov), "ok")
         self._log(f"✓ 成功 provider={prov}")
         self._batch_params = None
@@ -957,26 +959,27 @@ class App:
     def _err(self, err: str, friendly: str | None = None) -> None:
         """Handle generation error (kept in App for UI state access).
 
-        friendly: 调用方已归类的用户文案；传入后跳过子串匹配直接展示。
+        friendly: 调用方已归类的用户文案，直接展示；
+        未命中任何归类时降级为通用失败提示，原始多行详情只进调试日志，
+        不再把整段 provider 堆栈塞进单行状态栏。
         """
         self.content.gb.config(state="normal", text=_("btn_generate"))
         self.content.pb.stop()
-        self.content.pb.pack_forget()
         self._batch_params = None
 
-        friendly = friendly or err
-        if friendly is not err and friendly is not None:
-            pass  # 直供文案不走归类
-        elif "429" in err or "rate limit" in err.lower():
-            friendly = _("err_rate_limit")
-        elif "401" in err or "403" in err:
-            friendly = _("err_api_key")
-        elif "402" in err or _("err_balance_word") in err or "balance" in err.lower():
-            friendly = _("err_balance")
-        elif "timeout" in err.lower() or "timed out" in err.lower():
-            friendly = _("err_timeout")
-        elif "ConnectionError" in err or "connection" in err.lower():
-            friendly = _("err_connection")
+        if friendly is None:
+            if "429" in err or "rate limit" in err.lower():
+                friendly = _("err_rate_limit")
+            elif "401" in err or "403" in err:
+                friendly = _("err_api_key")
+            elif "402" in err or _("err_balance_word") in err or "balance" in err.lower():
+                friendly = _("err_balance")
+            elif "timeout" in err.lower() or "timed out" in err.lower():
+                friendly = _("err_timeout")
+            elif "ConnectionError" in err or "connection" in err.lower():
+                friendly = _("err_connection")
+            else:
+                friendly = _("status_failed")
 
         self._st(f"❌ {friendly}", "hl")
         self._log(f"✗ {err}")
@@ -993,7 +996,6 @@ class App:
         """单图生成被用户取消：恢复控件并提示（与 _err 同构的收尾）。"""
         self.content.gb.config(state="normal", text=_("btn_generate"))
         self.content.pb.stop()
-        self.content.pb.pack_forget()
         self._batch_params = None
         self._st(_("status_cancelled"), "warn")
         self._log("⏹ " + _("status_cancelled"))
