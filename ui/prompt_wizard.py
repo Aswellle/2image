@@ -964,7 +964,6 @@ class PromptWizard(tk.Toplevel):
         t = TEMPLATES[self._sel_tid]
         pos, _ignored = apply_template(self._sel_tid, kw, log_cb=self.app._log)
         self._on_done(pos, _("wizard_label_template_prefix", text=t["name"]))
-        self._set_template_state(self._TEMPLATE_PENDING_FILL)
         self._tmpl_status.config(text=_("wizard_applied", name=t["name"]), fg=C["ok"])
 
     def _set_template_state(self, state: str):
@@ -1029,7 +1028,8 @@ class PromptWizard(tk.Toplevel):
         self.after(3000, lambda: self._param_status.config(text=""))
         self.after(3000, lambda: self._status_lbl.config(text=""))
         self._set_result(positive)
-        self._set_template_state(self._TEMPLATE_IDLE)
+        # 生成完成即进入"待填充"态：填入维度 / 使用到主输入框立即可用
+        self._set_template_state(self._TEMPLATE_PENDING_FILL)
         self._history.insert(0, (label, positive))
         self._history = self._history[:8]
         self._hist_cb.config(values=[h[0] for h in self._history])
@@ -1182,7 +1182,7 @@ class PromptWizard(tk.Toplevel):
         if 0 <= idx < len(self._history):
             _, pos = self._history[idx]
             self._set_result(pos)
-            self._set_template_state(self._TEMPLATE_IDLE)
+            self._set_template_state(self._TEMPLATE_PENDING_FILL)
 
     def _on_close(self):
         self._stop_anim()
