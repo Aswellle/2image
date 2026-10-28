@@ -432,7 +432,7 @@ class MainContent:
             pady=6,
             cursor="hand2",
             activebackground="#c73652",
-            command=self.app._gen,
+            command=self.app.gen_controller.generate_or_cancel,
         )
         self.gb.pack(side="left")
 

@@ -944,6 +944,15 @@ class App:
                 100, lambda: messagebox.showwarning(_("dlg_err_key_title"), _("dlg_err_key_body", err=err[:200]))
             )
 
+    def _cancelled(self) -> None:
+        """单图生成被用户取消：恢复控件并提示（与 _err 同构的收尾）。"""
+        self.content.gb.config(state="normal", text=_("btn_generate"))
+        self.content.pb.stop()
+        self.content.pb.pack_forget()
+        self._batch_params = None
+        self._st(_("status_cancelled"), "warn")
+        self._log("⏹ " + _("status_cancelled"))
+
     def _export(self):
         """导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"""
         d = filedialog.askdirectory(title=_("export_choose_dir"))

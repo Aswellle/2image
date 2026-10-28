@@ -3125,6 +3125,10 @@ STRINGS = {
         "zh-CN": "⏹ 已取消",
         "en": "⏹ Cancelled",
     },
+    "btn_cancel_generation": {
+        "zh-CN": "✕ 取消生成",
+        "en": "✕ Cancel",
+    },
 }
 
 

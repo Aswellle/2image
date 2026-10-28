@@ -29,9 +29,24 @@ class GenerationController:
         self.app = app
         self.root = app.root
         self._cancel_token: CancellationToken | None = None
+        self._running = False
+
+    def generate_or_cancel(self, event=None) -> None:
+        """主生成按钮统一入口：空闲时启动生成，运行中变为取消。
+
+        按钮的 command 常驻本方法，状态切换只改文案/可用性，
+        避免多出口（成功/失败/取消）各自恢复 command 造成漂移。
+        """
+        if self._running:
+            self.cancel_generation()
+        else:
+            self.generate(event)
 
     def generate(self, event=None) -> None:
         """Start single-image generation."""
+        if self._running:
+            # 在飞防重：Ctrl+R / 重新生成按钮不会并发派生第二个 worker
+            return
         content = self.app.content
         prompt = content.pt.get("1.0", "end").strip()
         MAX_PROMPT_CHARS = 2000
@@ -72,8 +87,8 @@ class GenerationController:
         self.app._batch_params = {"prompt": prompt, "translated": "", "w": w, "h": h,
                                   "porder": porder, "cfg": self.app.cfg}
 
-        # Update UI state
-        content.gb.config(state="disabled", text=_("btn_generating"))
+        # Update UI state：主按钮转为"取消生成"（保持可点，经 generate_or_cancel 调度）
+        content.gb.config(state="normal", text=_("btn_cancel_generation"))
         content.pb.pack(fill="x", padx=14, pady=(0, 4))
         content.pb.start(10)
         self.app._st(_("status_translating"), "warn")
@@ -89,6 +104,7 @@ class GenerationController:
 
         # Create cancellation token for this generation job
         self._cancel_token = CancellationToken()
+        self._running = True
 
         # Start generation thread
         threading.Thread(
@@ -214,12 +230,14 @@ class GenerationController:
             add_entry(prompt, translated, path, used)
             self.root.after(0, lambda: self.app._ok(data, path, used))
         except GenerationCancelled:
-            self.root.after(0, lambda: self.app._st(_("status_cancelled"), "warn"))
+            self.root.after(0, self.app._cancelled)
         except DeadlineExceeded as ex:
             err_msg = str(ex)
             self.root.after(0, lambda: self.app._err(f"⏰ 生成超时: {err_msg}"))
         except Exception as ex:
             self.root.after(0, lambda e=str(ex): self.app._err(e))
+        finally:
+            self._running = False
 
     def _make_status_cb(self, total: int):
         """Create a status callback for progress updates."""
