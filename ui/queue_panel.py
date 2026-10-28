@@ -128,7 +128,7 @@ class _ItemWidget(tk.Frame):
 
         self._view_btn = tk.Button(
             row3,
-            text="🔍 查看结果",
+            text=_("queue_btn_view_result"),
             font=F["tiny_b"],
             bg=C["acc"],
             fg="white",

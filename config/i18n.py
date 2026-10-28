@@ -3153,6 +3153,87 @@ STRINGS = {
         "zh-CN": "清除搜索",
         "en": "Clear search",
     },
+    # ── 状态/错误文案多语言补漏 ─────────────────────────────────
+    "status_provider_attempt": {
+        "zh-CN": "⏳ {provider}（尝试 {attempt}）…",
+        "en": "⏳ {provider} (attempt {attempt})…",
+    },
+    "err_i2i_need_ref": {
+        "zh-CN": "图生图模式需要先选取参考图",
+        "en": "Img2img mode needs a reference image first",
+    },
+    "err_timeout_detail": {
+        "zh-CN": "⏰ 生成超时：{detail}",
+        "en": "⏰ Generation timed out: {detail}",
+    },
+    "err_deadline_body": {
+        "zh-CN": "生成超时（{seconds}s）",
+        "en": "generation exceeded its {seconds}s deadline",
+    },
+    "err_ref_read": {
+        "zh-CN": "参考图读取失败: {detail}",
+        "en": "Failed to read reference image: {detail}",
+    },
+    "status_compare_set": {
+        "zh-CN": "⚖ 已设置对比图：{title}",
+        "en": "⚖ Compare image set: {title}",
+    },
+    "batch_cell_kept": {
+        "zh-CN": "✅ 已保留",
+        "en": "✅ Kept",
+    },
+    "batch_cell_discarded": {
+        "zh-CN": "— 已丢弃 —",
+        "en": "— Discarded —",
+    },
+    "queue_btn_view_result": {
+        "zh-CN": "🔍 查看结果",
+        "en": "🔍 View result",
+    },
+    "wizard_result_title": {
+        "zh-CN": "📋  正面提示词（可编辑）",
+        "en": "📋  Positive prompt (editable)",
+    },
+    "export_dir_prefix": {
+        "zh-CN": "AI生图_",
+        "en": "AI_Images_",
+    },
+    "llm_info_sf_1": {
+        "zh-CN": "硅基流动自动预设的首选候选",
+        "en": "First choice for the SiliconFlow auto preset",
+    },
+    "llm_info_sf_2": {
+        "zh-CN": "硅基流动自动预设的稳定备用",
+        "en": "Stable fallback for the SiliconFlow auto preset",
+    },
+    "llm_info_sf_3": {
+        "zh-CN": "千问旗舰，英文创作能力强",
+        "en": "Qwen flagship; strong English writing",
+    },
+    "llm_info_sf_4": {
+        "zh-CN": "速度与质量均衡",
+        "en": "Balanced speed and quality",
+    },
+    "llm_info_sf_5": {
+        "zh-CN": "轻量兜底，保证最低可用性",
+        "en": "Lightweight fallback guaranteeing baseline availability",
+    },
+    "llm_info_ds_pro": {
+        "zh-CN": "质量优先 · 更强推理/指令遵循 · 官方 API 按量计费",
+        "en": "Quality-first · stronger reasoning/instruction following · pay-as-you-go official API",
+    },
+    "llm_info_ds_flash": {
+        "zh-CN": "速度优先 · 低延迟/低成本 · 官方 API 按量计费",
+        "en": "Speed-first · low latency/cost · pay-as-you-go official API",
+    },
+    "llm_info_hf_1": {
+        "zh-CN": "效果较好，但速度受免费队列影响",
+        "en": "Better quality, but speed depends on the free queue",
+    },
+    "llm_info_hf_2": {
+        "zh-CN": "轻量快速，效果一般",
+        "en": "Light and fast, moderate quality",
+    },
 }
 
 

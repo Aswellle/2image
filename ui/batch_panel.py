@@ -166,7 +166,7 @@ class _Cell:
             return
         self.bp._keep_cell(self)
         self.state = "kept"
-        set_enabled(self.keep_btn, False, text="✅ 已保留", bg="#34d399")
+        set_enabled(self.keep_btn, False, text=_("batch_cell_kept"), bg="#34d399")
         set_enabled(self.dis_btn, False)
         self.frame.config(highlightbackground="#34d399")
 
@@ -176,7 +176,10 @@ class _Cell:
         self.bp._discard_cell(self)
         self.state = "discarded"
         self.canvas.delete("all")
-        self.canvas.create_text(CELL_W // 2, CELL_H // 2, text="— 已丢弃 —", font=F["input"], fill=C["text_muted"])
+        self.canvas.create_text(
+            CELL_W // 2, CELL_H // 2, text=_("batch_cell_discarded"),
+            font=F["input"], fill=C["text_muted"],
+        )
         set_enabled(self.keep_btn, False)
         set_enabled(self.dis_btn, False)
         set_enabled(self.cmp_btn, False)
@@ -214,7 +217,7 @@ class _Cell:
         set_enabled(self.keep_btn, False, text=_("btn_keep"), bg=C["keep_bg"])
         set_enabled(self.dis_btn, False)
         set_enabled(self.cmp_btn, False, text=_("btn_compare"), bg=C["acc"])
-        self.status_lbl.config(text="等待…")
+        self.status_lbl.config(text=_("batch_status_waiting"))
         self.frame.config(highlightbackground=C["sep"], highlightthickness=1)
         try:
             self.canvas.unbind("<Double-Button-1>")

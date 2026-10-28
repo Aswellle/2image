@@ -26,22 +26,23 @@ from config.i18n import _
 
 
 # ── 每个模型通道的展示信息 ────────────────────────────────────────
+# 说明文案存键名，渲染时经 _() 按当前语言解析（勿在模块级求值）
 _SF_MODELS_INFO = [
-    ("🥇 DeepSeek V3-0324", "硅基流动自动预设的首选候选"),
-    ("   DeepSeek V3", "硅基流动自动预设的稳定备用"),
-    ("   Qwen2.5-72B-Instruct", "千问旗舰，英文创作能力强"),
-    ("   Qwen2.5-32B-Instruct", "速度与质量均衡"),
-    ("   GLM-4-9B-chat", "轻量兜底，保证最低可用性"),
+    ("🥇 DeepSeek V3-0324", "llm_info_sf_1"),
+    ("   DeepSeek V3", "llm_info_sf_2"),
+    ("   Qwen2.5-72B-Instruct", "llm_info_sf_3"),
+    ("   Qwen2.5-32B-Instruct", "llm_info_sf_4"),
+    ("   GLM-4-9B-chat", "llm_info_sf_5"),
 ]
 
 _DEEPSEEK_PRESETS_INFO = [
-    ("deepseek_pro", "DeepSeek Pro", "质量优先 · 更强推理/指令遵循 · 官方 API 按量计费"),
-    ("deepseek_flash", "DeepSeek Flash", "速度优先 · 低延迟/低成本 · 官方 API 按量计费"),
+    ("deepseek_pro", "DeepSeek Pro", "llm_info_ds_pro"),
+    ("deepseek_flash", "DeepSeek Flash", "llm_info_ds_flash"),
 ]
 
 _HF_MODELS_INFO = [
-    ("Mixtral-8x7B-Instruct", "效果较好，但速度受免费队列影响"),
-    ("Zephyr-7b-beta", "轻量快速，效果一般"),
+    ("Mixtral-8x7B-Instruct", "llm_info_hf_1"),
+    ("Zephyr-7b-beta", "llm_info_hf_2"),
 ]
 
 
@@ -212,7 +213,7 @@ class LLMWizard(tk.Toplevel):
 
         presets = [
             ("siliconflow_auto", _("wizard_llm_preset_auto_title"), _("wizard_llm_preset_auto_desc"), C["ok"]),
-            *[(key, name, desc, "#c084fc") for key, name, desc in _DEEPSEEK_PRESETS_INFO],
+            *[(key, name, _(desc), "#c084fc") for key, name, desc in _DEEPSEEK_PRESETS_INFO],
         ]
 
         def _select_preset(key):
@@ -312,7 +313,7 @@ class LLMWizard(tk.Toplevel):
             tk.Label(row, text=name, font=F["mono_sm_b"], bg=C["card"], fg=C["text"], width=26, anchor="w").pack(
                 side="left"
             )
-            tk.Label(row, text=desc, font=F["small"], bg=C["card"], fg=C["sub"], anchor="w").pack(
+            tk.Label(row, text=_(desc), font=F["small"], bg=C["card"], fg=C["sub"], anchor="w").pack(
                 side="left", padx=(4, 0)
             )
         tk.Label(model_f, text="").pack(pady=2)

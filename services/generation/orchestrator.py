@@ -16,6 +16,7 @@ import time
 from dataclasses import dataclass
 from typing import Callable
 
+from config.i18n import _
 from services.generation.cancellation import CancellationToken, Deadline
 from services.generation.errors import (
     GenerationCancelled,
@@ -124,7 +125,12 @@ class GenerationOrchestrator:
 
                 msg = f"[{provider_id}] attempt {attempt}/{self.retry_policy.max_attempts}"
                 if status_cb:
-                    status_cb(f"⏳ {provider_id} (尝试 {attempt})…")
+                    from services.providers import display_name_for
+
+                    status_cb(
+                        _("status_provider_attempt",
+                          provider=display_name_for(provider_id), attempt=attempt)
+                    )
 
 
                 if log_cb:

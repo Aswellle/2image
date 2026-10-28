@@ -954,15 +954,20 @@ class App:
         self._refresh_hist()
         self._refresh_tag_stats()
 
-    def _err(self, err: str) -> None:
-        """Handle generation error (kept in App for UI state access)."""
+    def _err(self, err: str, friendly: str | None = None) -> None:
+        """Handle generation error (kept in App for UI state access).
+
+        friendly: 调用方已归类的用户文案；传入后跳过子串匹配直接展示。
+        """
         self.content.gb.config(state="normal", text=_("btn_generate"))
         self.content.pb.stop()
         self.content.pb.pack_forget()
         self._batch_params = None
 
-        friendly = err
-        if "429" in err or "rate limit" in err.lower():
+        friendly = friendly or err
+        if friendly is not err and friendly is not None:
+            pass  # 直供文案不走归类
+        elif "429" in err or "rate limit" in err.lower():
             friendly = _("err_rate_limit")
         elif "401" in err or "403" in err:
             friendly = _("err_api_key")

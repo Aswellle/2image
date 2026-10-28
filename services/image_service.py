@@ -21,6 +21,7 @@ from PIL import Image, PngImagePlugin
 
 from config.settings import IMAGES_DIR
 
+from config.i18n import _
 from services.generation.cancellation import CancellationToken
 from services.generation.errors import (
     DeadlineExceeded,
@@ -188,7 +189,7 @@ def generate_image(prompt, w, h, seed, cfg,
     if result.cancelled:
         raise GenerationCancelled("生成已取消")
     if result.deadline_exceeded:
-        raise DeadlineExceeded(f"生成超时（{deadline_seconds}s）")
+        raise DeadlineExceeded(_("err_deadline_body", seconds=deadline_seconds))
     if result.image_bytes is not None:
         # provider_id 已是注册表 stable id，付费预算/健康度按它查表；
         # 展示串（含模型名）仅用于界面与历史记录展示

@@ -1068,7 +1068,7 @@ class MainContent:
                 data = _fh.read()
             self._set_compare_image(data)
             self._nb.select(0)
-            self.app._st(f"⚖ 已设置对比图：{self.app._display_title(e)}", "ok")
+            self.app._st(_("status_compare_set", title=self.app._display_title(e)), "ok")
 
     def _on_tools_row_resize(self, event=None):
         """工具行变窄时收起 Ctrl+Enter 提示，保证按钮不被挤压。
@@ -1483,7 +1483,7 @@ class MainContent:
         except Exception as e:
             self._ref_image = None
             self._ref_pick_btn.config(text=_("ref_read_failed"))
-            self.app._st(f"参考图读取失败: {e}", "err")
+            self.app._st(_("err_ref_read", detail=e), "err")
 
     def _clear_ref_image(self):
         """清除参考图，恢复占位符。"""

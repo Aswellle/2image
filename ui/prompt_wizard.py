@@ -912,6 +912,7 @@ class PromptWizard(tk.Toplevel):
         self._hist_cb = ttk.Combobox(parent, textvariable=self._hist_var, state="readonly", font=F["small"])
         self._hist_cb.pack(fill="x", padx=14, pady=(4, 14))
         self._hist_cb.bind("<<ComboboxSelected>>", self._load_history)
+        self._pos_placeholder = True  # 结果框初始为占位文案
 
     # ══════════════════════════════════════════════════════════
     #   生成逻辑
@@ -921,7 +922,7 @@ class PromptWizard(tk.Toplevel):
             return
         kw = self.kw_var.get().strip()
         if not kw:
-            messagebox.showwarning("提示", _("wizard_warn_no_keyword"), parent=self)
+            messagebox.showwarning(_("dlg_tip"), _("wizard_warn_no_keyword"), parent=self)
             return
 
         style = self._dim_style.get_value()
@@ -1053,6 +1054,7 @@ class PromptWizard(tk.Toplevel):
         self._pos_box.delete("1.0", "end")
         self._pos_box.insert("1.0", pos)
         self._pos_box.config(fg=C["ok"])
+        self._pos_placeholder = False
         # 触发词数指示器更新
         self._update_budget_display()
 
@@ -1060,6 +1062,7 @@ class PromptWizard(tk.Toplevel):
         self._pos_box.delete("1.0", "end")
         self._pos_box.insert("1.0", _("wizard_placeholder_prompt"))
         self._pos_box.config(fg=C["keep_bg"])
+        self._pos_placeholder = True
         self._set_template_state(self._TEMPLATE_IDLE)
         self._update_budget_display()
         self._status_lbl.config(text=_("wizard_cleared"), fg=C["sub"])
@@ -1084,8 +1087,8 @@ class PromptWizard(tk.Toplevel):
         except Exception:
             return
 
-        # 占位文本时不显示计数
-        if not pos or "显示在这里" in pos or "AI 生成" in pos:
+        # 占位文本时不显示计数（标志位判断，不依赖翻译文本内容）
+        if not pos or getattr(self, "_pos_placeholder", False):
             self._budget_lbl.config(text="", fg=C["sub"])
             set_enabled(self._trim_btn, False)
             return
@@ -1153,7 +1156,7 @@ class PromptWizard(tk.Toplevel):
         if self._template_state != self._TEMPLATE_PENDING_FILL:
             return
         pos = self._pos_box.get("1.0", "end").strip()
-        if not pos or "显示在这里" in pos:
+        if not pos or getattr(self, "_pos_placeholder", False):
             return
         self.app.pt.delete("1.0", "end")
         self.app.pt.insert("1.0", pos)
@@ -1171,7 +1174,9 @@ class PromptWizard(tk.Toplevel):
 
     def _copy_box(self, box: tk.Text):
         text = box.get("1.0", "end").strip()
-        if text and "显示在这里" not in text:
+        copying_placeholder = box is getattr(self, "_pos_box", None) and getattr(
+            self, "_pos_placeholder", False)
+        if text and not copying_placeholder:
             self.clipboard_clear()
             self.clipboard_append(text)
             self._status_lbl.config(text=_("wizard_copied"), fg=C["ok"])

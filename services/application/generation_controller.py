@@ -207,7 +207,7 @@ class GenerationController:
                 strength = getattr(content, '_ref_strength', None)
                 strength = strength.get() if strength is not None else 0.6
                 if ref_image is None:
-                    self.root.after(0, lambda: self.app._err("图生图模式需要先选取参考图"))
+                    self.root.after(0, lambda: self.app._err(_("err_i2i_need_ref")))
                     return
             else:
                 ref_image = None
@@ -233,7 +233,10 @@ class GenerationController:
             self.root.after(0, self.app._cancelled)
         except DeadlineExceeded as ex:
             err_msg = str(ex)
-            self.root.after(0, lambda: self.app._err(f"⏰ 生成超时: {err_msg}"))
+            # friendly 直供，绕开 _err 的子串归类，保留超时细节
+            self.root.after(
+                0, lambda: self.app._err(
+                    err_msg, friendly=_("err_timeout_detail", detail=err_msg)))
         except Exception as ex:
             self.root.after(0, lambda e=str(ex): self.app._err(e))
         finally:
