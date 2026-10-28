@@ -157,7 +157,8 @@ def try_<name>(
 ```
 
 **Rules**:
-- Raise `ValueError` for missing API key or configuration issues
+- Raise typed errors via `services/providers/_net.py`: `raise_for_response(resp, name)` for HTTP failures and `raise_provider_error(name, kind=...)` for explicit kinds（config/quota/rate_limit/invalid_response/transient）——错误是 `ProviderError` 家族（ValueError 子类），orchestrator 按 `.code` 决策重试/回退，App 按 code 取文案；不要用裸 RuntimeError 表达失败语义
+- Missing API key / configuration → `ProviderConfigError`（ValueError 子类，旧 except ValueError 链继续兼容）
 - `image_service.py` catches `(ValueError, RuntimeError, TimeoutError)` — all fall through to next provider
 - Import shared HTTP utilities from `services/providers/_net.py` (do NOT duplicate):
 
