@@ -613,10 +613,20 @@ class App:
             self.sidebar._refresh_tag_chips()
         except Exception:
             pass
-        # 清空主界面状态
+        # 重置语义 = 回到初始态，提示词草稿一并清空
+        self.content.pt.delete("1.0", "end")
+        self._clear_preview_selection()
+        self._refresh_hist()
+        self._st(_("status_ready"), "ok")
+
+    def _clear_preview_selection(self):
+        """仅清理选中项关联的预览/对比状态。
+
+        删除历史条目等场景使用：保留用户正在输入的提示词草稿、
+        当前的筛选状态与滚动位置，避免一次删除造成连带工作丢失。
+        """
         self.sel_id = self.cur_path = None
         self._cur_bytes = self.content._prev_orig = None
-        self.content.pt.delete("1.0", "end")
         self.content._prev_cv.delete("prev")
         self.content._prev_item = None
         self.content._prev_outline = None
@@ -626,8 +636,6 @@ class App:
         ch = self.content._prev_cv.winfo_height() or 400
         self.content._prev_cv.itemconfig(self.content._prev_ph, text=_("preview_placeholder"))
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
-        self._refresh_hist()
-        self._st(_("status_ready"), "ok")
 
     # ══════════════════════════════════════════════════════════
     #   查看器

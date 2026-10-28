@@ -1257,8 +1257,9 @@ class HistorySidebar:
             try:
                 cd["card"].destroy()
                 if self.app.sel_id == eid:
+                    # 仅清理预览/对比/选中态：保留提示词草稿、筛选与滚动
                     self.app.sel_id = None
-                    self.app._reset_view()
+                    self.app._clear_preview_selection()
                 self._refresh_tag_chips()
                 return
             except Exception:
@@ -1267,7 +1268,8 @@ class HistorySidebar:
         # 退化路径：卡片 widget 已不存在
         if self.app.sel_id == eid:
             self.app.sel_id = None
-            self.app._reset_view()
+            self.app._clear_preview_selection()
+            self.app._refresh_hist()
         else:
             self.app._refresh_hist()
 
@@ -1277,4 +1279,7 @@ class HistorySidebar:
             return
         if messagebox.askyesno(_("dlg_confirm_clear"), _("dlg_confirm_clear_n_body", n=n)):
             clear_all_entries()
-            self.app._refresh_hist()
+            # 全部记录已清除，选中项与预览不得再指向已不存在的图
+            self.app.sel_id = None
+            self.app._clear_preview_selection()
+            self._refresh_hist()
