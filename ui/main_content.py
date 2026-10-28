@@ -341,6 +341,13 @@ class MainContent:
         )
         self.pt.pack(fill="x")
         self.pt.bind("<Control-Return>", lambda e: (self.app._gen(), "break")[1])
+        # 提示词占位符：空输入时显示指引，输入即隐藏（与预览/搜索同一模式）
+        self._pt_ph = tk.Label(
+            pf, text=_("prompt_placeholder"), font=F["label"], bg=C["entry"],
+            fg=C["text_muted"], bd=0, anchor="nw", justify="left",
+        )
+        self._pt_ph.bind("<Button-1>", lambda _e: self.pt.focus_set())
+        self._upd_pt_ph()
 
         # ── 输入框底部辅助条：字数统计 + 一键复制 ─────────────
         _pt_foot = tk.Frame(R, bg="#0d1a30")
@@ -1125,6 +1132,10 @@ class MainContent:
 
     def _render_preview(self):
         if self._prev_orig is None:
+            # 无图占位也要跟随画布尺寸，避免窗口变宽后文字偏在左上角
+            cw = self._prev_cv.winfo_width() or 600
+            ch = self._prev_cv.winfo_height() or 400
+            self._prev_cv.coords(self._prev_ph, cw // 2, ch // 2)
             return
         self._prev_cv.update_idletasks()
         cw = self._prev_cv.winfo_width() or 600
@@ -1150,6 +1161,17 @@ class MainContent:
             self.app._cur_bytes = data
             self._set_preview(data)
 
+    def _upd_pt_ph(self):
+        """提示词占位符显隐：有内容即隐藏。"""
+        try:
+            empty = not self.pt.get("1.0", "end").strip()
+        except Exception:
+            return
+        if empty:
+            self._pt_ph.place(x=10, y=8)
+        else:
+            self._pt_ph.place_forget()
+
     def _update_char_count(self):
         """更新输入框字符计数标签（公开，供 PhrasePanel 等外部调用）。"""
         try:
@@ -1159,6 +1181,7 @@ class MainContent:
             self._char_lbl.config(text=_("lbl_chars", n=n), fg=color)
         except Exception:
             pass
+        self._upd_pt_ph()
 
     def _copy_prompt(self):
         """将提示词文本框内容复制到系统剪贴板，并在字数标签短暂显示反馈。"""

@@ -77,13 +77,16 @@ def test_nav_history_moves_selection(app, tk_root):
     from data.repository import add_entry
     newest = add_entry("newest prompt", "", "", "prov")
     older = add_entry("older prompt", "", "", "prov")
+    a.sidebar._refresh_hist()  # 键盘导航作用于可见（过滤后）列表
     tk_root.update()
-    a._nav_history_guarded(delta=-1)   # 无选中 → 选中列表第一条
+    a._nav_history_guarded(delta=-1)   # 无选中 → 列表末条（显示顺序最后）
     assert a.sel_id in (newest["id"], older["id"])
     first = a.sel_id
     other = older["id"] if first == newest["id"] else newest["id"]
     a._nav_history_guarded(delta=+1)
-    assert a.sel_id == other           # 向相邻条目移动
+    assert a.sel_id == first           # 已在列表末端，继续下移被钳制
+    a._nav_history_guarded(delta=-1)
+    assert a.sel_id == other           # 反向移动到相邻条目
 
 
 def test_nav_guard_ignores_typing_focus(app, tk_root, monkeypatch):

@@ -43,8 +43,8 @@ class SettingsController:
         win.grab_set()
         win.update_idletasks()
         x = self.root.winfo_x() + (self.root.winfo_width() - 520) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - 460) // 2
-        win.geometry(f"520x460+{max(0, x)}+{max(0, y)}")
+        y = self.root.winfo_y() + (self.root.winfo_height() - 620) // 2
+        win.geometry(f"520x620+{max(0, x)}+{max(0, y)}")
         win.bind("<Escape>", lambda _e: win.destroy())
 
         hdr = tk.Frame(win, bg=C["acc"])
@@ -64,6 +64,12 @@ class SettingsController:
             (_("shortcut_export_history"), "Ctrl + E"),
             (_("shortcut_open_viewer"), "Ctrl + O"),
             (_("shortcut_clear_log"), "Ctrl + L"),
+            (_("shortcut_queue_tab"), "Ctrl + Q"),
+            (_("shortcut_variants_tab"), "Ctrl + 2"),
+            (_("shortcut_toggle_sidebar"), "Ctrl + \\"),
+            (_("shortcut_delete_entry"), "Delete"),
+            (_("shortcut_history_nav"), "← / → / ↑ / ↓ / Home / End"),
+            (_("shortcut_close_overlay"), "Esc"),
         ]
         for i, (action, keys) in enumerate(rows):
             rb = C["panel"] if i % 2 == 0 else C["bg"]

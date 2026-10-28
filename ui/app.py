@@ -529,7 +529,7 @@ class App:
     #   状态栏 / 重置视图
     # ══════════════════════════════════════════════════════════
     def _st(self, msg: str, k: str = "ok"):
-        m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"], "err": C["hl"]}
+        m = {"ok": C["ok"], "warn": C["warn"], "hl": C["hl"], "err": C["neg_fg"]}
         self.content.stv.set(msg)
         self.content.stl.config(fg=m.get(k, C["ok"]))
 
@@ -955,6 +955,15 @@ class App:
         self._batch_params = None
         self._refresh_hist()
         self._refresh_tag_stats()
+        # 新作品落选中态：与变体保留路径行为一致，"当前是哪张"一目了然
+        try:
+            for e in get_all_entries(limit=5):
+                if e.get("image_path") == path:
+                    self.sel_id = e["id"]
+                    self.sidebar._update_sidebar_selection(e["id"])
+                    break
+        except Exception:
+            pass
 
     def _err(self, err: str, friendly: str | None = None) -> None:
         """Handle generation error (kept in App for UI state access).

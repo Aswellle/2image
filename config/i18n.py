@@ -3234,6 +3234,43 @@ STRINGS = {
         "zh-CN": "轻量快速，效果一般",
         "en": "Light and fast, moderate quality",
     },
+    # ── P3 打磨配套文案 ────────────────────────────────────────
+    "toast_fav_on": {
+        "zh-CN": "⭐ 已收藏：{name}",
+        "en": "⭐ Favorited: {name}",
+    },
+    "toast_fav_off": {
+        "zh-CN": "已取消收藏：{name}",
+        "en": "Removed from favorites: {name}",
+    },
+    "prompt_placeholder": {
+        "zh-CN": "描述你想要的画面，支持中文，自动翻译…\nCtrl + Enter 生成",
+        "en": "Describe the image you want — Chinese supported, auto-translated…\nCtrl + Enter to generate",
+    },
+    "shortcut_queue_tab": {
+        "zh-CN": "切到队列页",
+        "en": "Switch to queue tab",
+    },
+    "shortcut_variants_tab": {
+        "zh-CN": "切到变体页",
+        "en": "Switch to variants tab",
+    },
+    "shortcut_toggle_sidebar": {
+        "zh-CN": "折叠 / 展开侧栏",
+        "en": "Collapse / expand sidebar",
+    },
+    "shortcut_delete_entry": {
+        "zh-CN": "删除选中条目",
+        "en": "Delete selected entry",
+    },
+    "shortcut_history_nav": {
+        "zh-CN": "历史列表导航",
+        "en": "Navigate history list",
+    },
+    "shortcut_close_overlay": {
+        "zh-CN": "关闭覆盖窗口 / 取消裁剪",
+        "en": "Close overlay window / cancel crop",
+    },
 }
 
 

@@ -195,7 +195,16 @@ class HistorySidebar:
         def _on_search(*_):
             if self._search_timer:
                 self.app.root.after_cancel(self._search_timer)
-            self._search_timer = self.app.root.after(250, lambda: self.app._refresh_hist(keep_scroll=True))
+
+            def _fire_search():
+                self._search_timer = None
+                q = self.sv.get().strip()
+                # 查询变化 → 回到顶部；查询未变 → 保持滚动锚点
+                keep = (q == getattr(self, "_last_search", None))
+                self._last_search = q
+                self.app._refresh_hist(keep_scroll=keep)
+
+            self._search_timer = self.app.root.after(250, _fire_search)
 
         self.sv.trace("w", _on_search)
         _srf = tk.Frame(sf, bg=C["entry"], highlightbackground=C["ok"], highlightthickness=1)
@@ -1237,11 +1246,9 @@ class HistorySidebar:
         btn2.pack(fill="x", pady=(3, 0))
 
         def _confirm():
+            # 内联重命名本身已是显式编辑且可再次修改，回车即提交，
+            # 不再叠加模态确认（避免训练用户无脑回车穿过确认框）
             nn = nick_var.get().strip()
-            if not messagebox.askyesno(
-                _("dlg_confirm_rename"), _("dlg_confirm_rename_body", name=nn or _("lbl_cleared")), parent=self.app.root
-            ):
-                return
             rename_entry(entry["id"], nn)
             try:
                 inline.destroy()
@@ -1293,18 +1300,13 @@ class HistorySidebar:
         ent.bind("<Escape>", lambda ev: _cancel())
 
     def _toggle_fav(self, entry):
+        # 高频整理动作：即点即切换 + toast 反馈，不再弹两次模态框
         is_fav = bool(entry.get("favorited", 0))
+        new_fav = not is_fav
+        toggle_favorite(entry["id"], new_fav)
         title = self.app._display_title(entry)
-        if is_fav:
-            if not messagebox.askyesno(_("dlg_tip"), _("dlg_unfavorite_body", name=title), parent=self.app.root):
-                return
-            toggle_favorite(entry["id"], False)
-            new_fav = False
-        else:
-            if not messagebox.askyesno(_("dlg_tip"), _("dlg_favorite_body", name=title), parent=self.app.root):
-                return
-            toggle_favorite(entry["id"], True)
-            new_fav = True
+        self.app._toast(
+            _("toast_fav_on" if new_fav else "toast_fav_off", name=title), "info")
 
         cd = self._card_widgets.get(entry["id"])
         if cd and not self._fav_only:

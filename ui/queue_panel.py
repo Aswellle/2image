@@ -153,10 +153,14 @@ class _ItemWidget(tk.Frame):
             set_enabled(self._view_btn, True)
         if self._item.elapsed > 0:
             self._time_lbl.config(text=f"  ⏱ {self._item.elapsed:.1f}s")
+        # 失败信息并入元信息行：提示词始终保留（它是区分任务的标识）
+        meta = f"📐 {self._item.size}"
         if self._item.provider:
-            self._meta_lbl.config(text=f"📐 {self._item.size}  ·  {self._item.provider[:28]}")
+            meta += f"  ·  {self._item.provider[:28]}"
         if self._item.error:
-            self._prompt_lbl.config(text=f"⚠ {self._item.error[:70]}", fg=C["hl"])
+            self._meta_lbl.config(text=f"{meta}  ·  ⚠ {self._item.error[:44]}", fg=C["hl"])
+        else:
+            self._meta_lbl.config(text=meta, fg=C["sub"])
 
     def update_status(self, status: str, **kw):
         self._item.status = status
