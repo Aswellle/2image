@@ -3174,6 +3174,18 @@ STRINGS = {
         "zh-CN": "参考图读取失败: {detail}",
         "en": "Failed to read reference image: {detail}",
     },
+    "err_policy": {
+        "zh-CN": "内容未通过该接口的安全审核，请调整提示词后重试或更换接口",
+        "en": "Content rejected by this provider's safety filter — adjust the prompt or switch providers",
+    },
+    "err_invalid_request": {
+        "zh-CN": "请求参数不被该接口接受（如尺寸/模型限制），已自动跳过",
+        "en": "Request rejected by this provider (size/model limits) — skipped automatically",
+    },
+    "err_invalid_response": {
+        "zh-CN": "该接口返回了无法解析的响应，请稍后重试或更换接口",
+        "en": "This provider returned an unparsable response — retry later or switch providers",
+    },
     "status_compare_set": {
         "zh-CN": "⚖ 已设置对比图：{title}",
         "en": "⚖ Compare image set: {title}",

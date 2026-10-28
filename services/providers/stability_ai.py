@@ -1,6 +1,14 @@
 """services/providers/stability_ai.py — Stability AI（文生图 + 图生图）"""
 
 import base64
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderInvalidRequestError,
+    ProviderInvalidResponseError,
+    ProviderQuotaError,
+    classify_http_error,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -54,13 +62,13 @@ def _parse_response(resp, model, log):
                 return base64.b64decode(b64), f"StabilityAI/{model}"
     except Exception:
         pass
-    raise ValueError("Stability AI 响应格式未知")
+    raise ProviderInvalidResponseError("Stability AI 响应格式未知")
 
 
 def try_stability_ai(prompt, w, h, seed, cfg, log):
     key = cfg.get("stability_key", "").strip()
     if not key:
-        raise ValueError("需要 Stability AI API Key，请在「💎 付费接口配置」中填写")
+        raise ProviderConfigError("需要 Stability AI API Key，请在「💎 付费接口配置」中填写")
 
     ref_image = cfg.get("_ref_image")  # bytes or None
     strength = cfg.get("_ref_strength", 0.6)
@@ -92,13 +100,13 @@ def try_stability_ai(prompt, w, h, seed, cfg, log):
 
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401:
-        raise ValueError("Stability AI Key 无效或已过期")
+        raise ProviderAuthError("Stability AI Key 无效或已过期")
     if resp.status_code == 402:
-        raise ValueError("Stability AI 余额不足")
+        raise ProviderQuotaError("Stability AI 余额不足")
     if resp.status_code == 422:
-        raise ValueError(f"Stability AI 参数错误: {_safe_error_text(resp)}")
+        raise ProviderInvalidRequestError(f"Stability AI 参数错误: {_safe_error_text(resp)}")
     if resp.status_code != 200:
-        raise ValueError(f"Stability AI 返回 {resp.status_code}: {_safe_error_text(resp)}")
+        raise classify_http_error(resp.status_code, f"Stability AI 返回 {resp.status_code}: {_safe_error_text(resp)}")
 
     model_tag = "sd3.5-large(img2img)" if ref_image else cfg.get("stability_model", "core")
     return _parse_response(resp, model_tag, log)

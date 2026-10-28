@@ -253,7 +253,8 @@ class GenerationController:
             # friendly 直供，绕开 _err 的子串归类，保留超时细节
             self.root.after(0, lambda: self.app._err(err_msg, friendly=_("err_timeout_detail", detail=err_msg)))
         except Exception as ex:
-            self.root.after(0, lambda e=str(ex): self.app._err(e))
+            # 传异常对象本身：ProviderError 家族在 _err 按 code 取文案
+            self.root.after(0, lambda e=ex: self.app._err(e))
         finally:
             self._running = False
 

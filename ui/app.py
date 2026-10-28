@@ -51,6 +51,7 @@ from services.providers import (
 
 
 from services.application import GenerationController, MenuController, SettingsController
+from services.generation.errors import ProviderError
 
 MAX_NICK_LEN = 20  # 昵称/提示符显示截断长度
 
@@ -84,6 +85,19 @@ SASH_W = 6
 
 
 # ══════════════════════════════════════════════════════════════
+# ProviderError.code → 状态栏文案键；未命中码型（如 not_configured）
+# 自带配置指引文案，直接展示原文
+_CODE_MSG_KEYS = {
+    "auth_failed": "err_api_key",
+    "quota_exhausted": "err_balance",
+    "rate_limited": "err_rate_limit",
+    "policy_rejected": "err_policy",
+    "invalid_request": "err_invalid_request",
+    "invalid_response": "err_invalid_response",
+    "transient": "err_connection",
+}
+
+
 class App:
     """主窗口控制器 v5.2。侧栏/主区控件已提取至独立模块。"""
 
@@ -965,38 +979,46 @@ class App:
         except Exception:
             pass
 
-    def _err(self, err: str, friendly: str | None = None) -> None:
+    def _err(self, err, friendly: str | None = None) -> None:
         """Handle generation error (kept in App for UI state access).
 
-        friendly: 调用方已归类的用户文案，直接展示；
-        未命中任何归类时降级为通用失败提示，原始多行详情只进调试日志，
-        不再把整段 provider 堆栈塞进单行状态栏。
+        err 可为字符串或 ProviderError 实例：类型化错误优先按 code
+        取文案（不再做字符串嗅探）；friendly 为调用方已归类的文案，
+        直接展示。未命中任何归类时降级为通用失败提示，原始多行详情
+        只进调试日志，不再把整段 provider 堆栈塞进单行状态栏。
         """
         self.content.gb.config(state="normal", text=_("btn_generate"))
         self.content.pb.stop()
         self._batch_params = None
 
+        err_text = str(err)
+        if friendly is None and isinstance(err, ProviderError):
+            key = _CODE_MSG_KEYS.get(err.code)
+            if key:
+                friendly = _(key)
+            elif err.code == "not_configured" and err_text:
+                friendly = err_text
         if friendly is None:
-            if "429" in err or "rate limit" in err.lower():
+            if "429" in err_text or "rate limit" in err_text.lower():
                 friendly = _("err_rate_limit")
-            elif "401" in err or "403" in err:
+            elif "401" in err_text or "403" in err_text:
                 friendly = _("err_api_key")
-            elif "402" in err or _("err_balance_word") in err or "balance" in err.lower():
+            elif "402" in err_text or _("err_balance_word") in err_text or "balance" in err_text.lower():
                 friendly = _("err_balance")
-            elif "timeout" in err.lower() or "timed out" in err.lower():
+            elif "timeout" in err_text.lower() or "timed out" in err_text.lower():
                 friendly = _("err_timeout")
-            elif "ConnectionError" in err or "connection" in err.lower():
+            elif "ConnectionError" in err_text or "connection" in err_text.lower():
                 friendly = _("err_connection")
             else:
                 friendly = _("status_failed")
 
         self._st(f"❌ {friendly}", "hl")
-        self._log(f"✗ {err}")
+        self._log(f"✗ {err_text}")
         cw = self.content._prev_cv.winfo_width() or 600
         ch = self.content._prev_cv.winfo_height() or 400
         self.content._prev_cv.itemconfig(self.content._prev_ph, text=_("preview_error"))
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
-        if any(k in err for k in ["API Key", "Key", "Token", "token", "401", "402", "403", _("err_balance_word")]):
+        if any(k in err_text for k in ["API Key", "Key", "Token", "token", "401", "402", "403", _("err_balance_word")]):
             self.root.after(
                 100, lambda: messagebox.showwarning(_("dlg_err_key_title"), _("dlg_err_key_body", err=err[:200]))
             )

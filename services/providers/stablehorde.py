@@ -19,6 +19,12 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderInvalidResponseError,
+    ProviderPolicyError,
+    ProviderTransientError,
+)
 from services.providers._net import (
     get_session as _get_session,
     validate_image_url as _validate_image_url,
@@ -105,9 +111,9 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
             log(f"    提交[{attempt}] 状态:{sc}")
 
             if sc == 403:
-                raise ValueError("StableHorde 拒绝请求（403）\n可能原因：API Key 被封禁或内容违规")
+                raise ProviderPolicyError("StableHorde 拒绝请求（403）\n可能原因：API Key 被封禁或内容违规")
             if sc == 401:
-                raise ValueError("StableHorde API Key 无效")
+                raise ProviderAuthError("StableHorde API Key 无效")
             if sc in (429, 503):
                 ra = resp.headers.get("Retry-After", "")
                 w2 = int(ra) if ra.isdigit() else (10 * attempt)
@@ -134,7 +140,9 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
         _LAST_DONE_TS[0] = time.time()
 
     if not job_id:
-        raise ValueError("StableHorde 提交失败（多次重试后无 job_id）\n建议：服务繁忙，请稍后再试或换用其他接口")
+        raise ProviderTransientError(
+            "StableHorde 提交失败（多次重试后无 job_id）\n建议：服务繁忙，请稍后再试或换用其他接口"
+        )
 
     log(f"  任务 {job_id[:8]}… 开始轮询…")
 
@@ -158,7 +166,7 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
             continue
 
         if d.get("faulted"):
-            raise ValueError("StableHorde 任务执行失败（faulted=true）")
+            raise ProviderTransientError("StableHorde 任务执行失败（faulted=true）")
 
         done = d.get("done", False)
         wait = d.get("wait_time", 0) or 0
@@ -173,27 +181,29 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
         if i >= 10 and int(wait) > 180:
             slow_count += 1
             if slow_count >= 3:  # 连续 3 次都显示 >180s 才放弃
-                raise TimeoutError(f"StableHorde 队列持续过长（预计 {wait}s），放弃\n建议：换用硅基流动或其他接口")
+                raise ProviderTransientError(
+                    f"StableHorde 队列持续过长（预计 {wait}s），放弃\n建议：换用硅基流动或其他接口"
+                )
     else:
-        raise TimeoutError(f"StableHorde {max_poll * 4}s 内未完成，放弃")
+        raise ProviderTransientError(f"StableHorde {max_poll * 4}s 内未完成，放弃")
 
     # ── 获取结果 ─────────────────────────────────────────────────
     try:
         result = _get_session().get(f"{_BASE}/generate/status/{job_id}", headers=chk_headers, timeout=30)
         result.raise_for_status()
     except Exception as e:
-        raise ValueError(f"StableHorde 获取结果失败: {e}")
+        raise ProviderTransientError(f"StableHorde 获取结果失败: {e}")
 
     gens = result.json().get("generations", [])
     if not gens:
-        raise ValueError("StableHorde 返回无 generations")
+        raise ProviderInvalidResponseError("StableHorde 返回无 generations")
 
     gen = gens[0]
     img_url = gen.get("img", "")
     model = gen.get("model", "unknown")
 
     if not img_url:
-        raise ValueError("StableHorde generation 无 img URL")
+        raise ProviderInvalidResponseError("StableHorde generation 无 img URL")
 
     log(f"  下载图片: {img_url[:60]}…")
     # 下载带重试（R2 URL 偶尔需要重定向；safe_get_image 验证所有重定向目标）
@@ -209,4 +219,4 @@ def try_stablehorde(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
             if attempt < 3:
                 time.sleep(5)
 
-    raise ValueError(f"StableHorde 图片下载失败（3次重试）: {img_url[:60]}")
+    raise ProviderTransientError(f"StableHorde 图片下载失败（3次重试）: {img_url[:60]}")

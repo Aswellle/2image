@@ -131,6 +131,50 @@ def safe_error_text(resp) -> str:
         return f"HTTP {resp.status_code}"
 
 
+def raise_provider_error(
+    provider: str,
+    status: int | None = None,
+    detail: str = "",
+    kind: str | None = None,
+) -> None:
+    """Provider 层统一抛错出口（NET-ERR-001）。
+
+    status 非空 → 按 HTTP 状态归类；否则按 kind 显式指定
+    （config / rate_limit / quota / invalid_response / transient）。
+    抛出 ``ProviderError`` 家族（ValueError 子类）——旧契约的
+    except ValueError 链照常兜底，orchestrator 按 ``.code``
+    做重试/回退决策，不再依赖错误字符串嗅探。
+    """
+    from services.generation.errors import (
+        ProviderConfigError,
+        ProviderInvalidResponseError,
+        ProviderQuotaError,
+        ProviderRateLimitError,
+        ProviderTransientError,
+        classify_http_error,
+    )
+
+    msg = f"{provider}: {detail}" if detail else provider
+    if kind == "config":
+        raise ProviderConfigError(msg)
+    if kind == "rate_limit":
+        raise ProviderRateLimitError(msg)
+    if kind == "quota":
+        raise ProviderQuotaError(msg)
+    if kind == "invalid_response":
+        raise ProviderInvalidResponseError(msg)
+    if kind == "transient":
+        raise ProviderTransientError(msg)
+    if status:
+        raise classify_http_error(status, msg)
+    raise ProviderTransientError(msg)
+
+
+def raise_for_response(resp, provider: str) -> None:
+    """HTTP 非 2xx 的标准出口：按状态码归类抛出类型化 ProviderError。"""
+    raise_provider_error(provider, status=resp.status_code, detail=safe_error_text(resp))
+
+
 def raise_if_cancelled(cfg) -> None:
     """轮询供应商的取消通道：cfg["_cancel_check"] 由调度器注入。
 

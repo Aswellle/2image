@@ -32,11 +32,20 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderError,
+    ProviderInvalidResponseError,
+    ProviderQuotaError,
+    ProviderTransientError,
+)
 from services.providers._net import (
     get_session as _get_session,
     validate_image_url as _validate_image_url,
     safe_error_text as _safe_error_text,
     safe_get_image as _safe_get_image,
+    raise_for_response,
 )
 
 
@@ -62,7 +71,7 @@ _MAX_RETRIES = 3
 def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("xai_key", "").strip()
     if not key:
-        raise ValueError(
+        raise ProviderConfigError(
             "需要 xAI API Key！\n"
             "注册地址：https://x.ai/api\n"
             "新用户赠送 $25 额度（约 350 张图），消费 $5 后可额外获得 $150/月"
@@ -107,21 +116,23 @@ def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
                 time.sleep(30)
                 continue
             if resp.status_code == 402:
-                raise ValueError(
+                raise ProviderQuotaError(
                     "xAI 账户余额不足。\n"
                     "充值地址：https://console.x.ai\n"
                     "提示：消费满 $5 后可开启数据共享计划获得 $150/月免费额度"
                 )
             if resp.status_code == 401:
-                raise ValueError("xAI API Key 无效或已过期，请前往 https://console.x.ai 重新生成。")
+                raise ProviderAuthError("xAI API Key 无效或已过期，请前往 https://console.x.ai 重新生成。")
             if resp.status_code != 200:
-                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
+                raise_for_response(resp, "💎 xAI Grok Imagine")
 
             data = resp.json()
             image_bytes = _extract_image(data, log)
             log("[xAI Grok] 生成成功 ✓ (Aurora / 1024×1024 JPEG)")
             return (image_bytes, f"xAI/{_MODEL}")
 
+        except ProviderError:
+            raise  # 类型化错误直通：重试/回退由 orchestrator 按 code 决策
         except (ValueError, RuntimeError) as e:
             last_err = e
             log(f"[xAI Grok] 错误：{e}")
@@ -133,14 +144,14 @@ def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
             if attempt < _MAX_RETRIES:
                 time.sleep(4 * attempt)
 
-    raise RuntimeError(f"xAI Grok 全部重试失败：{last_err}")
+    raise ProviderTransientError(f"xAI Grok 全部重试失败：{last_err}")
 
 
 def _extract_image(data: dict, log: Callable) -> bytes:
     """解析 OpenAI 兼容的 {data:[{url}]} 或 {data:[{b64_json}]} 格式。"""
     items = data.get("data", [])
     if not items:
-        raise ValueError(f"xAI 响应无 data 字段：{data}")
+        raise ProviderInvalidResponseError(f"xAI 响应无 data 字段：{data}")
 
     url = items[0].get("url", "")
     if url:
@@ -151,4 +162,4 @@ def _extract_image(data: dict, log: Callable) -> bytes:
     if b64:
         return base64.b64decode(b64)
 
-    raise ValueError(f"xAI 响应无 url 或 b64_json：{items[0]}")
+    raise ProviderInvalidResponseError(f"xAI 响应无 url 或 b64_json：{items[0]}")

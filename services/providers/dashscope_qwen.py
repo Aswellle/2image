@@ -16,6 +16,13 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderInvalidResponseError,
+    ProviderTransientError,
+    classify_http_error,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -46,7 +53,7 @@ _POLL_INTERVAL = 8
 def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("dashscope_key", "").strip()
     if not key:
-        raise ValueError("需要阿里云 DashScope API Key！注册：https://dashscope.console.aliyun.com/")
+        raise ProviderConfigError("需要阿里云 DashScope API Key！注册：https://dashscope.console.aliyun.com/")
 
     headers = {
         "Authorization": f"Bearer {key}",
@@ -71,18 +78,18 @@ def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
             resp = _get_session().post(_SUBMIT_URL, headers=headers, json=payload, timeout=_TIMEOUT)
         except requests.exceptions.ConnectionError as e:
             _LAST_DONE[0] = time.time()
-            raise ValueError(f"无法连接 DashScope: {e}")
+            raise ProviderTransientError(f"无法连接 DashScope: {e}")
         _LAST_DONE[0] = time.time()
 
     log(f"► 通义万相  提交任务  状态:{resp.status_code}")
     if resp.status_code == 401:
-        raise ValueError("DashScope API Key 无效")
+        raise ProviderAuthError("DashScope API Key 无效")
     if resp.status_code != 200:
-        raise ValueError(f"DashScope 提交失败 {resp.status_code}: {_safe_error_text(resp)}")
+        raise classify_http_error(resp.status_code, f"DashScope 提交失败 {resp.status_code}: {_safe_error_text(resp)}")
 
     task_id = resp.json().get("output", {}).get("task_id", "")
     if not task_id:
-        raise ValueError(f"DashScope 响应中无 task_id：{resp.json()}")
+        raise ProviderInvalidResponseError(f"DashScope 响应中无 task_id：{resp.json()}")
 
     log(f"  任务 ID: {task_id}，开始轮询…")
     for i in range(_MAX_POLL):
@@ -104,7 +111,7 @@ def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
         if status == "SUCCEEDED":
             results = output.get("results", [])
             if not results or not results[0].get("url"):
-                raise ValueError(f"DashScope 任务成功但无图片 URL：{output}")
+                raise ProviderInvalidResponseError(f"DashScope 任务成功但无图片 URL：{output}")
             img_url = results[0]["url"]
             log("  下载图片中…")
             data = _safe_get_image(img_url, timeout=60)
@@ -112,7 +119,7 @@ def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
             return data, "DashScope/Qwen-Image"
 
         if status in ("FAILED", "CANCELED", "UNKNOWN"):
-            raise ValueError(f"DashScope 任务失败：{output.get('message', status)}")
+            raise ProviderInvalidResponseError(f"DashScope 任务失败：{output.get('message', status)}")
         # PENDING / RUNNING 继续轮询
 
-    raise ValueError("DashScope 任务轮询超时（240s），请稍后在控制台查看任务状态")
+    raise ProviderTransientError("DashScope 任务轮询超时（240s），请稍后在控制台查看任务状态")

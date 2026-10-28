@@ -12,6 +12,15 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderInvalidResponseError,
+    ProviderQuotaError,
+    ProviderRateLimitError,
+    ProviderTransientError,
+    classify_http_error,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -55,7 +64,7 @@ def _best_aspect(w: int, h: int) -> str:
 def try_bria_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("bria_key", "").strip()
     if not key:
-        raise ValueError("需要 Bria AI API Key，注册送 1000 次免费调用：https://platform.bria.ai/")
+        raise ProviderConfigError("需要 Bria AI API Key，注册送 1000 次免费调用：https://platform.bria.ai/")
 
     headers = {"api_token": key, "Content-Type": "application/json"}
     payload = {
@@ -74,23 +83,23 @@ def try_bria_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
             resp = _get_session().post(_ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT)
         except requests.exceptions.ConnectionError as e:
             _LAST_DONE[0] = time.time()
-            raise ValueError(f"无法连接 Bria AI: {e}")
+            raise ProviderTransientError(f"无法连接 Bria AI: {e}")
         _LAST_DONE[0] = time.time()
 
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401:
-        raise ValueError("Bria AI API Key 无效")
+        raise ProviderAuthError("Bria AI API Key 无效")
     if resp.status_code == 402:
-        raise ValueError("Bria AI 免费额度已用完，请前往 https://platform.bria.ai/ 查看余量")
+        raise ProviderQuotaError("Bria AI 免费额度已用完，请前往 https://platform.bria.ai/ 查看余量")
     if resp.status_code == 429:
-        raise ValueError("Bria AI 速率限制（HTTP 429），请稍后再试")
+        raise ProviderRateLimitError("Bria AI 速率限制（HTTP 429），请稍后再试")
     if resp.status_code != 200:
-        raise ValueError(f"Bria AI 返回 {resp.status_code}: {_safe_error_text(resp)}")
+        raise classify_http_error(resp.status_code, f"Bria AI 返回 {resp.status_code}: {_safe_error_text(resp)}")
 
     j = resp.json()
     img_url = j.get("result", {}).get("image_url", "")
     if not img_url:
-        raise ValueError(f"Bria AI 响应中无 image_url：{j}")
+        raise ProviderInvalidResponseError(f"Bria AI 响应中无 image_url：{j}")
 
     log("  下载图片中…")
     data = _safe_get_image(img_url, timeout=60)

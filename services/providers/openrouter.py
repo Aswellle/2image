@@ -19,7 +19,14 @@ import time
 import base64
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
+from services.generation.errors import (
+    ProviderConfigError,
+    ProviderError,
+    ProviderInvalidResponseError,
+    ProviderQuotaError,
+    ProviderTransientError,
+)
+from services.providers._net import get_session as _get_session, raise_for_response, safe_error_text as _safe_error_text
 
 
 PROVIDER_INFO = {
@@ -47,7 +54,7 @@ _MAX_RETRIES = 3
 def try_openrouter(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("openrouter_key", "").strip()
     if not key:
-        raise ValueError("需要 OpenRouter API Key！注册：https://openrouter.ai/keys")
+        raise ProviderConfigError("需要 OpenRouter API Key！注册：https://openrouter.ai/keys")
 
     model = cfg.get("openrouter_model", "").strip() or _DEFAULT_MODEL
 
@@ -89,15 +96,17 @@ def try_openrouter(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Calla
                 time.sleep(30)
                 continue
             if resp.status_code == 402:
-                raise ValueError("OpenRouter 余额不足，请充值或更换其他模型。")
+                raise ProviderQuotaError("OpenRouter 余额不足，请充值或更换其他模型。")
             if resp.status_code != 200:
-                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
+                raise_for_response(resp, "OpenRouter (统一 Image API)")
 
             data = resp.json()
             image_bytes = _extract_image(data)
             log(f"[OpenRouter] 生成成功 ✓ 模型：{model}")
             return (image_bytes, f"OpenRouter/{model.split('/')[-1]}")
 
+        except ProviderError:
+            raise  # 类型化错误直通：重试/回退由 orchestrator 按 code 决策
         except (ValueError, RuntimeError) as e:
             last_err = e
             log(f"[OpenRouter] 错误：{e}")
@@ -109,16 +118,16 @@ def try_openrouter(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Calla
             if attempt < _MAX_RETRIES:
                 time.sleep(4 * attempt)
 
-    raise RuntimeError(f"OpenRouter 全部重试失败：{last_err}")
+    raise ProviderTransientError(f"OpenRouter 全部重试失败：{last_err}")
 
 
 def _extract_image(data: dict) -> bytes:
     """统一 Image API 响应：data[].b64_json。"""
     items = data.get("data", [])
     if not items:
-        raise ValueError(f"OpenRouter 响应无 data 字段：{data}")
+        raise ProviderInvalidResponseError(f"OpenRouter 响应无 data 字段：{data}")
 
     b64 = items[0].get("b64_json", "")
     if not b64:
-        raise ValueError(f"OpenRouter 响应中未找到 b64_json：{items[0]}")
+        raise ProviderInvalidResponseError(f"OpenRouter 响应中未找到 b64_json：{items[0]}")
     return base64.b64decode(b64)

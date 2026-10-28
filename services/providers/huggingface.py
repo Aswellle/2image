@@ -29,6 +29,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import ProviderAuthError, ProviderConfigError, ProviderTransientError
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -68,7 +69,7 @@ _TIMEOUT = 300  # HF 免费推理队列长，需要足够的超时
 def try_hf_inference(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     token = cfg.get("hf_token", "").strip()
     if not token:
-        raise ValueError("需要 HuggingFace Token，请在「⚙ 设置」中填写")
+        raise ProviderConfigError("需要 HuggingFace Token，请在「⚙ 设置」中填写")
 
     hq_mode = bool(cfg.get("variant_hq", False))
     model_list = HF_HQ_MODELS if hq_mode else HF_MODELS
@@ -150,9 +151,9 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Cal
             log(f"    [{attempt}] 状态:{sc}")
 
             if sc == 401:
-                raise ValueError("HuggingFace Token 无效或已过期")
+                raise ProviderAuthError("HuggingFace Token 无效或已过期")
             if sc == 403:
-                raise ValueError("HuggingFace Token 无 Inference 权限")
+                raise ProviderAuthError("HuggingFace Token 无 Inference 权限")
             if sc in (404, 410):
                 log(f"    {sc} 模型不可用，换模型…")
                 break
@@ -254,6 +255,6 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Cal
         if result:
             return result
 
-    raise ValueError(
+    raise ProviderTransientError(
         "所有 HuggingFace 模型均失败\n原因：免费账号并发限制或推理配额耗尽\n建议：换用硅基流动（速度更快、更稳定）"
     )

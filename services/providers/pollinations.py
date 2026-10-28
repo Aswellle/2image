@@ -27,6 +27,7 @@ import time
 import urllib.parse
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import ProviderAuthError, ProviderTransientError
 from services.providers._net import (
     get_session as _get_session,
     validate_image_url as _validate_image_url,
@@ -114,7 +115,7 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Cal
             log(f"    [{attempt}] 状态:{sc}  ct:{ct}")
 
             if sc == 401:
-                raise ValueError(
+                raise ProviderAuthError(
                     "Pollinations.AI 返回 401（新平台可能已要求鉴权）\n"
                     "请前往 https://enter.pollinations.ai 获取 Key，"
                     "填入「免费接口配置」的 Pollinations Key 后重试"
@@ -165,7 +166,7 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Cal
         if result:
             return result
 
-    raise ValueError(
+    raise ProviderTransientError(
         "Pollinations.AI 所有模型均失败\n"
         "原因：匿名限速(15s/次)、服务不可用或网络异常\n"
         "建议换用硅基流动；注册免费账号可提速：https://auth.pollinations.ai"

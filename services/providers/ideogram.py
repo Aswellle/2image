@@ -15,6 +15,15 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderInvalidRequestError,
+    ProviderInvalidResponseError,
+    ProviderRateLimitError,
+    ProviderTransientError,
+    classify_http_error,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -64,7 +73,7 @@ def _best_aspect(w: int, h: int) -> str:
 def try_ideogram(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("ideogram_key", "").strip()
     if not key:
-        raise ValueError("需要 Ideogram API Key！注册：https://ideogram.ai/")
+        raise ProviderConfigError("需要 Ideogram API Key！注册：https://ideogram.ai/")
 
     aspect = _best_aspect(w, h)
     rendering_speed = cfg.get("ideogram_rendering_speed", "DEFAULT")
@@ -92,28 +101,28 @@ def try_ideogram(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
             )
         except requests.exceptions.ConnectionError as e:
             _LAST_DONE[0] = time.time()
-            raise ValueError(f"无法连接 Ideogram: {e}")
+            raise ProviderTransientError(f"无法连接 Ideogram: {e}")
         _LAST_DONE[0] = time.time()
 
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401:
-        raise ValueError("Ideogram API Key 无效")
+        raise ProviderAuthError("Ideogram API Key 无效")
     if resp.status_code == 429:
-        raise ValueError("Ideogram 速率限制（HTTP 429），请稍后再试")
+        raise ProviderRateLimitError("Ideogram 速率限制（HTTP 429），请稍后再试")
     if resp.status_code == 400:
-        raise ValueError(f"Ideogram 请求错误: {_safe_error_text(resp)}")
+        raise ProviderInvalidRequestError(f"Ideogram 请求错误: {_safe_error_text(resp)}")
     if resp.status_code != 200:
-        raise ValueError(f"Ideogram 返回 {resp.status_code}: {_safe_error_text(resp)}")
+        raise classify_http_error(resp.status_code, f"Ideogram 返回 {resp.status_code}: {_safe_error_text(resp)}")
 
     data = resp.json().get("data", [])
     if not data:
-        raise ValueError("Ideogram 返回数据为空")
+        raise ProviderInvalidResponseError("Ideogram 返回数据为空")
     item = data[0]
     if not item.get("is_image_safe", True):
-        raise ValueError("Ideogram 安全过滤：该提示词未通过审核，无图片返回")
+        raise ProviderInvalidResponseError("Ideogram 安全过滤：该提示词未通过审核，无图片返回")
     img_url = item.get("url", "")
     if not img_url:
-        raise ValueError("Ideogram 响应中无图片 URL")
+        raise ProviderInvalidResponseError("Ideogram 响应中无图片 URL")
 
     log("  下载图片中…")
     data = _safe_get_image(img_url, timeout=60)

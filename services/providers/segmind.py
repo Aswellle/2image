@@ -21,6 +21,12 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderQuotaError,
+    ProviderTransientError,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -55,7 +61,7 @@ _NEG_PROMPT = "blurry, low quality, distorted, ugly, deformed, watermark, text, 
 def try_segmind(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("segmind_key", "").strip()
     if not key:
-        raise ValueError("需要 Segmind API Key！\n注册免费获赠 $5 额度：https://www.segmind.com")
+        raise ProviderConfigError("需要 Segmind API Key！\n注册免费获赠 $5 额度：https://www.segmind.com")
 
     hq_mode = bool(cfg.get("variant_hq", False))
     mode_tag = "HQ变体" if hq_mode else "标准"
@@ -128,9 +134,9 @@ def try_segmind(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
                 log(f"    [{attempt}] 状态:{sc}")
 
                 if sc == 401:
-                    raise ValueError("Segmind API Key 无效，请检查设置")
+                    raise ProviderAuthError("Segmind API Key 无效，请检查设置")
                 if sc == 402:
-                    raise ValueError("Segmind 额度不足！\n请前往 https://www.segmind.com 查看余额。")
+                    raise ProviderQuotaError("Segmind 额度不足！\n请前往 https://www.segmind.com 查看余额。")
                 if sc == 429:
                     ra = resp.headers.get("Retry-After", "")
                     w2 = int(ra) if ra.isdigit() else 10
@@ -196,4 +202,4 @@ def try_segmind(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
         if result:
             return result
 
-    raise ValueError("Segmind 所有模型均失败\n请检查 API Key 或访问 https://www.segmind.com 查看服务状态。")
+    raise ProviderTransientError("Segmind 所有模型均失败\n请检查 API Key 或访问 https://www.segmind.com 查看服务状态。")

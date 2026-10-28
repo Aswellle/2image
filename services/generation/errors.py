@@ -23,12 +23,30 @@ Mapping guide:
 from __future__ import annotations
 
 
-class ProviderError(Exception):
-    """Base for all provider-domain errors."""
+class ProviderError(ValueError):
+    """Base for all provider-domain errors.
+
+    Inherits ValueError so the legacy provider contract
+    ("raise ValueError → fall through to next provider") keeps working
+    everywhere that catches ValueError while the orchestrator gets
+    precise ``code``/``retryable`` semantics.
+    """
 
     code: str = "provider_error"
     retryable: bool = False
     fallback: bool = True
+
+
+class ProviderConfigError(ProviderError):
+    """Provider selected but credentials missing/invalid format.
+
+    Distinct from auth failure: nothing was sent to the API, so the
+    message carries user-facing setup guidance. Never retried.
+    """
+
+    code = "not_configured"
+    retryable = False
+    fallback = True
 
 
 class ProviderAuthError(ProviderError):

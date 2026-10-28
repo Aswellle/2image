@@ -19,7 +19,13 @@ from typing import Callable, Tuple
 import requests
 
 from config.model_catalog import MINIMAX_IMAGE_DEFAULT, MINIMAX_IMAGE_NAMES
-from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
+from services.generation.errors import (
+    ProviderConfigError,
+    ProviderError,
+    ProviderInvalidResponseError,
+    ProviderTransientError,
+)
+from services.providers._net import get_session as _get_session, raise_for_response, safe_error_text as _safe_error_text
 
 
 PROVIDER_INFO = {
@@ -73,7 +79,7 @@ def _guess_mime(image_bytes: bytes) -> str:
 def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("minimax_key", "").strip()
     if not key:
-        raise ValueError("需要 MiniMax API Key，请在「💎 付费接口配置」中填写")
+        raise ProviderConfigError("需要 MiniMax API Key，请在「💎 付费接口配置」中填写")
 
     headers = {
         "Authorization": f"Bearer {key}",
@@ -121,13 +127,15 @@ def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
                 time.sleep(20)
                 continue
             if resp.status_code != 200:
-                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
+                raise_for_response(resp, "MiniMax Image 01 (免费试用)")
 
             data = resp.json()
             image_bytes = _extract_image(data)
             log("[MiniMax] 生成成功 ✓")
             return (image_bytes, f"MiniMax/{MINIMAX_IMAGE_NAMES.get(_MODEL, _MODEL)}")
 
+        except ProviderError:
+            raise  # 类型化错误直通：重试/回退由 orchestrator 按 code 决策
         except (ValueError, RuntimeError) as e:
             last_err = e
             log(f"[MiniMax] 错误：{e}")
@@ -139,16 +147,16 @@ def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
             if attempt < _MAX_RETRIES:
                 time.sleep(3 * attempt)
 
-    raise RuntimeError(f"MiniMax 全部重试失败：{last_err}")
+    raise ProviderTransientError(f"MiniMax 全部重试失败：{last_err}")
 
 
 def _extract_image(data: dict) -> bytes:
     """响应体：{"data": {"image_base64": ["<b64>", ...]}, "base_resp": {...}}。"""
     base_resp = data.get("base_resp", {})
     if base_resp.get("status_code", 0) not in (0, None):
-        raise ValueError(f"MiniMax 错误：{base_resp.get('status_msg', data)}")
+        raise ProviderTransientError(f"MiniMax 错误：{base_resp.get('status_msg', data)}")
 
     images = data.get("data", {}).get("image_base64", [])
     if not images:
-        raise ValueError(f"MiniMax 响应中无 image_base64：{data}")
+        raise ProviderInvalidResponseError(f"MiniMax 响应中无 image_base64：{data}")
     return base64.b64decode(images[0])

@@ -23,6 +23,16 @@ from config.model_catalog import (
     GPT_IMAGE_DEFAULT,
     GPT_IMAGE_NAMES,
 )
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderInvalidRequestError,
+    ProviderInvalidResponseError,
+    ProviderPolicyError,
+    ProviderQuotaError,
+    ProviderRateLimitError,
+    classify_http_error,
+)
 from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
 
 PROVIDER_INFO = {
@@ -122,7 +132,7 @@ def _normalize_quality(q: str) -> str:
 def try_openai_image(prompt, w, h, seed, cfg, log):
     key = cfg.get("openai_key", "").strip()
     if not key:
-        raise ValueError("需要 OpenAI API Key，请在「💎 付费接口配置」中填写")
+        raise ProviderConfigError("需要 OpenAI API Key，请在「💎 付费接口配置」中填写")
 
     model = cfg.get("gpt_image_model", GPT_IMAGE_DEFAULT)
     quality = _normalize_quality(cfg.get("gpt_image_quality", "auto"))
@@ -149,26 +159,26 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
 
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401:
-        raise ValueError("OpenAI API Key 无效或已过期")
+        raise ProviderAuthError("OpenAI API Key 无效或已过期")
     if resp.status_code == 402:
-        raise ValueError("OpenAI 账户余额不足")
+        raise ProviderQuotaError("OpenAI 账户余额不足")
     if resp.status_code == 403:
-        raise ValueError(
+        raise ProviderPolicyError(
             "OpenAI 拒绝访问 GPT-Image——首次使用该模型可能需要先在 "
             "platform.openai.com 后台完成 Organization Verification（组织验证）"
         )
     if resp.status_code == 429:
-        raise ValueError("OpenAI 速率限制（HTTP 429）")
+        raise ProviderRateLimitError("OpenAI 速率限制（HTTP 429）")
     if resp.status_code == 400:
-        raise ValueError(f"GPT-Image 请求错误: {_safe_error_text(resp)}")
+        raise ProviderInvalidRequestError(f"GPT-Image 请求错误: {_safe_error_text(resp)}")
     if resp.status_code != 200:
-        raise ValueError(f"OpenAI 返回 {resp.status_code}: {_safe_error_text(resp)}")
+        raise classify_http_error(resp.status_code, f"OpenAI 返回 {resp.status_code}: {_safe_error_text(resp)}")
 
     j = resp.json()
     data_items = j.get("data") or []
     b64 = data_items[0].get("b64_json", "") if data_items else ""
     if not b64:
-        raise ValueError("GPT-Image 返回数据中无图片")
+        raise ProviderInvalidResponseError("GPT-Image 返回数据中无图片")
     display_name = GPT_IMAGE_NAMES.get(model, model)
     log(f"  ✓ GPT-Image 成功 ({display_name}/{quality})")
     return base64.b64decode(b64), f"OpenAI/{display_name}-{quality}"

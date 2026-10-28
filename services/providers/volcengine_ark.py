@@ -24,10 +24,18 @@ from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_NAMES,
 )
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderError,
+    ProviderInvalidResponseError,
+    ProviderTransientError,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
     safe_get_image as _safe_get_image,
+    raise_for_response,
 )
 
 
@@ -73,7 +81,7 @@ def _best_size(w: int, h: int) -> str:
 def try_volcengine_ark(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("volcengine_key", "").strip()
     if not key:
-        raise ValueError("需要火山引擎 API Key，请在配置中填写")
+        raise ProviderConfigError("需要火山引擎 API Key，请在配置中填写")
 
     # 模型选择：图生图自动使用 SeedEdit，文生图使用配置的模型
     ref_image = cfg.get("_ref_image")
@@ -138,14 +146,14 @@ def try_volcengine_ark(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
                 time.sleep(15)
                 continue
             if resp.status_code == 401:
-                raise ValueError("火山引擎 API Key 无效或已过期")
+                raise ProviderAuthError("火山引擎 API Key 无效或已过期")
             if resp.status_code != 200:
-                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
+                raise_for_response(resp, "豆包 Seedream (火山引擎)")
 
             data = resp.json()
             items = data.get("data", [])
             if not items:
-                raise ValueError("豆包返回数据中无图片")
+                raise ProviderInvalidResponseError("豆包返回数据中无图片")
 
             # 优先使用 b64_json，否则下载 URL
             b64 = items[0].get("b64_json", "")
@@ -154,12 +162,14 @@ def try_volcengine_ark(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
             else:
                 img_url = items[0].get("url", "")
                 if not img_url:
-                    raise ValueError("豆包返回数据中无图片 URL")
+                    raise ProviderInvalidResponseError("豆包返回数据中无图片 URL")
                 image_bytes = _safe_get_image(img_url)
 
             log("[豆包] 生成成功 ✓")
             return (image_bytes, f"豆包/{display_name}")
 
+        except ProviderError:
+            raise  # 类型化错误直通：重试/回退由 orchestrator 按 code 决策
         except (ValueError, RuntimeError) as e:
             last_err = e
             log(f"[豆包] 错误：{e}")
@@ -171,4 +181,4 @@ def try_volcengine_ark(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
             if attempt < _MAX_RETRIES:
                 time.sleep(3 * attempt)
 
-    raise RuntimeError(f"豆包全部重试失败：{last_err}")
+    raise ProviderTransientError(f"豆包全部重试失败：{last_err}")

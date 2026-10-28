@@ -12,6 +12,12 @@ v3 变体高质量模式（variant_hq）：
 import requests
 import time
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderQuotaError,
+    ProviderTransientError,
+)
 from services.providers._net import (
     get_session as _get_session,
     validate_image_url as _validate_image_url,
@@ -62,7 +68,9 @@ _HQ_NEGATIVE = (
 def try_siliconflow(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("sf_key", "").strip()
     if not key:
-        raise ValueError("需要硅基流动 API Key！请在「⚙ 设置」中填写。\n注册地址：https://cloud.siliconflow.cn")
+        raise ProviderConfigError(
+            "需要硅基流动 API Key！请在「⚙ 设置」中填写。\n注册地址：https://cloud.siliconflow.cn"
+        )
 
     # 根据是否为高质量变体模式选择不同模型列表
     hq_mode = bool(cfg.get("variant_hq", False))
@@ -104,14 +112,14 @@ def try_siliconflow(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
                 "https://api.siliconflow.cn/v1/images/generations", headers=headers, json=payload, timeout=90
             )
         except requests.exceptions.ConnectionError as e:
-            raise ValueError(f"无法连接硅基流动: {e}")
+            raise ProviderTransientError(f"无法连接硅基流动: {e}")
 
         log(f"    状态: {resp.status_code}")
 
         if resp.status_code == 401:
-            raise ValueError("硅基流动 API Key 无效")
+            raise ProviderAuthError("硅基流动 API Key 无效")
         if resp.status_code == 402:
-            raise ValueError("硅基流动余额不足")
+            raise ProviderQuotaError("硅基流动余额不足")
         if resp.status_code == 429:
             wait = 3 if hq_mode else 2
             log(f"    速率限制，等待 {wait}s…")
@@ -140,4 +148,4 @@ def try_siliconflow(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
         data = _safe_get_image(img_url, timeout=60)
         return data, f"硅基流动/{model_id.split('/')[-1]}"
 
-    raise ValueError("所有硅基流动免费模型均失败")
+    raise ProviderTransientError("所有硅基流动免费模型均失败")

@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from services.generation.errors import ProviderAuthError, ProviderQuotaError
+
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"fake-image-data" * 100  # ≥1024B，满足 provider 的最小尺寸校验
 PNG_B64 = base64.b64encode(PNG_BYTES).decode("ascii")
 
@@ -402,14 +404,16 @@ class TestXaiGrok:
             data, _ = mod.try_xai_grok("cat", 1024, 1024, 1, self.CFG, lambda s: None)
         assert data == PNG_BYTES
 
-    def test_401_retries_then_runtime(self):
+    def test_401_auth_error_not_retried(self):
+        """401 → ProviderAuthError 立即抛出（不再重试后 RuntimeError）。"""
         import services.providers.xai_grok as mod
+        from services.generation.errors import ProviderAuthError
 
         with (
             patch(f"{self.MOD}._get_session", return_value=MagicMock(post=MagicMock(return_value=_resp(401)))),
             patch.object(mod.time, "sleep"),
         ):
-            with pytest.raises(RuntimeError, match="全部重试失败"):
+            with pytest.raises(ProviderAuthError):
                 mod.try_xai_grok("cat", 1024, 1024, 1, self.CFG, lambda s: None)
 
     def test_429_then_success(self):
@@ -462,7 +466,7 @@ class TestTogetherAi:
             patch(f"{self.MOD}._get_session", return_value=MagicMock(post=MagicMock(return_value=_resp(402)))),
             patch.object(mod.time, "sleep"),
         ):
-            with pytest.raises(RuntimeError, match="全部重试失败"):
+            with pytest.raises(ProviderQuotaError):
                 mod.try_together_ai("cat", 1024, 1024, 1, self.CFG, lambda s: None)
 
     def test_429_then_success(self):

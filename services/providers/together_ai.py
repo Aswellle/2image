@@ -17,10 +17,19 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderConfigError,
+    ProviderError,
+    ProviderInvalidRequestError,
+    ProviderInvalidResponseError,
+    ProviderQuotaError,
+    ProviderTransientError,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
     safe_get_image as _safe_get_image,
+    raise_for_response,
 )
 
 PROVIDER_INFO = {
@@ -45,7 +54,7 @@ _MAX_RETRIES = 3
 def try_together_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("together_key", "").strip()
     if not key:
-        raise ValueError("需要 Together AI API Key！注册：https://api.together.ai/")
+        raise ProviderConfigError("需要 Together AI API Key！注册：https://api.together.ai/")
 
     headers = {
         "Authorization": f"Bearer {key}",
@@ -85,20 +94,22 @@ def try_together_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
                 time.sleep(30)
                 continue
             if resp.status_code == 402:
-                raise ValueError("Together AI 余额不足，请前往 https://api.together.ai/ 充值。")
+                raise ProviderQuotaError("Together AI 余额不足，请前往 https://api.together.ai/ 充值。")
             if resp.status_code == 404:
-                raise ValueError(
+                raise ProviderInvalidRequestError(
                     "Together AI 模型不可用（FLUX.1-schnell 可能已从免费 "
                     "Serverless API 下线），请前往 https://api.together.ai/ 确认当前可用模型。"
                 )
             if resp.status_code != 200:
-                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
+                raise_for_response(resp, "Together AI (FLUX Free·免费)")
 
             data = resp.json()
             image_bytes = _extract_image(data, log)
             log("[Together AI] 生成成功 ✓")
             return (image_bytes, "TogetherAI/FLUX.1-schnell")
 
+        except ProviderError:
+            raise  # 类型化错误直通：重试/回退由 orchestrator 按 code 决策
         except (ValueError, RuntimeError) as e:
             last_err = e
             log(f"[Together AI] 错误：{e}")
@@ -110,14 +121,14 @@ def try_together_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Call
             if attempt < _MAX_RETRIES:
                 time.sleep(3 * attempt)
 
-    raise RuntimeError(f"Together AI 全部重试失败：{last_err}")
+    raise ProviderTransientError(f"Together AI 全部重试失败：{last_err}")
 
 
 def _extract_image(data: dict, log: Callable) -> bytes:
     """解析 {data:[{url}]} 格式并下载图片。"""
     items = data.get("data", [])
     if not items:
-        raise ValueError(f"Together AI 响应无 data 字段：{data}")
+        raise ProviderInvalidResponseError(f"Together AI 响应无 data 字段：{data}")
 
     url = items[0].get("url", "")
     if not url:
@@ -126,7 +137,7 @@ def _extract_image(data: dict, log: Callable) -> bytes:
         b64 = items[0].get("b64_json", "")
         if b64:
             return base64.b64decode(b64)
-        raise ValueError(f"Together AI 响应无 url 或 b64_json：{items[0]}")
+        raise ProviderInvalidResponseError(f"Together AI 响应无 url 或 b64_json：{items[0]}")
 
     log(f"[Together AI] 下载图片：{url[:80]}…")
     return _safe_get_image(url, timeout=60)

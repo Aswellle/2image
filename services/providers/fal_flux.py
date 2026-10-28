@@ -10,6 +10,14 @@ import base64
 import threading
 import time
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderInvalidResponseError,
+    ProviderRateLimitError,
+    ProviderTransientError,
+    classify_http_error,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -72,24 +80,24 @@ def _poll_fal(request_id: str, queue_base: str, headers: dict, cfg: dict, log: C
         if status == "COMPLETED":
             res = _get_session().get(result_url, headers=headers, timeout=20)
             if res.status_code != 200:
-                raise ValueError(f"fal.ai 结果获取失败: {res.status_code}")
+                raise classify_http_error(res.status_code, f"fal.ai 结果获取失败: {res.status_code}")
             images = res.json().get("images", [])
             if not images:
-                raise ValueError("fal.ai 结果中无图片")
+                raise ProviderInvalidResponseError("fal.ai 结果中无图片")
             img_url = images[0].get("url", "")
             if not img_url:
-                raise ValueError("fal.ai 结果中无图片 URL")
+                raise ProviderInvalidResponseError("fal.ai 结果中无图片 URL")
             log("  下载图片中…")
             return _safe_get_image(img_url, timeout=120)
         if status in ("FAILED", "CANCELLED"):
-            raise ValueError(f"fal.ai 任务失败: {status}")
-    raise ValueError("fal.ai 等待超时（>120s），建议检查网络或换用其他接口")
+            raise ProviderInvalidResponseError(f"fal.ai 任务失败: {status}")
+    raise ProviderTransientError("fal.ai 等待超时（>120s），建议检查网络或换用其他接口")
 
 
 def try_fal_flux(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("fal_key", "").strip()
     if not key:
-        raise ValueError("需要 fal.ai API Key！注册：https://fal.ai/")
+        raise ProviderConfigError("需要 fal.ai API Key！注册：https://fal.ai/")
 
     headers = {"Authorization": f"Key {key}", "Content-Type": "application/json"}
     ref_image = cfg.get("_ref_image")  # bytes or None
@@ -133,19 +141,19 @@ def try_fal_flux(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
             resp = _get_session().post(queue_base, headers=headers, json=payload, timeout=30)
         except Exception as e:
             _LAST_DONE[0] = time.time()
-            raise ValueError(f"无法连接 fal.ai: {e}")
+            raise ProviderTransientError(f"无法连接 fal.ai: {e}")
         _LAST_DONE[0] = time.time()
 
     if resp.status_code == 401:
-        raise ValueError("fal.ai API Key 无效")
+        raise ProviderAuthError("fal.ai API Key 无效")
     if resp.status_code == 429:
-        raise ValueError("fal.ai 速率限制，请稍后再试")
+        raise ProviderRateLimitError("fal.ai 速率限制，请稍后再试")
     if resp.status_code != 200:
-        raise ValueError(f"fal.ai 返回 {resp.status_code}: {_safe_error_text(resp)}")
+        raise classify_http_error(resp.status_code, f"fal.ai 返回 {resp.status_code}: {_safe_error_text(resp)}")
 
     request_id = resp.json().get("request_id", "")
     if not request_id:
-        raise ValueError("fal.ai 未返回 request_id")
+        raise ProviderInvalidResponseError("fal.ai 未返回 request_id")
     log(f"  已提交  ID={request_id[:14]}…  等待生成…")
 
     # ── 轮询（锁外执行，不阻塞其他线程提交）─────────────────────

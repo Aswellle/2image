@@ -21,6 +21,14 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderInvalidResponseError,
+    ProviderRateLimitError,
+    ProviderTransientError,
+    classify_http_error,
+)
 from services.providers._net import (
     get_session as _get_session,
     validate_image_url as _validate_image_url,
@@ -60,7 +68,7 @@ def _best_size(w: int, h: int) -> str:
 def try_recraft(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("recraft_key", "").strip()
     if not key:
-        raise ValueError("需要 Recraft API Key！注册：https://www.recraft.ai/")
+        raise ProviderConfigError("需要 Recraft API Key！注册：https://www.recraft.ai/")
 
     size = _best_size(w, h)
     style = cfg.get("recraft_style", "realistic_image")
@@ -89,20 +97,20 @@ def try_recraft(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
             )
         except requests.exceptions.ConnectionError as e:
             _LAST_DONE[0] = time.time()
-            raise ValueError(f"无法连接 Recraft: {e}")
+            raise ProviderTransientError(f"无法连接 Recraft: {e}")
         _LAST_DONE[0] = time.time()
 
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401:
-        raise ValueError("Recraft API Key 无效")
+        raise ProviderAuthError("Recraft API Key 无效")
     if resp.status_code == 429:
-        raise ValueError("Recraft 速率限制（HTTP 429）")
+        raise ProviderRateLimitError("Recraft 速率限制（HTTP 429）")
     if resp.status_code != 200:
-        raise ValueError(f"Recraft 返回 {resp.status_code}: {_safe_error_text(resp)}")
+        raise classify_http_error(resp.status_code, f"Recraft 返回 {resp.status_code}: {_safe_error_text(resp)}")
 
     data = resp.json().get("data", [])
     if not data:
-        raise ValueError("Recraft 返回数据为空")
+        raise ProviderInvalidResponseError("Recraft 返回数据为空")
 
     img_url = data[0].get("url", "")
     if img_url:
@@ -116,4 +124,4 @@ def try_recraft(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
         log(f"  ✓ Recraft {model} 成功（base64）{len(img) // 1024}KB")
         return img, f"Recraft/{model}-{style}"
 
-    raise ValueError("Recraft 响应中无图片数据")
+    raise ProviderInvalidResponseError("Recraft 响应中无图片数据")

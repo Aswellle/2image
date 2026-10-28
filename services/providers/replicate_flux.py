@@ -1,6 +1,14 @@
 """services/providers/replicate_flux.py — Replicate FLUX"""
 
 import base64, time
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderInvalidResponseError,
+    ProviderQuotaError,
+    ProviderTransientError,
+    classify_http_error,
+)
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -27,7 +35,7 @@ _MODELS = {
 def try_replicate(prompt, w, h, seed, cfg, log):
     key = cfg.get("replicate_key", "").strip()
     if not key:
-        raise ValueError("需要 Replicate API Token，请在「💎 付费接口配置」中填写")
+        raise ProviderConfigError("需要 Replicate API Token，请在「💎 付费接口配置」中填写")
     slug = cfg.get("replicate_model", "flux-1.1-pro")
     path = _MODELS.get(slug, _MODELS["flux-1.1-pro"])
     mw = max(64, min(w, 1440) // 64 * 64)
@@ -42,11 +50,11 @@ def try_replicate(prompt, w, h, seed, cfg, log):
     )
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401:
-        raise ValueError("Replicate Token 无效")
+        raise ProviderAuthError("Replicate Token 无效")
     if resp.status_code == 402:
-        raise ValueError("Replicate 余额不足")
+        raise ProviderQuotaError("Replicate 余额不足")
     if resp.status_code not in (200, 201):
-        raise ValueError(f"Replicate 返回 {resp.status_code}: {_safe_error_text(resp)}")
+        raise classify_http_error(resp.status_code, f"Replicate 返回 {resp.status_code}: {_safe_error_text(resp)}")
     j = resp.json()
     pred_id = j.get("id")
     status = j.get("status", "")
@@ -69,15 +77,15 @@ def try_replicate(prompt, w, h, seed, cfg, log):
                 output = pj.get("output")
                 break
             if status in ("failed", "canceled"):
-                raise ValueError(f"Replicate 任务失败: {pj.get('error', '')}")
+                raise ProviderInvalidResponseError(f"Replicate 任务失败: {pj.get('error', '')}")
         else:
-            raise TimeoutError("Replicate 120s 超时")
+            raise ProviderTransientError("Replicate 120s 超时")
     if isinstance(output, list) and output:
         img_url = output[0]
     elif isinstance(output, str):
         img_url = output
     else:
-        raise ValueError(f"Replicate 输出格式未知: {output}")
+        raise ProviderInvalidResponseError(f"Replicate 输出格式未知: {output}")
     if img_url.startswith("data:"):
         log(f"  ✓ Replicate {slug} 成功（data URI）")
         return base64.b64decode(img_url.split(",", 1)[1]), f"Replicate/{slug}"

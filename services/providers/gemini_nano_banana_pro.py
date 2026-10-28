@@ -16,7 +16,13 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, safe_error_text as _safe_error_text
+from services.generation.errors import (
+    ProviderConfigError,
+    ProviderError,
+    ProviderInvalidResponseError,
+    ProviderTransientError,
+)
+from services.providers._net import get_session as _get_session, raise_for_response, safe_error_text as _safe_error_text
 
 
 PROVIDER_INFO = {
@@ -52,7 +58,7 @@ def _guess_mime(image_bytes: bytes) -> str:
 def try_gemini_nano_banana_pro(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("gemini_key", "").strip()
     if not key:
-        raise ValueError("需要 Google Gemini API Key！注册：https://aistudio.google.com/")
+        raise ProviderConfigError("需要 Google Gemini API Key！注册：https://aistudio.google.com/")
 
     headers = {
         "Content-Type": "application/json",
@@ -102,13 +108,15 @@ def try_gemini_nano_banana_pro(prompt: str, w: int, h: int, seed: int, cfg: dict
                 time.sleep(30)
                 continue
             if resp.status_code != 200:
-                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
+                raise_for_response(resp, "💎 Nano Banana Pro")
 
             data = resp.json()
             image_bytes = _extract_image(data)
             log("[Nano Banana Pro] 生成成功 ✓")
             return (image_bytes, "Gemini/Nano-Banana-Pro")
 
+        except ProviderError:
+            raise  # 类型化错误直通：重试/回退由 orchestrator 按 code 决策
         except (ValueError, RuntimeError) as e:
             last_err = e
             log(f"[Nano Banana Pro] 错误：{e}")
@@ -120,14 +128,14 @@ def try_gemini_nano_banana_pro(prompt: str, w: int, h: int, seed: int, cfg: dict
             if attempt < _MAX_RETRIES:
                 time.sleep(3 * attempt)
 
-    raise RuntimeError(f"Nano Banana Pro 全部重试失败：{last_err}")
+    raise ProviderTransientError(f"Nano Banana Pro 全部重试失败：{last_err}")
 
 
 def _extract_image(data: dict) -> bytes:
     """从 Gemini 响应中提取 base64 图片数据并解码。"""
     candidates = data.get("candidates", [])
     if not candidates:
-        raise ValueError("Nano Banana Pro 响应无 candidates（格式异常）")
+        raise ProviderInvalidResponseError("Nano Banana Pro 响应无 candidates（格式异常）")
 
     parts = candidates[0].get("content", {}).get("parts", [])
     for part in parts:
@@ -137,6 +145,6 @@ def _extract_image(data: dict) -> bytes:
             try:
                 return base64.b64decode(b64)
             except Exception as e:
-                raise ValueError(f"base64 解码失败：{e}")
+                raise ProviderInvalidResponseError(f"base64 解码失败：{e}")
 
-    raise ValueError("Nano Banana Pro 响应中未找到图片数据")
+    raise ProviderInvalidResponseError("Nano Banana Pro 响应中未找到图片数据")

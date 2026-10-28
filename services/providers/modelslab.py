@@ -23,6 +23,12 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderConfigError,
+    ProviderQuotaError,
+    ProviderTransientError,
+)
 from services.providers._net import (
     get_session as _get_session,
     validate_image_url as _validate_image_url,
@@ -82,13 +88,13 @@ def _download_image(url: str, log: Callable) -> bytes:
             log(f"    下载失败({attempt}): {e}")
             if attempt < 3:
                 time.sleep(5)
-    raise ValueError(f"图片下载失败：{url[:80]}")
+    raise ProviderTransientError(f"图片下载失败：{url[:80]}")
 
 
 def try_modelslab(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("modelslab_key", "").strip()
     if not key:
-        raise ValueError("需要 ModelsLab API Key！\n免费注册（每天 100 次）：https://modelslab.com")
+        raise ProviderConfigError("需要 ModelsLab API Key！\n免费注册（每天 100 次）：https://modelslab.com")
 
     hq_mode = bool(cfg.get("variant_hq", False))
     mode_tag = "HQ变体" if hq_mode else "标准"
@@ -150,9 +156,9 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callab
         log(f"    提交状态:{sc}")
 
         if sc == 401:
-            raise ValueError("ModelsLab API Key 无效，请检查设置")
+            raise ProviderAuthError("ModelsLab API Key 无效，请检查设置")
         if sc == 402:
-            raise ValueError("ModelsLab 免费额度已用尽，请等明天重置")
+            raise ProviderQuotaError("ModelsLab 免费额度已用尽，请等明天重置")
         if sc == 429:
             ra = _resp.headers.get("Retry-After", "")
             w2 = int(ra) if ra.isdigit() else 10
@@ -239,4 +245,4 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callab
         err = j.get("message", j.get("error", str(j)[:120]))
         log(f"    错误状态 '{status}': {err}，换模型…")
 
-    raise ValueError("ModelsLab 所有模型均失败\n请检查 API Key 或访问 https://modelslab.com 查看服务状态。")
+    raise ProviderTransientError("ModelsLab 所有模型均失败\n请检查 API Key 或访问 https://modelslab.com 查看服务状态。")

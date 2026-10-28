@@ -17,6 +17,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from services.generation.errors import (
+    ProviderAuthError,
+    ProviderInvalidResponseError,
+    ProviderTransientError,
+)
+
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"fake-image-data" * 16
 PNG_B64 = base64.b64encode(PNG_BYTES).decode("ascii")
 
@@ -76,14 +82,16 @@ class TestVolcengineArk:
         assert data == PNG_BYTES
         safe_dl.assert_called_once_with("https://cdn.example.com/x.png")
 
-    def test_401_retries_then_runtime_error(self):
+    def test_401_auth_error_not_retried(self):
+        """401 → ProviderAuthError 立即抛出，不再重试同一 provider。"""
         import services.providers.volcengine_ark as mod
+        from services.generation.errors import ProviderAuthError
 
         sess = _fake_session(post=_resp(401, json_data=None))
         with patch(f"{self.MOD}._get_session", return_value=sess), patch.object(mod.time, "sleep"):
-            with pytest.raises(RuntimeError, match="全部重试失败"):
+            with pytest.raises(ProviderAuthError):
                 mod.try_volcengine_ark("cat", 1024, 1024, 1, self.CFG, lambda s: None)
-        assert sess.post.call_count == 3  # _MAX_RETRIES
+        assert sess.post.call_count == 1
 
     def test_429_backoff_then_success(self):
         import services.providers.volcengine_ark as mod
@@ -100,7 +108,7 @@ class TestVolcengineArk:
 
         sess = _fake_session(post=_resp(200, {"data": []}))
         with patch(f"{self.MOD}._get_session", return_value=sess), patch.object(mod.time, "sleep"):
-            with pytest.raises(RuntimeError, match="全部重试失败"):
+            with pytest.raises(ProviderInvalidResponseError, match="豆包"):
                 mod.try_volcengine_ark("cat", 1024, 1024, 1, self.CFG, lambda s: None)
 
     def test_missing_key(self):
@@ -306,7 +314,7 @@ class TestMiniMax:
 
         resp = _resp(200, {"base_resp": {"status_code": 1004, "status_msg": "invalid"}})
         with patch(f"{self.MOD}._get_session", return_value=_fake_session(post=resp)), patch.object(mod.time, "sleep"):
-            with pytest.raises(RuntimeError, match="全部重试失败"):
+            with pytest.raises(ProviderTransientError):
                 mod.try_minimax_image("cat", 1024, 1024, 1, self.CFG, lambda s: None)
 
     def test_missing_key(self):
@@ -361,7 +369,7 @@ class TestNanoBananaPro:
             patch(f"{self.MOD}._get_session", return_value=_fake_session(post=_resp(500))),
             patch.object(mod.time, "sleep"),
         ):
-            with pytest.raises(RuntimeError, match="全部重试失败"):
+            with pytest.raises(ProviderTransientError):
                 mod.try_gemini_nano_banana_pro("cat", 1024, 1024, 1, self.CFG, lambda s: None)
 
     def test_no_candidates(self):
@@ -371,7 +379,7 @@ class TestNanoBananaPro:
             patch(f"{self.MOD}._get_session", return_value=_fake_session(post=_resp(200, {"candidates": []}))),
             patch.object(mod.time, "sleep"),
         ):
-            with pytest.raises(RuntimeError, match="全部重试失败"):
+            with pytest.raises(ProviderInvalidResponseError):
                 mod.try_gemini_nano_banana_pro("cat", 1024, 1024, 1, self.CFG, lambda s: None)
 
     def test_img2img_inline_data(self):

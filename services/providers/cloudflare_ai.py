@@ -21,6 +21,7 @@ import base64
 import time
 import requests
 from typing import Callable, Tuple
+from services.generation.errors import ProviderAuthError, ProviderConfigError, ProviderTransientError
 from services.providers._net import (
     get_session as _get_session,
     safe_error_text as _safe_error_text,
@@ -63,7 +64,7 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
     api_token = cfg.get("cf_api_token", "").strip()
 
     if not account_id or not api_token:
-        raise ValueError(
+        raise ProviderConfigError(
             "需要 Cloudflare Account ID 和 API Token！\n"
             "注册：https://dash.cloudflare.com\n"
             "Token：https://dash.cloudflare.com/profile/api-tokens"
@@ -112,9 +113,9 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
         log(f"    状态: {resp.status_code}")
 
         if resp.status_code == 401:
-            raise ValueError("Cloudflare API Token 无效，请检查设置")
+            raise ProviderAuthError("Cloudflare API Token 无效，请检查设置")
         if resp.status_code == 403:
-            raise ValueError(
+            raise ProviderConfigError(
                 "Cloudflare Token 权限不足，需要 Workers AI Read 权限\n"
                 "请前往 https://dash.cloudflare.com/profile/api-tokens 重新生成"
             )
@@ -173,7 +174,7 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
         log(f"  ✓ Cloudflare/{model_short} 成功，{len(img_bytes) // 1024}KB")
         return img_bytes, f"Cloudflare/{model_short}"
 
-    raise ValueError(
+    raise ProviderTransientError(
         "Cloudflare Workers AI 所有模型均失败\n"
         "请检查 Account ID / API Token，或访问 https://dash.cloudflare.com 查看服务状态。"
     )
