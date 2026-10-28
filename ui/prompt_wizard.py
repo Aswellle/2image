@@ -39,105 +39,114 @@ from ui.wizard_llm import LLMWizard
 
 
 # ══════════════════════════════════════════════════════════════
-#   维度预设数据
+#   维度预设数据（模块级只存键名，取词延迟到界面构建/使用时，
+#   避免模块导入早于 init_language 把文案冻结在默认语言）
 # ══════════════════════════════════════════════════════════════
+_CUSTOM_KEY = "wizard_custom_option"
+
+
+def _presets(keys):
+    """键名列表 → 当前语言文案列表。"""
+    return [_(k) for k in keys]
+
+
 STYLE_P = [
-    _("preset_style_1"),
-    _("preset_style_2"),
-    _("preset_style_3"),
-    _("preset_style_4"),
-    _("preset_style_5"),
-    _("preset_style_6"),
-    _("preset_style_7"),
-    _("preset_style_8"),
-    _("preset_style_9"),
-    _("preset_style_10"),
-    _("preset_style_11"),
-    _("preset_style_12"),
-    _("wizard_custom_option"),
+    "preset_style_1",
+    "preset_style_2",
+    "preset_style_3",
+    "preset_style_4",
+    "preset_style_5",
+    "preset_style_6",
+    "preset_style_7",
+    "preset_style_8",
+    "preset_style_9",
+    "preset_style_10",
+    "preset_style_11",
+    "preset_style_12",
+    "wizard_custom_option",
 ]
 MOOD_P = [
-    _("preset_mood_1"),
-    _("preset_mood_2"),
-    _("preset_mood_3"),
-    _("preset_mood_4"),
-    _("preset_mood_5"),
-    _("preset_mood_6"),
-    _("preset_mood_7"),
-    _("preset_mood_8"),
-    _("preset_mood_9"),
-    _("preset_mood_10"),
-    _("preset_mood_11"),
-    _("preset_mood_12"),
-    _("wizard_custom_option"),
+    "preset_mood_1",
+    "preset_mood_2",
+    "preset_mood_3",
+    "preset_mood_4",
+    "preset_mood_5",
+    "preset_mood_6",
+    "preset_mood_7",
+    "preset_mood_8",
+    "preset_mood_9",
+    "preset_mood_10",
+    "preset_mood_11",
+    "preset_mood_12",
+    "wizard_custom_option",
 ]
 DETAIL_P = [
-    _("preset_detail_1"),
-    _("preset_detail_2"),
-    _("preset_detail_3"),
-    _("preset_detail_4"),
-    _("preset_detail_5"),
-    _("preset_detail_6"),
-    _("preset_detail_7"),
-    _("preset_detail_8"),
-    _("wizard_custom_option"),
+    "preset_detail_1",
+    "preset_detail_2",
+    "preset_detail_3",
+    "preset_detail_4",
+    "preset_detail_5",
+    "preset_detail_6",
+    "preset_detail_7",
+    "preset_detail_8",
+    "wizard_custom_option",
 ]
 COMP_P = [
-    _("preset_comp_1"),
-    _("preset_comp_2"),
-    _("preset_comp_3"),
-    _("preset_comp_4"),
-    _("preset_comp_5"),
-    _("preset_comp_6"),
-    _("preset_comp_7"),
-    _("preset_comp_8"),
-    _("preset_comp_9"),
-    _("preset_comp_10"),
-    _("wizard_custom_option"),
+    "preset_comp_1",
+    "preset_comp_2",
+    "preset_comp_3",
+    "preset_comp_4",
+    "preset_comp_5",
+    "preset_comp_6",
+    "preset_comp_7",
+    "preset_comp_8",
+    "preset_comp_9",
+    "preset_comp_10",
+    "wizard_custom_option",
 ]
 LIGHT_P = [
-    _("preset_light_1"),
-    _("preset_light_2"),
-    _("preset_light_3"),
-    _("preset_light_4"),
-    _("preset_light_5"),
-    _("preset_light_6"),
-    _("preset_light_7"),
-    _("preset_light_8"),
-    _("preset_light_9"),
-    _("preset_light_10"),
-    _("wizard_custom_option"),
+    "preset_light_1",
+    "preset_light_2",
+    "preset_light_3",
+    "preset_light_4",
+    "preset_light_5",
+    "preset_light_6",
+    "preset_light_7",
+    "preset_light_8",
+    "preset_light_9",
+    "preset_light_10",
+    "wizard_custom_option",
 ]
 CAMERA_P = [
-    _("preset_camera_1"),
-    _("preset_camera_2"),
-    _("preset_camera_3"),
-    _("preset_camera_4"),
-    _("preset_camera_5"),
-    _("preset_camera_6"),
-    _("preset_camera_7"),
-    _("preset_camera_8"),
-    _("wizard_custom_option"),
+    "preset_camera_1",
+    "preset_camera_2",
+    "preset_camera_3",
+    "preset_camera_4",
+    "preset_camera_5",
+    "preset_camera_6",
+    "preset_camera_7",
+    "preset_camera_8",
+    "wizard_custom_option",
 ]
 QUALITY_P = [
-    _("preset_quality_1"),
-    _("preset_quality_2"),
-    _("preset_quality_3"),
-    _("preset_quality_4"),
-    _("preset_quality_5"),
-    _("preset_quality_6"),
-    _("preset_quality_7"),
-    _("preset_quality_8"),
-    _("wizard_custom_option"),
+    "preset_quality_1",
+    "preset_quality_2",
+    "preset_quality_3",
+    "preset_quality_4",
+    "preset_quality_5",
+    "preset_quality_6",
+    "preset_quality_7",
+    "preset_quality_8",
+    "wizard_custom_option",
 ]
 _RAND_POOLS = {
-    "style": [x for x in STYLE_P if _("wizard_custom_option") not in x],
-    "mood": [x for x in MOOD_P if _("wizard_custom_option") not in x],
-    "detail": [x for x in DETAIL_P if _("wizard_custom_option") not in x],
-    "composition": [x for x in COMP_P if _("wizard_custom_option") not in x],
-    "lighting": [x for x in LIGHT_P if _("wizard_custom_option") not in x],
-    "camera": [x for x in CAMERA_P if _("wizard_custom_option") not in x],
-    "quality": [x for x in QUALITY_P if _("wizard_custom_option") not in x],
+    "style": [k for k in STYLE_P if k != _CUSTOM_KEY],
+    "mood": [k for k in MOOD_P if k != _CUSTOM_KEY],
+    "detail": [k for k in DETAIL_P if k != _CUSTOM_KEY],
+    "composition": [k for k in COMP_P if k != _CUSTOM_KEY],
+    "lighting": [k for k in LIGHT_P if k != _CUSTOM_KEY],
+    "camera": [k for k in CAMERA_P if k != _CUSTOM_KEY],
+    "quality": [k for k in QUALITY_P if k != _CUSTOM_KEY],
 }
 
 
@@ -257,10 +266,11 @@ class PromptWizard(tk.Toplevel):
     _TEMPLATE_PREVIEWING = "previewing"
     _TEMPLATE_PENDING_FILL = "pending-fill"
 
+    # 键名存类属性，取词在 _set_template_state 运行时进行
     _TEMPLATE_BADGES = {
-        _TEMPLATE_IDLE: (_("wizard_badge_idle"), "#64748b"),
-        _TEMPLATE_PREVIEWING: (_("wizard_badge_previewing"), "#f0a500"),
-        _TEMPLATE_PENDING_FILL: (_("wizard_badge_pending_fill"), C["ok"]),
+        _TEMPLATE_IDLE: ("wizard_badge_idle", "#64748b"),
+        _TEMPLATE_PREVIEWING: ("wizard_badge_previewing", "#f0a500"),
+        _TEMPLATE_PENDING_FILL: ("wizard_badge_pending_fill", C["ok"]),
     }
 
     def __init__(self, parent_app):
@@ -530,26 +540,26 @@ class PromptWizard(tk.Toplevel):
         dim_host = tk.Frame(parent, bg=C["bg"])
         dim_host.pack(fill="x", padx=PX, pady=(6, 0))
 
-        self._dim_style = _DimRow(cv_ref, dim_host, _("wizard_label_style"), STYLE_P, guide=_("wizard_guide_style"))
-        self._dim_mood = _DimRow(cv_ref, dim_host, _("wizard_label_mood"), MOOD_P, guide=_("wizard_guide_mood"))
+        self._dim_style = _DimRow(cv_ref, dim_host, _("wizard_label_style"), _presets(STYLE_P), guide=_("wizard_guide_style"))
+        self._dim_mood = _DimRow(cv_ref, dim_host, _("wizard_label_mood"), _presets(MOOD_P), guide=_("wizard_guide_mood"))
 
         # 高级维度宿主：默认收起，点击「更多精细控制」展开
         self._adv_host = tk.Frame(dim_host, bg=C["bg"])
         self._hdivider_thin(self._adv_host)
         self._dim_detail = _DimRow(
-            cv_ref, self._adv_host, _("wizard_label_detail"), DETAIL_P, guide=_("wizard_guide_detail")
+            cv_ref, self._adv_host, _("wizard_label_detail"), _presets(DETAIL_P), guide=_("wizard_guide_detail")
         )
         self._dim_comp = _DimRow(
-            cv_ref, self._adv_host, _("wizard_label_composition"), COMP_P, guide=_("wizard_guide_composition")
+            cv_ref, self._adv_host, _("wizard_label_composition"), _presets(COMP_P), guide=_("wizard_guide_composition")
         )
         self._dim_light = _DimRow(
-            cv_ref, self._adv_host, _("wizard_label_lighting"), LIGHT_P, guide=_("wizard_guide_lighting")
+            cv_ref, self._adv_host, _("wizard_label_lighting"), _presets(LIGHT_P), guide=_("wizard_guide_lighting")
         )
         self._dim_cam = _DimRow(
-            cv_ref, self._adv_host, _("wizard_label_camera"), CAMERA_P, guide=_("wizard_guide_camera")
+            cv_ref, self._adv_host, _("wizard_label_camera"), _presets(CAMERA_P), guide=_("wizard_guide_camera")
         )
         self._dim_qual = _DimRow(
-            cv_ref, self._adv_host, _("wizard_label_quality"), QUALITY_P, guide=_("wizard_guide_quality")
+            cv_ref, self._adv_host, _("wizard_label_quality"), _presets(QUALITY_P), guide=_("wizard_guide_quality")
         )
 
         self._adv_open = False
@@ -626,7 +636,7 @@ class PromptWizard(tk.Toplevel):
             ("camera", self._dim_cam),
             ("quality", self._dim_qual),
         ]:
-            dim.set_random(_RAND_POOLS[key])
+            dim.set_random(_presets(_RAND_POOLS[key]))
 
     def _reset_params(self):
         for dim in [
@@ -959,7 +969,8 @@ class PromptWizard(tk.Toplevel):
 
     def _set_template_state(self, state: str):
         self._template_state = state
-        badge_text, badge_fg = self._TEMPLATE_BADGES[state]
+        badge_key, badge_fg = self._TEMPLATE_BADGES[state]
+        badge_text = _(badge_key)
         is_previewing = state == self._TEMPLATE_PREVIEWING
         is_pending_fill = state == self._TEMPLATE_PENDING_FILL
 
