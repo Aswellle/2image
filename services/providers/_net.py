@@ -9,6 +9,7 @@ services/providers/_net.py — 共享 HTTP 工具
   validate_image_url() — 基于 DNS 解析的 SSRF 防护（替代各文件的 _validate_image_url）
   safe_error_text()    — 从 API 响应中提取安全错误文本
 """
+
 import ipaddress
 import socket
 import threading
@@ -25,8 +26,7 @@ _thread_local = threading.local()
 
 def _new_session() -> requests.Session:
     sess = requests.Session()
-    adapter = requests.adapters.HTTPAdapter(
-        pool_connections=6, pool_maxsize=12, max_retries=0)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=6, pool_maxsize=12, max_retries=0)
     sess.mount("https://", adapter)
     sess.mount("http://", adapter)
     return sess
@@ -80,8 +80,14 @@ def validate_image_url(url: str) -> bool:
             # 处理 IPv4-mapped IPv6（::ffff:169.254.x.x）
             if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
                 ip = ip.ipv4_mapped
-            if (ip.is_private or ip.is_loopback or ip.is_link_local
-                    or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+            if (
+                ip.is_private
+                or ip.is_loopback
+                or ip.is_link_local
+                or ip.is_reserved
+                or ip.is_multicast
+                or ip.is_unspecified
+            ):
                 return False
     except Exception:
         return False  # 任何解析异常都拒绝（fail-closed）
@@ -107,6 +113,7 @@ def safe_get_image(url: str, timeout: int = 60) -> bytes:
     # Deferred import avoids circular dependency:
     # providers._net → generation.downloader → providers._net
     from services.generation.downloader import bounded_download
+
     return bounded_download(url, session=get_session())
 
 
@@ -142,6 +149,5 @@ def read_bounded(resp, max_bytes: int = 25 * 1024 * 1024) -> bytes:
         if chunk:
             data.extend(chunk)
             if len(data) > max_bytes:
-                raise ValueError(
-                    f"图片响应超过 {max_bytes // (1024 * 1024)}MB 上限")
+                raise ValueError(f"图片响应超过 {max_bytes // (1024 * 1024)}MB 上限")
     return bytes(data)

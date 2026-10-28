@@ -13,6 +13,7 @@ services/providers/openai_image.py — OpenAI GPT-Image（文生图 + 图生图�
   · size 取值因模型而异（见上方说明）
   · 新增 /v1/images/edits 端点：传入参考图即可做图生图/局部编辑
 """
+
 import base64
 
 from config.model_catalog import (
@@ -57,6 +58,7 @@ def _gpt2_size(w: int, h: int) -> str:
       - 宽高比 1:3–3:1
       - 总像素 0.65MP–8.3MP
     """
+
     def up16(v):
         return max(_GPT2_MULT, (v + _GPT2_MULT // 2) // _GPT2_MULT * _GPT2_MULT)
 
@@ -104,6 +106,7 @@ def _gpt2_size(w: int, h: int) -> str:
 
     return f"{w}x{h}"
 
+
 def _size_for(model: str, w: int, h: int) -> str:
     """按模型路由尺寸取值：gpt-image-2+ 家族用任意尺寸，其余用预设。"""
     if model in (GPT_IMAGE_2, GPT_IMAGE_25_FLARE, GPT_IMAGE_25_SUNBURST):
@@ -131,16 +134,18 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
     if ref_image is not None:
         log(f"► OpenAI GPT-Image  图生图  质量={quality}  尺寸={size_str}")
         files = {"image": ("ref.png", ref_image, "image/png")}
-        data = {"model": model, "prompt": prompt, "n": "1",
-                "size": size_str, "quality": quality}
-        resp = _get_session().post("https://api.openai.com/v1/images/edits",
-            headers=headers, files=files, data=data, timeout=180)
+        data = {"model": model, "prompt": prompt, "n": "1", "size": size_str, "quality": quality}
+        resp = _get_session().post(
+            "https://api.openai.com/v1/images/edits", headers=headers, files=files, data=data, timeout=180
+        )
     else:
         log(f"► OpenAI GPT-Image  文生图  模型={GPT_IMAGE_NAMES.get(model, model)}  质量={quality}  尺寸={size_str}")
-        resp = _get_session().post("https://api.openai.com/v1/images/generations",
+        resp = _get_session().post(
+            "https://api.openai.com/v1/images/generations",
             headers={**headers, "Content-Type": "application/json"},
-            json={"model": model, "prompt": prompt, "n": 1,
-                  "size": size_str, "quality": quality}, timeout=120)
+            json={"model": model, "prompt": prompt, "n": 1, "size": size_str, "quality": quality},
+            timeout=120,
+        )
 
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401:
@@ -150,7 +155,8 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
     if resp.status_code == 403:
         raise ValueError(
             "OpenAI 拒绝访问 GPT-Image——首次使用该模型可能需要先在 "
-            "platform.openai.com 后台完成 Organization Verification（组织验证）")
+            "platform.openai.com 后台完成 Organization Verification（组织验证）"
+        )
     if resp.status_code == 429:
         raise ValueError("OpenAI 速率限制（HTTP 429）")
     if resp.status_code == 400:
@@ -160,7 +166,7 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
 
     j = resp.json()
     data_items = j.get("data") or []
-    b64 = (data_items[0].get("b64_json", "") if data_items else "")
+    b64 = data_items[0].get("b64_json", "") if data_items else ""
     if not b64:
         raise ValueError("GPT-Image 返回数据中无图片")
     display_name = GPT_IMAGE_NAMES.get(model, model)

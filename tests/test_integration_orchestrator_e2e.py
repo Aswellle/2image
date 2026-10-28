@@ -5,6 +5,7 @@ Proves that generate_image() now routes through the GenerationOrchestrator,
 making cancellation, deadline, health, and error taxonomy active in the
 production code path.
 """
+
 from __future__ import annotations
 
 import threading
@@ -31,10 +32,8 @@ class TestGenerateImageUsesOrchestrator:
         def success(prompt, w, h, seed, cfg, log):
             return (b"\x89PNG\r\n\x1a\n", "free_fallback")
 
-        with patch("services.image_service.ALL_PROVIDERS",
-                   {"auth_required": auth_fail, "free_fallback": success}):
-            data, used = generate_image("test", 64, 64, 42, {},
-                                         provider_order=["auth_required", "free_fallback"])
+        with patch("services.image_service.ALL_PROVIDERS", {"auth_required": auth_fail, "free_fallback": success}):
+            data, used = generate_image("test", 64, 64, 42, {}, provider_order=["auth_required", "free_fallback"])
 
         assert used == "free_fallback"
         assert data == b"\x89PNG\r\n\x1a\n"
@@ -61,11 +60,10 @@ class TestGenerateImageUsesOrchestrator:
 
         threading.Thread(target=cancel_during_retry_sleep, daemon=True).start()
 
-        with patch("services.image_service.ALL_PROVIDERS",
-                   {"flaky": flaky_provider}):
+        with patch("services.image_service.ALL_PROVIDERS", {"flaky": flaky_provider}):
             with pytest.raises(GenerationCancelled):
-                generate_image("test", 64, 64, 42, {},
-                               provider_order=["flaky"], token=token)
+                generate_image("test", 64, 64, 42, {}, provider_order=["flaky"], token=token)
+
     def test_transient_error_retries_then_falls_back(self):
         """Transient errors should be retried (with backoff) then fall back."""
         call_count = {"n": 0}
@@ -77,22 +75,20 @@ class TestGenerateImageUsesOrchestrator:
         def good(prompt, w, h, seed, cfg, log):
             return (b"\x89PNG", "good")
 
-        with patch("services.image_service.ALL_PROVIDERS",
-                   {"flaky": flaky, "good": good}):
-            data, used = generate_image("test", 64, 64, 42, {},
-                                         provider_order=["flaky", "good"])
+        with patch("services.image_service.ALL_PROVIDERS", {"flaky": flaky, "good": good}):
+            data, used = generate_image("test", 64, 64, 42, {}, provider_order=["flaky", "good"])
 
         assert used == "good"
         assert call_count["n"] >= 1
 
     def test_no_token_backward_compat(self):
         """generate_image() without token should still work (backward compat)."""
+
         def good(prompt, w, h, seed, cfg, log):
             return (b"\x89PNG", "good")
 
         with patch("services.image_service.ALL_PROVIDERS", {"good": good}):
-            data, used = generate_image("test", 64, 64, 42, {},
-                                         provider_order=["good"])
+            data, used = generate_image("test", 64, 64, 42, {}, provider_order=["good"])
         assert used == "good"
 
     def test_token_cancel_before_run(self):
@@ -105,5 +101,4 @@ class TestGenerateImageUsesOrchestrator:
 
         with patch("services.image_service.ALL_PROVIDERS", {"good": good}):
             with pytest.raises(GenerationCancelled):
-                generate_image("test", 64, 64, 42, {},
-                               provider_order=["good"], token=token)
+                generate_image("test", 64, 64, 42, {}, provider_order=["good"], token=token)

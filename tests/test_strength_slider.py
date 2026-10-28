@@ -53,14 +53,9 @@ def test_full_strength_slider_shows_internal_value_and_marks(tk_root):
     slider = _StrengthSlider(tk_root, tk.DoubleVar(value=0.6), marks=True)
     tk_root.update_idletasks()
 
-    items = [
-        slider.cv.itemcget(item, "text")
-        for item in slider.cv.find_all()
-        if slider.cv.type(item) == "text"
-    ]
+    items = [slider.cv.itemcget(item, "text") for item in slider.cv.find_all() if slider.cv.type(item) == "text"]
     assert "0.6" in items
     assert {"微调", "融合", "重构"}.issubset(items)
-
 
 
 @skip_if_no_tk

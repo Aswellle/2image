@@ -1,5 +1,6 @@
 """SemVer parsing/comparison matrix (§28.1): numeric compare, prerelease
 ordering, downgrade refusal, invalid input rejection."""
+
 import pytest
 
 from services.updater import is_newer
@@ -12,6 +13,7 @@ from services.updater.version import (
 
 
 # ── parse ────────────────────────────────────────────────────
+
 
 def test_parse_plain_and_v_prefix():
     assert parse_version("2.6.1") == SemVer(2, 6, 1)
@@ -32,6 +34,7 @@ def test_parse_invalid_raises(bad):
 
 
 # ── compare ──────────────────────────────────────────────────
+
 
 def test_compare_numeric_not_lexicographic():
     assert is_newer("2.10.0", "2.9.0") is True

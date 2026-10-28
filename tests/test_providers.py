@@ -1,4 +1,5 @@
 """Tests for provider error handling."""
+
 import importlib
 from pathlib import Path
 
@@ -15,12 +16,14 @@ def test_release_spec_collects_dynamic_provider_modules():
 
 def test_gemini_missing_key_raises_valueerror():
     from services.providers.gemini import try_gemini
+
     with pytest.raises(ValueError, match="API Key"):
         try_gemini("test prompt", 512, 512, 42, {"gemini_key": ""}, print)
 
 
 def test_openai_image_missing_key_raises_valueerror():
     from services.providers.openai_image import try_openai_image
+
     with pytest.raises(ValueError, match="API Key"):
         try_openai_image("test prompt", 1024, 1024, 42, {"openai_key": ""}, print)
 
@@ -28,6 +31,7 @@ def test_openai_image_missing_key_raises_valueerror():
 # ── gpt-image-2 任意尺寸约束（TC gpt-image-2）───────────────────────────────
 # gpt-image-2 只接受「双 16 倍数 / 长边≤3840 / 宽高比 1:3–3:1 / 0.65–8.3MP」的尺寸。
 # App 提供的小尺寸与 1920x1080 等不满足约束，必须在 provider 内收敛为合法值。
+
 
 def _assert_gpt2_size(s: str):
     w, h = [int(x) for x in s.split("x")]
@@ -39,25 +43,30 @@ def _assert_gpt2_size(s: str):
 
 def test_gpt2_size_square_stays_1024():
     from services.providers.openai_image import _gpt2_size
+
     assert _gpt2_size(1024, 1024) == "1024x1024"
 
 
-@pytest.mark.parametrize("w,h", [(512,512),(768,768),(1024,576),(1280,720),
-                                 (1920,1080),(576,1024),(720,1280),(768,1024)])
+@pytest.mark.parametrize(
+    "w,h", [(512, 512), (768, 768), (1024, 576), (1280, 720), (1920, 1080), (576, 1024), (720, 1280), (768, 1024)]
+)
 def test_gpt2_size_produces_valid_size(w, h):
     """Every size offered in the UI must be converged to a valid gpt-image-2 size."""
     from services.providers.openai_image import _gpt2_size
+
     _assert_gpt2_size(_gpt2_size(w, h))
 
 
 def test_gpt2_size_clamps_extreme_edges():
     from services.providers.openai_image import _gpt2_size
+
     _assert_gpt2_size(_gpt2_size(5000, 5000))
     _assert_gpt2_size(_gpt2_size(200, 4000))
 
 
 def test_size_for_routes_by_model():
     from services.providers.openai_image import _size_for
+
     # gpt-image-2 用任意尺寸，gpt-image-1 家族用预设；同一请求二者不同
     assert _size_for("gpt-image-2", 512, 512) != _size_for("gpt-image-1", 512, 512)
     assert _size_for("gpt-image-1", 1024, 1024) == "1024x1024"
@@ -67,6 +76,7 @@ def test_size_for_routes_by_model():
 def test_normalize_quality_maps_legacy_values():
     """DALL-E 时代的 standard/hd 必须映射到 GPT-Image 体系，避免 400。"""
     from services.providers.openai_image import _normalize_quality
+
     assert _normalize_quality("standard") == "medium"
     assert _normalize_quality("hd") == "high"
     assert _normalize_quality("auto") == "auto"
@@ -75,6 +85,7 @@ def test_normalize_quality_maps_legacy_values():
 
 def test_siliconflow_missing_key_raises_valueerror():
     from services.providers.siliconflow import try_siliconflow
+
     with pytest.raises(ValueError, match="API Key"):
         try_siliconflow("test prompt", 512, 512, 42, {"sf_key": ""}, print)
 
@@ -83,27 +94,27 @@ def test_siliconflow_missing_key_raises_valueerror():
 # when that key is absent. This enforces the provider error-contract.
 # stablehorde is excluded: empty key = anonymous mode (valid usage).
 _PROVIDER_KEY_CASES = [
-    ("services.providers.huggingface",   "try_hf_inference",  {"hf_token": ""}),
+    ("services.providers.huggingface", "try_hf_inference", {"hf_token": ""}),
     ("services.providers.cloudflare_ai", "try_cloudflare_ai", {"cf_account_id": "", "cf_api_token": ""}),
-    ("services.providers.segmind",       "try_segmind",       {"segmind_key": ""}),
-    ("services.providers.replicate_flux","try_replicate",     {"replicate_key": ""}),
-    ("services.providers.stability_ai",  "try_stability_ai",  {"stability_key": ""}),
-    ("services.providers.together_ai",   "try_together_ai",   {"together_key": ""}),
-    ("services.providers.xai_grok",      "try_xai_grok",      {"xai_key": ""}),
-    ("services.providers.openrouter",    "try_openrouter",    {"openrouter_key": ""}),
-    ("services.providers.fal_flux",      "try_fal_flux",      {"fal_key": ""}),
-    ("services.providers.ideogram",      "try_ideogram",      {"ideogram_key": ""}),
-    ("services.providers.recraft",       "try_recraft",       {"recraft_key": ""}),
-    ("services.providers.modelslab",     "try_modelslab",     {"modelslab_key": ""}),
+    ("services.providers.segmind", "try_segmind", {"segmind_key": ""}),
+    ("services.providers.replicate_flux", "try_replicate", {"replicate_key": ""}),
+    ("services.providers.stability_ai", "try_stability_ai", {"stability_key": ""}),
+    ("services.providers.together_ai", "try_together_ai", {"together_key": ""}),
+    ("services.providers.xai_grok", "try_xai_grok", {"xai_key": ""}),
+    ("services.providers.openrouter", "try_openrouter", {"openrouter_key": ""}),
+    ("services.providers.fal_flux", "try_fal_flux", {"fal_key": ""}),
+    ("services.providers.ideogram", "try_ideogram", {"ideogram_key": ""}),
+    ("services.providers.recraft", "try_recraft", {"recraft_key": ""}),
+    ("services.providers.modelslab", "try_modelslab", {"modelslab_key": ""}),
     ("services.providers.gemini_nano_banana_pro", "try_gemini_nano_banana_pro", {"gemini_key": ""}),
     ("services.providers.minimax_image", "try_minimax_image", {"minimax_key": ""}),
-    ("services.providers.dashscope_qwen","try_dashscope_qwen",{"dashscope_key": ""}),
-    ("services.providers.bfl_flux",      "try_bfl_flux",      {"bfl_key": ""}),
-    ("services.providers.bria_ai",       "try_bria_ai",       {"bria_key": ""}),
+    ("services.providers.dashscope_qwen", "try_dashscope_qwen", {"dashscope_key": ""}),
+    ("services.providers.bfl_flux", "try_bfl_flux", {"bfl_key": ""}),
+    ("services.providers.bria_ai", "try_bria_ai", {"bria_key": ""}),
 ]
 
-@pytest.mark.parametrize("module,fn,cfg", _PROVIDER_KEY_CASES,
-                          ids=[c[1] for c in _PROVIDER_KEY_CASES])
+
+@pytest.mark.parametrize("module,fn,cfg", _PROVIDER_KEY_CASES, ids=[c[1] for c in _PROVIDER_KEY_CASES])
 def test_provider_missing_key_raises_valueerror(module, fn, cfg):
     """Every keyed provider must raise ValueError on missing/empty API key."""
     mod = importlib.import_module(module)
@@ -114,6 +125,7 @@ def test_provider_missing_key_raises_valueerror(module, fn, cfg):
 
 def test_validate_image_url_blocks_non_https():
     from services.providers._net import validate_image_url
+
     assert not validate_image_url("http://cdn.example.com/test.png")
     assert not validate_image_url("ftp://cdn.example.com/test.png")
     assert not validate_image_url("")
@@ -121,23 +133,26 @@ def test_validate_image_url_blocks_non_https():
 
 def test_validate_image_url_blocks_literal_private_ips():
     from services.providers._net import validate_image_url
+
     # These must be blocked regardless of scheme — the CRITICAL test cases
     # (old implementation only blocked these via scheme check on http://, not IP logic)
-    assert not validate_image_url("https://127.0.0.1/test.png")        # loopback
-    assert not validate_image_url("https://10.0.0.1/test.png")         # RFC1918 private
-    assert not validate_image_url("https://192.168.1.1/test.png")      # RFC1918 private
-    assert not validate_image_url("https://172.16.0.1/test.png")       # RFC1918 private
-    assert not validate_image_url("https://169.254.169.254/latest/")   # link-local / cloud metadata
+    assert not validate_image_url("https://127.0.0.1/test.png")  # loopback
+    assert not validate_image_url("https://10.0.0.1/test.png")  # RFC1918 private
+    assert not validate_image_url("https://192.168.1.1/test.png")  # RFC1918 private
+    assert not validate_image_url("https://172.16.0.1/test.png")  # RFC1918 private
+    assert not validate_image_url("https://169.254.169.254/latest/")  # link-local / cloud metadata
 
 
 def test_validate_image_url_blocks_localhost_hostname():
     from services.providers._net import validate_image_url
+
     # DNS names that resolve to internal IPs must be blocked (was the SSRF hole)
     assert not validate_image_url("https://localhost/test.png")
 
 
 def test_validate_image_url_unresolvable_is_blocked():
     from services.providers._net import validate_image_url
+
     # Fail-closed: unresolvable hostnames are rejected, not allowed
     assert not validate_image_url("https://this.host.does.not.exist.invalid/x.png")
 
@@ -146,9 +161,10 @@ def test_validate_image_url_allows_public_cdn():
     from services.providers._net import validate_image_url
     from unittest.mock import patch
     import socket
+
     # Mock DNS to return a known public IP (1.1.1.1 = Cloudflare) for the CDN hostname
-    mock_result = [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('1.1.1.1', 443))]
-    with patch('services.providers._net.socket.getaddrinfo', return_value=mock_result):
+    mock_result = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("1.1.1.1", 443))]
+    with patch("services.providers._net.socket.getaddrinfo", return_value=mock_result):
         assert validate_image_url("https://cdn.example.com/test.png")
 
 
@@ -156,10 +172,10 @@ def test_validate_image_url_blocks_ipv4_mapped_ipv6_loopback():
     from services.providers._net import validate_image_url
     from unittest.mock import patch
     import socket
+
     # ::ffff:127.0.0.1 — IPv4-mapped loopback; must be unwrapped and blocked
-    mock_result = [(socket.AF_INET6, socket.SOCK_STREAM, 6, '',
-                    ('::ffff:127.0.0.1', 443, 0, 0))]
-    with patch('services.providers._net.socket.getaddrinfo', return_value=mock_result):
+    mock_result = [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("::ffff:127.0.0.1", 443, 0, 0))]
+    with patch("services.providers._net.socket.getaddrinfo", return_value=mock_result):
         assert not validate_image_url("https://cdn.example.com/img.png")
 
 
@@ -167,20 +183,22 @@ def test_validate_image_url_blocks_ipv4_mapped_ipv6_link_local():
     from services.providers._net import validate_image_url
     from unittest.mock import patch
     import socket
+
     # ::ffff:169.254.169.254 — cloud metadata via IPv6 literal
-    mock_result = [(socket.AF_INET6, socket.SOCK_STREAM, 6, '',
-                    ('::ffff:169.254.169.254', 443, 0, 0))]
-    with patch('services.providers._net.socket.getaddrinfo', return_value=mock_result):
+    mock_result = [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("::ffff:169.254.169.254", 443, 0, 0))]
+    with patch("services.providers._net.socket.getaddrinfo", return_value=mock_result):
         assert not validate_image_url("https://metadata.internal/latest/")
 
 
 def test_validate_image_url_blocks_native_ipv6_loopback():
     from services.providers._net import validate_image_url
+
     assert not validate_image_url("https://[::1]/img.png")
 
 
 def test_validate_image_url_allows_literal_public_ip():
     from services.providers._net import validate_image_url
+
     # Literal public IP — no DNS lookup, tests IP-check path directly
     assert validate_image_url("https://8.8.8.8/image.png")
 
@@ -194,24 +212,23 @@ def test_validate_image_url_allows_literal_public_ip():
 import requests as _requests
 
 _NETWORK_FAILURE_CASES = [
-    ("services.providers.siliconflow",   "try_siliconflow",   {"sf_key": "x"},                                  "post"),
-    ("services.providers.huggingface",   "try_hf_inference",  {"hf_token": "x"},                               "post"),
-    ("services.providers.pollinations",  "try_pollinations",  {},                                               "get"),
-    ("services.providers.cloudflare_ai","try_cloudflare_ai",  {"cf_account_id": "x", "cf_api_token": "x"},     "post"),
-    ("services.providers.segmind",       "try_segmind",       {"segmind_key": "x"},                            "post"),
-    ("services.providers.stablehorde",   "try_stablehorde",   {},                                               "post"),
-    ("services.providers.recraft",       "try_recraft",       {"recraft_key": "x"},                            "post"),
-    ("services.providers.modelslab",     "try_modelslab",     {"modelslab_key": "x"},                          "post"),
-    ("services.providers.ideogram",      "try_ideogram",      {"ideogram_key": "x"},                           "post"),
-    ("services.providers.gemini",        "try_gemini",        {"gemini_key": "x"},                             "post"),
-    ("services.providers.openrouter",    "try_openrouter",    {"openrouter_key": "x"},                         "post"),
-    ("services.providers.together_ai",   "try_together_ai",   {"together_key": "x"},                           "post"),
-    ("services.providers.xai_grok",      "try_xai_grok",      {"xai_key": "x"},                               "post"),
+    ("services.providers.siliconflow", "try_siliconflow", {"sf_key": "x"}, "post"),
+    ("services.providers.huggingface", "try_hf_inference", {"hf_token": "x"}, "post"),
+    ("services.providers.pollinations", "try_pollinations", {}, "get"),
+    ("services.providers.cloudflare_ai", "try_cloudflare_ai", {"cf_account_id": "x", "cf_api_token": "x"}, "post"),
+    ("services.providers.segmind", "try_segmind", {"segmind_key": "x"}, "post"),
+    ("services.providers.stablehorde", "try_stablehorde", {}, "post"),
+    ("services.providers.recraft", "try_recraft", {"recraft_key": "x"}, "post"),
+    ("services.providers.modelslab", "try_modelslab", {"modelslab_key": "x"}, "post"),
+    ("services.providers.ideogram", "try_ideogram", {"ideogram_key": "x"}, "post"),
+    ("services.providers.gemini", "try_gemini", {"gemini_key": "x"}, "post"),
+    ("services.providers.openrouter", "try_openrouter", {"openrouter_key": "x"}, "post"),
+    ("services.providers.together_ai", "try_together_ai", {"together_key": "x"}, "post"),
+    ("services.providers.xai_grok", "try_xai_grok", {"xai_key": "x"}, "post"),
 ]
 
 
-@pytest.mark.parametrize("module,fn,cfg,method", _NETWORK_FAILURE_CASES,
-                          ids=[c[1] for c in _NETWORK_FAILURE_CASES])
+@pytest.mark.parametrize("module,fn,cfg,method", _NETWORK_FAILURE_CASES, ids=[c[1] for c in _NETWORK_FAILURE_CASES])
 def test_provider_connection_error_not_nameerror(module, fn, cfg, method):
     """A network failure must surface as ValueError/RuntimeError/TimeoutError,
     never NameError (which would indicate missing `import requests`).
@@ -219,6 +236,7 @@ def test_provider_connection_error_not_nameerror(module, fn, cfg, method):
     NET-004: provider 使用 thread-local `get_session()` —— 打桩点改为
     各模块导入的 `_get_session` 访问器。"""
     from unittest.mock import MagicMock, patch
+
     mod = importlib.import_module(module)
     func = getattr(mod, fn)
     conn_err = _requests.exceptions.ConnectionError("simulated network down")
@@ -233,9 +251,11 @@ def test_provider_connection_error_not_nameerror(module, fn, cfg, method):
 # safe_get_image() now delegates to bounded_download(), which validates
 # Content-Type and uses streaming. Tests updated accordingly.
 
+
 def _make_redirect(location: str):
     """Helper: mock response that redirects to `location`."""
     from unittest.mock import MagicMock
+
     r = MagicMock()
     r.status_code = 302
     r.headers = {"Location": location}
@@ -245,6 +265,7 @@ def _make_redirect(location: str):
 def _make_ok(content: bytes = b"image-bytes", content_type="image/png"):
     """Helper: mock response compatible with bounded_download()."""
     from unittest.mock import MagicMock
+
     r = MagicMock()
     r.status_code = 200
     r.content = content
@@ -260,9 +281,12 @@ def test_safe_get_image_happy_path():
     from unittest.mock import patch
     from services.providers import _net
     from services.providers._net import safe_get_image, SESSION
+
     # NET-004: safe_get_image 用 thread-local get_session()；测试中指回 SESSION 便于打桩
-    with patch.object(_net, "get_session", return_value=SESSION), \
-         patch.object(SESSION, "get", return_value=_make_ok(b"img")):
+    with (
+        patch.object(_net, "get_session", return_value=SESSION),
+        patch.object(SESSION, "get", return_value=_make_ok(b"img")),
+    ):
         result = safe_get_image("https://8.8.8.8/img.png")
     assert result == b"img"
 
@@ -273,9 +297,9 @@ def test_safe_get_image_redirect_to_private_ip_blocked():
     from services.providers import _net
     from services.providers._net import safe_get_image, SESSION
     from services.generation.errors import ProviderInvalidResponseError
+
     responses = [_make_redirect("https://192.168.1.1/steal.png")]
-    with patch.object(_net, "get_session", return_value=SESSION), \
-         patch.object(SESSION, "get", side_effect=responses):
+    with patch.object(_net, "get_session", return_value=SESSION), patch.object(SESSION, "get", side_effect=responses):
         with pytest.raises(ProviderInvalidResponseError, match="[Bb]locked"):
             safe_get_image("https://cdn.example.com/start.png")
 
@@ -284,5 +308,6 @@ def test_safe_get_image_initial_invalid_url_blocked():
     """HTTP (non-HTTPS) URLs must be blocked by validate_image_url."""
     from services.providers._net import safe_get_image
     from services.generation.errors import ProviderInvalidResponseError
+
     with pytest.raises(ProviderInvalidResponseError, match="[Bb]locked"):
         safe_get_image("http://example.com/img.png")

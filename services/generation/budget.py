@@ -10,6 +10,7 @@ services/generation/budget.py — 付费预算守卫（PAY-001 后半）
 存储：~/2image/spend.json（按天分桶，启动/记录时清理过期天）。
 单价为保守近似的**估算值**，仅用于预算守卫，不构成账单依据。
 """
+
 from __future__ import annotations
 
 import json
@@ -27,17 +28,17 @@ SPEND_FILE = os.path.join(APP_DIR, "spend.json")
 # 估算单价（USD / 张）。取各供应商主流模型 1024x1024 档的公开定价近似值，
 # 偏高取整 —— 预算守卫宁可早停。新付费供应商接入时在此补一行。
 PRICING_USD_PER_IMAGE: dict[str, float] = {
-    "openai_image": 0.05,             # gpt-image-1 medium
-    "stability_ai": 0.04,             # core
-    "replicate_flux": 0.04,           # flux-1.1-pro
+    "openai_image": 0.05,  # gpt-image-1 medium
+    "stability_ai": 0.04,  # core
+    "replicate_flux": 0.04,  # flux-1.1-pro
     "xai_grok": 0.03,
     "ideogram": 0.08,
-    "fal_flux": 0.06,                 # FLUX pro ultra
+    "fal_flux": 0.06,  # FLUX pro ultra
     "recraft": 0.04,
-    "bfl_flux": 0.05,                 # flux-pro
+    "bfl_flux": 0.05,  # flux-pro
     "minimax_image": 0.05,
-    "gemini_nano_banana_pro": 0.15,   # Gemini 3 Pro Image
-    "volcengine_ark": 0.05,           # Seedream
+    "gemini_nano_banana_pro": 0.15,  # Gemini 3 Pro Image
+    "volcengine_ark": 0.05,  # Seedream
 }
 
 # 不在定价表中的付费接口按此兜底估算
@@ -54,6 +55,7 @@ def estimate_cost(provider_id: str) -> float:
 def is_paid(provider_id: str) -> bool:
     """是否付费/商业供应商（按注册表分类）。"""
     from services.providers import ALL_PROVIDERS, FREE_PROVIDERS
+
     return provider_id in ALL_PROVIDERS and provider_id not in FREE_PROVIDERS
 
 
@@ -133,6 +135,5 @@ def filter_by_budget(order: list[str], cfg: dict) -> list[str]:
         return order
     kept = [pid for pid in order if not is_paid(pid)]
     if len(kept) != len(order):
-        log.info("Budget reached ($%.2f): paid providers excluded from auto route",
-                 spent_today(cfg))
+        log.info("Budget reached ($%.2f): paid providers excluded from auto route", spent_today(cfg))
     return kept

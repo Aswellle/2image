@@ -2998,8 +2998,8 @@ STRINGS = {
         "en": "🆓 Free tier · no credit card · img2img supported",
     },
     "wz_gm_info1": {
-        "zh-CN": "• Google 图像模型 \"Nano Banana\"（Gemini 2.5 Flash Image），免费额度",
-        "en": "• Google's image model \"Nano Banana\" (Gemini 2.5 Flash Image) with a free tier",
+        "zh-CN": '• Google 图像模型 "Nano Banana"（Gemini 2.5 Flash Image），免费额度',
+        "en": '• Google\'s image model "Nano Banana" (Gemini 2.5 Flash Image) with a free tier',
     },
     "wz_gm_info2": {
         "zh-CN": "• 通过 Google AI Studio 获取 API Key，登录 Google 账号即可，全程免费",

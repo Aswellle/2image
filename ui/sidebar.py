@@ -200,7 +200,7 @@ class HistorySidebar:
                 self._search_timer = None
                 q = self.sv.get().strip()
                 # 查询变化 → 回到顶部；查询未变 → 保持滚动锚点
-                keep = (q == getattr(self, "_last_search", None))
+                keep = q == getattr(self, "_last_search", None)
                 self._last_search = q
                 self.app._refresh_hist(keep_scroll=keep)
 
@@ -542,13 +542,25 @@ class HistorySidebar:
         box.pack(pady=(36, 12), padx=16)
         tk.Label(box, text=title, font=F["body"], bg=C["panel"], fg=C["sub"]).pack()
         tk.Label(
-            box, text=hint, font=F["small"], bg=C["panel"], fg=C["text_muted"],
-            wraplength=260, justify="center",
+            box,
+            text=hint,
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["text_muted"],
+            wraplength=260,
+            justify="center",
         ).pack(pady=(6, 0))
         if show_clear:
             tk.Button(
-                box, text=_("btn_clear_search"), font=F["small"], bd=0,
-                bg=C["acc"], fg=C["text"], padx=10, pady=4, cursor="hand2",
+                box,
+                text=_("btn_clear_search"),
+                font=F["small"],
+                bd=0,
+                bg=C["acc"],
+                fg=C["text"],
+                padx=10,
+                pady=4,
+                cursor="hand2",
                 command=self._clear_search,
             ).pack(pady=(10, 0))
 
@@ -556,11 +568,14 @@ class HistorySidebar:
         """DATA-003: keyset 分页「加载更多」—— 追加下一页，不全量重载。"""
         self._more_btn = tk.Button(
             self.hi,
-            text=_("btn_show_more", count=count_entries(
-                keyword=self.sv.get().strip(),
-                only_favorites=self._fav_only,
-                tag_filter=self._tag_filter,
-            )),
+            text=_(
+                "btn_show_more",
+                count=count_entries(
+                    keyword=self.sv.get().strip(),
+                    only_favorites=self._fav_only,
+                    tag_filter=self._tag_filter,
+                ),
+            ),
             font=F["body"],
             bg=C["acc"],
             fg=C["text"],
@@ -1305,8 +1320,7 @@ class HistorySidebar:
         new_fav = not is_fav
         toggle_favorite(entry["id"], new_fav)
         title = self.app._display_title(entry)
-        self.app._toast(
-            _("toast_fav_on" if new_fav else "toast_fav_off", name=title), "info")
+        self.app._toast(_("toast_fav_on" if new_fav else "toast_fav_off", name=title), "info")
 
         cd = self._card_widgets.get(entry["id"])
         if cd and not self._fav_only:

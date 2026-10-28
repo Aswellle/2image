@@ -4,6 +4,7 @@ services/generation/metrics.py — Provider request metrics
 Tracks per-provider request statistics: success rate, latency
 percentiles, error counts.  All local, no external reporting.
 """
+
 from __future__ import annotations
 
 import statistics
@@ -119,10 +120,7 @@ class MetricsCollector:
         return {
             "providers": len(all_metrics),
             "total_requests": total_requests,
-            "overall_success_rate": (
-                sum(m["successes"] for m in all_metrics.values())
-                / max(1, total_requests)
-            ),
+            "overall_success_rate": (sum(m["successes"] for m in all_metrics.values()) / max(1, total_requests)),
         }
 
 

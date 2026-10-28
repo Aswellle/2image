@@ -11,6 +11,7 @@ v7 历史：
   · 使用 pkgutil 自动扫描 provider 模块
   · 各模块通过 PROVIDER_INFO 声明自身元信息
 """
+
 import pkgutil
 import importlib
 

@@ -3,6 +3,7 @@ tests/test_performance.py — Performance optimization tests
 ─────────────────────────────────────────────────────────────
 Tests for translation cache, async logger, and keyset pagination.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -10,8 +11,6 @@ import pytest
 from services.translation.cache import TranslationCache, get_translation_cache
 from services.logger import AsyncLogger, get_logger
 from data import repository
-
-
 
 
 @pytest.fixture(autouse=True)

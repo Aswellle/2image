@@ -15,12 +15,18 @@ recraftv4_1），但 v3 仍未弃用，且官方文档说明 inpainting/outpaint
 枚举是否与 v3 完全兼容，这里改为可通过 cfg["recraft_model"] 切换
 （默认仍是经过验证的 recraftv3），想用更高画质可自行设为 recraftv4_1。
 """
+
 import base64
 import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import (
+    get_session as _get_session,
+    validate_image_url as _validate_image_url,
+    safe_error_text as _safe_error_text,
+    safe_get_image as _safe_get_image,
+)
 
 PROVIDER_INFO = {
     "id": "recraft",
@@ -30,9 +36,9 @@ PROVIDER_INFO = {
 }
 
 
-_LOCK      = threading.Lock()
+_LOCK = threading.Lock()
 _LAST_DONE = [0.0]
-_MIN_INTV  = 2.0
+_MIN_INTV = 2.0
 
 # 支持的输出尺寸（选最接近的）
 _SIZES = [
@@ -51,13 +57,12 @@ def _best_size(w: int, h: int) -> str:
     return min(_SIZES, key=lambda x: abs(x[0][0] / x[0][1] - r))[1]
 
 
-def try_recraft(prompt: str, w: int, h: int, seed: int,
-                cfg: dict, log: Callable) -> Tuple[bytes, str]:
+def try_recraft(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("recraft_key", "").strip()
     if not key:
         raise ValueError("需要 Recraft API Key！注册：https://www.recraft.ai/")
 
-    size  = _best_size(w, h)
+    size = _best_size(w, h)
     style = cfg.get("recraft_style", "realistic_image")
     model = cfg.get("recraft_model", "recraftv3")
     log(f"► Recraft {model}  尺寸={size}  风格={style}")
@@ -71,14 +76,14 @@ def try_recraft(prompt: str, w: int, h: int, seed: int,
                 "https://external.api.recraft.ai/v1/images/generations",
                 headers={
                     "Authorization": f"Bearer {key}",
-                    "Content-Type":  "application/json",
+                    "Content-Type": "application/json",
                 },
                 json={
                     "prompt": prompt,
-                    "style":  style,
-                    "n":      1,
-                    "size":   size,
-                    "model":  model,
+                    "style": style,
+                    "n": 1,
+                    "size": size,
+                    "model": model,
                 },
                 timeout=120,
             )

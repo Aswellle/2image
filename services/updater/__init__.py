@@ -21,6 +21,7 @@ Design rules (see docs update plan):
   · all network/disk work is blocking — callers must run it on a
     worker thread and marshal UI updates back via root.after
 """
+
 from services.updater.errors import (
     ChecksumMismatchError,
     UpdateError,

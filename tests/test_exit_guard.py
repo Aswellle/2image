@@ -10,8 +10,7 @@ from unittest.mock import MagicMock, patch
 def test_close_with_active_tasks_asks_and_aborts_on_no(app):
     real, _ = app
     real._has_active_tasks = MagicMock(return_value=True)
-    with patch("ui.app.messagebox.askyesno", return_value=False) as ask, \
-            patch.object(real.root, "destroy") as destroy:
+    with patch("ui.app.messagebox.askyesno", return_value=False) as ask, patch.object(real.root, "destroy") as destroy:
         real._on_close_request()
     ask.assert_called_once()
     destroy.assert_not_called()
@@ -20,8 +19,7 @@ def test_close_with_active_tasks_asks_and_aborts_on_no(app):
 def test_close_with_active_tasks_proceeds_on_yes(app):
     real, _ = app
     real._has_active_tasks = MagicMock(return_value=True)
-    with patch("ui.app.messagebox.askyesno", return_value=True) as ask, \
-            patch.object(real.root, "destroy") as destroy:
+    with patch("ui.app.messagebox.askyesno", return_value=True) as ask, patch.object(real.root, "destroy") as destroy:
         real._on_close_request()
     ask.assert_called_once()
     destroy.assert_called_once()
@@ -30,8 +28,7 @@ def test_close_with_active_tasks_proceeds_on_yes(app):
 def test_close_without_tasks_destroys_without_asking(app):
     real, _ = app
     real._has_active_tasks = MagicMock(return_value=False)
-    with patch("ui.app.messagebox.askyesno") as ask, \
-            patch.object(real.root, "destroy") as destroy:
+    with patch("ui.app.messagebox.askyesno") as ask, patch.object(real.root, "destroy") as destroy:
         real._on_close_request()
     ask.assert_not_called()
     destroy.assert_called_once()

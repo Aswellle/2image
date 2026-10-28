@@ -17,6 +17,7 @@ Owns everything that outlives a single function call:
 All paths derive from config.settings.APP_DIR at call time so tests can
 rebind the data root.
 """
+
 from __future__ import annotations
 
 import datetime as _dt
@@ -34,6 +35,7 @@ DEFAULT_CONFIRM_TIMEOUT_SEC = 90.0
 
 
 # ── State machine (§15) ──────────────────────────────────────
+
 
 class UpdateState(enum.Enum):
     IDLE = "idle"
@@ -56,8 +58,7 @@ _NO_UPDATE, _AVAILABLE = UpdateState.NO_UPDATE, UpdateState.UPDATE_AVAILABLE
 _DOWNLOADING, _VERIFYING = UpdateState.DOWNLOADING, UpdateState.VERIFYING
 _READY, _WAIT_EXIT = UpdateState.READY_TO_INSTALL, UpdateState.WAITING_APP_EXIT
 _INSTALLING, _VERIFY_INSTALL = UpdateState.INSTALLING, UpdateState.VERIFYING_INSTALL
-_ROLLBACK, _SUCCESS, _FAILED = (UpdateState.ROLLING_BACK, UpdateState.SUCCESS,
-                                UpdateState.FAILED)
+_ROLLBACK, _SUCCESS, _FAILED = (UpdateState.ROLLING_BACK, UpdateState.SUCCESS, UpdateState.FAILED)
 
 _ALLOWED_TRANSITIONS: dict[UpdateState, frozenset] = {
     _IDLE: frozenset({_CHECKING}),
@@ -92,14 +93,15 @@ class UpdateFlow:
             raise ValueError(
                 f"illegal update transition: {self._state.value} -> "
                 f"{new_state.value} (allowed: "
-                f"{sorted(s.value for s in allowed)})")
-        append_update_log(
-            f"state: {self._state.value} -> {new_state.value}")
+                f"{sorted(s.value for s in allowed)})"
+            )
+        append_update_log(f"state: {self._state.value} -> {new_state.value}")
         self._state = new_state
         return new_state
 
 
 # ── Paths ────────────────────────────────────────────────────
+
 
 def update_root() -> Path:
     return Path(_settings.APP_DIR) / "updates"
@@ -135,6 +137,7 @@ def log_path() -> Path:
 
 # ── Audit log (§26) ──────────────────────────────────────────
 
+
 def append_update_log(message: str) -> None:
     """Append a timestamped line to the update audit log.
 
@@ -153,12 +156,12 @@ def append_update_log(message: str) -> None:
 
 # ── Install confirmation markers (§13) ───────────────────────
 
+
 def _now_iso() -> str:
     return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def write_pending(from_version: str, to_version: str,
-                  nonce: str | None = None) -> dict:
+def write_pending(from_version: str, to_version: str, nonce: str | None = None) -> dict:
     """Called by the updater right before launching the new build."""
     payload = {
         "from": str(from_version),
@@ -170,9 +173,7 @@ def write_pending(from_version: str, to_version: str,
     root.mkdir(parents=True, exist_ok=True)
     with open(pending_path(), "w", encoding="utf-8") as fh:
         json.dump(payload, fh, ensure_ascii=False, indent=2)
-    append_update_log(
-        f"pending update marker written: {from_version} -> {to_version} "
-        f"(nonce={payload['nonce'][:8]}…)")
+    append_update_log(f"pending update marker written: {from_version} -> {to_version} (nonce={payload['nonce'][:8]}…)")
     return payload
 
 
@@ -212,12 +213,12 @@ def confirm_pending_update(current_version: str) -> bool:
             json.dump(payload, fh, ensure_ascii=False, indent=2)
     except OSError:
         return False
-    append_update_log(
-        f"update confirmed by new build: v{current_version}")
+    append_update_log(f"update confirmed by new build: v{current_version}")
     return True
 
 
 # ── Auto-check cache (§19) ───────────────────────────────────
+
 
 def load_check_state() -> dict:
     try:
@@ -247,8 +248,7 @@ def mark_checked(known_version: str | None = None) -> None:
 
 def _parse_iso(text: str) -> float | None:
     try:
-        return _dt.datetime.fromisoformat(
-            str(text).replace("Z", "+00:00")).timestamp()
+        return _dt.datetime.fromisoformat(str(text).replace("Z", "+00:00")).timestamp()
     except ValueError:
         return None
 
@@ -273,6 +273,7 @@ def dismiss(version: str) -> None:
 
 
 # ── Backup / rollback (§14) ──────────────────────────────────
+
 
 def backup_file(src: Path, version: str) -> Path | None:
     """Copy a program file into updates/backup/<version>/ before the
@@ -306,6 +307,7 @@ def restore_backup(version: str, file_name: str, dest: Path) -> bool:
 
 # ── Cleanup (§13/§30) ────────────────────────────────────────
 
+
 def purge_runtime_dirs(keep: Path | None = None) -> None:
     """Delete updater runtime copies (updater copies itself to a random
     runtime dir before running so the installer can overwrite the app
@@ -328,9 +330,9 @@ def purge_runtime_dirs(keep: Path | None = None) -> None:
         pass
 
 
-def cleanup_after_success(target_version: str | None = None,
-                          from_version: str | None = None,
-                          keep_runtime: Path | None = None) -> None:
+def cleanup_after_success(
+    target_version: str | None = None, from_version: str | None = None, keep_runtime: Path | None = None
+) -> None:
     """Post-confirmation cleanup: remove the downloaded package, the
     rollback backup, all confirmation markers and runtime copies."""
     versions = {str(v) for v in (target_version, from_version) if v}

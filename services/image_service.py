@@ -7,6 +7,7 @@ Phase 2 重构：
   - save_image_file() 改用 UUID 文件名 + 原子写入
   - 下载使用 bounded_download()
 """
+
 import io
 import os
 import random
@@ -54,6 +55,7 @@ def _wrap_provider_fn(fn: Callable) -> Callable:
       4. Message keyword match  → auth / quota / rate-limit / policy
       5. Anything else          → transient (retry, then fallback)
     """
+
     def wrapped(prompt, width, height, seed, cfg, log_cb):
         try:
             return fn(prompt, width, height, seed, cfg, log_cb)
@@ -61,27 +63,35 @@ def _wrap_provider_fn(fn: Callable) -> Callable:
             raise  # Already domain errors, don't re-wrap
         except requests.HTTPError as exc:
             status = getattr(exc.response, "status_code", None) or 0
-            raise classify_http_error(status, safe_error_text(exc.response)
-                                      if exc.response is not None else "") from exc
+            raise classify_http_error(
+                status, safe_error_text(exc.response) if exc.response is not None else ""
+            ) from exc
         except (requests.Timeout, requests.ConnectionError) as exc:
             raise ProviderTransientError(f"{type(exc).__name__}: {exc}") from exc
         except Exception as exc:
             raise _classify_by_message(str(exc)) from exc
+
     wrapped.__name__ = getattr(fn, "__name__", "wrapped_provider")
     return wrapped
 
 
 # 拉丁关键词用词边界正则匹配，避免子串误命中（如 "rate" 命中 "generate"）；
 # 中文关键词无词边界概念，保留子串匹配。
-_AUTH_LATIN = (r"\bkey\b", r"\btoken\b", r"\binvalid\b", r"\bmissing\b",
-               r"\brequired\b", r"\bunauthorized\b", r"\b40[13]\b")
+_AUTH_LATIN = (
+    r"\bkey\b",
+    r"\btoken\b",
+    r"\binvalid\b",
+    r"\bmissing\b",
+    r"\brequired\b",
+    r"\bunauthorized\b",
+    r"\b40[13]\b",
+)
 _AUTH_CJK = ("令牌", "密钥", "需要配置", "未配置", "无效")
 _QUOTA_LATIN = (r"\bquota\b", r"\bbalance\b", r"\binsufficient\b", r"\b402\b")
 _QUOTA_CJK = ("余额", "额度", "充值")
 _RATE_LIMIT_LATIN = (r"\brate limit\b", r"\b429\b", r"\btoo many\b", r"\bthrottl")
 _RATE_LIMIT_CJK = ("限流", "频繁")
-_POLICY_LATIN = (r"\bpolicy\b", r"\bnsfw\b", r"\bsafety\b",
-                 r"\bcontent moderation\b", r"\bblocked\b")
+_POLICY_LATIN = (r"\bpolicy\b", r"\bnsfw\b", r"\bsafety\b", r"\bcontent moderation\b", r"\bblocked\b")
 _POLICY_CJK = ("违规", "敏感", "审核", "不合规")
 
 
@@ -104,12 +114,20 @@ def _classify_by_message(msg: str) -> ProviderError:
     return ProviderTransientError(msg)
 
 
-def generate_image(prompt, w, h, seed, cfg,
-                   provider_order=None, status_cb=None, log_cb=None,
-                   ref_image: bytes | None = None,
-                   strength: float = 0.6,
-                   token: CancellationToken | None = None,
-                   deadline_seconds: float = 180.0):
+def generate_image(
+    prompt,
+    w,
+    h,
+    seed,
+    cfg,
+    provider_order=None,
+    status_cb=None,
+    log_cb=None,
+    ref_image: bytes | None = None,
+    strength: float = 0.6,
+    token: CancellationToken | None = None,
+    deadline_seconds: float = 180.0,
+):
     """生成图片。
 
     ref_image: 参考图字节（图生图模式），None = 纯文生图。
@@ -129,7 +147,7 @@ def generate_image(prompt, w, h, seed, cfg,
     eff_cfg = cfg
     if ref_image is not None:
         eff_cfg = {**cfg, "_ref_image": ref_image, "_ref_strength": float(strength)}
-        log_to_file(f"[img2img] 参考图 {len(ref_image)//1024}KB  强度={strength:.1f}")
+        log_to_file(f"[img2img] 参考图 {len(ref_image) // 1024}KB  强度={strength:.1f}")
 
     # 取消下发：轮询型供应商在轮询循环里检查 cfg["_cancel_check"]，
     # 提交-轮询任务（最长 6 分钟）在用户取消后立即中断而非空转到超时。
@@ -151,9 +169,13 @@ def generate_image(prompt, w, h, seed, cfg,
     # 过滤未配置 Key / 未开启付费 opt-in / 超预算的接口——防止显式选择
     # 免费接口失败后，自动回退链产生未授权的付费调用。
     from services.providers import (
-        FREE_PROVIDERS, MULTI_KEY_PROVIDERS, OPTIONAL_KEY_PROVIDERS, PROVIDER_KEYS,
+        FREE_PROVIDERS,
+        MULTI_KEY_PROVIDERS,
+        OPTIONAL_KEY_PROVIDERS,
+        PROVIDER_KEYS,
     )
     from services.generation import budget as _budget
+
     paid_allowed = bool(cfg.get("paid_auto_opt_in"))
     over_budget = _budget.over_budget(cfg)
     for name, fn in ALL_PROVIDERS.items():
@@ -167,8 +189,7 @@ def generate_image(prompt, w, h, seed, cfg,
                 continue
         else:
             key_name = PROVIDER_KEYS.get(name)
-            if (key_name and name not in OPTIONAL_KEY_PROVIDERS
-                    and not str(cfg.get(key_name, "") or "").strip()):
+            if key_name and name not in OPTIONAL_KEY_PROVIDERS and not str(cfg.get(key_name, "") or "").strip():
                 continue
         providers[name] = _wrap_provider_fn(fn)
 
@@ -179,9 +200,15 @@ def generate_image(prompt, w, h, seed, cfg,
 
     try:
         result = orch.run(
-            prompt, w, h, seed, eff_cfg,
-            log_cb=log_cb, status_cb=status_cb,
-            token=token, provider_order=order,
+            prompt,
+            w,
+            h,
+            seed,
+            eff_cfg,
+            log_cb=log_cb,
+            status_cb=status_cb,
+            token=token,
+            provider_order=order,
         )
     except GenerationCancelled:
         raise  # Propagate to caller for special handling
@@ -198,12 +225,14 @@ def generate_image(prompt, w, h, seed, cfg,
         # PAY-001: 记录付费估算消耗（免费接口为 no-op），单图/队列/批量统一入口
         try:
             from services.generation import budget
+
             total = budget.record_spend(used, cfg)
             if total and budget.is_paid(used):
                 limit = budget.daily_budget(cfg)
                 if limit > 0:
-                    log_to_file(f"💰 付费消耗估算 +${budget.estimate_cost(used):.2f} "
-                                f"（今日 ${total:.2f} / ${limit:.2f}）")
+                    log_to_file(
+                        f"💰 付费消耗估算 +${budget.estimate_cost(used):.2f} （今日 ${total:.2f} / ${limit:.2f}）"
+                    )
         except Exception:
             pass  # 预算记录失败绝不影响生成结果
         return result.image_bytes, shown
@@ -211,9 +240,9 @@ def generate_image(prompt, w, h, seed, cfg,
     raise RuntimeError("所有接口均失败:\n" + "\n".join(result.errors))
 
 
-def save_image_file(image_bytes, prompt,
-                    seed: int = 0, provider: str = "",
-                    translated: str = "", size: str = "") -> str:
+def save_image_file(
+    image_bytes, prompt, seed: int = 0, provider: str = "", translated: str = "", size: str = ""
+) -> str:
     """
     Save image with UUID-based filename and atomic write.
 

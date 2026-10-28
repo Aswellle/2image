@@ -1,6 +1,7 @@
 """
 tests/test_adapter.py — Provider adapter interface tests
 """
+
 from __future__ import annotations
 
 import pytest
@@ -35,10 +36,10 @@ class TestMapHttpError:
 class TestImageProviderProtocol:
     def test_protocol_exists(self):
         # Verify protocol can be referenced
-        assert hasattr(ImageProvider, 'generate')
-        assert hasattr(ImageProvider, 'provider_id')
-        assert hasattr(ImageProvider, 'display_name')
-        assert hasattr(ImageProvider, 'supports_img2img')
+        assert hasattr(ImageProvider, "generate")
+        assert hasattr(ImageProvider, "provider_id")
+        assert hasattr(ImageProvider, "display_name")
+        assert hasattr(ImageProvider, "supports_img2img")
 
     def test_protocol_not_instantiable(self):
         # Protocol classes cannot be instantiated directly

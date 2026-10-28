@@ -21,14 +21,17 @@ v5 修复（2026-07）：
     同时对 401 给出明确指向 enter.pollinations.ai 的错误提示，
     不再和其它失败原因混在一起变成一句模糊的"所有模型均失败"。
 """
+
 import threading
 import time
 import urllib.parse
 import requests
 from typing import Callable, Tuple
-from services.providers._net import (get_session as _get_session,
-                                    validate_image_url as _validate_image_url,
-                                    read_bounded as _read_bounded)
+from services.providers._net import (
+    get_session as _get_session,
+    validate_image_url as _validate_image_url,
+    read_bounded as _read_bounded,
+)
 
 PROVIDER_INFO = {
     "id": "pollinations",
@@ -38,42 +41,41 @@ PROVIDER_INFO = {
 }
 
 # ── 进程级串行锁：保证同一时刻只有 1 个 Pollinations 请求在飞 ────────
-_POLL_LOCK     = threading.Lock()
-_LAST_DONE_TS  = [0.0]        # 上次请求【完成】时间戳（关键：完成后才写入）
+_POLL_LOCK = threading.Lock()
+_LAST_DONE_TS = [0.0]  # 上次请求【完成】时间戳（关键：完成后才写入）
 
-_MIN_INTERVAL  = 16.0         # 官方匿名限速 15s，留 1s 余量
+_MIN_INTERVAL = 16.0  # 官方匿名限速 15s，留 1s 余量
 _POLL_MODELS_STD = ["flux", "flux-realism", "turbo"]
-_POLL_MODELS_HQ  = ["flux", "flux-realism"]
+_POLL_MODELS_HQ = ["flux", "flux-realism"]
 _BASE_URL = "https://image.pollinations.ai/prompt/{prompt}"
-_TIMEOUT  = 180
+_TIMEOUT = 180
 _MAX_RETRY = 3
 
 
-def try_pollinations(prompt: str, w: int, h: int, seed: int,
-                     cfg: dict, log: Callable) -> Tuple[bytes, str]:
+def try_pollinations(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     """线程安全地调用 Pollinations.AI，遵守官方 15s 限速。"""
-    hq_mode  = bool(cfg.get("variant_hq", False))
+    hq_mode = bool(cfg.get("variant_hq", False))
     mode_tag = "HQ变体" if hq_mode else "标准"
     log(f"► Pollinations.AI（完全免费，无需 Key）[{mode_tag}]…")
 
     def _snap(v: int, mx: int = 1280) -> int:
         return min(max(64, (v // 64) * 64), mx)
 
-    sw  = _snap(w)
-    sh  = _snap(h)
+    sw = _snap(w)
+    sh = _snap(h)
     enc = urllib.parse.quote(prompt, safe="")
     model_list = _POLL_MODELS_HQ if hq_mode else _POLL_MODELS_STD
-    api_key = cfg.get("pollinations_key", "").strip()   # 可选，新平台可能需要
+    api_key = cfg.get("pollinations_key", "").strip()  # 可选，新平台可能需要
 
     for model in model_list:
-        log(f"  模型: {model}  {sw}×{sh}"
-            + (" [enhance=true]" if hq_mode else ""))
-        url    = _BASE_URL.format(prompt=enc)
+        log(f"  模型: {model}  {sw}×{sh}" + (" [enhance=true]" if hq_mode else ""))
+        url = _BASE_URL.format(prompt=enc)
         params = {
-            "width": sw, "height": sh,
-            "seed":  seed % 2_147_483_647,
+            "width": sw,
+            "height": sh,
+            "seed": seed % 2_147_483_647,
             "model": model,
-            "nologo":  "true",
+            "nologo": "true",
             "enhance": "true" if hq_mode else "false",
         }
         if api_key:
@@ -96,8 +98,7 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int,
         # HTTP 请求在锁外执行，多线程可真正并发
         for attempt in range(1, _MAX_RETRY + 1):
             try:
-                resp = _get_session().get(url, params=params,
-                                    timeout=_TIMEOUT, allow_redirects=True)
+                resp = _get_session().get(url, params=params, timeout=_TIMEOUT, allow_redirects=True)
             except requests.exceptions.ConnectionError as e:
                 log(f"    网络错误: {e}")
                 break
@@ -154,8 +155,7 @@ def try_pollinations(prompt: str, w: int, h: int, seed: int,
                 log("    数据过小，换模型…")
                 break
 
-            log(f"  ✓ Pollinations/{model} 成功 "
-                f"{len(img_data)//1024}KB")
+            log(f"  ✓ Pollinations/{model} 成功 {len(img_data) // 1024}KB")
             result = (img_data, f"Pollinations/{model}")
             break
 

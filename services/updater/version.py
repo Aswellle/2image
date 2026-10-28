@@ -7,6 +7,7 @@ pre-release suffix ("-beta.1") are tolerated; a release always
 outranks a pre-release of the same triple.  Downgrades are refused by
 ``is_newer`` returning False.
 """
+
 from __future__ import annotations
 
 import json
@@ -15,8 +16,7 @@ import sys
 from dataclasses import dataclass
 from functools import total_ordering
 
-_SEMVER_RE = re.compile(
-    r"^[vV]?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z][0-9A-Za-z.\-]*))?$")
+_SEMVER_RE = re.compile(r"^[vV]?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z][0-9A-Za-z.\-]*))?$")
 
 
 class VersionError(ValueError):
@@ -36,11 +36,8 @@ class SemVer:
         # that as a leading rank (release=2 beats pre-release=1); the
         # identifiers themselves compare numerically when numeric and
         # alphanumerically otherwise, with numeric < alphanumeric.
-        pre_key = tuple(
-            (0, int(p), "") if p.isdigit() else (1, 0, p)
-            for p in self.prerelease)
-        return (self.major, self.minor, self.patch,
-                2 if not self.prerelease else 1, pre_key)
+        pre_key = tuple((0, int(p), "") if p.isdigit() else (1, 0, p) for p in self.prerelease)
+        return (self.major, self.minor, self.patch, 2 if not self.prerelease else 1, pre_key)
 
     def __lt__(self, other):
         if not isinstance(other, SemVer):
@@ -91,9 +88,7 @@ def get_current_version() -> str:
     """
     candidates = []
     if is_packaged():
-        candidates.append(
-            __import__("os").path.join(
-                getattr(sys, "_MEIPASS", "."), "version.json"))
+        candidates.append(__import__("os").path.join(getattr(sys, "_MEIPASS", "."), "version.json"))
     candidates.append(str(_repo_root() / "version.json"))
     for path in candidates:
         try:

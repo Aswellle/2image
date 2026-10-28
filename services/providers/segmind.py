@@ -15,14 +15,17 @@ v2 修复：
   5. 429 时读取 Retry-After 精确等待
   6. 超时提升至 120s
 """
+
 import base64
 import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import (get_session as _get_session,
-                                    safe_error_text as _safe_error_text,
-                                    read_bounded as _read_bounded)
+from services.providers._net import (
+    get_session as _get_session,
+    safe_error_text as _safe_error_text,
+    read_bounded as _read_bounded,
+)
 
 PROVIDER_INFO = {
     "id": "segmind",
@@ -32,41 +35,34 @@ PROVIDER_INFO = {
 }
 
 # ── 进程级串行锁 ─────────────────────────────────────────────────
-_SEG_LOCK     = threading.Lock()
+_SEG_LOCK = threading.Lock()
 _LAST_DONE_TS = [0.0]
-_MIN_INTERVAL = 3.0    # Segmind 建议最小并发间隔
+_MIN_INTERVAL = 3.0  # Segmind 建议最小并发间隔
 
 _SEGMIND_MODELS = [
     # (endpoint, steps, guidance, use_neg, max_w, max_h, is_flux)
-    ("sdxl1.0-txt2img",            30, 7.5,  True,  1024, 1024, False),
-    ("flux-schnell",                4, 0.0,  False, 1024, 1024, True),
-    ("stable-diffusion-3-medium-txt2img", 28, 7.0,  True,  1024, 1024, False),
+    ("sdxl1.0-txt2img", 30, 7.5, True, 1024, 1024, False),
+    ("flux-schnell", 4, 0.0, False, 1024, 1024, True),
+    ("stable-diffusion-3-medium-txt2img", 28, 7.0, True, 1024, 1024, False),
 ]
 
 _API_BASE = "https://api.segmind.com/v1"
-_TIMEOUT  = 120
+_TIMEOUT = 120
 
-_NEG_PROMPT = (
-    "blurry, low quality, distorted, ugly, deformed, "
-    "watermark, text, logo, bad anatomy, extra limbs"
-)
+_NEG_PROMPT = "blurry, low quality, distorted, ugly, deformed, watermark, text, logo, bad anatomy, extra limbs"
 
 
-def try_segmind(prompt: str, w: int, h: int, seed: int,
-                cfg: dict, log: Callable) -> Tuple[bytes, str]:
+def try_segmind(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("segmind_key", "").strip()
     if not key:
-        raise ValueError(
-            "需要 Segmind API Key！\n"
-            "注册免费获赠 $5 额度：https://www.segmind.com"
-        )
+        raise ValueError("需要 Segmind API Key！\n注册免费获赠 $5 额度：https://www.segmind.com")
 
-    hq_mode  = bool(cfg.get("variant_hq", False))
+    hq_mode = bool(cfg.get("variant_hq", False))
     mode_tag = "HQ变体" if hq_mode else "标准"
     log(f"► Segmind API（注册送 $5 额度）[{mode_tag}]…")
 
     headers = {
-        "x-api-key":    key,
+        "x-api-key": key,
         "Content-Type": "application/json",
     }
 
@@ -75,17 +71,16 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
 
     for endpoint, steps, guidance, use_neg, max_w, max_h, is_flux in _SEGMIND_MODELS:
         # HQ 模式适当增加步数（FLUX 步数有上限，不超 8）
-        use_steps = steps + (4 if hq_mode and not is_flux else
-                             (2 if hq_mode and is_flux else 0))
-        sw  = snap(w, max_w)
-        sh  = snap(h, max_h)
+        use_steps = steps + (4 if hq_mode and not is_flux else (2 if hq_mode and is_flux else 0))
+        sw = snap(w, max_w)
+        sh = snap(h, max_h)
         url = f"{_API_BASE}/{endpoint}"
         log(f"  模型: {endpoint}  {sw}×{sh}  steps={use_steps}")
 
         payload: dict = {
             "prompt": prompt,
             "num_inference_steps": use_steps,
-            "seed":   seed % 2_147_483_647,
+            "seed": seed % 2_147_483_647,
             "img_format": "png",
         }
         # Segmind 尺寸参数名按端点区分：SDXL/SD3 用 img_width/img_height（512-2048，8 的倍数），
@@ -101,8 +96,8 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
         # SDXL/SD3 特有参数：使用文档化的 scheduler 取值（"karras" 不在枚举内），
         # 未文档化的 sampler 参数一并移除；enhance_prompt 传布尔值。
         if not is_flux:
-            payload["scheduler"]      = "UniPC"
-            payload["enhance_prompt"] = hq_mode   # 布尔值
+            payload["scheduler"] = "UniPC"
+            payload["enhance_prompt"] = hq_mode  # 布尔值
 
         # FLUX：不传 samples（该端点不支持）
         if not is_flux:
@@ -118,8 +113,7 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
 
             for attempt in range(1, 4):
                 try:
-                    resp = _get_session().post(url, headers=headers,
-                                         json=payload, timeout=_TIMEOUT)
+                    resp = _get_session().post(url, headers=headers, json=payload, timeout=_TIMEOUT)
                 except requests.exceptions.ConnectionError as e:
                     log(f"    网络错误: {e}")
                     break
@@ -136,10 +130,7 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
                 if sc == 401:
                     raise ValueError("Segmind API Key 无效，请检查设置")
                 if sc == 402:
-                    raise ValueError(
-                        "Segmind 额度不足！\n"
-                        "请前往 https://www.segmind.com 查看余额。"
-                    )
+                    raise ValueError("Segmind 额度不足！\n请前往 https://www.segmind.com 查看余额。")
                 if sc == 429:
                     ra = resp.headers.get("Retry-After", "")
                     w2 = int(ra) if ra.isdigit() else 10
@@ -173,8 +164,7 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
                         log("    无法解析 JSON，换模型…")
                         break
 
-                    b64 = (j.get("image") or j.get("b64_json")
-                           or j.get("base64"))
+                    b64 = j.get("image") or j.get("b64_json") or j.get("base64")
                     if b64:
                         try:
                             img = base64.b64decode(b64)
@@ -206,7 +196,4 @@ def try_segmind(prompt: str, w: int, h: int, seed: int,
         if result:
             return result
 
-    raise ValueError(
-        "Segmind 所有模型均失败\n"
-        "请检查 API Key 或访问 https://www.segmind.com 查看服务状态。"
-    )
+    raise ValueError("Segmind 所有模型均失败\n请检查 API Key 或访问 https://www.segmind.com 查看服务状态。")

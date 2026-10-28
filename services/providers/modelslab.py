@@ -18,14 +18,17 @@ v2 修复：
   5. 请求完成后才更新时间戳
   6. 网络下载超时提升至 120s
 """
+
 import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import (get_session as _get_session,
-                                    validate_image_url as _validate_image_url,
-                                    safe_get_image as _safe_get_image,
-                                    raise_if_cancelled as _raise_if_cancelled)
+from services.providers._net import (
+    get_session as _get_session,
+    validate_image_url as _validate_image_url,
+    safe_get_image as _safe_get_image,
+    raise_if_cancelled as _raise_if_cancelled,
+)
 
 PROVIDER_INFO = {
     "id": "modelslab",
@@ -36,28 +39,28 @@ PROVIDER_INFO = {
 
 
 # ── 进程级串行锁 ─────────────────────────────────────────────────
-_ML_LOCK      = threading.Lock()
+_ML_LOCK = threading.Lock()
 _LAST_DONE_TS = [0.0]
-_MIN_INTERVAL = 2.0     # ModelsLab 限速相对宽松，2s 间隔足够
+_MIN_INTERVAL = 2.0  # ModelsLab 限速相对宽松，2s 间隔足够
 
-_API_URL   = "https://modelslab.com/api/v6/images/text2img"
+_API_URL = "https://modelslab.com/api/v6/images/text2img"
 _FETCH_URL = "https://modelslab.com/api/v6/images/fetch"
-_TIMEOUT   = 90
-_MAX_POLL  = 36    # 36 × 10s = 360s（6分钟），适应免费 tier 长队列
+_TIMEOUT = 90
+_MAX_POLL = 36  # 36 × 10s = 360s（6分钟），适应免费 tier 长队列
 _POLL_INTERVAL = 10
 
 # 模型列表：(model_id, steps, guidance_scale_str, has_neg)
 # 注意：所有数值参数统一为 str，guidance_scale 也是
 _ML_MODELS = [
-    ("flux",                  "20", "7.5",  False),
-    ("sdxl",                  "30", "7.5",  True),
-    ("realistic-vision-v51",  "30", "7.0",  True),
-    ("sd-1.5",                "25", "7.0",  True),
+    ("flux", "20", "7.5", False),
+    ("sdxl", "30", "7.5", True),
+    ("realistic-vision-v51", "30", "7.0", True),
+    ("sd-1.5", "25", "7.0", True),
 ]
 _ML_HQ_MODELS = [
-    ("flux",                  "25", "7.5",  False),
-    ("sdxl",                  "35", "8.0",  True),
-    ("realistic-vision-v51",  "35", "7.5",  True),
+    ("flux", "25", "7.5", False),
+    ("sdxl", "35", "8.0", True),
+    ("realistic-vision-v51", "35", "7.5", True),
 ]
 
 _HQ_NEGATIVE = (
@@ -82,17 +85,13 @@ def _download_image(url: str, log: Callable) -> bytes:
     raise ValueError(f"图片下载失败：{url[:80]}")
 
 
-def try_modelslab(prompt: str, w: int, h: int, seed: int,
-                  cfg: dict, log: Callable) -> Tuple[bytes, str]:
+def try_modelslab(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("modelslab_key", "").strip()
     if not key:
-        raise ValueError(
-            "需要 ModelsLab API Key！\n"
-            "免费注册（每天 100 次）：https://modelslab.com"
-        )
+        raise ValueError("需要 ModelsLab API Key！\n免费注册（每天 100 次）：https://modelslab.com")
 
-    hq_mode    = bool(cfg.get("variant_hq", False))
-    mode_tag   = "HQ变体" if hq_mode else "标准"
+    hq_mode = bool(cfg.get("variant_hq", False))
+    mode_tag = "HQ变体" if hq_mode else "标准"
     model_list = _ML_HQ_MODELS if hq_mode else _ML_MODELS
     log(f"► ModelsLab（免费 100次/天）[{mode_tag}]…")
 
@@ -107,22 +106,21 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
 
         # ── 所有数值参数统一为字符串（ModelsLab API 要求）────────
         payload: dict = {
-            "key":                 key,
-            "model_id":            model_id,
-            "prompt":              prompt,
-            "width":               str(sw),
-            "height":              str(sh),
-            "samples":             "1",
+            "key": key,
+            "model_id": model_id,
+            "prompt": prompt,
+            "width": str(sw),
+            "height": str(sh),
+            "samples": "1",
             "num_inference_steps": steps_str,
-            "guidance_scale":      guidance_str,
-            "seed":                str(seed % 2_147_483_647),
-            "safety_checker":      "no",
-            "enhance_prompt":      "yes" if hq_mode else "no",
-            "base64":              "no",
+            "guidance_scale": guidance_str,
+            "seed": str(seed % 2_147_483_647),
+            "safety_checker": "no",
+            "enhance_prompt": "yes" if hq_mode else "no",
+            "base64": "no",
         }
         if has_neg:
             payload["negative_prompt"] = _HQ_NEGATIVE
-
 
         # ── 仅用锁保护限速 + 发包，响应处理和等待均在锁外 ────────
         _resp = None
@@ -181,8 +179,7 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
                 continue
             try:
                 img_bytes = _download_image(outputs[0], log)
-                log(f"  ✓ ModelsLab/{model_id} 成功，"
-                    f"{len(img_bytes)//1024}KB")
+                log(f"  ✓ ModelsLab/{model_id} 成功，{len(img_bytes) // 1024}KB")
                 # 直接返回 —— result 会在下一轮模型迭代被重置，
                 # continue 会把成功结果丢弃（契约测试发现的 bug）
                 return (img_bytes, f"ModelsLab/{model_id}")
@@ -209,25 +206,21 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
                 _raise_if_cancelled(cfg)
                 time.sleep(_POLL_INTERVAL)
                 try:
-                    fr  = _get_session().post(
-                        _FETCH_URL,
-                        json={"key": key, "request_id": str(fetch_id)},
-                        timeout=30)
-                    fj  = fr.json()
+                    fr = _get_session().post(_FETCH_URL, json={"key": key, "request_id": str(fetch_id)}, timeout=30)
+                    fj = fr.json()
                 except Exception as e:
-                    log(f"    [{i+1}/{_MAX_POLL}] 轮询异常: {e}")
+                    log(f"    [{i + 1}/{_MAX_POLL}] 轮询异常: {e}")
                     continue
 
                 fs = fj.get("status", "")
-                log(f"    [{i+1}/{_MAX_POLL}] status={fs}")
+                log(f"    [{i + 1}/{_MAX_POLL}] status={fs}")
 
                 if fs == "success":
                     fout = fj.get("output", [])
                     if fout:
                         try:
                             img_bytes = _download_image(fout[0], log)
-                            log(f"  ✓ ModelsLab/{model_id} 轮询成功，"
-                                f"{len(img_bytes)//1024}KB")
+                            log(f"  ✓ ModelsLab/{model_id} 轮询成功，{len(img_bytes) // 1024}KB")
                             poll_result = (img_bytes, f"ModelsLab/{model_id}")
                         except Exception as e:
                             log(f"    轮询下载失败: {e}")
@@ -246,7 +239,4 @@ def try_modelslab(prompt: str, w: int, h: int, seed: int,
         err = j.get("message", j.get("error", str(j)[:120]))
         log(f"    错误状态 '{status}': {err}，换模型…")
 
-    raise ValueError(
-        "ModelsLab 所有模型均失败\n"
-        "请检查 API Key 或访问 https://modelslab.com 查看服务状态。"
-    )
+    raise ValueError("ModelsLab 所有模型均失败\n请检查 API Key 或访问 https://modelslab.com 查看服务状态。")

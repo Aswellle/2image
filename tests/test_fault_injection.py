@@ -4,6 +4,7 @@ tests/test_fault_injection.py — Provider fault injection suite
 Validates error taxonomy, retry behavior, cancellation,
 and circuit breaker using scripted fake providers — no network.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -28,7 +29,6 @@ from tests.fakes.scenarios import (
     http_scenario_429_then_200,
     scenario_all_fail,
     scenario_auth_then_stop,
-
     scenario_recovery_after_transients,
     scenario_then_fallback,
 )
@@ -161,12 +161,14 @@ class TestDeadline:
     def test_expired_after_timeout(self):
         dl = Deadline(seconds=0.05)
         import time
+
         time.sleep(0.2)
         assert dl.is_expired() is True
 
     def test_assert_alive_raises_when_expired(self):
         dl = Deadline(seconds=0.01)
         import time
+
         time.sleep(0.15)
         with pytest.raises(DeadlineExceeded):
             dl.assert_alive()
@@ -175,11 +177,10 @@ class TestDeadline:
         dl = Deadline(seconds=10.0)
         r1 = dl.remaining()
         import time
+
         time.sleep(0.1)
         r2 = dl.remaining()
         assert r2 < r1
-
-
 
 
 # ─── RetryPolicy Tests ────────────────────────────────────────────

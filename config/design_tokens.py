@@ -10,6 +10,7 @@ Usage::
     from config.design_tokens import TOKENS
     label.config(bg=TOKENS["surface_panel"], fg=TOKENS["text_primary"])
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -90,32 +91,46 @@ TOKENS = DesignTokens()
 
 # 主题 dict 键 → DesignTokens 字段名
 _THEME_KEY_MAP = {
-    "bg":     "surface_app",
-    "panel":  "surface_panel",
-    "card":   "surface_elevated",
+    "bg": "surface_app",
+    "panel": "surface_panel",
+    "card": "surface_elevated",
     "card_hl": "surface_overlay",
-    "text":   "text_primary",
-    "sub":    "text_secondary",
+    "text": "text_primary",
+    "sub": "text_secondary",
     "text_muted": "text_muted",
     "text_inverse": "text_inverse",
-    "acc":    "accent",
+    "acc": "accent",
     "accent_hover": "accent_hover",
-    "hl":     "highlight",
-    "ok":     "success",
-    "warn":   "warning",
+    "hl": "highlight",
+    "ok": "success",
+    "warn": "warning",
     "danger": "danger",
-    "sep":    "border_subtle",
+    "sep": "border_subtle",
     "sash_hl": "border_focus",
 }
 
 # 与颜色无关、双主题共享的固定字段（不从主题派生）
 _FIXED_FIELDS = (
-    "info", "shadow_color",
-    "space_xs", "space_sm", "space_md", "space_lg", "space_xl", "space_2xl",
-    "radius_sm", "radius_md", "radius_lg", "radius_round",
-    "font_family", "font_family_mono",
-    "font_size_xs", "font_size_sm", "font_size_md",
-    "font_size_lg", "font_size_xl", "font_size_2xl",
+    "info",
+    "shadow_color",
+    "space_xs",
+    "space_sm",
+    "space_md",
+    "space_lg",
+    "space_xl",
+    "space_2xl",
+    "radius_sm",
+    "radius_md",
+    "radius_lg",
+    "radius_round",
+    "font_family",
+    "font_family_mono",
+    "font_size_xs",
+    "font_size_sm",
+    "font_size_md",
+    "font_size_lg",
+    "font_size_xl",
+    "font_size_2xl",
 )
 
 
@@ -134,6 +149,7 @@ def derive_tokens_from_theme(theme: dict) -> DesignTokens:
 
 
 # ─── Button state helpers ─────────────────────────────────────────
+
 
 def button_colors(state: str = "normal", variant: str = "primary") -> dict:
     """

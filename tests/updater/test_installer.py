@@ -1,5 +1,6 @@
 """Installer command construction + install-mode detection (§9/§10):
 argument arrays only (never shell=True), silent in-place flags."""
+
 import sys
 from pathlib import Path
 
@@ -10,7 +11,8 @@ def test_command_is_argument_array_with_silent_flags():
     cmd = ins.build_installer_command(
         Path("C:/pkg/2image-setup-v2.7.0.exe"),
         Path("C:/Users/u/AppData/Local/2image"),
-        Path("C:/Users/u/2image/updates/update.log"))
+        Path("C:/Users/u/2image/updates/update.log"),
+    )
     assert isinstance(cmd, list)
     assert cmd[0].endswith("2image-setup-v2.7.0.exe")
     assert "/VERYSILENT" in cmd

@@ -1,5 +1,6 @@
 """State machine transitions, pending/confirm markers, auto-check
 throttle, dismiss, backup/rollback helpers (§13/§14/§15/§19)."""
+
 import datetime as dt
 import time
 
@@ -11,13 +12,21 @@ from services.updater.state import UpdateFlow, UpdateState
 
 # ── state machine ────────────────────────────────────────────
 
+
 def test_happy_path_transitions():
     flow = UpdateFlow()
-    for step in (UpdateState.CHECKING, UpdateState.UPDATE_AVAILABLE,
-                 UpdateState.DOWNLOADING, UpdateState.VERIFYING,
-                 UpdateState.READY_TO_INSTALL, UpdateState.WAITING_APP_EXIT,
-                 UpdateState.INSTALLING, UpdateState.VERIFYING_INSTALL,
-                 UpdateState.SUCCESS, UpdateState.IDLE):
+    for step in (
+        UpdateState.CHECKING,
+        UpdateState.UPDATE_AVAILABLE,
+        UpdateState.DOWNLOADING,
+        UpdateState.VERIFYING,
+        UpdateState.READY_TO_INSTALL,
+        UpdateState.WAITING_APP_EXIT,
+        UpdateState.INSTALLING,
+        UpdateState.VERIFYING_INSTALL,
+        UpdateState.SUCCESS,
+        UpdateState.IDLE,
+    ):
         flow.transition(step)
     assert flow.state is UpdateState.IDLE
 
@@ -44,6 +53,7 @@ def test_failure_and_retry_paths():
 
 
 # ── pending / confirm markers ────────────────────────────────
+
 
 def test_pending_write_read_roundtrip():
     payload = st.write_pending("2.6.0", "2.7.0")
@@ -74,6 +84,7 @@ def test_clear_pending_removes_both_markers():
 
 # ── auto-check cache ─────────────────────────────────────────
 
+
 def test_should_auto_check_without_state_file():
     assert st.should_auto_check() is True
 
@@ -100,6 +111,7 @@ def test_dismiss_roundtrip():
 
 # ── backup / restore ─────────────────────────────────────────
 
+
 def test_backup_and_restore_roundtrip(tmp_path):
     src = tmp_path / "2image.exe"
     src.write_bytes(b"old-build-bytes")
@@ -117,6 +129,7 @@ def test_restore_missing_backup_fails(tmp_path):
 
 
 # ── cleanup ──────────────────────────────────────────────────
+
 
 def test_cleanup_after_success_removes_everything():
     st.write_pending("2.6.0", "2.7.0")

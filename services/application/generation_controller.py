@@ -4,6 +4,7 @@ services/application/generation_controller.py — Generation orchestrator
 Extracts single-image and variant generation flow from App._gen()
 to slim down the main window class.
 """
+
 from __future__ import annotations
 
 import random
@@ -18,8 +19,6 @@ from services.image_service import generate_image, save_image_file
 from services.providers import provider_id_for
 from services.generation.router import get_provider_order
 from services.translation import has_chinese, translate_zh_to_en
-
-
 
 
 class GenerationController:
@@ -70,8 +69,7 @@ class GenerationController:
             return
 
         # i2i 缺参考图此刻即可判定：不等工作线程，避免闪一轮生成态再报错
-        if (getattr(content, "_gen_mode", "t2i") == "i2i"
-                and getattr(content, "_ref_image", None) is None):
+        if getattr(content, "_gen_mode", "t2i") == "i2i" and getattr(content, "_ref_image", None) is None:
             self.app._st(_("err_i2i_need_ref"), "err")
             return
 
@@ -80,8 +78,7 @@ class GenerationController:
 
         if psel == _("provider_auto"):
             if not self.app.cfg.get("sf_key", "").strip() and not self.app.cfg.get("hf_token", "").strip():
-                if messagebox.askyesno(_("dlg_suggest_free_key_title"),
-                    _("dlg_suggest_free_key_body")):
+                if messagebox.askyesno(_("dlg_suggest_free_key_title"), _("dlg_suggest_free_key_body")):
                     self.app._open_wizard()
                     return
             porder = get_provider_order(prompt, self.app.cfg)
@@ -90,8 +87,14 @@ class GenerationController:
 
         self.app._batch_total = 1
         self.app._batch_done = 0
-        self.app._batch_params = {"prompt": prompt, "translated": "", "w": w, "h": h,
-                                  "porder": porder, "cfg": self.app.cfg}
+        self.app._batch_params = {
+            "prompt": prompt,
+            "translated": "",
+            "w": w,
+            "h": h,
+            "porder": porder,
+            "cfg": self.app.cfg,
+        }
 
         # Update UI state：主按钮转为"取消生成"（保持可点，经 generate_or_cancel 调度）
         content.gb.config(state="normal", text=_("btn_cancel_generation"))
@@ -130,15 +133,20 @@ class GenerationController:
         # PAY-001: 显式选择付费接口时，日预算用尽则阻断（免费接口不受限）
         from services.providers import resolve_provider_id
         from services.generation import budget
+
         cfg = self.app.cfg
         pid = resolve_provider_id(psel)
         if pid and budget.is_paid(pid) and budget.over_budget(cfg):
             limit = budget.daily_budget(cfg)
             messagebox.showwarning(
                 _("dlg_budget_exhausted_title"),
-                _("dlg_budget_exhausted_body",
-                  spent=f"${budget.spent_today(cfg):.2f}",
-                  limit=f"${limit:.2f}", provider=psel))
+                _(
+                    "dlg_budget_exhausted_body",
+                    spent=f"${budget.spent_today(cfg):.2f}",
+                    limit=f"${limit:.2f}",
+                    provider=psel,
+                ),
+            )
             return False
         return True
 
@@ -149,8 +157,12 @@ class GenerationController:
         config key，新供应商自动纳入检查，无需在此维护硬编码名单。
         """
         from services.providers import (
-            ALL_PROVIDERS, FREE_PROVIDERS, MULTI_KEY_PROVIDERS,
-            OPTIONAL_KEY_PROVIDERS, PROVIDER_KEYS, resolve_provider_id,
+            ALL_PROVIDERS,
+            FREE_PROVIDERS,
+            MULTI_KEY_PROVIDERS,
+            OPTIONAL_KEY_PROVIDERS,
+            PROVIDER_KEYS,
+            resolve_provider_id,
         )
 
         pid = resolve_provider_id(psel)
@@ -165,9 +177,8 @@ class GenerationController:
             is_paid = pid not in FREE_PROVIDERS
             wizard_fn = self.app._open_paid_wizard if is_paid else self.app._open_wizard
             if messagebox.askyesno(
-                    _("dlg_need_config_title"),
-                    _("dlg_need_keys_body", provider=psel,
-                      keys="、".join(required_keys))):
+                _("dlg_need_config_title"), _("dlg_need_keys_body", provider=psel, keys="、".join(required_keys))
+            ):
                 wizard_fn()
             return False
 
@@ -180,10 +191,10 @@ class GenerationController:
         # 缺 Key → 引导配置（付费接口走付费向导）
         is_paid = pid not in FREE_PROVIDERS
         wizard_fn = self.app._open_paid_wizard if is_paid else self.app._open_wizard
-        if messagebox.askyesno(_("dlg_need_config_title"),
-                           _("dlg_need_key_body", provider=psel)):
+        if messagebox.askyesno(_("dlg_need_config_title"), _("dlg_need_key_body", provider=psel)):
             wizard_fn()
         return False
+
     def _run_generation(
         self,
         prompt: str,
@@ -206,23 +217,24 @@ class GenerationController:
 
             # Handle img2img mode
             content = self.app.content
-            _gen_mode = getattr(content, '_gen_mode', 't2i')
-            if _gen_mode == 'i2i':
-                ref_image = getattr(content, '_ref_image', None)
-                strength = getattr(content, '_ref_strength', None)
+            _gen_mode = getattr(content, "_gen_mode", "t2i")
+            if _gen_mode == "i2i":
+                ref_image = getattr(content, "_ref_image", None)
+                strength = getattr(content, "_ref_strength", None)
                 strength = strength.get() if strength is not None else 0.6
                 if ref_image is None:
-                    self.root.after(
-                        0, lambda: self.app._err(
-                            "i2i: no reference image",
-                            friendly=_("err_i2i_need_ref")))
+                    self.root.after(0, lambda: self.app._err("i2i: no reference image", friendly=_("err_i2i_need_ref")))
                     return
             else:
                 ref_image = None
                 strength = 0.6
 
             data, used = generate_image(
-                translated, w, h, seed, self.app.cfg,
+                translated,
+                w,
+                h,
+                seed,
+                self.app.cfg,
                 provider_order=porder,
                 status_cb=self._make_status_cb(len(porder)),
                 log_cb=self.app._log,
@@ -231,10 +243,7 @@ class GenerationController:
                 token=token,
             )
 
-            path = save_image_file(data, prompt,
-                                   seed=seed, provider=used,
-                                   translated=translated,
-                                   size=f"{w}x{h}")
+            path = save_image_file(data, prompt, seed=seed, provider=used, translated=translated, size=f"{w}x{h}")
             add_entry(prompt, translated, path, used)
             self.root.after(0, lambda: self.app._ok(data, path, used))
         except GenerationCancelled:
@@ -242,9 +251,7 @@ class GenerationController:
         except DeadlineExceeded as ex:
             err_msg = str(ex)
             # friendly 直供，绕开 _err 的子串归类，保留超时细节
-            self.root.after(
-                0, lambda: self.app._err(
-                    err_msg, friendly=_("err_timeout_detail", detail=err_msg)))
+            self.root.after(0, lambda: self.app._err(err_msg, friendly=_("err_timeout_detail", detail=err_msg)))
         except Exception as ex:
             self.root.after(0, lambda e=str(ex): self.app._err(e))
         finally:
@@ -292,16 +299,24 @@ class GenerationController:
         else:
             porder = [psel_id]
 
-        self.app._batch_params = {"prompt": prompt, "translated": "", "w": w, "h": h,
-                                  "porder": porder, "cfg": self.app.cfg}
+        self.app._batch_params = {
+            "prompt": prompt,
+            "translated": "",
+            "w": w,
+            "h": h,
+            "porder": porder,
+            "cfg": self.app.cfg,
+        }
         content._nb.select(1)
 
         content._batch_panel.start_batch(
-            n=n, params=self.app._batch_params,
+            n=n,
+            params=self.app._batch_params,
             translate_fn=lambda p, cfg, log_cb: translate_zh_to_en(p, log_cb=log_cb),
-            generate_fn=generate_image, save_fn=save_image_file,
-            log_fn=self.app._log, on_keep_fn=self.app._on_variant_kept)
+            generate_fn=generate_image,
+            save_fn=save_image_file,
+            log_fn=self.app._log,
+            on_keep_fn=self.app._on_variant_kept,
+        )
         self.app._st(_("status_batch_start", n=n), "warn")
         self.app._log(f"🎲 变体生成 n={n} size={sz}")
-
-

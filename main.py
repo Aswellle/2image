@@ -5,6 +5,7 @@ main.py — 程序入口
 职责：DPI 感知初始化 → 数据库初始化 → 启动 Tkinter 主窗口。
 不包含任何业务逻辑，保持入口文件极简。
 """
+
 import tkinter as tk
 import sys
 import os
@@ -28,6 +29,7 @@ def _resource_path(filename: str) -> str:
 def _set_windows_app_user_model_id():
     if sys.platform == "win32":
         from ctypes import windll
+
         windll.shell32.SetCurrentProcessExplicitAppUserModelID(_APP_USER_MODEL_ID)
 
 
@@ -39,6 +41,7 @@ def _enable_dpi_awareness():
     """Windows 下启用 DPI 感知，避免界面模糊。"""
     try:
         from ctypes import windll
+
         windll.shcore.SetProcessDpiAwareness(1)
     except Exception:
         pass
@@ -49,20 +52,24 @@ def main():
     _enable_dpi_awareness()
 
     from PIL import Image
+
     Image.MAX_IMAGE_PIXELS = 40_000_000  # decompression-bomb guard (~40 Mpx)
 
     # ── 字体初始化（加载缓存字体，后台下载缺失字体）────────────
     from config.fonts import init_fonts
+
     init_fonts()
 
     # ── 数据目录迁移（旧版 ~/.text_to_image_app → 新版 ~/2image）──
     from config.settings import migrate_legacy_data
+
     if migrate_legacy_data():
         log_to_file("[迁移] 旧版数据已成功迁移到 ~/2image 目录")
 
     # ── 数据库初始化（建表 / 迁移旧 JSON）──────────────────────
     from data.repository import init_db, migrate_from_json
     from config.settings import APP_DIR
+
     init_db()
     old_json = os.path.join(APP_DIR, "history.json")
     migrated = migrate_from_json(old_json)
@@ -71,6 +78,7 @@ def main():
 
     # ── 启动 UI ─────────────────────────────────────────────────
     from ui.app import App
+
     root = tk.Tk()
     root.withdraw()
     _configure_window_icon(root)
@@ -82,10 +90,10 @@ def main():
         try:
             from services.updater import state as upd_state
             from services.updater.version import get_current_version
+
             upd_state.purge_runtime_dirs()
             if upd_state.confirm_pending_update(get_current_version()):
-                log_to_file(f"[更新] 新版本 v{get_current_version()} 运行正常，"
-                            f"已写入完成标记")
+                log_to_file(f"[更新] 新版本 v{get_current_version()} 运行正常，已写入完成标记")
         except Exception as exc:
             log_to_file(f"[更新] 确认标记处理失败: {type(exc).__name__}")
 

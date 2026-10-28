@@ -9,6 +9,7 @@ worker 线程不再被同步文件写阻塞。
 AsyncLogger 是 stdlib logging 通道的 QueueHandler 实现（结构化 JSON），
 供需要 correlation 字段的模块选用。
 """
+
 import os
 import queue
 import threading
@@ -49,7 +50,7 @@ def _writer_loop() -> None:
     while True:
         msg = _QUEUE.get()
         try:
-            if msg is None:          # shutdown sentinel
+            if msg is None:  # shutdown sentinel
                 break
             _write_sync(msg)
         finally:
@@ -71,7 +72,7 @@ def _ensure_writer() -> None:
 def log_to_file(msg: str) -> None:
     """异步文件日志：调用线程不入磁盘，绝不阻塞生成/UI 线程。"""
     try:
-        safe = msg.replace('\n', '\\n').replace('\r', '\\r')
+        safe = msg.replace("\n", "\\n").replace("\r", "\\r")
         _ensure_writer()
         try:
             _QUEUE.put_nowait(safe)
@@ -88,6 +89,7 @@ def flush_logs(timeout: float = 2.0) -> None:
     死亡等异常情况下不再无限等待）。
     """
     import time as _time
+
     try:
         _ensure_writer()
         deadline = _time.monotonic() + max(0.0, float(timeout))
@@ -99,10 +101,12 @@ def flush_logs(timeout: float = 2.0) -> None:
 
 def make_log_callback(ui_cb: Optional[Callable[[str], None]] = None) -> Callable[[str], None]:
     """Create a logger that writes to file and optionally to UI."""
+
     def _cb(msg: str) -> None:
         log_to_file(msg)
         if ui_cb:
             ui_cb(msg)
+
     return _cb
 
 

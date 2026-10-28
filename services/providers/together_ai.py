@@ -12,13 +12,16 @@ Together's Serverless API"）——旧的 "...-Free" 模型 id 大概率直接
 但该模型当前是否仍对无付费账户免费尚未最终确认；若持续失败，
 调度器会按现有逻辑自动跳到下一个接口，不影响整体生成流程。
 """
+
 import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import (get_session as _get_session,
-                                    safe_error_text as _safe_error_text,
-                                    safe_get_image as _safe_get_image)
+from services.providers._net import (
+    get_session as _get_session,
+    safe_error_text as _safe_error_text,
+    safe_get_image as _safe_get_image,
+)
 
 PROVIDER_INFO = {
     "id": "together_ai",
@@ -29,35 +32,30 @@ PROVIDER_INFO = {
 
 
 # ── 串行锁（防批量变体并发触发速率限制）──────────────────────────────
-_LOCK      = threading.Lock()
+_LOCK = threading.Lock()
 _LAST_DONE = [0.0]
-_MIN_INTV  = 2.0   # Together AI 建议最小请求间隔（秒）
+_MIN_INTV = 2.0  # Together AI 建议最小请求间隔（秒）
 
-_ENDPOINT  = "https://api.together.xyz/v1/images/generations"
-_MODEL     = "black-forest-labs/FLUX.1-schnell"
-_TIMEOUT   = 120
+_ENDPOINT = "https://api.together.xyz/v1/images/generations"
+_MODEL = "black-forest-labs/FLUX.1-schnell"
+_TIMEOUT = 120
 _MAX_RETRIES = 3
 
 
-def try_together_ai(
-    prompt: str, w: int, h: int, seed: int,
-    cfg: dict, log: Callable
-) -> Tuple[bytes, str]:
+def try_together_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("together_key", "").strip()
     if not key:
-        raise ValueError(
-            "需要 Together AI API Key！注册：https://api.together.ai/"
-        )
+        raise ValueError("需要 Together AI API Key！注册：https://api.together.ai/")
 
     headers = {
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
     payload = {
-        "model":  _MODEL,
+        "model": _MODEL,
         "prompt": prompt,
-        "n":      1,
-        "width":  _clamp(w),
+        "n": 1,
+        "width": _clamp(w),
         "height": _clamp(h),
     }
     if seed and seed > 0:
@@ -71,7 +69,6 @@ def try_together_ai(
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
-
 
     last_err = None
     for attempt in range(1, _MAX_RETRIES + 1):
@@ -95,9 +92,7 @@ def try_together_ai(
                     "Serverless API 下线），请前往 https://api.together.ai/ 确认当前可用模型。"
                 )
             if resp.status_code != 200:
-                raise RuntimeError(
-                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                )
+                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
 
             data = resp.json()
             image_bytes = _extract_image(data, log)
@@ -117,6 +112,7 @@ def try_together_ai(
 
     raise RuntimeError(f"Together AI 全部重试失败：{last_err}")
 
+
 def _extract_image(data: dict, log: Callable) -> bytes:
     """解析 {data:[{url}]} 格式并下载图片。"""
     items = data.get("data", [])
@@ -126,6 +122,7 @@ def _extract_image(data: dict, log: Callable) -> bytes:
     url = items[0].get("url", "")
     if not url:
         import base64
+
         b64 = items[0].get("b64_json", "")
         if b64:
             return base64.b64decode(b64)

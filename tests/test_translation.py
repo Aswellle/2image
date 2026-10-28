@@ -4,6 +4,7 @@ tests/test_translation.py — 翻译服务契约（PERF-001）
 覆盖：缓存命中不出网、成功/失败路径、超长截断、限流等待可取消。
 全部 mock HTTP，绝不打真实翻译 API。
 """
+
 import time
 from unittest.mock import MagicMock, patch
 
@@ -63,8 +64,7 @@ def test_success_translates_and_caches():
 def test_network_failure_returns_original():
     _release_rate_limit()
     text = f"网络失败原文{time.time_ns()}"
-    with patch("services.translation.requests.get",
-               side_effect=ConnectionError("down")):
+    with patch("services.translation.requests.get", side_effect=ConnectionError("down")):
         result = translate_zh_to_en(text)
     assert result == text  # 失败降级：返回原文
     assert get_translation_cache().get(text) is None  # 失败不缓存
@@ -110,8 +110,7 @@ def test_privacy_log_does_not_leak_full_translation():
     _release_rate_limit()
     logs: list[str] = []
     secret = f"这是一段绝密提示词内容{time.time_ns()}"
-    with patch("services.translation.requests.get",
-               return_value=_mock_ok("translated secret output")):
+    with patch("services.translation.requests.get", return_value=_mock_ok("translated secret output")):
         translate_zh_to_en(secret, log_cb=logs.append)
     joined = "\n".join(logs)
     assert "translated secret output" not in joined
@@ -122,7 +121,7 @@ def test_cache_lru_eviction():
     cache = TranslationCache(max_size=2)
     cache.put("a", "1")
     cache.put("b", "2")
-    cache.put("c", "3")   # 淘汰 a
+    cache.put("c", "3")  # 淘汰 a
     assert cache.get("a") is None
     assert cache.get("b") == "2"
     assert cache.get("c") == "3"

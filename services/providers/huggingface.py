@@ -23,15 +23,18 @@ v3 修复（2026-07）：
     不再确认由 hf-inference 托管（社区反馈频繁 404）。移除这两个，
     换成 stabilityai/stable-diffusion-3-medium-diffusers。
 """
+
 import base64
 import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import (get_session as _get_session,
-                                    safe_error_text as _safe_error_text,
-                                    safe_get_image as _safe_get_image,
-                                    read_bounded as _read_bounded)
+from services.providers._net import (
+    get_session as _get_session,
+    safe_error_text as _safe_error_text,
+    safe_get_image as _safe_get_image,
+    read_bounded as _read_bounded,
+)
 
 PROVIDER_INFO = {
     "id": "huggingface",
@@ -43,41 +46,40 @@ PROVIDER_INFO = {
 
 
 # ── 进程级串行锁：保证同一时刻只有 1 个 HF 请求在飞 ─────────────────
-_HF_LOCK      = threading.Lock()
+_HF_LOCK = threading.Lock()
 _LAST_DONE_TS = [0.0]
-_MIN_INTERVAL = 2.0       # HF 每次请求之间最少等 2s（宽松，主要靠锁串行）
+_MIN_INTERVAL = 2.0  # HF 每次请求之间最少等 2s（宽松，主要靠锁串行）
 
 # 模型列表（已移除 sdxl-turbo/sd-v1-5/sdxl-base-1.0/sd-2.1，
 # 均已确认不再稳定挂在 HF hf-inference provider 上）
 HF_MODELS = [
     # (model_id,                                            steps, guidance, max_w, max_h)
-    ("black-forest-labs/FLUX.1-schnell",                      4,   0.0,  1024, 1024),
-    ("stabilityai/stable-diffusion-3-medium-diffusers",      20,   7.0,  1024, 1024),
+    ("black-forest-labs/FLUX.1-schnell", 4, 0.0, 1024, 1024),
+    ("stabilityai/stable-diffusion-3-medium-diffusers", 20, 7.0, 1024, 1024),
 ]
 HF_HQ_MODELS = [
-    ("black-forest-labs/FLUX.1-schnell",                      8,   0.0,  1024, 1024),
-    ("stabilityai/stable-diffusion-3-medium-diffusers",      28,   7.5,  1024, 1024),
+    ("black-forest-labs/FLUX.1-schnell", 8, 0.0, 1024, 1024),
+    ("stabilityai/stable-diffusion-3-medium-diffusers", 28, 7.5, 1024, 1024),
 ]
 
-_TIMEOUT = 300     # HF 免费推理队列长，需要足够的超时
+_TIMEOUT = 300  # HF 免费推理队列长，需要足够的超时
 
 
-def try_hf_inference(prompt: str, w: int, h: int, seed: int,
-                     cfg: dict, log: Callable) -> Tuple[bytes, str]:
+def try_hf_inference(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     token = cfg.get("hf_token", "").strip()
     if not token:
         raise ValueError("需要 HuggingFace Token，请在「⚙ 设置」中填写")
 
-    hq_mode    = bool(cfg.get("variant_hq", False))
+    hq_mode = bool(cfg.get("variant_hq", False))
     model_list = HF_HQ_MODELS if hq_mode else HF_MODELS
-    mode_tag   = "HQ变体" if hq_mode else "标准"
+    mode_tag = "HQ变体" if hq_mode else "标准"
     log(f"► HuggingFace Inference API [{mode_tag}]…")
 
     headers = {
-        "Authorization":    f"Bearer {token}",
-        "Content-Type":     "application/json",
-        "x-wait-for-model": "true",   # 让服务端排队而不是立刻返回 503
-        "x-use-cache":      "false",
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "x-wait-for-model": "true",  # 让服务端排队而不是立刻返回 503
+        "x-use-cache": "false",
     }
 
     def snap(v: int, mx: int) -> int:
@@ -89,22 +91,21 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
         sn = model_id.split("/")[-1]
         log(f"  模型: {sn}  {mw}×{mh}  steps={steps}")
 
-        url = (f"https://router.huggingface.co/hf-inference/models/{model_id}")
+        url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
 
         # parameters 结构：FLUX 和 SDXL 参数位置相同
         params_dict: dict = {
-            "width":               mw,
-            "height":              mh,
+            "width": mw,
+            "height": mh,
             "num_inference_steps": steps,
-            "seed":                seed % 2_147_483_647,
+            "seed": seed % 2_147_483_647,
         }
         if guidance > 0:
             params_dict["guidance_scale"] = guidance
         # HQ 模式加 negative_prompt（SDXL 支持，FLUX 忽略）
         if hq_mode and guidance > 0:
             params_dict["negative_prompt"] = (
-                "blurry, low quality, distorted, ugly, watermark, "
-                "deformed, extra limbs, bad anatomy"
+                "blurry, low quality, distorted, ugly, watermark, deformed, extra limbs, bad anatomy"
             )
         body = {"inputs": prompt, "parameters": params_dict}
 
@@ -112,7 +113,7 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
         _retry_sleep = 0
 
         # ── 每次尝试仅持锁做限速检查+发包，重试等待移至锁外 ─────
-        for attempt in range(1, 4):   # 最多 3 次重试
+        for attempt in range(1, 4):  # 最多 3 次重试
             if _retry_sleep > 0:
                 time.sleep(_retry_sleep)
                 _retry_sleep = 0
@@ -124,8 +125,7 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
                 if gap < _MIN_INTERVAL:
                     time.sleep(_MIN_INTERVAL - gap)
                 try:
-                    _resp = _get_session().post(url, headers=headers,
-                                          json=body, timeout=_TIMEOUT)
+                    _resp = _get_session().post(url, headers=headers, json=body, timeout=_TIMEOUT)
                 except requests.exceptions.ConnectionError as e:
                     _dispatch_err = ("conn", e)
                 except requests.exceptions.Timeout as e:
@@ -179,7 +179,7 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
                 # 尝试读取错误详情
                 try:
                     err_body = resp.json()
-                    err_msg  = err_body.get("error", _safe_error_text(resp))
+                    err_msg = err_body.get("error", _safe_error_text(resp))
                 except Exception:
                     err_msg = _safe_error_text(resp)
                 log(f"    {sc}: {err_msg}，换模型…")
@@ -222,7 +222,7 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
                 if isinstance(j, dict):
                     imgs = j.get("images", [])
                     if imgs and imgs[0].get("url"):
-                        img_data = _safe_get_image(imgs[0]['url'], timeout=60)
+                        img_data = _safe_get_image(imgs[0]["url"], timeout=60)
                         log(f"  ✓ HuggingFace/{sn} 成功（images.url）")
                         result = (img_data, f"HuggingFace/{sn}")
                         break
@@ -236,7 +236,7 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
                             result = (img, f"HuggingFace/{sn}")
                             break
                         if data[0].get("url"):
-                            img_data = _safe_get_image(data[0]['url'], timeout=60)
+                            img_data = _safe_get_image(data[0]["url"], timeout=60)
                             log(f"  ✓ HuggingFace/{sn} 成功（data.url）")
                             result = (img_data, f"HuggingFace/{sn}")
                             break
@@ -255,7 +255,5 @@ def try_hf_inference(prompt: str, w: int, h: int, seed: int,
             return result
 
     raise ValueError(
-        "所有 HuggingFace 模型均失败\n"
-        "原因：免费账号并发限制或推理配额耗尽\n"
-        "建议：换用硅基流动（速度更快、更稳定）"
+        "所有 HuggingFace 模型均失败\n原因：免费账号并发限制或推理配额耗尽\n建议：换用硅基流动（速度更快、更稳定）"
     )

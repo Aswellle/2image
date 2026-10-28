@@ -1,4 +1,5 @@
 """tests/test_prompt_wizard_progressive.py — P1-25 渐进披露回归。"""
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -17,6 +18,7 @@ def wizard(tk_root, mock_app):
     mock_app.root = tk_root
     mock_app.cfg = dict(DEFAULT_CONFIG)
     from ui.prompt_wizard import PromptWizard
+
     w = PromptWizard(mock_app)
     tk_root.update()
     yield w
@@ -28,11 +30,10 @@ def wizard(tk_root, mock_app):
 
 def test_advanced_dims_built_but_collapsed(wizard):
     """7 个维度对象全部存在；高级 5 维默认收起。"""
-    for attr in ("_dim_style", "_dim_mood", "_dim_detail", "_dim_comp",
-                 "_dim_light", "_dim_cam", "_dim_qual"):
+    for attr in ("_dim_style", "_dim_mood", "_dim_detail", "_dim_comp", "_dim_light", "_dim_cam", "_dim_qual"):
         assert getattr(wizard, attr) is not None
     with pytest.raises(tk.TclError):
-        wizard._adv_host.pack_info()          # 未 pack = 收起
+        wizard._adv_host.pack_info()  # 未 pack = 收起
     assert wizard._adv_open is False
 
 
@@ -40,7 +41,7 @@ def test_toggle_expands_and_collapses(wizard, tk_root):
     wizard._toggle_advanced_dims()
     tk_root.update()
     assert wizard._adv_open is True
-    wizard._adv_host.pack_info()              # 已 pack = 展开
+    wizard._adv_host.pack_info()  # 已 pack = 展开
     assert "▾" in wizard._adv_toggle.cget("text")
 
     wizard._toggle_advanced_dims()

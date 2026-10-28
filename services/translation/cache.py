@@ -4,6 +4,7 @@ services/translation/cache.py — Translation result cache
 LRU cache for translation results to avoid redundant API calls
 for the same source text.  Thread-safe.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -22,9 +23,7 @@ class TranslationCache:
         self._misses = 0
 
     def _key(self, text: str, source_lang: str = "zh", target_lang: str = "en") -> str:
-        return hashlib.sha256(
-            f"{source_lang}\0{target_lang}\0{text}".encode("utf-8")
-        ).hexdigest()
+        return hashlib.sha256(f"{source_lang}\0{target_lang}\0{text}".encode("utf-8")).hexdigest()
 
     def get(self, text: str, source_lang: str = "zh", target_lang: str = "en") -> str | None:
         if not text or not text.strip():

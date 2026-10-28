@@ -1,4 +1,5 @@
 """Tests for image_service provider fallback."""
+
 import pytest
 from services.image_service import generate_image
 
@@ -26,10 +27,8 @@ def test_runtimeerror_triggers_provider_fallback():
     def good_provider(prompt, w, h, seed, cfg, log):
         return b"fake_image_bytes", "GoodProvider"
 
-    with patch("services.image_service.ALL_PROVIDERS",
-               {"bad": bad_provider, "good": good_provider}):
-        data, used = generate_image("test", 512, 512, 42, {},
-                                    provider_order=["bad", "good"])
+    with patch("services.image_service.ALL_PROVIDERS", {"bad": bad_provider, "good": good_provider}):
+        data, used = generate_image("test", 512, 512, 42, {}, provider_order=["bad", "good"])
     assert used == "GoodProvider"
     assert data == b"fake_image_bytes"
 
@@ -44,10 +43,8 @@ def test_timeouterror_triggers_provider_fallback():
     def good_provider(prompt, w, h, seed, cfg, log):
         return b"image_bytes", "GoodProvider"
 
-    with patch("services.image_service.ALL_PROVIDERS",
-               {"slow": timeout_provider, "good": good_provider}):
-        data, used = generate_image("test", 512, 512, 42, {},
-                                    provider_order=["slow", "good"])
+    with patch("services.image_service.ALL_PROVIDERS", {"slow": timeout_provider, "good": good_provider}):
+        data, used = generate_image("test", 512, 512, 42, {}, provider_order=["slow", "good"])
     assert used == "GoodProvider"
 
 
@@ -58,9 +55,9 @@ def test_save_image_file():
     import io, os
 
     # Create a tiny test image
-    img = Image.new('RGB', (64, 64), color='blue')
+    img = Image.new("RGB", (64, 64), color="blue")
     buf = io.BytesIO()
-    img.save(buf, 'PNG')
+    img.save(buf, "PNG")
 
     path = save_image_file(buf.getvalue(), "test prompt", seed=42, provider="Test", size="64x64")
     try:

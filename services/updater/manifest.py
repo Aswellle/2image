@@ -8,6 +8,7 @@ manifest that fails any rule must never lead to a download, let alone
 an install.  Download URLs are restricted to the project's GitHub
 Release hosts (allowlist, HTTPS only).
 """
+
 from __future__ import annotations
 
 import re
@@ -23,8 +24,7 @@ from services.updater.version import parse_version
 
 REPO_OWNER = "Aswellle"
 REPO_NAME = "2image"
-MANIFEST_URL = (f"https://github.com/{REPO_OWNER}/{REPO_NAME}"
-                "/releases/latest/download/update.json")
+MANIFEST_URL = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/releases/latest/download/update.json"
 RELEASES_PAGE = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/releases/latest"
 
 MANIFEST_ASSET_KEY = "windows-x64-installer"
@@ -32,11 +32,13 @@ SUPPORTED_SCHEMA_VERSION = 1
 STABLE_CHANNEL = "stable"
 
 # Redirect targets of GitHub release assets must stay inside this set.
-ALLOWED_DOWNLOAD_HOSTS = frozenset({
-    "github.com",
-    "objects.githubusercontent.com",
-    "release-assets.githubusercontent.com",
-})
+ALLOWED_DOWNLOAD_HOSTS = frozenset(
+    {
+        "github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com",
+    }
+)
 
 _CONNECT_TIMEOUT = 10.0
 _READ_TIMEOUT = 30.0
@@ -172,6 +174,7 @@ def fetch_manifest(
     """
     if session is None:
         from services.providers._net import get_session
+
         session = get_session()
 
     attempts = max(1, retries + 1)
@@ -182,37 +185,29 @@ def fetch_manifest(
         try:
             resp = session.get(MANIFEST_URL, timeout=timeout)
             if resp.status_code == 404:
-                raise UpdateError(
-                    UpdateErrorCode.HTTP_ERROR,
-                    "update.json not found (HTTP 404)")
+                raise UpdateError(UpdateErrorCode.HTTP_ERROR, "update.json not found (HTTP 404)")
             if 500 <= resp.status_code < 600:
-                raise UpdateError(
-                    UpdateErrorCode.HTTP_ERROR,
-                    f"manifest server error (HTTP {resp.status_code})")
+                raise UpdateError(UpdateErrorCode.HTTP_ERROR, f"manifest server error (HTTP {resp.status_code})")
             if resp.status_code != 200:
-                raise UpdateError(
-                    UpdateErrorCode.HTTP_ERROR,
-                    f"unexpected HTTP {resp.status_code}")
+                raise UpdateError(UpdateErrorCode.HTTP_ERROR, f"unexpected HTTP {resp.status_code}")
             try:
                 payload = resp.json()
             except ValueError as exc:
                 raise _invalid(f"malformed manifest JSON: {exc}") from exc
             return evaluate_manifest(payload, current_version)
         except UpdateError as exc:
-            permanent = (exc.code in (UpdateErrorCode.MANIFEST_INVALID,
-                                      UpdateErrorCode.VERSION_INVALID)
-                         or "404" in exc.detail)
+            permanent = (
+                exc.code in (UpdateErrorCode.MANIFEST_INVALID, UpdateErrorCode.VERSION_INVALID) or "404" in exc.detail
+            )
             if permanent or attempt >= attempts - 1:
                 raise
             last_error = exc
         except requests.RequestException as exc:
             if attempt >= attempts - 1:
                 raise UpdateError(
-                    UpdateErrorCode.NETWORK_ERROR,
-                    f"manifest request failed: {type(exc).__name__}") from exc
-            last_error = UpdateError(
-                UpdateErrorCode.NETWORK_ERROR,
-                f"manifest request failed: {type(exc).__name__}")
+                    UpdateErrorCode.NETWORK_ERROR, f"manifest request failed: {type(exc).__name__}"
+                ) from exc
+            last_error = UpdateError(UpdateErrorCode.NETWORK_ERROR, f"manifest request failed: {type(exc).__name__}")
         # Retryable failure: interruptible short backoff, then retry.
         if token is not None and token.wait(backoff):
             token.throw_if_cancelled()

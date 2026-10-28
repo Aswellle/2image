@@ -12,6 +12,7 @@ services/providers/volcengine_ark.py — 火山引擎豆包生图（文生图 + 
 
 参考：火山引擎 Ark SDK (volcengine-python-sdk)
 """
+
 import base64
 import threading
 import time
@@ -50,22 +51,26 @@ _MAX_RETRIES = 3
 
 # 支持的尺寸
 _SUPPORTED_SIZES = [
-    "1024x1024", "1280x720", "720x1280",
-    "1440x960", "960x1440", "2048x2048",
+    "1024x1024",
+    "1280x720",
+    "720x1280",
+    "1440x960",
+    "960x1440",
+    "2048x2048",
 ]
 
 
 def _best_size(w: int, h: int) -> str:
     """取最接近的支持尺寸"""
+
     def score(s):
         sw, sh = map(int, s.split("x"))
         return abs(sw - w) + abs(sh - h)
+
     return min(_SUPPORTED_SIZES, key=score)
 
 
-def try_volcengine_ark(
-    prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
-) -> Tuple[bytes, str]:
+def try_volcengine_ark(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("volcengine_key", "").strip()
     if not key:
         raise ValueError("需要火山引擎 API Key，请在配置中填写")
@@ -118,13 +123,15 @@ def try_volcengine_ark(
             time.sleep(_MIN_INTV - gap)
         _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
 
-
     last_err = None
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
             log(f"[豆包] 尝试 {attempt}/{_MAX_RETRIES}…")
             resp = _get_session().post(
-                _ENDPOINT, headers=headers, json=payload, timeout=_TIMEOUT,
+                _ENDPOINT,
+                headers=headers,
+                json=payload,
+                timeout=_TIMEOUT,
             )
             if resp.status_code == 429:
                 log("[豆包] 速率限制，等待 15s…")
@@ -133,9 +140,7 @@ def try_volcengine_ark(
             if resp.status_code == 401:
                 raise ValueError("火山引擎 API Key 无效或已过期")
             if resp.status_code != 200:
-                raise RuntimeError(
-                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                )
+                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
 
             data = resp.json()
             items = data.get("data", [])
@@ -167,4 +172,3 @@ def try_volcengine_ark(
                 time.sleep(3 * attempt)
 
     raise RuntimeError(f"豆包全部重试失败：{last_err}")
-

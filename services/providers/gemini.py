@@ -11,6 +11,7 @@ services/providers/gemini.py — Google Gemini 图像生成（文生图 + 图生
 认证：Header x-goog-api-key
 响应：candidates[0].content.parts[].inlineData.data（base64）
 """
+
 import base64
 import threading
 import time
@@ -36,9 +37,7 @@ _LAST_DONE = [0.0]
 _MIN_INTV = 2.0  # Gemini 免费层建议间隔
 
 _DEFAULT_MODEL = GEMINI_IMAGE_DEFAULT  # 默认图像模型（可选值见 config.model_catalog）
-_ENDPOINT_TPL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-)
+_ENDPOINT_TPL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 _TIMEOUT = 90
 _MAX_RETRIES = 3
 
@@ -54,9 +53,7 @@ def _guess_mime(image_bytes: bytes) -> str:
     return "image/png"
 
 
-def try_gemini(
-    prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
-) -> Tuple[bytes, str]:
+def try_gemini(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("gemini_key", "").strip()
     if not key:
         raise ValueError("需要 Google Gemini API Key！注册：https://aistudio.google.com/")
@@ -68,29 +65,27 @@ def try_gemini(
 
     # 可通过 cfg["gemini_model"] 切换图像模型（默认 gemini-2.5-flash-image，
     # 也可选 gemini-3.1-flash-image 等最新 GA 模型）
-    model    = cfg.get("gemini_model", _DEFAULT_MODEL)
+    model = cfg.get("gemini_model", _DEFAULT_MODEL)
     endpoint = _ENDPOINT_TPL.format(model=model)
 
-    ref_image = cfg.get("_ref_image")   # bytes or None（图生图参考图）
+    ref_image = cfg.get("_ref_image")  # bytes or None（图生图参考图）
     parts = [{"text": prompt}]
     if ref_image is not None:
-        parts.append({
-            "inline_data": {
-                "mime_type": _guess_mime(ref_image),
-                "data": base64.b64encode(ref_image).decode("ascii"),
+        parts.append(
+            {
+                "inline_data": {
+                    "mime_type": _guess_mime(ref_image),
+                    "data": base64.b64encode(ref_image).decode("ascii"),
+                }
             }
-        })
-        log(f"[Gemini] 图生图模式，参考图 {len(ref_image)//1024}KB")
+        )
+        log(f"[Gemini] 图生图模式，参考图 {len(ref_image) // 1024}KB")
 
     # Gemini generateContent 图像生成请求体
     # 注意：responseModalities 必须同时包含 TEXT 和 IMAGE，
     # 只传 IMAGE 会被官方 API 拒绝（哪怕文本部分被忽略不用）。
     payload = {
-        "contents": [
-            {
-                "parts": parts
-            }
-        ],
+        "contents": [{"parts": parts}],
         "generationConfig": {
             "responseModalities": ["TEXT", "IMAGE"],
         },
@@ -120,9 +115,7 @@ def try_gemini(
                 time.sleep(30)
                 continue
             if resp.status_code != 200:
-                raise RuntimeError(
-                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                )
+                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
 
             data = resp.json()
             # 解析 base64 图片数据

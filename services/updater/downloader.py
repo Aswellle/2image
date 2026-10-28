@@ -13,6 +13,7 @@ The download URL host is re-checked against the manifest allowlist
 well.  Transient failures retry with a short backoff; cancellation
 always removes the partial file.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -34,7 +35,7 @@ from services.updater.errors import (
 from services.updater.manifest import UpdateAsset, _url_allowed
 
 CHUNK_SIZE = 128 * 1024
-MAX_ASSET_BYTES = 200 * 1024 * 1024   # installer ~20-40 MB; generous cap
+MAX_ASSET_BYTES = 200 * 1024 * 1024  # installer ~20-40 MB; generous cap
 CONNECT_TIMEOUT = 10.0
 READ_TIMEOUT = 30.0
 
@@ -42,8 +43,7 @@ READ_TIMEOUT = 30.0
 ProgressCb = Callable[[str, int, int, float], None]
 
 
-def sha256_file(path: Path, progress: ProgressCb | None = None,
-                token: CancellationToken | None = None) -> str:
+def sha256_file(path: Path, progress: ProgressCb | None = None, token: CancellationToken | None = None) -> str:
     """Chunked SHA-256 of a local file (cancellation-aware)."""
     digest = hashlib.sha256()
     size = path.stat().st_size
@@ -96,11 +96,10 @@ def download_verified(
     network failure; GenerationCancelled propagates after cleanup.
     """
     if not _url_allowed(asset.download_url):
-        raise UpdateError(
-            UpdateErrorCode.MANIFEST_INVALID,
-            f"downloadUrl not allowed: {asset.download_url!r}")
+        raise UpdateError(UpdateErrorCode.MANIFEST_INVALID, f"downloadUrl not allowed: {asset.download_url!r}")
     if session is None:
         from services.providers._net import get_session
+
         session = get_session()
 
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -118,22 +117,17 @@ def download_verified(
         if token is not None:
             token.throw_if_cancelled()
         try:
-            _download_once(asset, partial, token, progress, session,
-                           max_bytes)
+            _download_once(asset, partial, token, progress, session, max_bytes)
             break
-        except (UpdateError, requests.RequestException, OSError,
-                GenerationCancelled) as exc:
+        except (UpdateError, requests.RequestException, OSError, GenerationCancelled) as exc:
             _silent_unlink(partial)
             if isinstance(exc, GenerationCancelled):
                 raise
-            retryable = not isinstance(exc, UpdateError) or exc.code in (
-                UpdateErrorCode.DOWNLOAD_FAILED,)
+            retryable = not isinstance(exc, UpdateError) or exc.code in (UpdateErrorCode.DOWNLOAD_FAILED,)
             if attempt >= attempts - 1 or not retryable:
                 if isinstance(exc, UpdateError):
                     raise
-                raise UpdateError(
-                    UpdateErrorCode.DOWNLOAD_FAILED,
-                    f"download failed: {type(exc).__name__}") from exc
+                raise UpdateError(UpdateErrorCode.DOWNLOAD_FAILED, f"download failed: {type(exc).__name__}") from exc
             last_error = exc
             if token is not None and token.wait(backoff):
                 token.throw_if_cancelled()
@@ -147,14 +141,14 @@ def download_verified(
     if actual_size != asset.size:
         _silent_unlink(partial)
         raise UpdateError(
-            UpdateErrorCode.SIZE_MISMATCH,
-            f"size mismatch: got {actual_size}, manifest says {asset.size}")
+            UpdateErrorCode.SIZE_MISMATCH, f"size mismatch: got {actual_size}, manifest says {asset.size}"
+        )
     actual_hash = sha256_file(partial, progress, token)
     if actual_hash != asset.sha256:
         _silent_unlink(partial)
         raise ChecksumMismatchError(
-            f"sha256 mismatch: expected {asset.sha256[:16]}…, "
-            f"got {actual_hash[:16]}… (download deleted)")
+            f"sha256 mismatch: expected {asset.sha256[:16]}…, got {actual_hash[:16]}… (download deleted)"
+        )
     os.replace(partial, final)
     return final
 
@@ -167,15 +161,12 @@ def _download_once(
     session: requests.Session,
     max_bytes: int,
 ) -> None:
-    resp = session.get(asset.download_url, stream=True,
-                       timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
+    resp = session.get(asset.download_url, stream=True, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
     try:
         resp.raise_for_status()
         # Redirect target must stay inside the release asset hosts.
         if not _url_allowed(str(resp.url or asset.download_url)):
-            raise UpdateError(
-                UpdateErrorCode.MANIFEST_INVALID,
-                f"redirect target not allowed: {resp.url!r}")
+            raise UpdateError(UpdateErrorCode.MANIFEST_INVALID, f"redirect target not allowed: {resp.url!r}")
         total = asset.size
         done = 0
         started = time.monotonic()
@@ -190,18 +181,15 @@ def _download_once(
                 done += len(chunk)
                 if done > max_bytes or (total and done > total):
                     raise UpdateError(
-                        UpdateErrorCode.SIZE_MISMATCH,
-                        f"download exceeds limit ({done} > "
-                        f"{total or max_bytes} bytes)")
+                        UpdateErrorCode.SIZE_MISMATCH, f"download exceeds limit ({done} > {total or max_bytes} bytes)"
+                    )
                 if progress is not None:
                     elapsed = time.monotonic() - started
                     if elapsed > 0.2:
                         speed = done / elapsed
                     progress("download", done, total, speed)
         if total and done < total:
-            raise UpdateError(
-                UpdateErrorCode.DOWNLOAD_FAILED,
-                f"incomplete download ({done}/{total} bytes)")
+            raise UpdateError(UpdateErrorCode.DOWNLOAD_FAILED, f"incomplete download ({done}/{total} bytes)")
     finally:
         try:
             resp.close()

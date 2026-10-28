@@ -14,6 +14,7 @@ ui/history/thumbnail.py — Viewport-aware thumbnail pipeline (UIUX P0-02/03)
 · 代号（generation）守卫：刷新后旧任务在解码前即被丢弃
 · 解码与合成全部在工作线程；回调经 root.after 回主线程
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -34,10 +35,14 @@ _PAD_RGB = (13, 27, 42, 255)
 def cache_key(path: str, thumb_size: int) -> str:
     """文件内容敏感的缓存键：路径 + mtime_ns + 大小 + 缩略图尺寸。"""
     st = os.stat(path)
-    raw = "\x1f".join((
-        os.path.abspath(path), str(st.st_mtime_ns), str(st.st_size),
-        str(thumb_size),
-    ))
+    raw = "\x1f".join(
+        (
+            os.path.abspath(path),
+            str(st.st_mtime_ns),
+            str(st.st_size),
+            str(thumb_size),
+        )
+    )
     return hashlib.sha256(raw.encode("utf-8", "surrogatepass")).hexdigest()
 
 
@@ -102,27 +107,25 @@ class ThumbnailLoader:
     生命周期：每个实例持有常驻工作线程，**必须**在宿主窗口销毁时
     调用 shutdown()，否则线程随测试/窗口重建不断累积。
     """
+
     _PUMP_MS = 30
     # Sentinel handed to workers on shutdown.  It MUST be a _Job (lowest
     # priority, fully orderable): a plain object() in the heap makes
     # heappop compare it against real jobs and crash the worker thread
     # with TypeError whenever both sit in the queue at once.
-    _STOP = _Job(priority=-1, seq=-1, gen=-1, path="", thumb_size=0,
-                 on_ready=None, on_missing=None)
+    _STOP = _Job(priority=-1, seq=-1, gen=-1, path="", thumb_size=0, on_ready=None, on_missing=None)
 
-    def __init__(self, root, workers: int = 4,
-                 pil_cache: PilThumbCache | None = None):
+    def __init__(self, root, workers: int = 4, pil_cache: PilThumbCache | None = None):
         self._root = root
         self._q: queue.PriorityQueue = queue.PriorityQueue()
         self._outq: queue.Queue = queue.Queue()
         self._pil = pil_cache or PilThumbCache()
         self._seq = itertools.count()
-        self._gen = 0            # 当前代号；不一致的队列任务直接丢弃
+        self._gen = 0  # 当前代号；不一致的队列任务直接丢弃
         self._stopped = False
         self._pump_job = None
         self._threads = [
-            threading.Thread(target=self._worker, daemon=True,
-                             name=f"thumb-loader-{id(self)}-{i}")
+            threading.Thread(target=self._worker, daemon=True, name=f"thumb-loader-{id(self)}-{i}")
             for i in range(max(1, workers))
         ]
         for t in self._threads:
@@ -134,13 +137,27 @@ class ThumbnailLoader:
         """刷新列表时递增；队列中旧代号的未开始任务将被丢弃。"""
         self._gen = gen
 
-    def submit(self, path: str, thumb_size: int, priority: int, gen: int,
-               on_ready: Callable[[Image.Image], None],
-               on_missing: Callable[[], None]) -> None:
+    def submit(
+        self,
+        path: str,
+        thumb_size: int,
+        priority: int,
+        gen: int,
+        on_ready: Callable[[Image.Image], None],
+        on_missing: Callable[[], None],
+    ) -> None:
         """请求一张缩略图。on_ready/on_missing 均在主线程被调用。"""
-        self._q.put(_Job(priority=priority, seq=next(self._seq), gen=gen,
-                         path=path, thumb_size=thumb_size,
-                         on_ready=on_ready, on_missing=on_missing))
+        self._q.put(
+            _Job(
+                priority=priority,
+                seq=next(self._seq),
+                gen=gen,
+                path=path,
+                thumb_size=thumb_size,
+                on_ready=on_ready,
+                on_missing=on_missing,
+            )
+        )
 
     def clear_cache(self) -> None:
         self._pil.clear()
@@ -206,8 +223,7 @@ class ThumbnailLoader:
                 key = cache_key(job.path, job.thumb_size)
                 img = self._pil.get(key)
                 if img is None:
-                    img = render_square(Image.open(job.path),
-                                        job.thumb_size)
+                    img = render_square(Image.open(job.path), job.thumb_size)
                     self._pil.put(key, img)
                 self._outq.put(lambda fn=job.on_ready, im=img: fn(im))
             except Exception:

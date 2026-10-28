@@ -5,6 +5,7 @@ Called by CI during release to generate:
   - build-metadata.json (version, git SHA, Python, PyInstaller, timestamp)
   - SBOM.spdx.json (SPDX 2.3 JSON with all Python dependencies)
 """
+
 from __future__ import annotations
 
 import json
@@ -17,10 +18,7 @@ from pathlib import Path
 
 def get_git_sha() -> str:
     try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=os.path.dirname(__file__),
-            text=True
-        ).strip()
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=os.path.dirname(__file__), text=True).strip()
     except Exception:
         return "unknown"
 
@@ -28,8 +26,7 @@ def get_git_sha() -> str:
 def get_git_tag() -> str:
     try:
         return subprocess.check_output(
-            ["git", "describe", "--tags", "--always"],
-            cwd=os.path.dirname(__file__), text=True
+            ["git", "describe", "--tags", "--always"], cwd=os.path.dirname(__file__), text=True
         ).strip()
     except Exception:
         return "unknown"
@@ -42,6 +39,7 @@ def get_python_version() -> str:
 def get_pyinstaller_version() -> str:
     try:
         import PyInstaller
+
         return PyInstaller.__version__
     except Exception:
         return "unknown"
@@ -50,10 +48,7 @@ def get_pyinstaller_version() -> str:
 def get_dependencies() -> list[dict]:
     """Get installed pip packages as SPDX packages."""
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "list", "--format=json"],
-            capture_output=True, text=True
-        )
+        result = subprocess.run([sys.executable, "-m", "pip", "list", "--format=json"], capture_output=True, text=True)
         packages = json.loads(result.stdout)
         return [
             {
@@ -114,7 +109,8 @@ def generate_sbom(src_dir: str = ".", out_dir: str = "dist") -> dict:
                 "downloadLocation": "https://github.com/Aswellle/2image",
                 "filesAnalyzed": False,
             },
-        ] + get_dependencies(),
+        ]
+        + get_dependencies(),
         "relationships": [],
     }
     sbom_path = out_path / "SBOM.spdx.json"

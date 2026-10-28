@@ -53,12 +53,13 @@ _NORMAL_ATTR = "_ql_normal_palette"
 
 # ─── 颜色工具 ─────────────────────────────────────────────────────
 
+
 def _hex_to_rgb(value: str) -> tuple[int, int, int] | None:
     value = value.lstrip("#")
     if len(value) != 6:
         return None
     try:
-        return tuple(int(value[i:i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+        return tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
     except ValueError:
         return None
 
@@ -69,6 +70,7 @@ def _rgb_to_hex(rgb) -> str:
 
 def _relative_luminance(rgb) -> float:
     """WCAG 相对亮度（0–255 的 sRGB 分量）。"""
+
     def lin(v: float) -> float:
         v = v / 255
         return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
@@ -108,6 +110,7 @@ def _resolve(widget: tk.Misc, color: str) -> str | None:
 
 
 # ─── 派生色 ───────────────────────────────────────────────────────
+
 
 def press_color(widget: tk.Misc | None, bg: str) -> str:
     """由按钮常态底色派生按压底色。
@@ -153,6 +156,7 @@ def disabled_fg(fg: str, bg: str) -> str:
 
 
 # ─── 常态配色缓存 ─────────────────────────────────────────────────
+
 
 def _stash_normal(widget: tk.Button) -> tuple[str, str]:
     """记录按钮的常态配色；已记录过则原样返回。"""
@@ -218,6 +222,7 @@ def _apply_disabled_palette(widget: tk.Button, bg: str | None = None) -> None:
 
 # ─── 对外接口 ─────────────────────────────────────────────────────
 
+
 def apply_state_defaults(widget: tk.Widget) -> None:
     """补齐单个按钮没显式设置的按压/禁用态颜色。
 
@@ -257,6 +262,7 @@ def install_button_state_defaults(root: tk.Misc) -> None:
     用类绑定而不是遍历控件：对话框 / wizard / 面板都是运行时才
     创建的，遍历只能覆盖启动那一刻已经存在的按钮。
     """
+
     def _on_map(event: tk.Event) -> None:
         apply_state_defaults(event.widget)
 

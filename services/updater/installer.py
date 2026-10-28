@@ -8,6 +8,7 @@ install instance: the new build replaces the old program files
 in-place while everything under ~/2image (config, history, images)
 stays untouched.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -40,8 +41,7 @@ def detect_install_dir() -> Path:
     return Path(sys.executable).parent
 
 
-def build_installer_command(installer: Path, install_dir: Path,
-                            log_file: Path) -> list[str]:
+def build_installer_command(installer: Path, install_dir: Path, log_file: Path) -> list[str]:
     """Silent in-place upgrade command line (doc §10).
 
     /CLOSEAPPLICATIONS lets Inno close a still-running app instance,
@@ -70,20 +70,15 @@ def run_installer(cmd: list[str], timeout: float = INSTALLER_TIMEOUT) -> int:
     """
     creationflags = _CREATE_NO_WINDOW if sys.platform == "win32" else 0
     try:
-        proc = subprocess.run(cmd, timeout=timeout, close_fds=True,
-                              creationflags=creationflags)
+        proc = subprocess.run(cmd, timeout=timeout, close_fds=True, creationflags=creationflags)
     except FileNotFoundError as exc:
         raise UpdateError(
-            UpdateErrorCode.INSTALLER_LAUNCH_FAILED,
-            f"installer not found: {cmd[0] if cmd else ''}") from exc
+            UpdateErrorCode.INSTALLER_LAUNCH_FAILED, f"installer not found: {cmd[0] if cmd else ''}"
+        ) from exc
     except PermissionError as exc:
-        raise UpdateError(
-            UpdateErrorCode.INSTALLER_LAUNCH_FAILED,
-            f"installer launch denied: {exc}") from exc
+        raise UpdateError(UpdateErrorCode.INSTALLER_LAUNCH_FAILED, f"installer launch denied: {exc}") from exc
     except subprocess.TimeoutExpired as exc:
-        raise UpdateError(
-            UpdateErrorCode.INSTALL_FAILED,
-            f"installer timed out after {timeout:.0f}s") from exc
+        raise UpdateError(UpdateErrorCode.INSTALL_FAILED, f"installer timed out after {timeout:.0f}s") from exc
     return proc.returncode
 
 
@@ -92,5 +87,4 @@ def launch_detached(exe: Path, args: list[str] | None = None) -> subprocess.Pope
     flags = 0
     if sys.platform == "win32":
         flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-    return subprocess.Popen([str(exe)] + [str(a) for a in (args or [])],
-                            creationflags=flags, close_fds=True)
+    return subprocess.Popen([str(exe)] + [str(a) for a in (args or [])], creationflags=flags, close_fds=True)

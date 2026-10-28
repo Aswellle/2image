@@ -10,6 +10,7 @@ v4 新增（Phase 1 安全重构）：
 v3 新增：
   tags     TEXT  — 逗号分隔的标签列表
 """
+
 import os
 import sqlite3
 import threading
@@ -82,6 +83,7 @@ def init_db() -> None:
 
         # Setup FTS5 search
         from data.search import setup_fts5
+
         setup_fts5(c)
 
 
@@ -141,11 +143,11 @@ def _migrate_tags_from_csv():
                     continue
                 c.execute("INSERT OR IGNORE INTO tag (name) VALUES (?)", (tag_name,))
                 tag_id = c.execute("SELECT id FROM tag WHERE name = ?", (tag_name,)).fetchone()[0]
-                c.execute("INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)",
-                          (entry_id, tag_id))
+                c.execute("INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)", (entry_id, tag_id))
                 migrated += 1
         c.commit()
         return migrated
+
 
 # ─── 写入 ─────────────────────────────────────────────────────
 def add_entry(prompt: str, translated: str, image_path: str, provider: str) -> dict:
@@ -155,13 +157,21 @@ def add_entry(prompt: str, translated: str, image_path: str, provider: str) -> d
             "INSERT INTO history"
             "(timestamp,prompt,translated,image_path,provider,nickname,favorited,tags)"
             " VALUES (?,?,?,?,?,NULL,0,'')",
-            (ts, prompt, translated, image_path, provider)
+            (ts, prompt, translated, image_path, provider),
         )
         c.commit()
         eid = cur.lastrowid
-    return {"id": eid, "timestamp": ts, "prompt": prompt, "translated": translated,
-            "image_path": image_path, "provider": provider,
-            "nickname": None, "favorited": 0, "tags": ""}
+    return {
+        "id": eid,
+        "timestamp": ts,
+        "prompt": prompt,
+        "translated": translated,
+        "image_path": image_path,
+        "provider": provider,
+        "nickname": None,
+        "favorited": 0,
+        "tags": "",
+    }
 
 
 # ─── 读取 ─────────────────────────────────────────────────────
@@ -173,6 +183,7 @@ def _keyword_clause(keyword: str) -> tuple:
     Returns (sql_fragment, params)。
     """
     from data.search import fts_ids
+
     if keyword:
         ids = fts_ids(_conn(), keyword)
         if ids is not None:
@@ -181,17 +192,14 @@ def _keyword_clause(keyword: str) -> tuple:
                 # FTS 无匹配 —— 但 nickname 未入索引，仍保留 nickname LIKE
                 return "(nickname LIKE ?)", [nick]
             placeholders = ",".join("?" * len(ids))
-            return (f"(id IN ({placeholders}) OR nickname LIKE ?)",
-                    ids + [nick])
+            return (f"(id IN ({placeholders}) OR nickname LIKE ?)", ids + [nick])
         return "(prompt LIKE ? OR nickname LIKE ?)", [f"%{keyword}%", f"%{keyword}%"]
     return "", []
 
 
-def get_all_entries(keyword: str = "",
-                    only_favorites: bool = False,
-                    tag_filter: str = "",
-                    limit: int = 0,
-                    offset: int = 0) -> list:
+def get_all_entries(
+    keyword: str = "", only_favorites: bool = False, tag_filter: str = "", limit: int = 0, offset: int = 0
+) -> list:
     clauses, params = [], []
     if only_favorites:
         clauses.append("favorited = 1")
@@ -230,9 +238,9 @@ def get_all_entries(keyword: str = "",
     return [dict(r) for r in rows]
 
 
-def get_entries_keyset(after_id: int = 0, limit: int = 50,
-                       keyword: str = "", tag_filter: str = "",
-                       only_favorites: bool = False) -> list:
+def get_entries_keyset(
+    after_id: int = 0, limit: int = 50, keyword: str = "", tag_filter: str = "", only_favorites: bool = False
+) -> list:
     """
     Keyset pagination for history browsing.
 
@@ -256,10 +264,7 @@ def get_entries_keyset(after_id: int = 0, limit: int = 50,
         clauses.append(kw_sql)
         params += kw_params
     if tag_filter:
-        clauses.append(
-            "id IN (SELECT et.entry_id FROM entry_tag et "
-            "JOIN tag t ON et.tag_id = t.id WHERE t.name = ?)"
-        )
+        clauses.append("id IN (SELECT et.entry_id FROM entry_tag et JOIN tag t ON et.tag_id = t.id WHERE t.name = ?)")
         params.append(tag_filter)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     sql = (
@@ -281,7 +286,6 @@ def get_entries_keyset(after_id: int = 0, limit: int = 50,
     return [dict(r) for r in rows]
 
 
-
 def get_entry(entry_id: int):
     with _conn() as c:
         row = c.execute("SELECT * FROM history WHERE id=?", (entry_id,)).fetchone()
@@ -293,7 +297,7 @@ def get_entry(entry_id: int):
             "SELECT GROUP_CONCAT(t.name, ',') AS tags "
             "FROM entry_tag et JOIN tag t ON et.tag_id = t.id "
             "WHERE et.entry_id = ?",
-            (entry_id,)
+            (entry_id,),
         ).fetchone()
         entry["tags"] = (tags_row["tags"] or "") if tags_row else ""
     return entry
@@ -309,8 +313,7 @@ def rename_entry(entry_id: int, nickname: str) -> None:
 
 def toggle_favorite(entry_id: int, favorited: bool) -> None:
     with _conn() as c:
-        c.execute("UPDATE history SET favorited=? WHERE id=?",
-                  (1 if favorited else 0, entry_id))
+        c.execute("UPDATE history SET favorited=? WHERE id=?", (1 if favorited else 0, entry_id))
         c.commit()
 
 
@@ -332,8 +335,7 @@ def update_tags(entry_id: int, tags: str) -> None:
                 continue
             c.execute("INSERT OR IGNORE INTO tag (name) VALUES (?)", (tag_name,))
             tag_id = c.execute("SELECT id FROM tag WHERE name = ?", (tag_name,)).fetchone()[0]
-            c.execute("INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)",
-                      (entry_id, tag_id))
+            c.execute("INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)", (entry_id, tag_id))
         c.commit()
 
 
@@ -364,7 +366,8 @@ def get_stats() -> dict:
         week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
 
-        row = c.execute("""
+        row = c.execute(
+            """
             SELECT
                 COUNT(*) as total,
                 SUM(CASE WHEN favorited=1 THEN 1 ELSE 0 END) as favorites,
@@ -372,7 +375,9 @@ def get_stats() -> dict:
                 SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as month,
                 SUM(CASE WHEN timestamp LIKE ? THEN 1 ELSE 0 END) as today
             FROM history
-        """, (week_ago, month_ago, f"{today_str}%")).fetchone()
+        """,
+            (week_ago, month_ago, f"{today_str}%"),
+        ).fetchone()
 
         total = row["total"]
         favorites = row["favorites"]
@@ -390,15 +395,14 @@ def get_stats() -> dict:
         # 近 7 天每日数量（单次 GROUP BY 替代 7 个独立查询）
         week_start = (datetime.now() - timedelta(days=6)).strftime("%Y-%m-%d")
         daily_rows = c.execute(
-            "SELECT substr(timestamp, 1, 10) AS day, COUNT(*) AS cnt "
-            "FROM history WHERE timestamp >= ? GROUP BY day",
-            (week_start,)
+            "SELECT substr(timestamp, 1, 10) AS day, COUNT(*) AS cnt FROM history WHERE timestamp >= ? GROUP BY day",
+            (week_start,),
         ).fetchall()
         daily_map = {r["day"]: r["cnt"] for r in daily_rows}
         daily = []
         for i in range(6, -1, -1):
             d = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
-            daily.append((d[5:], daily_map.get(d, 0)))   # "MM-DD"
+            daily.append((d[5:], daily_map.get(d, 0)))  # "MM-DD"
 
         # Tags 热度 — use junction tables
         tag_rows = c.execute(
@@ -409,14 +413,14 @@ def get_stats() -> dict:
         top_tags = [(r["name"], r["cnt"]) for r in tag_rows]
 
     return {
-        "total":     total,
+        "total": total,
         "favorites": favorites,
-        "today":     today,
-        "week":      week,
-        "month":     month,
+        "today": today,
+        "week": week,
+        "month": month,
         "providers": [{"provider": r[0], "cnt": r[1]} for r in prov_rows],
-        "daily":     daily,
-        "top_tags":  top_tags,
+        "daily": daily,
+        "top_tags": top_tags,
     }
 
 
@@ -431,14 +435,12 @@ def delete_entry(entry_id: int, remove_file: bool = True) -> None:
                 safe_delete_file(p)
             except (ValueError, FileNotFoundError, OSError) as exc:
                 import logging
-                logging.getLogger(__name__).warning(
-                    "Failed to delete image for entry %s: %s", entry_id, exc
-                )
+
+                logging.getLogger(__name__).warning("Failed to delete image for entry %s: %s", entry_id, exc)
 
     with _conn() as c:
         c.execute("DELETE FROM history WHERE id=?", (entry_id,))
         c.commit()
-
 
 
 def clear_all_entries(remove_files: bool = False) -> dict:
@@ -457,9 +459,7 @@ def clear_all_entries(remove_files: bool = False) -> dict:
         # Collect all image paths before deleting records
         entries = []
         with _conn() as c:
-            rows = c.execute(
-                "SELECT id, image_path FROM history WHERE image_path != ''"
-            ).fetchall()
+            rows = c.execute("SELECT id, image_path FROM history WHERE image_path != ''").fetchall()
             entries = [dict(r) for r in rows]
 
     with _conn() as c:
@@ -479,9 +479,7 @@ def clear_all_entries(remove_files: bool = False) -> dict:
     return result
 
 
-def count_entries(keyword: str = "",
-                  only_favorites: bool = False,
-                  tag_filter: str = "") -> int:
+def count_entries(keyword: str = "", only_favorites: bool = False, tag_filter: str = "") -> int:
     """统计历史条数；过滤语义与 get_all_entries 完全一致（FTS/LIKE 同源）。
 
     侧栏「显示更多」用过滤后的计数替代全库总数，避免筛选态下误导。
@@ -494,10 +492,7 @@ def count_entries(keyword: str = "",
         clauses.append(kw_sql)
         params += kw_params
     if tag_filter:
-        clauses.append(
-            "id IN (SELECT et.entry_id FROM entry_tag et "
-            "JOIN tag t ON et.tag_id = t.id WHERE t.name = ?)"
-        )
+        clauses.append("id IN (SELECT et.entry_id FROM entry_tag et JOIN tag t ON et.tag_id = t.id WHERE t.name = ?)")
         params.append(tag_filter)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     with _conn() as c:
@@ -574,13 +569,15 @@ def migrate_from_json(json_path: str) -> dict:
             os.rename(json_path, json_path + ".migrated")
             logger.info(
                 "Migration complete: %d/%d records. Original renamed.",
-                result["migrated"], result["total"],
+                result["migrated"],
+                result["total"],
             )
         else:
             logger.warning(
-                "Migration partial: %d/%d records, %d failed. "
-                "Original NOT renamed to preserve data.",
-                result["migrated"], result["total"], result["failed"],
+                "Migration partial: %d/%d records, %d failed. Original NOT renamed to preserve data.",
+                result["migrated"],
+                result["total"],
+                result["failed"],
             )
     except Exception as exc:
         logger.error("Migration transaction failed: %s", exc)
@@ -599,14 +596,14 @@ def get_year_heatmap(year: int) -> dict:
     仅包含 count > 0 的日期；不在该年的日期不包含。
     """
     start = f"{year}-01-01"
-    end   = f"{year}-12-31 23:59:59"
+    end = f"{year}-12-31 23:59:59"
     with _conn() as c:
         rows = c.execute(
             "SELECT substr(timestamp,1,10) as day, COUNT(*) as cnt "
             "FROM history "
             "WHERE timestamp >= ? AND timestamp <= ? "
             "GROUP BY day",
-            (start, end)
+            (start, end),
         ).fetchall()
     return {row[0]: row[1] for row in rows}
 
@@ -617,11 +614,11 @@ def get_available_years() -> list:
     至少包含当前年份。
     """
     from datetime import datetime as _dt
+
     current_year = _dt.now().year
     with _conn() as c:
         rows = c.execute(
-            "SELECT DISTINCT substr(timestamp,1,4) as yr "
-            "FROM history WHERE yr != '' ORDER BY yr DESC"
+            "SELECT DISTINCT substr(timestamp,1,4) as yr FROM history WHERE yr != '' ORDER BY yr DESC"
         ).fetchall()
     years = [int(r[0]) for r in rows if r[0].isdigit()]
     if current_year not in years:
@@ -632,35 +629,36 @@ def get_available_years() -> list:
 def get_year_stats(year: int) -> dict:
     """返回指定年的汇总统计（总数 / 最活跃月份 / 最活跃单日）。"""
     start = f"{year}-01-01"
-    end   = f"{year}-12-31 23:59:59"
+    end = f"{year}-12-31 23:59:59"
     with _conn() as c:
         total = c.execute(
-            "SELECT COUNT(*) FROM history WHERE timestamp >= ? AND timestamp <= ?",
-            (start, end)
+            "SELECT COUNT(*) FROM history WHERE timestamp >= ? AND timestamp <= ?", (start, end)
         ).fetchone()[0]
         # 最活跃月
         month_rows = c.execute(
             "SELECT substr(timestamp,1,7) as m, COUNT(*) as cnt "
             "FROM history WHERE timestamp >= ? AND timestamp <= ? "
             "GROUP BY m ORDER BY cnt DESC LIMIT 1",
-            (start, end)
+            (start, end),
         ).fetchone()
         # 最活跃单日
         day_rows = c.execute(
             "SELECT substr(timestamp,1,10) as d, COUNT(*) as cnt "
             "FROM history WHERE timestamp >= ? AND timestamp <= ? "
             "GROUP BY d ORDER BY cnt DESC LIMIT 1",
-            (start, end)
+            (start, end),
         ).fetchone()
     return {
-        "year":       year,
-        "total":      total,
+        "year": year,
+        "total": total,
         "best_month": dict(month_rows) if month_rows else None,
-        "best_day":   dict(day_rows)   if day_rows   else None,
+        "best_day": dict(day_rows) if day_rows else None,
     }
+
 
 # ─── 测试辅助 ─────────────────────────────────────────────────
 _test_db_path: str = None
+
 
 def _set_test_db(path: str = ":memory:") -> None:
     """切换到测试数据库（仅用于单元测试）。

@@ -1,4 +1,5 @@
 """tests/test_budget.py — PAY-001 预算计费器行为回归。"""
+
 import json
 
 import pytest
@@ -50,15 +51,15 @@ def test_over_budget_semantics(tmp_spend):
     assert not budget.over_budget({})
     # 达到上限 → over
     cfg = {"paid_daily_budget_usd": 0.08}
-    budget.record_spend("openai_image", cfg)   # 0.05
+    budget.record_spend("openai_image", cfg)  # 0.05
     assert not budget.over_budget(cfg)
-    budget.record_spend("openai_image", cfg)   # 0.10 >= 0.08
+    budget.record_spend("openai_image", cfg)  # 0.10 >= 0.08
     assert budget.over_budget(cfg)
 
 
 def test_filter_by_budget_strips_paid_keeps_free(tmp_spend):
     cfg = {"paid_daily_budget_usd": 0.01}
-    budget.record_spend("openai_image", cfg)   # 0.05 >= 0.01 → over
+    budget.record_spend("openai_image", cfg)  # 0.05 >= 0.01 → over
     order = ["openai_image", "siliconflow", "pollinations"]
     filtered = budget.filter_by_budget(order, cfg)
     assert filtered == ["siliconflow", "pollinations"]
@@ -72,8 +73,8 @@ def test_filter_by_budget_noop_when_under(tmp_spend):
 
 def test_router_excludes_paid_when_over_budget(tmp_spend):
     from services.generation.router import get_provider_order
-    cfg = {"sf_key": "sk", "openai_key": "sk",
-           "paid_auto_opt_in": True, "paid_daily_budget_usd": 0.01}
+
+    cfg = {"sf_key": "sk", "openai_key": "sk", "paid_auto_opt_in": True, "paid_daily_budget_usd": 0.01}
     budget.record_spend("openai_image", cfg)
     order = get_provider_order("banner 标题", cfg)
     assert "openai_image" not in order

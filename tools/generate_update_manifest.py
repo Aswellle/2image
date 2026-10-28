@@ -8,6 +8,7 @@ with the exact rules the client enforces in
 services/updater/manifest.py before writing it out.  A release whose
 manifest fails this validation cannot ship.
 """
+
 import argparse
 import hashlib
 import json
@@ -34,31 +35,25 @@ def sha256_of(path: Path) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="generate_update_manifest",
-        description="Generate the update.json release asset")
+        prog="generate_update_manifest", description="Generate the update.json release asset"
+    )
     parser.add_argument("--version", required=True, help="2.6.1")
     parser.add_argument("--tag", required=True, help="v2.6.1")
-    parser.add_argument("--installer", required=True,
-                        help="path of the built installer exe")
-    parser.add_argument("--out", required=True,
-                        help="where to write update.json")
-    parser.add_argument("--published-at", default="",
-                        help="ISO-8601 timestamp (defaults to now UTC)")
+    parser.add_argument("--installer", required=True, help="path of the built installer exe")
+    parser.add_argument("--out", required=True, help="where to write update.json")
+    parser.add_argument("--published-at", default="", help="ISO-8601 timestamp (defaults to now UTC)")
     args = parser.parse_args()
 
     installer = Path(args.installer)
     if not installer.is_file():
-        print(f"[update-manifest] FAIL: installer missing: {installer}",
-              file=sys.stderr)
+        print(f"[update-manifest] FAIL: installer missing: {installer}", file=sys.stderr)
         return 1
 
     file_name = installer.name
     size = installer.stat().st_size
     sha256 = sha256_of(installer)
-    published = args.published_at or datetime.now(timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ")
-    release_url = (f"https://github.com/{REPO_OWNER}/{REPO_NAME}"
-                   f"/releases/tag/{args.tag}")
+    published = args.published_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    release_url = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/releases/tag/{args.tag}"
 
     payload = {
         "schemaVersion": 1,
@@ -73,8 +68,9 @@ def main() -> int:
         "assets": {
             "windows-x64-installer": {
                 "fileName": file_name,
-                "downloadUrl": (f"https://github.com/{REPO_OWNER}/{REPO_NAME}"
-                                f"/releases/download/{args.tag}/{file_name}"),
+                "downloadUrl": (
+                    f"https://github.com/{REPO_OWNER}/{REPO_NAME}/releases/download/{args.tag}/{file_name}"
+                ),
                 "size": size,
                 "sha256": sha256,
             },
@@ -86,15 +82,13 @@ def main() -> int:
     try:
         validate_manifest(payload)
     except Exception as exc:
-        print(f"[update-manifest] FAIL: generated manifest invalid: {exc}",
-              file=sys.stderr)
+        print(f"[update-manifest] FAIL: generated manifest invalid: {exc}", file=sys.stderr)
         return 1
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    print(f"[update-manifest] OK: {out} "
-          f"({file_name}, {size} bytes, sha256={sha256[:16]}…)")
+    print(f"[update-manifest] OK: {out} ({file_name}, {size} bytes, sha256={sha256[:16]}…)")
     return 0
 
 

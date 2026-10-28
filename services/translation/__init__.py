@@ -10,6 +10,7 @@ PERF-001 改造：
   - 隐私：文件日志不记录完整译文（仅长度），避免用户提示词
     全文落入 debug.log（§23.3）
 """
+
 import hashlib
 import re
 import threading
@@ -24,12 +25,12 @@ from services.generation.errors import GenerationCancelled
 _TRANS_LOCK = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTERVAL = 1.5  # MyMemory free tier recommended interval
-_WAIT_STEP = 0.1     # 限流等待的检查粒度（秒）
+_WAIT_STEP = 0.1  # 限流等待的检查粒度（秒）
 
 
 def has_chinese(text: str) -> bool:
     """Check if text contains Chinese characters."""
-    return bool(re.search(r'[一-鿿]', text))
+    return bool(re.search(r"[一-鿿]", text))
 
 
 def _log_privacy(log_cb, msg: str, translated: str = "") -> None:
@@ -55,8 +56,9 @@ def _interruptible_wait(seconds: float, token: Optional[CancellationToken]) -> N
         waited += _WAIT_STEP
 
 
-def translate_zh_to_en(text: str, log_cb: Optional[Callable[[str], None]] = None,
-                       token: Optional[CancellationToken] = None) -> str:
+def translate_zh_to_en(
+    text: str, log_cb: Optional[Callable[[str], None]] = None, token: Optional[CancellationToken] = None
+) -> str:
     """Translate Chinese text to English using MyMemory API.
 
     token: 可选取消令牌 —— 限流等待期间每 0.1s 检查一次，
@@ -64,6 +66,7 @@ def translate_zh_to_en(text: str, log_cb: Optional[Callable[[str], None]] = None
     """
     # Check cache first（锁外快速路径，不受限流影响）
     from services.translation.cache import get_translation_cache
+
     cache = get_translation_cache()
     cached = cache.get(text)
     if cached is not None:
@@ -83,8 +86,8 @@ def translate_zh_to_en(text: str, log_cb: Optional[Callable[[str], None]] = None
         _LAST_DONE[0] = time.time()
     try:
         resp = requests.get(
-            "https://api.mymemory.translated.net/get",
-            params={"q": text, "langpair": "zh|en"}, timeout=15)
+            "https://api.mymemory.translated.net/get", params={"q": text, "langpair": "zh|en"}, timeout=15
+        )
         translated = resp.json().get("responseData", {}).get("translatedText", "")
         if translated and "PLEASE SELECT" not in translated.upper() and len(translated) > 2:
             _log_privacy(log_cb, "翻译完成", translated)

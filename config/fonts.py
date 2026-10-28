@@ -11,6 +11,7 @@ config/fonts.py — 字体管理器
 绝不注册来源不可信的字体文件。字体下载失败不影响任何核心功能。
 （未来可将字体文件直接打进安装包，彻底消除运行时下载。）
 """
+
 import hashlib
 import os
 import sys
@@ -29,11 +30,11 @@ os.makedirs(_FONTS_DIR, exist_ok=True)
 # 主字体回退到系统微软雅黑。
 _DL = [
     {
-        "file":      "JetBrainsMono-Regular.ttf",
-        "family":    "JetBrains Mono",
-        "role":      "mono",
-        "sha256":    "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f",
-        "min_bytes": 100_000,   # 合理字体文件下界
+        "file": "JetBrainsMono-Regular.ttf",
+        "family": "JetBrains Mono",
+        "role": "mono",
+        "sha256": "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f",
+        "min_bytes": 100_000,  # 合理字体文件下界
         "max_bytes": 20_000_000,
         "urls": [
             "https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@v2.304/fonts/ttf/JetBrainsMono-Regular.ttf",
@@ -79,9 +80,10 @@ def _verify(data: bytes, entry: dict) -> bool:
         actual = hashlib.sha256(data).hexdigest()
         if actual != expected:
             import logging
+
             logging.getLogger(__name__).warning(
-                "字体 SHA256 不匹配，拒绝落盘: %s (got %s…)",
-                entry.get("file", "?"), actual[:16])
+                "字体 SHA256 不匹配，拒绝落盘: %s (got %s…)", entry.get("file", "?"), actual[:16]
+            )
             return False
     return True
 
@@ -153,42 +155,40 @@ def init_fonts():
         threading.Thread(target=_bg_download, daemon=True).start()
 
     # ── 字体规格字典 ──────────────────────────────────────────
-    F.update({
-        # 标题层级
-        "title":      (sans, 15, "bold"),   # 窗口/模块主标题
-        "h1":         (sans, 13, "bold"),   # 区域大标题
-        "h2":         (sans, 12, "bold"),   # 区域小标题
-        "label":      (sans, 12),           # 较大标签
-        "label_lg":   (sans, 13),           # 大标签
-
-        # 正文层级
-        "btn":        (sans, 11, "bold"),   # 主要按钮（粗体 11）
-        "input":      (sans, 11),           # 输入框 / 文本区
-        "body":       (sans, 10),           # 普通标签 / 说明文字
-        "body_b":     (sans, 10, "bold"),   # 强调正文
-        "body_i":     (sans, 10, "italic"), # 斜体正文
-        "small":      (sans, 9),            # 辅助说明
-        "small_b":    (sans, 9, "bold"),    # 加粗辅助说明
-        "small_i":    (sans, 9, "italic"),  # 斜体辅助说明
-        "tiny":       (sans, 8),            # 极小文字
-        "tiny_b":     (sans, 8, "bold"),    # 加粗极小文字
-
-        # 大尺寸展示（统计数字、大标题等）
-        "disp":       (sans, 14, "bold"),
-        "disp_lg":    (sans, 18),
-        "display":    (sans, 24),
-        "display_b":  (sans, 28, "bold"),
-
-        # 等宽字体
-        "mono_tiny":  (mono, 8),
-        "mono_tiny_b":(mono, 8, "bold"),
-        "mono_sm":    (mono, 9),
-        "mono_sm_b":  (mono, 9, "bold"),
-        "mono":       (mono, 10),
-        "badge":      (mono, 10, "bold"),   # 状态标签
-        "mono_lg":    (mono, 11, "bold"),
-
-        # 字体名称字符串（供动态字重场景使用）
-        "_sans":      sans,
-        "_mono":      mono,
-    })
+    F.update(
+        {
+            # 标题层级
+            "title": (sans, 15, "bold"),  # 窗口/模块主标题
+            "h1": (sans, 13, "bold"),  # 区域大标题
+            "h2": (sans, 12, "bold"),  # 区域小标题
+            "label": (sans, 12),  # 较大标签
+            "label_lg": (sans, 13),  # 大标签
+            # 正文层级
+            "btn": (sans, 11, "bold"),  # 主要按钮（粗体 11）
+            "input": (sans, 11),  # 输入框 / 文本区
+            "body": (sans, 10),  # 普通标签 / 说明文字
+            "body_b": (sans, 10, "bold"),  # 强调正文
+            "body_i": (sans, 10, "italic"),  # 斜体正文
+            "small": (sans, 9),  # 辅助说明
+            "small_b": (sans, 9, "bold"),  # 加粗辅助说明
+            "small_i": (sans, 9, "italic"),  # 斜体辅助说明
+            "tiny": (sans, 8),  # 极小文字
+            "tiny_b": (sans, 8, "bold"),  # 加粗极小文字
+            # 大尺寸展示（统计数字、大标题等）
+            "disp": (sans, 14, "bold"),
+            "disp_lg": (sans, 18),
+            "display": (sans, 24),
+            "display_b": (sans, 28, "bold"),
+            # 等宽字体
+            "mono_tiny": (mono, 8),
+            "mono_tiny_b": (mono, 8, "bold"),
+            "mono_sm": (mono, 9),
+            "mono_sm_b": (mono, 9, "bold"),
+            "mono": (mono, 10),
+            "badge": (mono, 10, "bold"),  # 状态标签
+            "mono_lg": (mono, 11, "bold"),
+            # 字体名称字符串（供动态字重场景使用）
+            "_sans": sans,
+            "_mono": mono,
+        }
+    )

@@ -4,12 +4,12 @@ services/generation/provider_health.py — Health tracking & circuit breaker
 Tracks per-provider success rate, latency, consecutive failures,
 and implements a simple circuit breaker (HEALTHY → DEGRADED → OPEN → HALF_OPEN).
 """
+
 from __future__ import annotations
 
 import threading
 import time
 from dataclasses import dataclass, field
-
 
 
 class HealthState:

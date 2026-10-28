@@ -11,6 +11,7 @@ Usage::
     btn = PrimaryButton(parent, text="Generate", command=on_click)
     pill = StatusPill(parent, state="success", text="Connected")
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -210,9 +211,7 @@ class ErrorBanner(tk.Frame):
         level: str = "danger",
         **kwargs,
     ) -> None:
-        color = TOKENS.danger if level == "danger" else (
-            TOKENS.warning if level == "warning" else TOKENS.info
-        )
+        color = TOKENS.danger if level == "danger" else (TOKENS.warning if level == "warning" else TOKENS.info)
         super().__init__(
             master,
             bg=TOKENS.surface_elevated,
@@ -240,9 +239,7 @@ class ErrorBanner(tk.Frame):
         self._msg.pack(side="left", fill="x", expand=True, padx=TOKENS.space_xs)
 
     def set_message(self, message: str, level: str = "danger") -> None:
-        color = TOKENS.danger if level == "danger" else (
-            TOKENS.warning if level == "warning" else TOKENS.info
-        )
+        color = TOKENS.danger if level == "danger" else (TOKENS.warning if level == "warning" else TOKENS.info)
         self._msg.config(text=message)
         self._icon.config(text="⚠" if level != "info" else "ℹ", fg=color)
 
@@ -297,6 +294,7 @@ class LoadingIndicator(tk.Frame):
         self._dots = 0
         self._after_id = None
 
+
 from ui.components.state_label import GenerationStateLabel
 
 __all__ = [
@@ -311,5 +309,3 @@ __all__ = [
     "LoadingIndicator",
     "GenerationStateLabel",
 ]
-
-

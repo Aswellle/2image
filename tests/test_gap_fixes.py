@@ -10,6 +10,7 @@ tests/test_gap_fixes.py — 《全面代码审查与开发修复优化计划》�
   · PRAGMA user_version 版本化迁移
   · 字体 SHA256 校验
 """
+
 import sqlite3
 
 import pytest
@@ -35,6 +36,7 @@ from services.smart_router import _filter_available
 
 # ── Orchestrator fallback 语义 ────────────────────────────────
 
+
 def _ok_provider(prompt, w, h, seed, cfg, log):
     return b"image", "ok_provider"
 
@@ -44,12 +46,15 @@ def _make_providers(*behaviors):
     fns = {}
     for i, behavior in enumerate(behaviors):
         name = f"prov_{i}"
+
         def make_fn(b):
             def fn(prompt, w, h, seed, cfg, log):
                 if isinstance(b, Exception):
                     raise b
                 return b"image", "me"
+
             return fn
+
         fns[name] = make_fn(behavior)
     return fns
 
@@ -61,8 +66,12 @@ def test_orchestrator_invalid_request_stops_chain():
         _ok_provider,
         _ok_provider,
     )
-    orch = GenerationOrchestrator(providers=providers, retry_policy=__import__(
-        "services.generation.retry_policy", fromlist=["RetryPolicy"]).RetryPolicy(max_attempts=2))
+    orch = GenerationOrchestrator(
+        providers=providers,
+        retry_policy=__import__("services.generation.retry_policy", fromlist=["RetryPolicy"]).RetryPolicy(
+            max_attempts=2
+        ),
+    )
     result = orch.run("p", 64, 64, 1, {})
     assert result.image_bytes is None
     assert len(result.errors) == 1  # 只试了第一家
@@ -76,8 +85,9 @@ def test_orchestrator_auth_error_falls_through():
     )
     orch = GenerationOrchestrator(
         providers=providers,
-        retry_policy=__import__(
-            "services.generation.retry_policy", fromlist=["RetryPolicy"]).RetryPolicy(max_attempts=3),
+        retry_policy=__import__("services.generation.retry_policy", fromlist=["RetryPolicy"]).RetryPolicy(
+            max_attempts=3
+        ),
     )
     result = orch.run("p", 64, 64, 1, {})
     assert result.image_bytes == b"image"
@@ -95,10 +105,12 @@ def test_orchestrator_cancel_returns_immediately():
 
 def test_orchestrator_transient_retries_then_fallback():
     providers = _make_providers(
-        ProviderTransientError("503"), ProviderTransientError("503"),
+        ProviderTransientError("503"),
+        ProviderTransientError("503"),
         _ok_provider,
     )
     from services.generation.retry_policy import RetryPolicy
+
     orch = GenerationOrchestrator(
         providers=providers,
         retry_policy=RetryPolicy(max_attempts=1, base_delay=0.01),
@@ -109,10 +121,13 @@ def test_orchestrator_transient_retries_then_fallback():
 
 # ── _wrap_provider_fn 分类边界 ─────────────────────────────────
 
+
 def test_wrap_maps_missing_token_to_auth():
     """缺 Token（不只 Key）→ ProviderAuthError（不再当 transient 重试）。"""
+
     def fn(prompt, w, h, seed, cfg, log):
         raise ValueError("需要填写 HuggingFace Token")
+
     err = None
     try:
         _wrap_provider_fn(fn)("p", 64, 64, 1, {}, None)
@@ -126,6 +141,7 @@ def test_wrap_maps_http_429():
         resp = requests.models.Response()
         resp.status_code = 429
         raise requests.HTTPError("429", response=resp)
+
     with pytest.raises(ProviderRateLimitError):
         _wrap_provider_fn(fn)("p", 64, 64, 1, {}, None)
 
@@ -133,11 +149,13 @@ def test_wrap_maps_http_429():
 def test_wrap_maps_quota_and_policy():
     def quota_fn(prompt, w, h, seed, cfg, log):
         raise RuntimeError("账户余额不足，请充值")
+
     with pytest.raises(ProviderQuotaError):
         _wrap_provider_fn(quota_fn)("p", 64, 64, 1, {}, None)
 
     def policy_fn(prompt, w, h, seed, cfg, log):
         raise RuntimeError("content policy violation")
+
     with pytest.raises(ProviderPolicyError):
         _wrap_provider_fn(policy_fn)("p", 64, 64, 1, {}, None)
 
@@ -145,11 +163,13 @@ def test_wrap_maps_quota_and_policy():
 def test_wrap_maps_timeout_to_transient():
     def fn(prompt, w, h, seed, cfg, log):
         raise requests.Timeout("timed out")
+
     with pytest.raises(ProviderTransientError):
         _wrap_provider_fn(fn)("p", 64, 64, 1, {}, None)
 
 
 # ── smart_router：缺 key 过滤 + PAY-001 ───────────────────────
+
 
 def test_router_filters_free_provider_without_key():
     """缺 key 的免费接口被过滤（不再每次生成空跑 3 轮重试）。"""
@@ -169,8 +189,7 @@ def test_router_paid_requires_opt_in():
     cfg = dict(DEFAULT_CONFIG)
     cfg["openai_key"] = "sk-paid"
     assert "openai_image" not in _filter_available(["openai_image", "pollinations"], cfg)
-    assert "openai_image" in _filter_available(
-        ["openai_image", "pollinations"], cfg, allow_paid=True)
+    assert "openai_image" in _filter_available(["openai_image", "pollinations"], cfg, allow_paid=True)
 
 
 def test_router_stablehorde_key_optional():
@@ -179,6 +198,7 @@ def test_router_stablehorde_key_optional():
 
 
 # ── FTS5 触发器 + 关键词分流 ──────────────────────────────────
+
 
 @pytest.fixture()
 def mem_db():
@@ -192,8 +212,8 @@ def mem_db():
 def test_fts_latin_vs_cjk_split(mem_db):
     mem_db.add_entry("a cute cat on the moon", "月亮上的猫", "", "t")
     mem_db.add_entry("赛博朋克城市夜景", "", "", "t")
-    assert len(mem_db.get_all_entries(keyword="cat")) == 1       # FTS
-    assert len(mem_db.get_all_entries(keyword="赛博")) == 1      # LIKE
+    assert len(mem_db.get_all_entries(keyword="cat")) == 1  # FTS
+    assert len(mem_db.get_all_entries(keyword="赛博")) == 1  # LIKE
     assert mem_db.get_all_entries(keyword="zzz_no_match") == []
 
 
@@ -223,8 +243,10 @@ def test_user_version_migration_applied(mem_db):
 
 # ── 字体 SHA256 校验 ──────────────────────────────────────────
 
+
 def test_font_verify_rejects_hash_mismatch():
     from config.fonts import _verify
+
     entry = {"sha256": "0" * 64, "min_bytes": 10, "max_bytes": 1000}
     assert not _verify(b"x" * 100, entry)
     ok_entry = {"min_bytes": 10, "max_bytes": 1000}
@@ -233,6 +255,7 @@ def test_font_verify_rejects_hash_mismatch():
 
 def test_font_verify_rejects_wrong_size():
     from config.fonts import _verify
+
     entry = {"min_bytes": 1000, "max_bytes": 2000}
     assert not _verify(b"x" * 10, entry)
     assert not _verify(b"x" * 5000, entry)

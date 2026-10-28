@@ -4,6 +4,7 @@ tests/test_router.py — Health-aware scoring router tests
 Validates provider manifest resolution, legacy alias mapping,
 capability filtering, health-based scoring, and free/paid policy.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -184,9 +185,7 @@ class TestGetProviderOrder:
             health.record_failure("transient")
 
         cfg = {"sf_key": "xxx"}
-        order = get_provider_order(
-            "", cfg, fallback_order=["siliconflow", "pollinations"])
+        order = get_provider_order("", cfg, fallback_order=["siliconflow", "pollinations"])
         # siliconflow 熔断（OPEN）→ 沉到队尾
         assert order.index("pollinations") < order.index("siliconflow")
         reg.reset("siliconflow")
-

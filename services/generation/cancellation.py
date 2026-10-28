@@ -5,6 +5,7 @@ Thread-safe cancellation and absolute deadline for long-running
 generation jobs.  Sleep uses ``Event.wait()`` so cancel()
 interrupts immediately instead of blocking for the full delay.
 """
+
 from __future__ import annotations
 
 import threading
@@ -55,9 +56,7 @@ class Deadline:
 
     def assert_alive(self) -> None:
         if self.is_expired():
-            raise DeadlineExceeded(
-                f"Deadline exceeded ({self._deadline - time.monotonic():.1f}s ago)"
-            )
+            raise DeadlineExceeded(f"Deadline exceeded ({self._deadline - time.monotonic():.1f}s ago)")
 
     def remaining_or_zero(self) -> float:
         return max(0.0, self.remaining())

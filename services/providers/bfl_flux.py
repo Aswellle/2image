@@ -9,16 +9,19 @@ services/providers/bfl_flux.py — Black Forest Labs 官方 FLUX API（文生图
 图生图用 flux-kontext-pro（input_image=base64 原图 + aspect_ratio，
 不支持 width/height——由模型自动贴近参考图尺寸）。
 """
+
 import base64
 import threading
 import time
 import requests
 from typing import Callable, Tuple
 from config.model_catalog import BFL_TXT2IMG_DEFAULT
-from services.providers._net import (get_session as _get_session,
-                                    safe_error_text as _safe_error_text,
-                                    safe_get_image as _safe_get_image,
-                                    raise_if_cancelled as _raise_if_cancelled)
+from services.providers._net import (
+    get_session as _get_session,
+    safe_error_text as _safe_error_text,
+    safe_get_image as _safe_get_image,
+    raise_if_cancelled as _raise_if_cancelled,
+)
 
 PROVIDER_INFO = {
     "id": "bfl_flux",
@@ -29,9 +32,9 @@ PROVIDER_INFO = {
 }
 
 
-_LOCK      = threading.Lock()
+_LOCK = threading.Lock()
 _LAST_DONE = [0.0]
-_MIN_INTV  = 1.0
+_MIN_INTV = 1.0
 
 _BASE = "https://api.bfl.ai/v1"
 _TIMEOUT = 30
@@ -40,10 +43,14 @@ _POLL_INTERVAL = 2.0
 
 # aspect_ratio 供 flux-kontext-pro 使用（无 width/height 参数）
 _ASPECTS = [
-    (1/3, "3:7"), (3, "7:3"),
-    (9/16, "9:16"), (16/9, "16:9"),
-    (2/3, "2:3"), (3/2, "3:2"),
-    (3/4, "3:4"), (4/3, "4:3"),
+    (1 / 3, "3:7"),
+    (3, "7:3"),
+    (9 / 16, "9:16"),
+    (16 / 9, "16:9"),
+    (2 / 3, "2:3"),
+    (3 / 2, "3:2"),
+    (3 / 4, "3:4"),
+    (4 / 3, "4:3"),
     (1, "1:1"),
 ]
 
@@ -53,23 +60,21 @@ def _best_aspect(w: int, h: int) -> str:
     return min(_ASPECTS, key=lambda x: abs(x[0] - r))[1]
 
 
-def try_bfl_flux(
-    prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
-) -> Tuple[bytes, str]:
+def try_bfl_flux(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("bfl_key", "").strip()
     if not key:
         raise ValueError("需要 Black Forest Labs API Key，请在「💎 付费接口配置」中填写")
 
     headers = {"x-key": key, "Content-Type": "application/json"}
-    ref_image = cfg.get("_ref_image")   # bytes or None（图生图参考图）
+    ref_image = cfg.get("_ref_image")  # bytes or None（图生图参考图）
 
     if ref_image is not None:
         model = "flux-kontext-pro"
         payload = {
-            "prompt":       prompt,
-            "input_image":  base64.b64encode(ref_image).decode("ascii"),
+            "prompt": prompt,
+            "input_image": base64.b64encode(ref_image).decode("ascii"),
             "aspect_ratio": _best_aspect(w, h),
-            "seed":         seed % 2_147_483_647,
+            "seed": seed % 2_147_483_647,
         }
         log(f"► BFL {model}  图生图")
     else:
@@ -77,9 +82,9 @@ def try_bfl_flux(
         model = cfg.get("bfl_model", BFL_TXT2IMG_DEFAULT)
         payload = {
             "prompt": prompt,
-            "width":  max(256, min(1440, round(w / 32) * 32)),
+            "width": max(256, min(1440, round(w / 32) * 32)),
             "height": max(256, min(1440, round(h / 32) * 32)),
-            "seed":   seed % 2_147_483_647,
+            "seed": seed % 2_147_483_647,
         }
         log(f"► BFL {model}  文生图  {payload['width']}×{payload['height']}")
 
@@ -88,8 +93,7 @@ def try_bfl_flux(
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         try:
-            resp = _get_session().post(f"{_BASE}/{model}", headers=headers,
-                                 json=payload, timeout=_TIMEOUT)
+            resp = _get_session().post(f"{_BASE}/{model}", headers=headers, json=payload, timeout=_TIMEOUT)
         except requests.exceptions.ConnectionError as e:
             _LAST_DONE[0] = time.time()
             raise ValueError(f"无法连接 Black Forest Labs: {e}")
@@ -115,12 +119,12 @@ def try_bfl_flux(
         time.sleep(_POLL_INTERVAL)
         poll_resp = _get_session().get(polling_url, headers={"x-key": key}, timeout=_TIMEOUT)
         if poll_resp.status_code != 200:
-            log(f"    轮询 {i+1}/{_MAX_POLL} 状态异常 {poll_resp.status_code}，继续等待…")
+            log(f"    轮询 {i + 1}/{_MAX_POLL} 状态异常 {poll_resp.status_code}，继续等待…")
             continue
 
         pj = poll_resp.json()
         status = pj.get("status", "")
-        log(f"    轮询 {i+1}/{_MAX_POLL}：{status}")
+        log(f"    轮询 {i + 1}/{_MAX_POLL}：{status}")
 
         if status == "Ready":
             img_url = pj.get("result", {}).get("sample", "")
@@ -128,7 +132,7 @@ def try_bfl_flux(
                 raise ValueError(f"BFL 任务完成但无图片 URL：{pj}")
             log("  下载图片中（签名 URL 仅 10 分钟有效）…")
             data = _safe_get_image(img_url, timeout=60)
-            log(f"  ✓ BFL {model} 成功  {len(data)//1024}KB")
+            log(f"  ✓ BFL {model} 成功  {len(data) // 1024}KB")
             return data, f"BFL/{model}"
 
         if status in ("Error", "Failed", "Request Moderated", "Content Moderated"):

@@ -1,6 +1,7 @@
 """
 tests/test_search.py — FTS5 search tests
 """
+
 from __future__ import annotations
 
 import pytest

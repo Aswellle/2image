@@ -25,9 +25,7 @@ _LATIN_RE = re.compile(r"^[\x20-\x7e]+$")
 def _fts_table_exists(conn) -> bool:
     """Check if FTS5 virtual table exists."""
     try:
-        row = conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='history_fts'"
-        ).fetchone()
+        row = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='history_fts'").fetchone()
         return row is not None
     except Exception:
         return False
@@ -41,8 +39,7 @@ def setup_fts5(conn) -> None:
             if _fts_table_exists(conn):
                 # 旧版表含 tags 列且从未随 INSERT 维护（不可信），
                 # 丢弃重建为 3 列新架构，由触发器接管。
-                cols = [r[1] for r in conn.execute(
-                    "PRAGMA table_info(history_fts)").fetchall()]
+                cols = [r[1] for r in conn.execute("PRAGMA table_info(history_fts)").fetchall()]
                 if "tags" in cols:
                     conn.execute("DROP TABLE history_fts")
             if not _fts_table_exists(conn):
@@ -147,9 +144,7 @@ def fts_ids(conn, keyword: str, limit: int = 500) -> list[int] | None:
         return None
     try:
         rows = conn.execute(
-            "SELECT rowid FROM history_fts WHERE history_fts MATCH ? "
-            "ORDER BY rank LIMIT ?",
-            (expr, limit)
+            "SELECT rowid FROM history_fts WHERE history_fts MATCH ? ORDER BY rank LIMIT ?", (expr, limit)
         ).fetchall()
         return [r[0] for r in rows]
     except Exception as exc:
@@ -160,6 +155,7 @@ def fts_ids(conn, keyword: str, limit: int = 500) -> list[int] | None:
 def search_entries(keyword: str, limit: int = 50) -> list[int]:
     """Search entries by keyword. Returns list of matching entry IDs."""
     from data.repository import _conn
+
     conn = _conn()
     if not keyword or not keyword.strip():
         return []
@@ -172,7 +168,7 @@ def search_entries(keyword: str, limit: int = 50) -> list[int]:
     try:
         rows = conn.execute(
             "SELECT id FROM history WHERE prompt LIKE ? OR translated LIKE ? OR provider LIKE ? LIMIT ?",
-            (f"%{keyword}%", f"%{keyword}%", f"%{keyword}%", limit)
+            (f"%{keyword}%", f"%{keyword}%", f"%{keyword}%", limit),
         ).fetchall()
         return [r[0] for r in rows]
     except Exception:

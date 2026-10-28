@@ -8,6 +8,7 @@ Replaces the old ``safe_get_image()`` in ``_net.py`` with:
   - SSRF redirect validation
   - Cancellation/deadline hooks
 """
+
 from __future__ import annotations
 
 import logging
@@ -73,8 +74,7 @@ def bounded_download(
         raise ProviderTransientError(f"Download timeout: {exc}") from exc
     except requests.ConnectionError as exc:
         raise ProviderTransientError(f"Connection failed: {exc}") from exc
-    except (GenerationCancelled, DeadlineExceeded,
-            ProviderInvalidResponseError, ProviderPayloadTooLargeError):
+    except (GenerationCancelled, DeadlineExceeded, ProviderInvalidResponseError, ProviderPayloadTooLargeError):
         raise
     except Exception as exc:
         raise ProviderTransientError(f"Download failed: {exc}") from exc
@@ -86,16 +86,12 @@ def bounded_download(
         # Validate content-type
         content_type = resp.headers.get("Content-Type", "").split(";", 1)[0].lower().strip()
         if content_type and content_type not in allowed_types:
-            raise ProviderInvalidResponseError(
-                f"Unsupported content type: {content_type}"
-            )
+            raise ProviderInvalidResponseError(f"Unsupported content type: {content_type}")
 
         # Check Content-Length header first
         length = resp.headers.get("Content-Length")
         if length and int(length) > max_bytes:
-            raise ProviderPayloadTooLargeError(
-                f"Content-Length {length} exceeds max {max_bytes}"
-            )
+            raise ProviderPayloadTooLargeError(f"Content-Length {length} exceeds max {max_bytes}")
 
         # Stream with size cap
         data = bytearray()
@@ -107,13 +103,10 @@ def bounded_download(
             if chunk:
                 data.extend(chunk)
                 if len(data) > max_bytes:
-                    raise ProviderPayloadTooLargeError(
-                        f"Download exceeded {max_bytes} bytes"
-                    )
+                    raise ProviderPayloadTooLargeError(f"Download exceeded {max_bytes} bytes")
     except requests.Timeout as exc:
         raise ProviderTransientError(f"Read timeout: {exc}") from exc
-    except (GenerationCancelled, DeadlineExceeded,
-            ProviderInvalidResponseError, ProviderPayloadTooLargeError):
+    except (GenerationCancelled, DeadlineExceeded, ProviderInvalidResponseError, ProviderPayloadTooLargeError):
         raise
     finally:
         resp.close()
@@ -142,9 +135,7 @@ def _follow_redirects(
             deadline.assert_alive()
 
         if not validate_image_url(current_url):
-            raise ProviderInvalidResponseError(
-                f"Redirect to unsafe URL blocked: {current_url[:100]}"
-            )
+            raise ProviderInvalidResponseError(f"Redirect to unsafe URL blocked: {current_url[:100]}")
 
         resp = session.get(
             current_url,
@@ -175,6 +166,4 @@ def _follow_redirects(
         # 中间跳响应必须关闭，重定向链长时才不泄漏连接
         resp.close()
 
-    raise ProviderInvalidResponseError(
-        f"Too many redirects (>{MAX_REDIRECT_HOPS})"
-    )
+    raise ProviderInvalidResponseError(f"Too many redirects (>{MAX_REDIRECT_HOPS})")

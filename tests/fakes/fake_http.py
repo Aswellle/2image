@@ -4,6 +4,7 @@ tests/fakes/fake_http.py — Fake HTTP responses/session for testing
 Avoids any real network calls while exercising provider HTTP
 error mapping, redirect handling, and download bounds checks.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -35,6 +36,7 @@ class FakeResponse:
 
     def json(self):
         import json
+
         return json.loads(self.text)
 
     def iter_content(self, chunk_size: int = 8192):

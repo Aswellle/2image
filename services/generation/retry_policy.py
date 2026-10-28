@@ -5,6 +5,7 @@ Single place that decides *how long* to wait between attempts.
 Replaces scattered ``sleep(2)``, ``sleep(3)``, ``sleep(10*attempt)``
 previously duplicated across every provider file.
 """
+
 from __future__ import annotations
 
 import random

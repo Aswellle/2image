@@ -3,11 +3,11 @@ tests/fakes/scenarios.py — Pre-built fault injection scenarios
 ──────────────────────────────────────────────────────────────
 Reusable test scenarios for common provider failure patterns.
 """
+
 from __future__ import annotations
 
 from tests.fakes.fake_http import FakeResponse, FakeSession, make_image_response
 from tests.fakes.fake_provider import ProviderScript, ScriptedProvider
-
 
 
 def scenario_then_fallback(
@@ -59,10 +59,7 @@ def scenario_rate_limit_then_success(
 def scenario_all_fail(ids: list[str] | None = None) -> dict[str, ScriptedProvider]:
     """Every provider fails — orchestrator raises after exhausting all."""
     ids = ids or ["a", "b", "c"]
-    return {
-        pid: ScriptedProvider(pid, ProviderScript().add_transient("down"))
-        for pid in ids
-    }
+    return {pid: ScriptedProvider(pid, ProviderScript().add_transient("down")) for pid in ids}
 
 
 def scenario_recovery_after_transients(
@@ -80,9 +77,7 @@ def scenario_recovery_after_transients(
 def http_scenario_429_then_200() -> FakeSession:
     """Fake session that returns 429 then 200."""
     session = FakeSession()
-    session.enqueue(
-        FakeResponse(status_code=429, headers={"Retry-After": "1"}, content=b"slow down")
-    )
+    session.enqueue(FakeResponse(status_code=429, headers={"Retry-After": "1"}, content=b"slow down"))
     session.enqueue(make_image_response())
     return session
 

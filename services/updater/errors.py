@@ -6,6 +6,7 @@ Every failure in the update pipeline carries a machine-readable code
 ``upd_err_*`` i18n keys and log the technical ``detail`` separately,
 so users always see an explainable state instead of a raw traceback.
 """
+
 from __future__ import annotations
 
 from enum import Enum

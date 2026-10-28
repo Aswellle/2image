@@ -32,7 +32,12 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import (
+    get_session as _get_session,
+    validate_image_url as _validate_image_url,
+    safe_error_text as _safe_error_text,
+    safe_get_image as _safe_get_image,
+)
 
 
 PROVIDER_INFO = {
@@ -43,22 +48,18 @@ PROVIDER_INFO = {
 }
 
 
-
-
 # ── 串行锁 ────────────────────────────────────────────────────────────
 _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV = 2.0
 
 _ENDPOINT = "https://api.x.ai/v1/images/generations"
-_MODEL    = "grok-imagine-image-quality"
-_TIMEOUT  = 120
+_MODEL = "grok-imagine-image-quality"
+_TIMEOUT = 120
 _MAX_RETRIES = 3
 
 
-def try_xai_grok(
-    prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
-) -> Tuple[bytes, str]:
+def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("xai_key", "").strip()
     if not key:
         raise ValueError(
@@ -69,16 +70,16 @@ def try_xai_grok(
 
     headers = {
         "Authorization": f"Bearer {key}",
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
     }
 
     # ── 注意：grok-2-image-1212 当前不支持 size/quality/style 参数 ──
     # 传入 size 会返回 HTTP 400 "Argument not supported: size"
     # 图片固定生成 1024×1024 JPEG，API 自动决定尺寸
     payload = {
-        "model":           _MODEL,
-        "prompt":          prompt,
-        "n":               1,
+        "model": _MODEL,
+        "prompt": prompt,
+        "n": 1,
         "response_format": "url",
     }
 
@@ -90,7 +91,6 @@ def try_xai_grok(
         if gap < _MIN_INTV:
             time.sleep(_MIN_INTV - gap)
         _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
-
 
     last_err = None
     for attempt in range(1, _MAX_RETRIES + 1):
@@ -113,13 +113,9 @@ def try_xai_grok(
                     "提示：消费满 $5 后可开启数据共享计划获得 $150/月免费额度"
                 )
             if resp.status_code == 401:
-                raise ValueError(
-                    "xAI API Key 无效或已过期，请前往 https://console.x.ai 重新生成。"
-                )
+                raise ValueError("xAI API Key 无效或已过期，请前往 https://console.x.ai 重新生成。")
             if resp.status_code != 200:
-                raise RuntimeError(
-                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                )
+                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
 
             data = resp.json()
             image_bytes = _extract_image(data, log)
@@ -138,6 +134,7 @@ def try_xai_grok(
                 time.sleep(4 * attempt)
 
     raise RuntimeError(f"xAI Grok 全部重试失败：{last_err}")
+
 
 def _extract_image(data: dict, log: Callable) -> bytes:
     """解析 OpenAI 兼容的 {data:[{url}]} 或 {data:[{b64_json}]} 格式。"""

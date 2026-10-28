@@ -1,6 +1,7 @@
 """
 tests/test_design_tokens.py — Design tokens and SBOM tests
 """
+
 from __future__ import annotations
 
 import json
@@ -32,11 +33,24 @@ class TestDesignTokens:
 
     def test_semantic_alias_keys_exist(self):
         """语义令牌别名键必须齐全（暗色单主题）。"""
-        for key in ("surface", "surface_raised", "surface_hover",
-                    "surface_selected", "accent", "accent_hover",
-                    "success", "danger", "warning", "divider",
-                    "text_primary", "text_secondary", "text_muted",
-                    "text_inverse", "surface_disabled", "text_disabled"):
+        for key in (
+            "surface",
+            "surface_raised",
+            "surface_hover",
+            "surface_selected",
+            "accent",
+            "accent_hover",
+            "success",
+            "danger",
+            "warning",
+            "divider",
+            "text_primary",
+            "text_secondary",
+            "text_muted",
+            "text_inverse",
+            "surface_disabled",
+            "text_disabled",
+        ):
             assert key in DARK_THEME, f"DARK_THEME 缺少语义键 {key}"
 
     def test_all_colors_valid_hex(self):
@@ -44,7 +58,7 @@ class TestDesignTokens:
             assert _HEX_RE.match(val), f"DARK_THEME.{key} = {val!r} 不是 #rrggbb"
 
     def test_init_theme_resyncs_tokens(self):
-        TOKENS.accent = "#000000"   # 模拟外部篡改
+        TOKENS.accent = "#000000"  # 模拟外部篡改
         init_theme({})
         assert TOKENS.accent == DARK_THEME["acc"]
 

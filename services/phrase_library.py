@@ -7,6 +7,7 @@ v2 新增：
   PHRASE_DESCRIPTIONS  ── 每条内置词条的中文效果说明
   get_phrase_desc()    ── 按词条查询中文说明，供 phrase_panel 悬浮提示使用
 """
+
 import json
 import os
 from config.settings import APP_DIR
@@ -83,7 +84,6 @@ ALL_CATEGORIES: list[str] = list(BUILTIN_PHRASES.keys())
 #   每条 60～100 字，突出「可见的画面效果」而非学术定义
 # ──────────────────────────────────────────────────────────────
 PHRASE_DESCRIPTIONS: dict[str, str] = {
-
     # ─── ✨ 画质增强 ──────────────────────────────────────────
     "masterpiece": (
         "🏆 最高画质总指令。让模型向博物馆级艺术品看齐，"
@@ -125,7 +125,6 @@ PHRASE_DESCRIPTIONS: dict[str, str] = {
         "整体质感如同杂志大片。"
         "适合需要广告图或时尚写真感的高品质图像。"
     ),
-
     # ─── 💡 光影效果 ──────────────────────────────────────────
     "golden hour lighting": (
         "🌅 「黄金时段光」。日出后或日落前约一小时的暖橙色"
@@ -162,7 +161,6 @@ PHRASE_DESCRIPTIONS: dict[str, str] = {
         "好莱坞大片的布光风格，为画面注入强烈视觉张力。"
         "适合英雄、悬疑、史诗等视觉冲击力强的题材。"
     ),
-
     # ─── 🎨 艺术风格 ──────────────────────────────────────────
     "photorealistic": (
         "📸 「照片级写实」。高度逼真，细节与质感与真实照片"
@@ -199,7 +197,6 @@ PHRASE_DESCRIPTIONS: dict[str, str] = {
         "金属高光、皮肤次表面散射效果极为真实细腻。"
         "适合产品可视化、科幻场景与概念设计图。"
     ),
-
     # ─── 📐 构图方式 ──────────────────────────────────────────
     "rule of thirds": (
         "📐 「三分构图法」。将画面分成九宫格，主体置于交叉点，"
@@ -231,7 +228,6 @@ PHRASE_DESCRIPTIONS: dict[str, str] = {
         "高大雄伟、充满压迫感与力量感。"
         "适合英雄形象塑造、摩天高楼与纪念碑类构图。"
     ),
-
     # ─── 📷 镜头参数 ──────────────────────────────────────────
     "85mm portrait lens, f/1.4 bokeh": (
         "📸 人像黄金焦段 + 超大光圈。浅景深令背景呈现奶油般"
@@ -263,7 +259,6 @@ PHRASE_DESCRIPTIONS: dict[str, str] = {
         "产生背景与前景贴近的空间压缩感。"
         "适合野生动物、远处人像及层叠山峦等远摄场景。"
     ),
-
     # ─── 🌙 氛围情绪 ──────────────────────────────────────────
     "romantic dreamy atmosphere": (
         "💕 「浪漫梦幻氛围」。柔焦光晕、飘落花瓣、粉紫梦幻"
@@ -295,7 +290,6 @@ PHRASE_DESCRIPTIONS: dict[str, str] = {
         "阳光明媚的高亮场景，充满青春朝气与正能量。"
         "适合青少年、运动、节日庆典类图像。"
     ),
-
     # ─── 👤 人物细节 ──────────────────────────────────────────
     "smooth porcelain skin": (
         "✨ 「如瓷器般光滑肌肤」。细腻白皙、几乎无瑕疵的"
@@ -339,6 +333,7 @@ def _load_custom() -> dict[str, list[str]]:
             backup = _CUSTOM_FILE + ".corrupt.bak"
             if os.path.exists(_CUSTOM_FILE):
                 import shutil
+
                 shutil.copy2(_CUSTOM_FILE, backup)
         except Exception:
             pass
@@ -348,9 +343,9 @@ def _load_custom() -> dict[str, list[str]]:
 def _save_custom(data: dict) -> None:
     """原子写入自定义词条（temp + os.replace），防止断电/崩溃损坏词库。"""
     import tempfile
+
     os.makedirs(os.path.dirname(_CUSTOM_FILE), exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(_CUSTOM_FILE),
-                               suffix=".tmp")
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(_CUSTOM_FILE), suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)

@@ -1,4 +1,5 @@
 """tests/test_toast.py — ToastManager 单元测试（真实 Tk，验证生命周期）。"""
+
 from __future__ import annotations
 
 import tkinter as tk

@@ -11,14 +11,17 @@ services/providers/dashscope_qwen.py — 阿里云 DashScope 通义万相 / Qwen
 配置模式不匹配，这里暂只做文生图；如需图生图请自行在 config.json
 里补充 workspace 相关参数后扩展本文件。
 """
+
 import threading
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import (get_session as _get_session,
-                                    safe_error_text as _safe_error_text,
-                                    safe_get_image as _safe_get_image,
-                                    raise_if_cancelled as _raise_if_cancelled)
+from services.providers._net import (
+    get_session as _get_session,
+    safe_error_text as _safe_error_text,
+    safe_get_image as _safe_get_image,
+    raise_if_cancelled as _raise_if_cancelled,
+)
 
 PROVIDER_INFO = {
     "id": "dashscope_qwen",
@@ -28,36 +31,34 @@ PROVIDER_INFO = {
 }
 
 
-_LOCK      = threading.Lock()
+_LOCK = threading.Lock()
 _LAST_DONE = [0.0]
-_MIN_INTV  = 2.0
+_MIN_INTV = 2.0
 
 _SUBMIT_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis"
-_TASK_URL   = "https://dashscope.aliyuncs.com/api/v1/tasks/{task_id}"
-_MODEL      = "wanx2.1-t2i-turbo"
-_TIMEOUT    = 30
-_MAX_POLL   = 30
+_TASK_URL = "https://dashscope.aliyuncs.com/api/v1/tasks/{task_id}"
+_MODEL = "wanx2.1-t2i-turbo"
+_TIMEOUT = 30
+_MAX_POLL = 30
 _POLL_INTERVAL = 8
 
 
-def try_dashscope_qwen(
-    prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
-) -> Tuple[bytes, str]:
+def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("dashscope_key", "").strip()
     if not key:
         raise ValueError("需要阿里云 DashScope API Key！注册：https://dashscope.console.aliyun.com/")
 
     headers = {
-        "Authorization":       f"Bearer {key}",
-        "Content-Type":        "application/json",
-        "X-DashScope-Async":   "enable",
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "X-DashScope-Async": "enable",
     }
     payload = {
         "model": cfg.get("dashscope_model", _MODEL),
         "input": {"prompt": prompt},
         "parameters": {
             "size": f"{w}*{h}",
-            "n":    1,
+            "n": 1,
             "seed": seed % 2_147_483_647,
         },
     }
@@ -93,12 +94,12 @@ def try_dashscope_qwen(
             timeout=_TIMEOUT,
         )
         if poll_resp.status_code != 200:
-            log(f"    轮询 {i+1}/{_MAX_POLL} 状态异常 {poll_resp.status_code}，继续等待…")
+            log(f"    轮询 {i + 1}/{_MAX_POLL} 状态异常 {poll_resp.status_code}，继续等待…")
             continue
 
         output = poll_resp.json().get("output", {})
         status = output.get("task_status", "")
-        log(f"    轮询 {i+1}/{_MAX_POLL}：{status}")
+        log(f"    轮询 {i + 1}/{_MAX_POLL}：{status}")
 
         if status == "SUCCEEDED":
             results = output.get("results", [])
@@ -107,7 +108,7 @@ def try_dashscope_qwen(
             img_url = results[0]["url"]
             log("  下载图片中…")
             data = _safe_get_image(img_url, timeout=60)
-            log(f"  ✓ 通义万相成功  {len(data)//1024}KB")
+            log(f"  ✓ 通义万相成功  {len(data) // 1024}KB")
             return data, "DashScope/Qwen-Image"
 
         if status in ("FAILED", "CANCELED", "UNKNOWN"):

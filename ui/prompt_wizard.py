@@ -540,8 +540,12 @@ class PromptWizard(tk.Toplevel):
         dim_host = tk.Frame(parent, bg=C["bg"])
         dim_host.pack(fill="x", padx=PX, pady=(6, 0))
 
-        self._dim_style = _DimRow(cv_ref, dim_host, _("wizard_label_style"), _presets(STYLE_P), guide=_("wizard_guide_style"))
-        self._dim_mood = _DimRow(cv_ref, dim_host, _("wizard_label_mood"), _presets(MOOD_P), guide=_("wizard_guide_mood"))
+        self._dim_style = _DimRow(
+            cv_ref, dim_host, _("wizard_label_style"), _presets(STYLE_P), guide=_("wizard_guide_style")
+        )
+        self._dim_mood = _DimRow(
+            cv_ref, dim_host, _("wizard_label_mood"), _presets(MOOD_P), guide=_("wizard_guide_mood")
+        )
 
         # 高级维度宿主：默认收起，点击「更多精细控制」展开
         self._adv_host = tk.Frame(dim_host, bg=C["bg"])
@@ -1101,9 +1105,11 @@ class PromptWizard(tk.Toplevel):
         # ── 智能压缩按钮 ────────────────────────────────────────
         if info["status"] == "too_long":
             set_enabled(
-                self._trim_btn, True,
+                self._trim_btn,
+                True,
                 text=_("wizard_trim_to_count", count=len(info["trimmed"].split())),
-                bg=C["dis_bg"], fg=C["neg_fg"],
+                bg=C["dis_bg"],
+                fg=C["neg_fg"],
             )
         elif info["status"] == "acceptable":
             set_enabled(self._trim_btn, True, text=_("wizard_trim_suggest"), bg=C["neg_bg"], fg=C["gold"])
@@ -1174,8 +1180,7 @@ class PromptWizard(tk.Toplevel):
 
     def _copy_box(self, box: tk.Text):
         text = box.get("1.0", "end").strip()
-        copying_placeholder = box is getattr(self, "_pos_box", None) and getattr(
-            self, "_pos_placeholder", False)
+        copying_placeholder = box is getattr(self, "_pos_box", None) and getattr(self, "_pos_placeholder", False)
         if text and not copying_placeholder:
             self.clipboard_clear()
             self.clipboard_append(text)

@@ -3,6 +3,7 @@
 两套提示（侧栏气泡 / 词条库说明卡）必须共用同一套延迟、帧数与
 淡入曲线，否则同一种控件同一种意图会出现快慢不一。
 """
+
 from __future__ import annotations
 
 import pytest

@@ -6,6 +6,7 @@ This is Phase 1 of NET-03: existing providers continue to work via
 their try_* functions, but new adapters can implement this interface
 for better testability and error mapping.
 """
+
 from __future__ import annotations
 
 from typing import Callable, Optional, Protocol, Tuple

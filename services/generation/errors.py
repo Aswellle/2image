@@ -19,6 +19,7 @@ Mapping guide:
   JSON decode fail  → ProviderTransientError (retry once)
   Image validate    → ProviderInvalidResponseError
 """
+
 from __future__ import annotations
 
 

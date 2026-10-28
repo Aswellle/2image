@@ -17,6 +17,7 @@ choose between running it and opening the releases page.
 All network/disk work happens on daemon threads; UI only receives
 callbacks marshalled through root.after.
 """
+
 from __future__ import annotations
 
 import os
@@ -95,7 +96,7 @@ class AboutDialog(tk.Toplevel):
 
         self._flow = UpdateFlow()
         self._token: CancellationToken | None = None
-        self._manifest = None            # UpdateManifest | None
+        self._manifest = None  # UpdateManifest | None
         self._package_path: Path | None = None
 
         self._build()
@@ -109,70 +110,114 @@ class AboutDialog(tk.Toplevel):
     def _build(self):
         hdr = tk.Frame(self, bg=C["acc"])
         hdr.pack(fill="x")
-        tk.Label(hdr, text=_("about_title"), font=F["title"],
-                 bg=C["acc"], fg="white").pack(anchor="w", padx=20, pady=14)
+        tk.Label(hdr, text=_("about_title"), font=F["title"], bg=C["acc"], fg="white").pack(
+            anchor="w", padx=20, pady=14
+        )
 
         body = tk.Frame(self, bg=C["bg"])
         body.pack(fill="both", expand=True, padx=20)
 
-        self._ver_lbl = tk.Label(body, text="", font=F["h2"],
-                                 bg=C["bg"], fg=C["text"])
+        self._ver_lbl = tk.Label(body, text="", font=F["h2"], bg=C["bg"], fg=C["text"])
         self._ver_lbl.pack(anchor="w", pady=(14, 2))
 
-        tk.Label(body, text=_("about_repo_hint"), font=F["small"],
-                 bg=C["bg"], fg=C["sub"]).pack(anchor="w")
+        tk.Label(body, text=_("about_repo_hint"), font=F["small"], bg=C["bg"], fg=C["sub"]).pack(anchor="w")
 
         row = tk.Frame(body, bg=C["bg"])
         row.pack(fill="x", pady=(12, 4))
         self._check_btn = tk.Button(
-            row, text=_("about_check_update"), font=F["btn"],
-            bg=C["acc"], fg="white", bd=0, padx=16, pady=8,
-            cursor="hand2", command=self.start_check,
-            activebackground=C["acc"], activeforeground="white")
+            row,
+            text=_("about_check_update"),
+            font=F["btn"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=16,
+            pady=8,
+            cursor="hand2",
+            command=self.start_check,
+            activebackground=C["acc"],
+            activeforeground="white",
+        )
         self._check_btn.pack(side="left")
 
         self._github_btn = tk.Button(
-            row, text="🐙 GitHub", font=F["btn"],
-            bg=C["panel"], fg=C["text"], bd=0, padx=16, pady=8,
+            row,
+            text="🐙 GitHub",
+            font=F["btn"],
+            bg=C["panel"],
+            fg=C["text"],
+            bd=0,
+            padx=16,
+            pady=8,
             cursor="hand2",
-            command=lambda: webbrowser.open(REPO_URL))
+            command=lambda: webbrowser.open(REPO_URL),
+        )
         self._github_btn.pack(side="left", padx=(10, 0))
 
         self._open_btn = tk.Button(
-            row, text=_("about_open_releases"), font=F["btn"],
-            bg=C["panel"], fg=C["text"], bd=0, padx=16, pady=8,
+            row,
+            text=_("about_open_releases"),
+            font=F["btn"],
+            bg=C["panel"],
+            fg=C["text"],
+            bd=0,
+            padx=16,
+            pady=8,
             cursor="hand2",
-            command=lambda: webbrowser.open(RELEASES_PAGE))
+            command=lambda: webbrowser.open(RELEASES_PAGE),
+        )
         self._open_btn.pack(side="left", padx=(10, 0))
 
         # update status area
-        self._status_lbl = tk.Label(body, text="", font=F["body"],
-                                    bg=C["bg"], fg=C["sub"],
-                                    wraplength=500, justify="left",
-                                    anchor="w")
+        self._status_lbl = tk.Label(
+            body, text="", font=F["body"], bg=C["bg"], fg=C["sub"], wraplength=500, justify="left", anchor="w"
+        )
         self._status_lbl.pack(fill="x", pady=(10, 0))
 
         self._notes_btn = tk.Button(
-            body, text=_("about_view_notes"), font=F["small"],
-            bg=C["panel"], fg=C["text"], bd=0, padx=10, pady=4,
-            cursor="hand2", command=self._open_notes)
+            body,
+            text=_("about_view_notes"),
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["text"],
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=self._open_notes,
+        )
         # packed only in UPDATE_AVAILABLE state
 
-        self._progress = ttk.Progressbar(body, maximum=100, length=560,
-                                        style="Update.Horizontal.TProgressbar")
+        self._progress = ttk.Progressbar(body, maximum=100, length=560, style="Update.Horizontal.TProgressbar")
         self._cancel_btn = tk.Button(
-            body, text=_("about_cancel_download"), font=F["small"],
-            bg=C["panel"], fg=C["sub"], bd=0, padx=10, pady=4,
-            cursor="hand2", command=self._cancel_download)
+            body,
+            text=_("about_cancel_download"),
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=self._cancel_download,
+        )
 
         # action row
         act = tk.Frame(body, bg=C["bg"])
         act.pack(fill="x", side="bottom", pady=(0, 14))
         self._install_btn = tk.Button(
-            act, text=_("about_download_install"), font=F["btn"],
-            bg=C["ok"], fg="#0a1a0a", bd=0, padx=18, pady=9,
-            cursor="hand2", state="disabled",
-            command=self._begin_install)
+            act,
+            text=_("about_download_install"),
+            font=F["btn"],
+            bg=C["ok"],
+            fg="#0a1a0a",
+            bd=0,
+            padx=18,
+            pady=9,
+            cursor="hand2",
+            state="disabled",
+            command=self._begin_install,
+        )
         self._install_btn.pack(side="right")
 
     def _fill_version(self):
@@ -187,15 +232,13 @@ class AboutDialog(tk.Toplevel):
     def _apply_ui(self):
         """Single place mapping the flow state onto widgets."""
         state = self._flow.state
-        busy = state in (UpdateState.CHECKING, UpdateState.DOWNLOADING,
-                         UpdateState.VERIFYING)
+        busy = state in (UpdateState.CHECKING, UpdateState.DOWNLOADING, UpdateState.VERIFYING)
         set_enabled(self._check_btn, not busy)
         installable = state in (UpdateState.UPDATE_AVAILABLE, UpdateState.READY_TO_INSTALL)
         set_enabled(
-            self._install_btn, installable,
-            text=_("about_install_ready")
-            if state is UpdateState.READY_TO_INSTALL
-            else _("about_download_install"),
+            self._install_btn,
+            installable,
+            text=_("about_install_ready") if state is UpdateState.READY_TO_INSTALL else _("about_download_install"),
         )
 
         if state is UpdateState.DOWNLOADING:
@@ -222,34 +265,31 @@ class AboutDialog(tk.Toplevel):
 
     # ── check ────────────────────────────────────────────────
     def start_check(self):
-        if self._flow.state in (UpdateState.CHECKING, UpdateState.DOWNLOADING,
-                                UpdateState.VERIFYING):
+        if self._flow.state in (UpdateState.CHECKING, UpdateState.DOWNLOADING, UpdateState.VERIFYING):
             return
-        self._token = None      # a stale cancelled token must not poison the check
+        self._token = None  # a stale cancelled token must not poison the check
         self._transition(UpdateState.CHECKING)
         self._set_status(_("about_checking"), C["sub"])
-        threading.Thread(target=self._check_worker, daemon=True,
-                         name="update-check").start()
+        threading.Thread(target=self._check_worker, daemon=True, name="update-check").start()
 
     def _check_worker(self):
         try:
             manifest = self._fetch()
         except GenerationCancelled:
-            self.root.after(0, lambda: self._check_failed(
-                UpdateErrorCode.CANCELLED, ""))
+            self.root.after(0, lambda: self._check_failed(UpdateErrorCode.CANCELLED, ""))
             return
         except UpdateError as exc:
             self.root.after(0, lambda e=exc: self._check_failed(e.code, e.detail))
             return
         except Exception as exc:  # unexpected — still a failed check
             append_update_log(f"unexpected check error: {type(exc).__name__}: {exc}")
-            self.root.after(0, lambda e=exc: self._check_failed(
-                UpdateErrorCode.NETWORK_ERROR, f"{type(e).__name__}"))
+            self.root.after(0, lambda e=exc: self._check_failed(UpdateErrorCode.NETWORK_ERROR, f"{type(e).__name__}"))
             return
         self.root.after(0, lambda: self._check_done(manifest))
 
     def _fetch(self):
         from services.updater.manifest import fetch_manifest
+
         return fetch_manifest(get_current_version(), token=self._token)
 
     def _check_failed(self, code: UpdateErrorCode, detail: str):
@@ -261,8 +301,7 @@ class AboutDialog(tk.Toplevel):
         msg = _("about_check_failed", err=_err_text(code))
         if code is not UpdateErrorCode.CANCELLED:
             msg += "\n" + _("about_check_failed_hint")
-        self._set_status(msg, C["hl"] if code is not UpdateErrorCode.CANCELLED
-                         else C["sub"])
+        self._set_status(msg, C["hl"] if code is not UpdateErrorCode.CANCELLED else C["sub"])
         self._apply_ui()
 
     def _check_done(self, manifest):
@@ -272,8 +311,7 @@ class AboutDialog(tk.Toplevel):
             return  # dialog closed / cancelled meanwhile
         if manifest is None:
             self._transition(UpdateState.NO_UPDATE)
-            self._set_status(
-                _("about_up_to_date", version=get_current_version()), C["ok"])
+            self._set_status(_("about_up_to_date", version=get_current_version()), C["ok"])
             return
         self._manifest = manifest
         self._transition(UpdateState.UPDATE_AVAILABLE)
@@ -281,8 +319,7 @@ class AboutDialog(tk.Toplevel):
         size_mb = manifest.installer.size / 1048576
         text = _("about_new_found", tag=manifest.tag, current=current)
         if manifest.published_at:
-            text += ("\n" + _("about_released_at",
-                              date=manifest.published_at[:10]))
+            text += "\n" + _("about_released_at", date=manifest.published_at[:10])
         text += "\n" + _("about_size_line", size=f"{size_mb:.0f}")
         self._set_status(text, C["warn"])
 
@@ -296,61 +333,64 @@ class AboutDialog(tk.Toplevel):
             return
         self._token = CancellationToken()
         self._transition(UpdateState.DOWNLOADING)
-        self._set_status(_("about_downloading", tag=self._manifest.tag,
-                           pct=0, done="0.0", total="?", speed="0.0"), C["sub"])
+        self._set_status(
+            _("about_downloading", tag=self._manifest.tag, pct=0, done="0.0", total="?", speed="0.0"), C["sub"]
+        )
 
         def _worker():
             try:
                 path = _downloader.download_verified(
                     self._manifest.installer,
                     _state.download_dir(self._manifest.version),
-                    token=self._token, progress=self._progress_cb)
+                    token=self._token,
+                    progress=self._progress_cb,
+                )
             except GenerationCancelled:
-                self.root.after(0, lambda: self._download_failed(
-                    UpdateErrorCode.CANCELLED, ""))
+                self.root.after(0, lambda: self._download_failed(UpdateErrorCode.CANCELLED, ""))
                 return
             except UpdateError as exc:
-                self.root.after(0, lambda e=exc: self._download_failed(
-                    e.code, e.detail))
+                self.root.after(0, lambda e=exc: self._download_failed(e.code, e.detail))
                 return
             except Exception as exc:
-                append_update_log(
-                    f"unexpected download error: {type(exc).__name__}: {exc}")
-                self.root.after(0, lambda e=exc: self._download_failed(
-                    UpdateErrorCode.DOWNLOAD_FAILED, type(e).__name__))
+                append_update_log(f"unexpected download error: {type(exc).__name__}: {exc}")
+                self.root.after(
+                    0, lambda e=exc: self._download_failed(UpdateErrorCode.DOWNLOAD_FAILED, type(e).__name__)
+                )
                 return
             self.root.after(0, lambda: self._download_done(path))
 
-        threading.Thread(target=_worker, daemon=True,
-                         name="update-download").start()
+        threading.Thread(target=_worker, daemon=True, name="update-download").start()
 
     def _progress_cb(self, stage: str, done: int, total: int, speed: float):
         def _apply():
             if not self._alive():
                 return
-            if self._flow.state not in (UpdateState.DOWNLOADING,
-                                        UpdateState.VERIFYING):
+            if self._flow.state not in (UpdateState.DOWNLOADING, UpdateState.VERIFYING):
                 return
             if stage == "verify":
                 if self._flow.state is UpdateState.DOWNLOADING:
                     self._transition(UpdateState.VERIFYING)
                 self._set_status(_("about_verifying"), C["sub"])
                 if total:
-                    self._progress.config(
-                        value=min(100, done * 100 // max(1, total)))
+                    self._progress.config(value=min(100, done * 100 // max(1, total)))
                 return
             if total:
                 pct = done * 100 // total
                 self._set_status(
-                    _("about_downloading", tag=self._manifest.tag, pct=pct,
-                      done=f"{done / 1048576:.1f}",
-                      total=f"{total / 1048576:.1f}",
-                      speed=f"{speed / 1048576:.1f}"), C["sub"])
+                    _(
+                        "about_downloading",
+                        tag=self._manifest.tag,
+                        pct=pct,
+                        done=f"{done / 1048576:.1f}",
+                        total=f"{total / 1048576:.1f}",
+                        speed=f"{speed / 1048576:.1f}",
+                    ),
+                    C["sub"],
+                )
                 self._progress.config(value=pct)
             else:
-                self._set_status(
-                    _("about_downloading_nolen",
-                      done=f"{done / 1048576:.1f}"), C["sub"])
+                self._set_status(_("about_downloading_nolen", done=f"{done / 1048576:.1f}"), C["sub"])
+
         self.root.after(0, _apply)
 
     def _download_done(self, path):
@@ -360,24 +400,20 @@ class AboutDialog(tk.Toplevel):
         if self._flow.state is UpdateState.DOWNLOADING:
             self._transition(UpdateState.VERIFYING)
         self._transition(UpdateState.READY_TO_INSTALL)
-        self._set_status(
-            _("about_ready", path=str(self._package_path)), C["ok"])
+        self._set_status(_("about_ready", path=str(self._package_path)), C["ok"])
 
     def _download_failed(self, code: UpdateErrorCode, detail: str):
         if not self._alive():
             return
         append_update_log(f"download failed: {code.value} {detail}")
         was_cancelled = code is UpdateErrorCode.CANCELLED
-        if self._flow.state in (UpdateState.DOWNLOADING,
-                                UpdateState.VERIFYING):
+        if self._flow.state in (UpdateState.DOWNLOADING, UpdateState.VERIFYING):
             self._transition(UpdateState.FAILED)
-            self._transition(UpdateState.UPDATE_AVAILABLE
-                             if self._manifest is not None else UpdateState.IDLE)
+            self._transition(UpdateState.UPDATE_AVAILABLE if self._manifest is not None else UpdateState.IDLE)
         if was_cancelled:
             self._set_status(_("about_download_cancelled"), C["sub"])
         else:
-            self._set_status(
-                _("about_install_failed") + "\n" + _err_text(code), C["hl"])
+            self._set_status(_("about_install_failed") + "\n" + _err_text(code), C["hl"])
             self.app._log(f"[update] download failed: {code.value} {detail}")
         self._apply_ui()
 
@@ -396,8 +432,7 @@ class AboutDialog(tk.Toplevel):
             return
         if not getattr(sys, "frozen", False):
             # dev environment: no in-app install
-            messagebox.showinfo(
-                _("about_title"), _("about_dev_hint"), parent=self)
+            messagebox.showinfo(_("about_title"), _("about_dev_hint"), parent=self)
             webbrowser.open(RELEASES_PAGE)
             return
         if _installer.detect_install_mode():
@@ -409,14 +444,12 @@ class AboutDialog(tk.Toplevel):
         # §18: never force-exit over running generation/queue tasks
         if self.app._has_active_tasks():
             choice = messagebox.askyesnocancel(
-                _("about_tasks_running_title"),
-                _("about_tasks_running_body"), parent=self)
+                _("about_tasks_running_title"), _("about_tasks_running_body"), parent=self
+            )
             if choice is not True:
                 self._set_status(_("about_tasks_wait_hint"), C["sub"])
                 return
-        if not messagebox.askyesno(
-                _("about_title"), _("about_confirm_install_body"),
-                parent=self):
+        if not messagebox.askyesno(_("about_title"), _("about_confirm_install_body"), parent=self):
             return
 
         install_dir = _installer.detect_install_dir()
@@ -424,30 +457,33 @@ class AboutDialog(tk.Toplevel):
         try:
             if updater_exe.is_file():
                 args = [
-                    "--installer", str(self._package_path),
-                    "--expected-sha256", self._manifest.installer.sha256,
-                    "--install-dir", str(install_dir),
-                    "--parent-pid", str(os.getpid()),
-                    "--parent-exe", sys.executable,
-                    "--from-version", get_current_version(),
-                    "--target-version", self._manifest.version,
+                    "--installer",
+                    str(self._package_path),
+                    "--expected-sha256",
+                    self._manifest.installer.sha256,
+                    "--install-dir",
+                    str(install_dir),
+                    "--parent-pid",
+                    str(os.getpid()),
+                    "--parent-exe",
+                    sys.executable,
+                    "--from-version",
+                    get_current_version(),
+                    "--target-version",
+                    self._manifest.version,
                 ]
                 _installer.launch_detached(updater_exe, args)
             else:
                 # degraded path: no bundled updater → direct silent install
                 # (no re-verification / rollback protection)
-                messagebox.showwarning(
-                    _("about_title"), _("about_updater_missing"), parent=self)
-                append_update_log(
-                    "2image_updater.exe missing — falling back to direct "
-                    "silent install")
+                messagebox.showwarning(_("about_title"), _("about_updater_missing"), parent=self)
+                append_update_log("2image_updater.exe missing — falling back to direct silent install")
                 cmd = _installer.build_installer_command(
-                    self._package_path, install_dir,
-                    _state.log_path().with_name("update-install.log"))
+                    self._package_path, install_dir, _state.log_path().with_name("update-install.log")
+                )
                 subprocess.Popen(
-                    cmd, close_fds=True,
-                    creationflags=subprocess.DETACHED_PROCESS
-                    | subprocess.CREATE_NEW_PROCESS_GROUP)
+                    cmd, close_fds=True, creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+                )
         except OSError as exc:
             append_update_log(f"installer launch failed: {exc}")
             self._fail_install(str(exc))
@@ -462,9 +498,8 @@ class AboutDialog(tk.Toplevel):
     def _portable_install(self):
         # §20 phase 1: run the installer or send the user to releases
         if messagebox.askyesno(
-                _("about_title"),
-                _("about_portable_ready_body", path=str(self._package_path)),
-                parent=self):
+            _("about_title"), _("about_portable_ready_body", path=str(self._package_path)), parent=self
+        ):
             try:
                 _installer.launch_detached(self._package_path)
             except OSError as exc:
@@ -487,7 +522,6 @@ class AboutDialog(tk.Toplevel):
     def _on_close(self):
         if self._token is not None:
             self._token.cancel()
-        if (self._flow.state is UpdateState.UPDATE_AVAILABLE
-                and self._manifest is not None):
+        if self._flow.state is UpdateState.UPDATE_AVAILABLE and self._manifest is not None:
             _state.dismiss(self._manifest.version)
         self.destroy()

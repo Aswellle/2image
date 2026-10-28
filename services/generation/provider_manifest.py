@@ -5,10 +5,10 @@ Defines the manifest structure for providers with stable IDs
 decoupled from display names.  The registry uses these IDs
 for all routing decisions; display names are UI-only.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-
 
 
 @dataclass(frozen=True)
@@ -253,6 +253,7 @@ LEGACY_NAME_TO_ID: dict[str, str] = {
     "Ideogram v4 (文字入图)": "ideogram",
     "Recraft v3/v4 (设计/插画)": "recraft",
 }
+
 
 def resolve_provider_id(name_or_id: str) -> str | None:
     """Convert a legacy display name or ID to a stable ID."""

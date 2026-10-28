@@ -4,6 +4,7 @@
 openai 名称、cloudflare config_key），导致路由与可用性判断失准。
 本测试把两份注册表锁进一致——变更 provider 元数据时必须同步双方。
 """
+
 import importlib
 import pkgutil
 
@@ -65,8 +66,7 @@ def test_all_config_keys_exist_in_defaults():
 
 def test_multi_key_providers_declared():
     """Cloudflare 需要 Account ID + API Token 双凭证全部就绪。"""
-    assert registry.MULTI_KEY_PROVIDERS.get("cloudflare_ai") == (
-        "cf_account_id", "cf_api_token")
+    assert registry.MULTI_KEY_PROVIDERS.get("cloudflare_ai") == ("cf_account_id", "cf_api_token")
     for pid, keys in registry.MULTI_KEY_PROVIDERS.items():
         for k in keys:
             assert k in DEFAULT_CONFIG, (pid, k)
@@ -110,7 +110,6 @@ def test_wizard_configured_matches_actual_wizards():
 
     infos = _provider_infos()
     for pid, info in infos.items():
-        keys = MULTI_KEY_PROVIDERS.get(pid) or (
-            (info["config_key"],) if info.get("config_key") else ())
+        keys = MULTI_KEY_PROVIDERS.get(pid) or ((info["config_key"],) if info.get("config_key") else ())
         covered = all(k in written for k in keys) if keys else True
         assert (pid in registry.WIZARD_CONFIGURED) == covered, pid

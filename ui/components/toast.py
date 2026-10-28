@@ -10,6 +10,7 @@ stays in the status bar; toasts are for one-shot acknowledgements.
 · 淡入 → 停留 → 淡出；不支持 alpha 的环境下静默降级为直接显示
 · show() 内部经 root.after 调度，工作线程调用亦安全
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -37,8 +38,7 @@ class ToastManager:
         self._jobs: list[str] = []
 
     # ── 公共 API ─────────────────────────────────────────────
-    def show(self, message: str, level: str = "info",
-             duration_ms: int | None = None) -> None:
+    def show(self, message: str, level: str = "info", duration_ms: int | None = None) -> None:
         """入队一条通知。线程安全：实际显示经 root.after 调度。"""
         if level not in self.LEVELS:
             level = "info"
@@ -73,12 +73,11 @@ class ToastManager:
                 win.wm_attributes("-topmost", True)
             except tk.TclError:
                 pass
-            frm = tk.Frame(win, bg=TOKENS.surface_elevated,
-                           highlightbackground=TOKENS.border_subtle,
-                           highlightthickness=1)
+            frm = tk.Frame(
+                win, bg=TOKENS.surface_elevated, highlightbackground=TOKENS.border_subtle, highlightthickness=1
+            )
             frm.pack(fill="both", expand=True)
-            self._lbl = tk.Label(frm, font=F["body"], padx=16, pady=10,
-                                 justify="left", anchor="w")
+            self._lbl = tk.Label(frm, font=F["body"], padx=16, pady=10, justify="left", anchor="w")
             self._lbl.pack()
             self._win = win
 
@@ -86,16 +85,16 @@ class ToastManager:
         self._lbl.config(text=message, bg=colors["bg"], fg=colors["fg"])
         self._lbl.update_idletasks()
         self._position()
-        self._fade(1.0 / _FADE_IN_STEPS, _FADE_IN_STEPS,
-                   lambda: self._jobs.append(
-                       self._root.after(duration, self._fade_out)))
+        self._fade(
+            1.0 / _FADE_IN_STEPS, _FADE_IN_STEPS, lambda: self._jobs.append(self._root.after(duration, self._fade_out))
+        )
 
     def _colors_for(self, level: str) -> dict:
         return {
             "success": {"bg": TOKENS.success, "fg": TOKENS.text_inverse},
-            "info":    {"bg": TOKENS.surface_elevated, "fg": TOKENS.text_primary},
+            "info": {"bg": TOKENS.surface_elevated, "fg": TOKENS.text_primary},
             "warning": {"bg": TOKENS.warning, "fg": TOKENS.text_inverse},
-            "error":   {"bg": TOKENS.danger, "fg": TOKENS.text_inverse},
+            "error": {"bg": TOKENS.danger, "fg": TOKENS.text_inverse},
         }.get(level, {"bg": TOKENS.surface_elevated, "fg": TOKENS.text_primary})
 
     def _position(self):
@@ -124,15 +123,12 @@ class ToastManager:
         alpha = min(1.0, alpha + step)
         self._set_alpha(alpha)
         if steps > 1:
-            self._jobs.append(self._root.after(
-                _FADE_STEP_MS,
-                lambda: self._fade(step, steps - 1, done, alpha)))
+            self._jobs.append(self._root.after(_FADE_STEP_MS, lambda: self._fade(step, steps - 1, done, alpha)))
         else:
             done()
 
     def _fade_out(self):
-        self._fade(-1.0 / _FADE_OUT_STEPS, _FADE_OUT_STEPS, self._finish_current,
-                   alpha=1.0)
+        self._fade(-1.0 / _FADE_OUT_STEPS, _FADE_OUT_STEPS, self._finish_current, alpha=1.0)
 
     def _finish_current(self):
         self._set_alpha(0.0)

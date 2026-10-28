@@ -11,6 +11,7 @@ Usage::
     lbl.set_state("translating")
     lbl.set_provider("SiliconFlow")
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -60,9 +61,7 @@ class GenerationStateLabel(tk.Label):
         if provider:
             self._provider = provider
 
-        icon, color_key, label = _STATE_DISPLAY.get(
-            state, ("❓", "text_secondary", "Unknown")
-        )
+        icon, color_key, label = _STATE_DISPLAY.get(state, ("❓", "text_secondary", "Unknown"))
         color = getattr(TOKENS, color_key, TOKENS.text_secondary)
 
         provider_text = f" ({self._provider})" if self._provider else ""

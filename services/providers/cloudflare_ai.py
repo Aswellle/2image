@@ -16,13 +16,16 @@ Cloudflare Workers AI 是 Cloudflare 提供的免费 AI 推理服务。
 
 API 响应：直接返回 base64 编码的图片数据（无需二次下载）
 """
+
 import base64
 import time
 import requests
 from typing import Callable, Tuple
-from services.providers._net import (get_session as _get_session,
-                                    safe_error_text as _safe_error_text,
-                                    read_bounded as _read_bounded)
+from services.providers._net import (
+    get_session as _get_session,
+    safe_error_text as _safe_error_text,
+    read_bounded as _read_bounded,
+)
 
 PROVIDER_INFO = {
     "id": "cloudflare_ai",
@@ -33,9 +36,8 @@ PROVIDER_INFO = {
 }
 
 
-
 _API_BASE = "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}"
-_TIMEOUT  = 60
+_TIMEOUT = 60
 
 # 模型列表（按质量排序）
 # FLUX.1-schnell：12B 参数，质量最高，速度约 2-5s
@@ -43,23 +45,22 @@ _TIMEOUT  = 60
 # SDXL-Lightning：最快，4步蒸馏，质量稍次
 _CF_MODELS = [
     # (model_path,                                              steps, guidance, max_sz)
-    ("@cf/black-forest-labs/flux-1-schnell",                    8,     0.0,    1024),
-    ("@cf/stabilityai/stable-diffusion-xl-base-1.0",            20,    7.5,    1024),
-    ("@cf/bytedance/stable-diffusion-xl-lightning",              4,     0.0,    1024),
+    ("@cf/black-forest-labs/flux-1-schnell", 8, 0.0, 1024),
+    ("@cf/stabilityai/stable-diffusion-xl-base-1.0", 20, 7.5, 1024),
+    ("@cf/bytedance/stable-diffusion-xl-lightning", 4, 0.0, 1024),
 ]
 
 # HQ 模式：优先 FLUX，跳过 Lightning
 _CF_HQ_MODELS = [
-    ("@cf/black-forest-labs/flux-1-schnell",                    8,     0.0,    1024),
-    ("@cf/stabilityai/stable-diffusion-xl-base-1.0",            30,    8.0,    1024),
+    ("@cf/black-forest-labs/flux-1-schnell", 8, 0.0, 1024),
+    ("@cf/stabilityai/stable-diffusion-xl-base-1.0", 30, 8.0, 1024),
 ]
 
 
-def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int,
-                      cfg: dict, log: Callable) -> Tuple[bytes, str]:
+def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     """调用 Cloudflare Workers AI 图像生成接口。"""
     account_id = cfg.get("cf_account_id", "").strip()
-    api_token  = cfg.get("cf_api_token",  "").strip()
+    api_token = cfg.get("cf_api_token", "").strip()
 
     if not account_id or not api_token:
         raise ValueError(
@@ -68,14 +69,14 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int,
             "Token：https://dash.cloudflare.com/profile/api-tokens"
         )
 
-    hq_mode    = bool(cfg.get("variant_hq", False))
+    hq_mode = bool(cfg.get("variant_hq", False))
     model_list = _CF_HQ_MODELS if hq_mode else _CF_MODELS
-    mode_tag   = "HQ变体" if hq_mode else "标准"
+    mode_tag = "HQ变体" if hq_mode else "标准"
     log(f"► Cloudflare Workers AI（免费 10K neurons/天）[{mode_tag}]…")
 
     headers = {
         "Authorization": f"Bearer {api_token}",
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
     }
 
     def snap(v: int, mx: int) -> int:
@@ -87,12 +88,12 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int,
         model_short = model_path.split("/")[-1]
         log(f"  模型: {model_short}  {sw}×{sh}  steps={steps}")
 
-        url     = _API_BASE.format(account_id=account_id, model=model_path)
+        url = _API_BASE.format(account_id=account_id, model=model_path)
         payload = {
             "prompt": prompt,
-            "width":  sw,
+            "width": sw,
             "height": sh,
-            "seed":   seed % 2_147_483_647,
+            "seed": seed % 2_147_483_647,
         }
         # FLUX.1-schnell 用 steps（1-8），SDXL 系用 num_steps —— 避免 FLUX 步数参数被忽略
         payload["steps" if "flux" in model_path else "num_steps"] = steps
@@ -100,8 +101,7 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int,
             payload["guidance"] = guidance
 
         try:
-            resp = _get_session().post(url, headers=headers, json=payload,
-                                 timeout=_TIMEOUT)
+            resp = _get_session().post(url, headers=headers, json=payload, timeout=_TIMEOUT)
         except requests.exceptions.ConnectionError as e:
             log(f"    网络错误: {e}，换模型…")
             continue
@@ -170,7 +170,7 @@ def try_cloudflare_ai(prompt: str, w: int, h: int, seed: int,
             log("    图片数据过小，换模型…")
             continue
 
-        log(f"  ✓ Cloudflare/{model_short} 成功，{len(img_bytes)//1024}KB")
+        log(f"  ✓ Cloudflare/{model_short} 成功，{len(img_bytes) // 1024}KB")
         return img_bytes, f"Cloudflare/{model_short}"
 
     raise ValueError(

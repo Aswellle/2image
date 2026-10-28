@@ -20,6 +20,7 @@ tools/check_i18n.py — i18n 质量门（I18N-001）
     python tools/check_i18n.py --hardcoded --baseline FILE       # 棘轮模式
     python tools/check_i18n.py --hardcoded --update-baseline FILE
 """
+
 from __future__ import annotations
 
 import ast
@@ -35,14 +36,24 @@ I18N_MODULE = "config/i18n.py"
 
 _CJK_RE = re.compile(r"[\u4e00-\u9fff]")
 # 这些调用里的中文视为开发日志/调试信息，允许不翻译（§35）
-_LOGGISH = {"log", "log_cb", "_log", "log_to_file", "make_log_callback",
-            "debug", "info", "warning", "error", "print"}
+_LOGGISH = {"log", "log_cb", "_log", "log_to_file", "make_log_callback", "debug", "info", "warning", "error", "print"}
 # 关键词参数中的字符串视为用户可见
-_VISIBLE_KWARGS = {"text", "label", "title", "message", "msg", "values",
-                   "initialfile", "confirm", "tooltip", "placeholder"}
+_VISIBLE_KWARGS = {
+    "text",
+    "label",
+    "title",
+    "message",
+    "msg",
+    "values",
+    "initialfile",
+    "confirm",
+    "tooltip",
+    "placeholder",
+}
 
 
 # ── 缺失 key 检查 ──────────────────────────────────────────────
+
 
 def load_strings() -> dict:
     src = (PROJECT_ROOT / I18N_MODULE).read_text(encoding="utf-8")
@@ -88,6 +99,7 @@ def check_missing_keys() -> int:
 
 # ── 代码使用键检查 ────────────────────────────────────────────
 
+
 def collect_used_keys() -> dict[str, list[str]]:
     """收集 ui/services/config/data + main.py 中 _(“字面量”) 调用的 key。"""
     used: dict[str, list[str]] = {}
@@ -114,8 +126,7 @@ def collect_used_keys() -> dict[str, list[str]]:
                     continue
                 arg = node.args[0]
                 if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    used.setdefault(arg.value, []).append(
-                        f"{rel}:{node.lineno}")
+                    used.setdefault(arg.value, []).append(f"{rel}:{node.lineno}")
     return used
 
 
@@ -124,8 +135,7 @@ def check_used_keys(strings: dict) -> int:
     used = collect_used_keys()
     missing = {k: locs for k, locs in used.items() if k not in strings}
     if missing:
-        print(f"[used-keys] 代码使用了 {len(missing)} 个 STRINGS 中不存在的 key:",
-              file=sys.stderr)
+        print(f"[used-keys] 代码使用了 {len(missing)} 个 STRINGS 中不存在的 key:", file=sys.stderr)
         for k in sorted(missing)[:20]:
             print(f"    {k}  <- {missing[k][0]}", file=sys.stderr)
         if len(missing) > 20:
@@ -136,6 +146,7 @@ def check_used_keys(strings: dict) -> int:
 
 
 # ── 硬编码扫描 ─────────────────────────────────────────────────
+
 
 def _is_loggish(node: ast.AST, parents: dict) -> bool:
     """字符串位于日志类调用（直接参数或关键字值）中。"""
@@ -188,19 +199,20 @@ def scan_hardcoded() -> list[dict]:
             for node in ast.walk(tree):
                 if isinstance(node, ast.Constant) and isinstance(node.value, str):
                     if _CJK_RE.search(node.value) and _visible_string(node, parents):
-                        findings.append({
-                            "file": rel,
-                            "line": node.lineno,
-                            "text": node.value.strip()[:60],
-                        })
+                        findings.append(
+                            {
+                                "file": rel,
+                                "line": node.lineno,
+                                "text": node.value.strip()[:60],
+                            }
+                        )
     return findings
 
 
 def report_hardcoded(baseline_path: str | None, update: bool) -> int:
     findings = scan_hardcoded()
     if update:
-        Path(baseline_path).write_text(
-            json.dumps(findings, ensure_ascii=False, indent=1), encoding="utf-8")
+        Path(baseline_path).write_text(json.dumps(findings, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"[hardcoded] 基线已更新：{len(findings)} 条 → {baseline_path}")
         return 0
     if not baseline_path:
@@ -227,15 +239,14 @@ def report_hardcoded(baseline_path: str | None, update: bool) -> int:
 
 def main() -> int:
     import argparse
+
     parser = argparse.ArgumentParser(description="i18n 质量门（I18N-001）")
-    parser.add_argument("--missing-keys", action="store_true",
-                        help="校验各 locale key 集合一致（硬门槛）")
-    parser.add_argument("--hardcoded", action="store_true",
-                        help="扫描硬编码中文字符串")
-    parser.add_argument("--baseline", metavar="FILE",
-                        help="棘轮模式：仅报告基线之外的新增项并返回非零")
-    parser.add_argument("--update-baseline", metavar="FILE", dest="update_baseline",
-                        help="将当前扫描结果写入基线文件并退出")
+    parser.add_argument("--missing-keys", action="store_true", help="校验各 locale key 集合一致（硬门槛）")
+    parser.add_argument("--hardcoded", action="store_true", help="扫描硬编码中文字符串")
+    parser.add_argument("--baseline", metavar="FILE", help="棘轮模式：仅报告基线之外的新增项并返回非零")
+    parser.add_argument(
+        "--update-baseline", metavar="FILE", dest="update_baseline", help="将当前扫描结果写入基线文件并退出"
+    )
     args = parser.parse_args()
 
     if not args.missing_keys and not args.hardcoded:

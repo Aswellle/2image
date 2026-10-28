@@ -5,6 +5,7 @@
 · 侧栏宽度从配置恢复并受 MIN/MAX 约束
 · Ctrl+\ 折叠/展开、双击分隔条恢复默认、拖拽结束持久化
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -75,32 +76,35 @@ def test_esc_no_overlay_noop(app):
 def test_nav_history_moves_selection(app, tk_root):
     a, _ = app
     from data.repository import add_entry
+
     newest = add_entry("newest prompt", "", "", "prov")
     older = add_entry("older prompt", "", "", "prov")
     a.sidebar._refresh_hist()  # 键盘导航作用于可见（过滤后）列表
     tk_root.update()
-    a._nav_history_guarded(delta=-1)   # 无选中 → 列表末条（显示顺序最后）
+    a._nav_history_guarded(delta=-1)  # 无选中 → 列表末条（显示顺序最后）
     assert a.sel_id in (newest["id"], older["id"])
     first = a.sel_id
     other = older["id"] if first == newest["id"] else newest["id"]
     a._nav_history_guarded(delta=+1)
-    assert a.sel_id == first           # 已在列表末端，继续下移被钳制
+    assert a.sel_id == first  # 已在列表末端，继续下移被钳制
     a._nav_history_guarded(delta=-1)
-    assert a.sel_id == other           # 反向移动到相邻条目
+    assert a.sel_id == other  # 反向移动到相邻条目
 
 
 def test_nav_guard_ignores_typing_focus(app, tk_root, monkeypatch):
     a, _ = app
     from data.repository import add_entry
+
     add_entry("some prompt", "", "", "prov")
     monkeypatch.setattr(a, "_typing_focus", lambda: True)
     a._nav_history_guarded(delta=-1)
-    assert a.sel_id is None            # 输入焦点在文本框：不劫持
+    assert a.sel_id is None  # 输入焦点在文本框：不劫持
 
 
 def test_delete_guard_respects_typing_focus(app, tk_root, monkeypatch):
     a, _ = app
     from data.repository import add_entry
+
     e = add_entry("to delete", "", "", "prov")
     a.sel_id = e["id"]
     called = []
@@ -109,4 +113,4 @@ def test_delete_guard_respects_typing_focus(app, tk_root, monkeypatch):
     assert called == [e["id"]]
     monkeypatch.setattr(a, "_typing_focus", lambda: True)
     a._delete_selected_guarded()
-    assert called == [e["id"]]         # 输入焦点在文本框时不触发删除
+    assert called == [e["id"]]  # 输入焦点在文本框时不触发删除

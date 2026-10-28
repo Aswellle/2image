@@ -4,6 +4,7 @@ tests/test_job_queue.py — Job Queue V2 tests
 Validates the job state machine, queue operations, pause/resume,
 cancel, and metrics tracking.
 """
+
 from __future__ import annotations
 
 import time
@@ -65,7 +66,6 @@ class TestQueueMetrics:
         job.finished_at = time.time()
         m.record_completion(job)
         assert m.provider_stats["siliconflow"]["success"] == 1
-
 
         job = Job(state=JobState.FAILED, provider_id="bad")
         m.record_completion(job)

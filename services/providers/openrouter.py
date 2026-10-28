@@ -44,14 +44,10 @@ _TIMEOUT = 120
 _MAX_RETRIES = 3
 
 
-def try_openrouter(
-    prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
-) -> Tuple[bytes, str]:
+def try_openrouter(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("openrouter_key", "").strip()
     if not key:
-        raise ValueError(
-            "需要 OpenRouter API Key！注册：https://openrouter.ai/keys"
-        )
+        raise ValueError("需要 OpenRouter API Key！注册：https://openrouter.ai/keys")
 
     model = cfg.get("openrouter_model", "").strip() or _DEFAULT_MODEL
 
@@ -78,7 +74,6 @@ def try_openrouter(
             time.sleep(_MIN_INTV - gap)
         _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
 
-
     last_err = None
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
@@ -96,9 +91,7 @@ def try_openrouter(
             if resp.status_code == 402:
                 raise ValueError("OpenRouter 余额不足，请充值或更换其他模型。")
             if resp.status_code != 200:
-                raise RuntimeError(
-                    f"HTTP {resp.status_code}: {_safe_error_text(resp)}"
-                )
+                raise RuntimeError(f"HTTP {resp.status_code}: {_safe_error_text(resp)}")
 
             data = resp.json()
             image_bytes = _extract_image(data)
@@ -117,6 +110,7 @@ def try_openrouter(
                 time.sleep(4 * attempt)
 
     raise RuntimeError(f"OpenRouter 全部重试失败：{last_err}")
+
 
 def _extract_image(data: dict) -> bytes:
     """统一 Image API 响应：data[].b64_json。"""

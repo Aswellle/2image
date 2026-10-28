@@ -1,6 +1,7 @@
 """Standalone updater script (tools/updater/updater.py): argument
 validation, pre-execution hash re-verification, confirmation wait and
 rollback behavior — the installer itself is never executed here."""
+
 import hashlib
 import importlib.util
 import sys
@@ -14,8 +15,7 @@ _SPEC_PATH = ROOT / "tools" / "updater" / "updater.py"
 
 
 def _load_module():
-    spec = importlib.util.spec_from_file_location("updater_script",
-                                                  _SPEC_PATH)
+    spec = importlib.util.spec_from_file_location("updater_script", _SPEC_PATH)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -44,6 +44,7 @@ def _args(tmp_path, **over):
 
 # ── helpers ──────────────────────────────────────────────────
 
+
 def test_sha256_of_file_matches_hashlib(upd, tmp_path):
     p = tmp_path / "blob.bin"
     p.write_bytes(b"x" * 5000)
@@ -60,6 +61,7 @@ def test_wait_for_pid_nonexistent_exits_fast(upd):
 
 def test_wait_for_confirmation_checks_success_marker(upd):
     from services.updater import state as st
+
     assert upd.wait_for_confirmation(0.1, poll=0.05) is False
     st.success_path().parent.mkdir(parents=True, exist_ok=True)
     st.success_path().write_text("{}", encoding="utf-8")
@@ -70,6 +72,7 @@ def test_wait_for_confirmation_checks_success_marker(upd):
 
 
 # ── child flow ───────────────────────────────────────────────
+
 
 def test_child_rejects_bad_sha_length(upd, tmp_path, monkeypatch):
     # _fatal opens a real blocking MessageBox — never allowed in tests
@@ -91,17 +94,17 @@ def test_child_refuses_tampered_installer_before_running_it(upd, tmp_path):
     args = _args(tmp_path)  # expected sha is all-zero → mismatch
     launched = []
     monkey = pytest.MonkeyPatch()
-    monkey.setattr(upd.upd_installer, "run_installer",
-                   lambda cmd: launched.append(cmd) or 0)
+    monkey.setattr(upd.upd_installer, "run_installer", lambda cmd: launched.append(cmd) or 0)
     try:
         assert upd.run_child(args) == upd.EXIT_HASH
-        assert launched == []          # installer never executed
+        assert launched == []  # installer never executed
     finally:
         monkey.undo()
 
 
 def test_child_rollback_restores_old_exe_on_install_failure(upd, tmp_path):
     from services.updater import state as st
+
     install_dir = tmp_path / "install"
     install_dir.mkdir(parents=True)
     old_exe = install_dir / "2image.exe"
@@ -116,8 +119,7 @@ def test_child_rollback_restores_old_exe_on_install_failure(upd, tmp_path):
     monkey = pytest.MonkeyPatch()
     relaunched = []
     monkey.setattr(upd.upd_installer, "run_installer", lambda cmd: 1)  # fail
-    monkey.setattr(upd.upd_installer, "launch_detached",
-                   lambda exe, args=None: relaunched.append(Path(exe)))
+    monkey.setattr(upd.upd_installer, "launch_detached", lambda exe, args=None: relaunched.append(Path(exe)))
     monkey.setattr(upd, "_fatal", lambda *a, **k: None)
     try:
         assert upd.run_child(args) == upd.EXIT_ROLLBACK
@@ -129,6 +131,7 @@ def test_child_rollback_restores_old_exe_on_install_failure(upd, tmp_path):
 
 def test_child_waits_for_confirmation_and_cleans_up(upd, tmp_path):
     from services.updater import state as st
+
     install_dir = tmp_path / "install"
     install_dir.mkdir(parents=True)
     old_exe = install_dir / "2image.exe"
@@ -153,11 +156,10 @@ def test_child_waits_for_confirmation_and_cleans_up(upd, tmp_path):
     monkey = pytest.MonkeyPatch()
     killed = []
     monkey.setattr(upd.upd_installer, "run_installer", lambda cmd: 0)
-    monkey.setattr(upd.upd_installer, "launch_detached",
-                   lambda exe, cmd_args=None: fake_launch(exe, cmd_args))
+    monkey.setattr(upd.upd_installer, "launch_detached", lambda exe, cmd_args=None: fake_launch(exe, cmd_args))
     try:
         assert upd.run_child(args) == upd.EXIT_OK
-        assert st.read_pending() is None          # cleaned up
+        assert st.read_pending() is None  # cleaned up
         assert not st.success_path().exists()
         assert killed == []
     finally:
@@ -166,6 +168,7 @@ def test_child_waits_for_confirmation_and_cleans_up(upd, tmp_path):
 
 def test_child_rolls_back_when_new_build_never_confirms(upd, tmp_path):
     from services.updater import state as st
+
     install_dir = tmp_path / "install"
     install_dir.mkdir(parents=True)
     old_exe = install_dir / "2image.exe"
@@ -183,8 +186,7 @@ def test_child_rolls_back_when_new_build_never_confirms(upd, tmp_path):
     monkey = pytest.MonkeyPatch()
     relaunched = []
     monkey.setattr(upd.upd_installer, "run_installer", lambda cmd: 0)
-    monkey.setattr(upd.upd_installer, "launch_detached",
-                   lambda exe, args=None: relaunched.append(Path(exe)))
+    monkey.setattr(upd.upd_installer, "launch_detached", lambda exe, args=None: relaunched.append(Path(exe)))
     monkey.setattr(upd, "_fatal", lambda *a, **k: None)
     # pretend the installer produced the new exe but it never confirmed
     monkey.setattr(upd.upd_installer, "APP_EXE_NAME", "2image.exe")

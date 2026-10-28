@@ -14,6 +14,7 @@ Supports: pause/resume, cancel, retry, metrics tracking.
 QueueMetrics）；``_process_job`` 是占位实现，不执行真实生成——
 生产队列见 ``ui/queue_panel.py``。接入 orchestrator 前勿用于生产。
 """
+
 from __future__ import annotations
 
 import enum
@@ -99,8 +100,10 @@ class Job:
     @property
     def is_terminal(self) -> bool:
         return self.state in {
-            JobState.SUCCEEDED, JobState.FAILED,
-            JobState.CANCELLED, JobState.DEADLINE_EXCEEDED,
+            JobState.SUCCEEDED,
+            JobState.FAILED,
+            JobState.CANCELLED,
+            JobState.DEADLINE_EXCEEDED,
         }
 
 
@@ -130,9 +133,7 @@ class QueueMetrics:
             if job.state in (JobState.SUCCEEDED, JobState.FAILED):
                 n = self.total_succeeded + self.total_failed
                 if n > 0:
-                    self.avg_duration_ms = (
-                        self.avg_duration_ms * (n - 1) + job.duration_ms
-                    ) / n
+                    self.avg_duration_ms = (self.avg_duration_ms * (n - 1) + job.duration_ms) / n
 
         # Per-provider stats
         provider = job.result_provider or job.provider_id or "unknown"
@@ -252,8 +253,7 @@ class JobQueue:
     def get_pending_count(self) -> int:
         with self._lock:
             return sum(
-                1 for j in self._jobs.values()
-                if j.state in (JobState.QUEUED, JobState.TRANSLATING, JobState.ROUTING)
+                1 for j in self._jobs.values() if j.state in (JobState.QUEUED, JobState.TRANSLATING, JobState.ROUTING)
             )
 
     @property
@@ -271,7 +271,9 @@ class JobQueue:
         if new_state not in valid and old_state != new_state:
             log.warning(
                 "Invalid transition: %s → %s for job %s",
-                old_state, new_state, job.id,
+                old_state,
+                new_state,
+                job.id,
             )
             return
         job.state = new_state

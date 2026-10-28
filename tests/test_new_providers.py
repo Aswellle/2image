@@ -3,6 +3,7 @@ tests/test_new_providers.py — 新增模型接口测试
 
 覆盖 volcengine_ark、GPT-Image 2/2.5、Gemini Nano Banana 版本选择
 """
+
 from __future__ import annotations
 
 import base64
@@ -11,12 +12,25 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from config.model_catalog import (
-    ARK_IMAGE_DEFAULT, ARK_IMAGE_NAMES, ARK_IMAGE_MODELS,
-    GPT_IMAGE_1, GPT_IMAGE_1_MINI, GPT_IMAGE_1_5, GPT_IMAGE_2,
-    GPT_IMAGE_DEFAULT, GPT_IMAGE_NAMES, GPT_IMAGE_MODELS,
-    GPT_IMAGE_25_FLARE, GPT_IMAGE_25_SUNBURST,
-    GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_NAMES, GEMINI_IMAGE_MODELS,
-    GEMINI_NB_V1, GEMINI_NB_V2, GEMINI_NB_V2_LITE, GEMINI_NB_PRO,
+    ARK_IMAGE_DEFAULT,
+    ARK_IMAGE_NAMES,
+    ARK_IMAGE_MODELS,
+    GPT_IMAGE_1,
+    GPT_IMAGE_1_MINI,
+    GPT_IMAGE_1_5,
+    GPT_IMAGE_2,
+    GPT_IMAGE_DEFAULT,
+    GPT_IMAGE_NAMES,
+    GPT_IMAGE_MODELS,
+    GPT_IMAGE_25_FLARE,
+    GPT_IMAGE_25_SUNBURST,
+    GEMINI_IMAGE_DEFAULT,
+    GEMINI_IMAGE_NAMES,
+    GEMINI_IMAGE_MODELS,
+    GEMINI_NB_V1,
+    GEMINI_NB_V2,
+    GEMINI_NB_V2_LITE,
+    GEMINI_NB_PRO,
 )
 
 
@@ -49,6 +63,7 @@ class TestModelCatalog:
     def test_gpt_image_legacy_marked(self):
         """旧版模型应标记为 Legacy"""
         from config.model_catalog import GPT_IMAGE_LEGACY
+
         assert GPT_IMAGE_1 in GPT_IMAGE_LEGACY
         assert GPT_IMAGE_2 not in GPT_IMAGE_LEGACY
 
@@ -67,12 +82,14 @@ class TestModelCatalog:
     def test_gemini_deprecated_marked(self):
         """v1 应标记为弃用"""
         from config.model_catalog import GEMINI_IMAGE_DEPRECATED
+
         assert GEMINI_NB_V1 in GEMINI_IMAGE_DEPRECATED
         assert GEMINI_NB_V2 not in GEMINI_IMAGE_DEPRECATED
 
     def test_ark_models_complete(self):
         """豆包系列应包含 3 个型号"""
         from config.model_catalog import ARK_SEEDREAM_30_T2I, ARK_SEEDREAM_40_T2I, ARK_SEEDIT_30_I2I
+
         assert ARK_SEEDREAM_30_T2I in ARK_IMAGE_MODELS
         assert ARK_SEEDREAM_40_T2I in ARK_IMAGE_MODELS
         assert ARK_SEEDIT_30_I2I in ARK_IMAGE_MODELS
@@ -96,17 +113,20 @@ class TestVolcengineArkProvider:
 
     def test_provider_info(self):
         from services.providers.volcengine_ark import PROVIDER_INFO
+
         assert PROVIDER_INFO["id"] == "volcengine_ark"
         assert PROVIDER_INFO["config_key"] == "volcengine_key"
         assert PROVIDER_INFO["category"] == "commercial"
 
     def test_missing_key_raises_valueerror(self):
         from services.providers.volcengine_ark import try_volcengine_ark
+
         with pytest.raises(ValueError, match="火山引擎"):
             try_volcengine_ark("test", 64, 64, 42, {}, print)
 
     def test_missing_key_empty_raises_valueerror(self):
         from services.providers.volcengine_ark import try_volcengine_ark
+
         with pytest.raises(ValueError, match="火山引擎"):
             try_volcengine_ark("test", 64, 64, 42, {"volcengine_key": "  "}, print)
 
@@ -117,9 +137,7 @@ class TestVolcengineArkProvider:
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "data": [{"url": "https://example.com/img.png"}]
-        }
+        mock_resp.json.return_value = {"data": [{"url": "https://example.com/img.png"}]}
         mock_session.return_value.post.return_value = mock_resp
 
         # 图片下载走 safe_get_image 安全通道（SSRF 校验），直接 mock 其返回
@@ -139,9 +157,7 @@ class TestVolcengineArkProvider:
         img_b64 = base64.b64encode(b"\x89PNG\r\n\x1a\n" + b"\x00" * 100).decode()
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "data": [{"b64_json": img_b64}]
-        }
+        mock_resp.json.return_value = {"data": [{"b64_json": img_b64}]}
         mock_session.return_value.post.return_value = mock_resp
 
         cfg = {"volcengine_key": "test-key"}
@@ -212,13 +228,7 @@ class TestGeminiNanoBanana:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
-            "candidates": [{
-                "content": {
-                    "parts": [
-                        {"inlineData": {"data": base64.b64encode(b"img").decode()}}
-                    ]
-                }
-            }]
+            "candidates": [{"content": {"parts": [{"inlineData": {"data": base64.b64encode(b"img").decode()}}]}}]
         }
         mock_session.return_value.post.return_value = mock_resp
 
@@ -237,13 +247,7 @@ class TestGeminiNanoBanana:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
-            "candidates": [{
-                "content": {
-                    "parts": [
-                        {"inlineData": {"data": base64.b64encode(b"img").decode()}}
-                    ]
-                }
-            }]
+            "candidates": [{"content": {"parts": [{"inlineData": {"data": base64.b64encode(b"img").decode()}}]}}]
         }
         mock_session.return_value.post.return_value = mock_resp
 
@@ -262,13 +266,7 @@ class TestGeminiNanoBanana:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
-            "candidates": [{
-                "content": {
-                    "parts": [
-                        {"inlineData": {"data": base64.b64encode(b"img").decode()}}
-                    ]
-                }
-            }]
+            "candidates": [{"content": {"parts": [{"inlineData": {"data": base64.b64encode(b"img").decode()}}]}}]
         }
         mock_session.return_value.post.return_value = mock_resp
 
@@ -288,13 +286,16 @@ class TestProviderRegistry:
 
     def test_volcengine_in_all_providers(self):
         from services.providers import ALL_PROVIDERS, COMMERCIAL_PROVIDERS
+
         assert "volcengine_ark" in ALL_PROVIDERS
         assert "volcengine_ark" in COMMERCIAL_PROVIDERS
 
     def test_openai_image_in_paid_providers(self):
         from services.providers import PAID_PROVIDERS
+
         assert "openai_image" in PAID_PROVIDERS
 
     def test_gemini_in_free_providers(self):
         from services.providers import FREE_PROVIDERS
+
         assert "gemini" in FREE_PROVIDERS

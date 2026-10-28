@@ -34,6 +34,7 @@ v4 核心优化：Token 预算控制 + 写实人像专项优化
   ─ 第二梯队：Qwen2.5-72B / Qwen2.5-32B
   ─ 第三梯队：GLM-4-9B（兜底）
 """
+
 import re
 import requests
 
@@ -43,7 +44,7 @@ import requests
 # 目标：58-72 词，硬上限 80 词（超出时后处理截断）
 _WORD_TARGET_MIN = 58
 _WORD_TARGET_MAX = 72
-_WORD_HARD_CAP   = 80     # 后处理截断阈值
+_WORD_HARD_CAP = 80  # 后处理截断阈值
 
 # ══════════════════════════════════════════════════════════════
 #   系统提示词 v4：严格词数控制 + 写实优先结构
@@ -96,18 +97,18 @@ Before outputting: count your words. If >72, cut the lowest-priority words from 
 # ══════════════════════════════════════════════════════════════
 _SF_MODELS = [
     # ─── 第一梯队：DeepSeek V3 系列 ──────────────────────────
-    "deepseek-ai/DeepSeek-V3-0324",   # 首选：最新版 V3，指令遵循最强
-    "deepseek-ai/DeepSeek-V3",        # 备用：原版 V3，稳定
+    "deepseek-ai/DeepSeek-V3-0324",  # 首选：最新版 V3，指令遵循最强
+    "deepseek-ai/DeepSeek-V3",  # 备用：原版 V3，稳定
     # ─── 第二梯队：Qwen2.5 系列 ──────────────────────────────
-    "Qwen/Qwen2.5-72B-Instruct",      # 千问旗舰 72B，英文创作强
-    "Qwen/Qwen2.5-32B-Instruct",      # 千问 32B，速度均衡
+    "Qwen/Qwen2.5-72B-Instruct",  # 千问旗舰 72B，英文创作强
+    "Qwen/Qwen2.5-32B-Instruct",  # 千问 32B，速度均衡
     # ─── 第三梯队：其他开源兜底 ──────────────────────────────
-    "THUDM/glm-4-9b-chat",            # GLM-4 轻量兜底
+    "THUDM/glm-4-9b-chat",  # GLM-4 轻量兜底
 ]
 
 # ── DeepSeek 官方 API 预设（api.deepseek.com）────────────────────
 _DEEPSEEK_PRESET_MODELS = {
-    "deepseek_pro":   ("deepseek-v4-pro", "DeepSeek Pro"),
+    "deepseek_pro": ("deepseek-v4-pro", "DeepSeek Pro"),
     "deepseek_flash": ("deepseek-v4-flash", "DeepSeek Flash"),
 }
 
@@ -119,11 +120,11 @@ _HF_MODELS = [
 
 # ── 模型展示名（用于日志和 UI 提示，更易读）────────────────────
 _SF_MODEL_LABELS = {
-    "deepseek-ai/DeepSeek-V3-0324":  "DeepSeek V3-0324 🥇",
-    "deepseek-ai/DeepSeek-V3":       "DeepSeek V3",
-    "Qwen/Qwen2.5-72B-Instruct":     "Qwen2.5-72B",
-    "Qwen/Qwen2.5-32B-Instruct":     "Qwen2.5-32B",
-    "THUDM/glm-4-9b-chat":           "GLM-4-9B",
+    "deepseek-ai/DeepSeek-V3-0324": "DeepSeek V3-0324 🥇",
+    "deepseek-ai/DeepSeek-V3": "DeepSeek V3",
+    "Qwen/Qwen2.5-72B-Instruct": "Qwen2.5-72B",
+    "Qwen/Qwen2.5-32B-Instruct": "Qwen2.5-32B",
+    "THUDM/glm-4-9b-chat": "GLM-4-9B",
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -142,8 +143,7 @@ NEGATIVE_LIBRARY = {
         "too many fingers, long neck"
     ),
     "写实/摄影": (
-        "painting, illustration, 3d render, cartoon, anime, sketch, "
-        "drawing, art, unrealistic, fake, cgi, digital art"
+        "painting, illustration, 3d render, cartoon, anime, sketch, drawing, art, unrealistic, fake, cgi, digital art"
     ),
     "动漫/插画": (
         "photo, realistic, photograph, 3d, cgi, render, "
@@ -253,7 +253,6 @@ TEMPLATES = {
         "size_hint": "3:4 竖版",
         "tips": "建议尺寸 768×1024，全身竖构图最适合穿搭展示",
     },
-
     # ══════════════════════════════════════════════════════════
     # ── 情绪爆款系列 ──────────────────────────────────────
     # ══════════════════════════════════════════════════════════
@@ -326,7 +325,6 @@ TEMPLATES = {
         "size_hint": "16:9 横版或 9:16 竖版",
         "tips": "建议尺寸 1280×720，日出构图感染力最强",
     },
-
     # ══════════════════════════════════════════════════════════
     # ── 知识干货系列 ──────────────────────────────────────
     # ══════════════════════════════════════════════════════════
@@ -399,7 +397,6 @@ TEMPLATES = {
         "size_hint": "1:1 或 4:3",
         "tips": "建议尺寸 1024×1024，方形构图兼容多平台",
     },
-
     # ══════════════════════════════════════════════════════════
     # ── 微信公众号系列（新增）───────────────────────────
     # ══════════════════════════════════════════════════════════
@@ -494,7 +491,6 @@ TEMPLATES = {
         "size_hint": "16:9 横版",
         "tips": "建议尺寸 1440×810，横版最适合展示品牌气质",
     },
-
     # ══════════════════════════════════════════════════════════
     # ── 电商产品系列 ──────────────────────────────────────
     # ══════════════════════════════════════════════════════════
@@ -567,7 +563,6 @@ TEMPLATES = {
         "size_hint": "16:9 横版",
         "tips": "建议尺寸 1280×720，横版直播间背景标准格式",
     },
-
     # ══════════════════════════════════════════════════════════
     # ── 视频封面系列 ──────────────────────────────────────
     # ══════════════════════════════════════════════════════════
@@ -623,7 +618,6 @@ TEMPLATES = {
         "size_hint": "16:9 横版或 1:1",
         "tips": "建议尺寸 1280×720，人物居中或双人对话构图",
     },
-
     # ══════════════════════════════════════════════════════════
     # ── AI 与数字艺术系列（新增）────────────────────────
     # ══════════════════════════════════════════════════════════
@@ -680,7 +674,6 @@ TEMPLATES = {
         "size_hint": "16:9 或 21:9 超宽",
         "tips": "建议尺寸 1920×1080，超宽屏可用 2560×1080",
     },
-
     # ══════════════════════════════════════════════════════════
     # ── 品牌与营销系列（新增）───────────────────────────
     # ══════════════════════════════════════════════════════════
@@ -791,7 +784,7 @@ def _trim_to_budget(text: str, max_words: int = _WORD_HARD_CAP) -> str:
         candidate = ", ".join(phrases)
         if len(candidate.split()) <= max_words:
             break
-        phrases.pop()   # 删除最后一个短语
+        phrases.pop()  # 删除最后一个短语
 
     result = ", ".join(phrases)
     return result.strip("., ")
@@ -820,28 +813,28 @@ def prompt_budget_info(text: str) -> dict:
     w = _count_words(text)
     c = len(text)
 
-    if w <= _WORD_TARGET_MAX:           # ≤ 72 词：最优
+    if w <= _WORD_TARGET_MAX:  # ≤ 72 词：最优
         status = "optimal"
-        label  = f"✅ 最优  {w} 词 / {c} 字符"
-        color  = "#4ecca3"
-    elif w <= _WORD_HARD_CAP:           # 73-80 词：可接受
+        label = f"✅ 最优  {w} 词 / {c} 字符"
+        color = "#4ecca3"
+    elif w <= _WORD_HARD_CAP:  # 73-80 词：可接受
         status = "acceptable"
-        label  = f"⚠️ 偏长  {w} 词 / {c} 字符"
-        color  = "#f0a500"
-    else:                               # > 80 词：过长
+        label = f"⚠️ 偏长  {w} 词 / {c} 字符"
+        color = "#f0a500"
+    else:  # > 80 词：过长
         status = "too_long"
-        label  = f"❌ 过长  {w} 词 / {c} 字符"
-        color  = "#e94560"
+        label = f"❌ 过长  {w} 词 / {c} 字符"
+        color = "#e94560"
 
     trimmed = _trim_to_budget(text, _WORD_HARD_CAP) if w > _WORD_HARD_CAP else text
 
     return {
-        "words":     w,
-        "chars":     c,
-        "status":    status,
-        "label":     label,
-        "color":     color,
-        "trimmed":   trimmed,
+        "words": w,
+        "chars": c,
+        "status": status,
+        "label": label,
+        "color": color,
+        "trimmed": trimmed,
     }
 
 
@@ -849,17 +842,17 @@ def prompt_budget_info(text: str) -> dict:
 #   主函数：全维度参数生成
 # ══════════════════════════════════════════════════════════════
 def generate_prompt(
-    keywords:    str,
-    cfg:         dict,
-    style:       str = "",
-    mood:        str = "",
-    detail:      str = "",
+    keywords: str,
+    cfg: dict,
+    style: str = "",
+    mood: str = "",
+    detail: str = "",
     composition: str = "",
-    lighting:    str = "",
-    camera:      str = "",
-    quality:     str = "",
-    negative:    str = "",
-    extra:       str = "",
+    lighting: str = "",
+    camera: str = "",
+    quality: str = "",
+    negative: str = "",
+    extra: str = "",
     log_cb=None,
 ) -> tuple:
     """
@@ -867,19 +860,29 @@ def generate_prompt(
     -------
     (positive_prompt: str, negative_prompt: str)
     """
+
     def log(msg):
-        if log_cb: log_cb(msg)
+        if log_cb:
+            log_cb(msg)
 
     # ── 组装结构化用户消息 ─────────────────────────────────────
     parts = [f"主题关键词: {keywords}"]
-    if style:       parts.append(f"风格 (Style): {style}")
-    if mood:        parts.append(f"氛围/情绪 (Mood): {mood}")
-    if detail:      parts.append(f"细节要求 (Detail): {detail}")
-    if composition: parts.append(f"构图方式 (Composition): {composition}")
-    if lighting:    parts.append(f"光影类型 (Lighting): {lighting}")
-    if camera:      parts.append(f"镜头参数 (Camera): {camera}")
-    if quality:     parts.append(f"画质增强 (Quality): {quality}")
-    if extra:       parts.append(f"额外说明: {extra}")
+    if style:
+        parts.append(f"风格 (Style): {style}")
+    if mood:
+        parts.append(f"氛围/情绪 (Mood): {mood}")
+    if detail:
+        parts.append(f"细节要求 (Detail): {detail}")
+    if composition:
+        parts.append(f"构图方式 (Composition): {composition}")
+    if lighting:
+        parts.append(f"光影类型 (Lighting): {lighting}")
+    if camera:
+        parts.append(f"镜头参数 (Camera): {camera}")
+    if quality:
+        parts.append(f"画质增强 (Quality): {quality}")
+    if extra:
+        parts.append(f"额外说明: {extra}")
     user_msg = "\n".join(parts)
 
     sf_key = cfg.get("sf_key", "").strip()
@@ -924,13 +927,15 @@ def generate_prompt(
 # ══════════════════════════════════════════════════════════════
 def apply_template(
     template_id: str,
-    keywords:    str,
-    cfg:         dict = None,
+    keywords: str,
+    cfg: dict = None,
     log_cb=None,
 ) -> tuple:
     """用关键词填充模板，立即返回 (positive, negative)，无网络请求。"""
+
     def log(msg):
-        if log_cb: log_cb(msg)
+        if log_cb:
+            log_cb(msg)
 
     if template_id not in TEMPLATES:
         raise ValueError(f"未知模板 ID: {template_id}")
@@ -944,13 +949,14 @@ def apply_template(
     prop_hints = {
         "美食": "a beautifully plated dish",
         "咖啡": "a latte art coffee cup",
-        "花":   "a bouquet of fresh flowers",
-        "书":   "an open book",
+        "花": "a bouquet of fresh flowers",
+        "书": "an open book",
     }
     prop = "a lifestyle product"
     for kw, hint in prop_hints.items():
         if kw in keywords:
-            prop = hint; break
+            prop = hint
+            break
     pos = pos.replace("{prop_hint}", prop)
 
     neg = t.get("negative", NEGATIVE_LIBRARY["通用质量"])
@@ -1013,27 +1019,32 @@ def _call_siliconflow(api_key: str, user_msg: str, log) -> str:
     url = "https://api.siliconflow.cn/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
     }
 
     for model in _SF_MODELS:
         label = _SF_MODEL_LABELS.get(model, model)
         log(f"🤖 提示词助手 › {label}…")
         try:
-            resp = requests.post(url, headers=headers, json={
-                "model":    model,
-                "messages": [
-                    {"role": "system", "content": _SYSTEM},
-                    {"role": "user",   "content": user_msg},
-                ],
-                # v4 关键参数调整：
-                # · temperature 0.60（↓ 0.72）— 减少发散，提高指令遵循精准度
-                # · max_tokens  160 — 72词×平均2.1 token/词≈151，留10 buffer
-                #   严格控制输出长度，防止 DeepSeek 过度生成
-                "temperature": 0.60,
-                "max_tokens":  160,
-                "stream":      False,
-            }, timeout=40)
+            resp = requests.post(
+                url,
+                headers=headers,
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": _SYSTEM},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    # v4 关键参数调整：
+                    # · temperature 0.60（↓ 0.72）— 减少发散，提高指令遵循精准度
+                    # · max_tokens  160 — 72词×平均2.1 token/词≈151，留10 buffer
+                    #   严格控制输出长度，防止 DeepSeek 过度生成
+                    "temperature": 0.60,
+                    "max_tokens": 160,
+                    "stream": False,
+                },
+                timeout=40,
+            )
 
             if resp.status_code == 200:
                 data = resp.json()
@@ -1053,8 +1064,7 @@ def _call_siliconflow(api_key: str, user_msg: str, log) -> str:
                 continue
             elif resp.status_code in (401, 403):
                 raise ValueError(
-                    f"API Key 无效或权限不足 (HTTP {resp.status_code})，"
-                    "请在「免费配置」中重新填写硅基流动 Key。"
+                    f"API Key 无效或权限不足 (HTTP {resp.status_code})，请在「免费配置」中重新填写硅基流动 Key。"
                 )
             else:
                 log(f"  {label}: HTTP {resp.status_code}，跳过")
@@ -1075,9 +1085,7 @@ def _call_siliconflow(api_key: str, user_msg: str, log) -> str:
         "  · 网络问题（请检查代理/防火墙）\n"
         "  · 账号余额不足（请登录 siliconflow.cn 充值）\n"
         "  · 当前套餐不包含所选模型\n\n"
-        "候选模型列表：\n"
-        + "\n".join(f"  {i+1}. {_SF_MODEL_LABELS.get(m, m)}"
-                    for i, m in enumerate(_SF_MODELS))
+        "候选模型列表：\n" + "\n".join(f"  {i + 1}. {_SF_MODEL_LABELS.get(m, m)}" for i, m in enumerate(_SF_MODELS))
     )
 
 
@@ -1085,17 +1093,22 @@ def _call_huggingface(token: str, user_msg: str, log) -> str:
     headers = {"Authorization": f"Bearer {token}"}
     for model in _HF_MODELS:
         log(f"🤖 提示词助手 › HF {model}…")
-        url    = f"https://api-inference.huggingface.co/models/{model}"
+        url = f"https://api-inference.huggingface.co/models/{model}"
         prompt = f"<s>[INST] {_SYSTEM}\n\nUser request:\n{user_msg} [/INST]"
         try:
-            resp = requests.post(url, headers=headers, json={
-                "inputs":     prompt,
-                "parameters": {
-                    "max_new_tokens":   160,   # 同步限制
-                    "temperature":      0.60,
-                    "return_full_text": False,
+            resp = requests.post(
+                url,
+                headers=headers,
+                json={
+                    "inputs": prompt,
+                    "parameters": {
+                        "max_new_tokens": 160,  # 同步限制
+                        "temperature": 0.60,
+                        "return_full_text": False,
+                    },
                 },
-            }, timeout=45)
+                timeout=45,
+            )
             if resp.status_code == 200:
                 result = resp.json()
                 if isinstance(result, list) and result:
@@ -1118,9 +1131,12 @@ def _clean(text: str) -> str:
     text = re.sub(
         r"^(Positive Prompt|Positive:|Prompt|OUTPUT|Result|Answer"
         r"|Here is[^:]*:|提示词|Output)[:\s]*",
-        "", text, flags=re.IGNORECASE).strip()
+        "",
+        text,
+        flags=re.IGNORECASE,
+    ).strip()
     # 去除引号
-    text = text.strip('"\'「」')
+    text = text.strip("\"'「」")
     # 合并多余空格
     text = re.sub(r"\s+", " ", text).strip()
     return text

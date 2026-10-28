@@ -1,6 +1,7 @@
 """
 tests/test_components.py — UI component library tests
 """
+
 from __future__ import annotations
 
 import pytest

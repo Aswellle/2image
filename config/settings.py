@@ -9,21 +9,24 @@ v8 变更：
 v5 新增字段：
   together_key, gemini_key, openrouter_key, openrouter_model, xai_key
 """
+
 import json
 import os
 from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
-    BFL_TXT2IMG_DEFAULT, GEMINI_IMAGE_DEFAULT, GPT_IMAGE_DEFAULT,
+    BFL_TXT2IMG_DEFAULT,
+    GEMINI_IMAGE_DEFAULT,
+    GPT_IMAGE_DEFAULT,
 )
 
 # ─── 应用路径 ──────────────────────────────────────────────────
-APP_DIR        = os.path.expanduser("~/2image")
+APP_DIR = os.path.expanduser("~/2image")
 LEGACY_APP_DIR = os.path.expanduser("~/.text_to_image_app")  # 旧版目录，用于一次性数据迁移
-IMAGES_DIR     = os.path.join(APP_DIR, "images")
-DB_FILE        = os.path.join(APP_DIR, "history.db")
-HISTORY_FILE   = os.path.join(APP_DIR, "history.json")   # 旧版，仅用于迁移
-CONFIG_FILE    = os.path.join(APP_DIR, "config.json")
-LOG_FILE       = os.path.join(APP_DIR, "debug.log")
+IMAGES_DIR = os.path.join(APP_DIR, "images")
+DB_FILE = os.path.join(APP_DIR, "history.db")
+HISTORY_FILE = os.path.join(APP_DIR, "history.json")  # 旧版，仅用于迁移
+CONFIG_FILE = os.path.join(APP_DIR, "config.json")
+LOG_FILE = os.path.join(APP_DIR, "debug.log")
 
 os.makedirs(APP_DIR, mode=0o700, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
@@ -61,68 +64,70 @@ def migrate_legacy_data() -> bool:
             migrated.append(item)
         except Exception as e:
             import sys
+
             print(f"[迁移警告] 复制 {item} 失败: {e}", file=sys.stderr)
 
     if migrated:
         import sys
+
         print(
-            f"[迁移] 已从 {LEGACY_APP_DIR} 迁移 {len(migrated)} 个项目到 {APP_DIR}："
-            f"{', '.join(migrated)}",
+            f"[迁移] 已从 {LEGACY_APP_DIR} 迁移 {len(migrated)} 个项目到 {APP_DIR}：{', '.join(migrated)}",
             file=sys.stderr,
         )
     return bool(migrated)
+
 
 # ─── 默认配置 ──────────────────────────────────────────────────
 DEFAULT_CONFIG: dict = {
     "config_version": 2,
     "language": "zh-CN",
     # ── 免费接口 ──────────────────────────────────────────────
-    "sf_key":               "",   # 硅基流动 API Key
-    "hf_token":             "",   # HuggingFace Token
-    "stablehorde_key":      "",   # StableHorde Key（空=匿名）
-    "segmind_key":          "",   # Segmind API Key（注册送 $5）
-    "pollinations_enabled": True, # Pollinations.AI（无需 Key）
-    "pollinations_key":     "",   # 可选：新平台若要求鉴权可在此填写
+    "sf_key": "",  # 硅基流动 API Key
+    "hf_token": "",  # HuggingFace Token
+    "stablehorde_key": "",  # StableHorde Key（空=匿名）
+    "segmind_key": "",  # Segmind API Key（注册送 $5）
+    "pollinations_enabled": True,  # Pollinations.AI（无需 Key）
+    "pollinations_key": "",  # 可选：新平台若要求鉴权可在此填写
     # ── 免费接口（v3 新增）────────────────────────────────────
-    "cf_account_id":        "",   # Cloudflare Account ID
-    "cf_api_token":         "",   # Cloudflare API Token
-    "modelslab_key":        "",   # ModelsLab API Key（免费 100次/天）
+    "cf_account_id": "",  # Cloudflare Account ID
+    "cf_api_token": "",  # Cloudflare API Token
+    "modelslab_key": "",  # ModelsLab API Key（免费 100次/天）
     # ── 免费接口（v5 新增）────────────────────────────────────
-    "together_key":         "",   # Together AI（FLUX.1 Free 免费端点）
-    "gemini_key":           "",   # Google Gemini API（免费 500次/天）
-    "openrouter_key":       "",   # OpenRouter（统一 Image API，免费可用性请自行核实）
-    "openrouter_model":     "bytedance-seed/seedream-4.5",
+    "together_key": "",  # Together AI（FLUX.1 Free 免费端点）
+    "gemini_key": "",  # Google Gemini API（免费 500次/天）
+    "openrouter_key": "",  # OpenRouter（统一 Image API，免费可用性请自行核实）
+    "openrouter_model": "bytedance-seed/seedream-4.5",
     # ── 付费接口 ──────────────────────────────────────────────
-    "openai_key":           "",
-    "stability_key":        "",
-    "replicate_key":        "",
+    "openai_key": "",
+    "stability_key": "",
+    "replicate_key": "",
     # ── 付费接口（v5 新增）────────────────────────────────────
-    "xai_key":              "",   # xAI Grok Imagine（注册送 $25）
+    "xai_key": "",  # xAI Grok Imagine（注册送 $25）
     # ── 商业变现接口（v6 新增）───────────────────────────────
-    "ideogram_key":         "",   # Ideogram v4（文字入图首选，免费25次/天）
-    "fal_key":              "",   # fal.ai FLUX Ultra（4MP高清，最高写实质量）
-    "recraft_key":          "",   # Recraft v3（设计/插画/品牌VI）
-    "recraft_style":        "realistic_image",  # realistic_image | digital_illustration | vector_illustration
-    "recraft_model":        "recraftv3",   # recraftv3（默认，稳） | recraftv4 | recraftv4_pro | recraftv4_1（更高画质）
+    "ideogram_key": "",  # Ideogram v4（文字入图首选，免费25次/天）
+    "fal_key": "",  # fal.ai FLUX Ultra（4MP高清，最高写实质量）
+    "recraft_key": "",  # Recraft v3（设计/插画/品牌VI）
+    "recraft_style": "realistic_image",  # realistic_image | digital_illustration | vector_illustration
+    "recraft_model": "recraftv3",  # recraftv3（默认，稳） | recraftv4 | recraftv4_pro | recraftv4_1（更高画质）
     # ── 新增接口（v7：GPT-Image / Nano Banana / 国内外新增供应商）──
     # ── 新增接口（v8：火山豆包）──────────────────────────────────
-    "volcengine_key":        "",   # 火山引擎 Ark API Key（豆包 Seedream 文生图 / SeedEdit 图生图）
-    "ark_model":             ARK_IMAGE_DEFAULT,  # 可选值见 config.model_catalog（豆包系列）
-    "bfl_key":               "",   # BFL（FLUX 官方）API Key — wizard_paid 写入
-    "minimax_key":           "",   # MiniMax 图像 API Key
-    "dashscope_key":         "",   # 阿里云百炼（通义万相）API Key
-    "bria_key":              "",   # Bria AI API Key
+    "volcengine_key": "",  # 火山引擎 Ark API Key（豆包 Seedream 文生图 / SeedEdit 图生图）
+    "ark_model": ARK_IMAGE_DEFAULT,  # 可选值见 config.model_catalog（豆包系列）
+    "bfl_key": "",  # BFL（FLUX 官方）API Key — wizard_paid 写入
+    "minimax_key": "",  # MiniMax 图像 API Key
+    "dashscope_key": "",  # 阿里云百炼（通义万相）API Key
+    "bria_key": "",  # Bria AI API Key
     # ── 付费模型偏好 ───────────────────────────────────────────
-    "gpt_image_model":      GPT_IMAGE_DEFAULT,    # 可选值见 config.model_catalog
-    "gpt_image_quality":    "auto",               # low | medium | high | auto
-    "stability_model":      "core",
-    "replicate_model":      "flux-1.1-pro",
-    "gemini_model":         GEMINI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
-    "bfl_model":            BFL_TXT2IMG_DEFAULT,   # 可选值见 config.model_catalog（图生图固定 flux-kontext-pro）
-    "deepseek_key":         "",   # DeepSeek 官方 API Key（Pro / Flash 预设）
+    "gpt_image_model": GPT_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
+    "gpt_image_quality": "auto",  # low | medium | high | auto
+    "stability_model": "core",
+    "replicate_model": "flux-1.1-pro",
+    "gemini_model": GEMINI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
+    "bfl_model": BFL_TXT2IMG_DEFAULT,  # 可选值见 config.model_catalog（图生图固定 flux-kontext-pro）
+    "deepseek_key": "",  # DeepSeek 官方 API Key（Pro / Flash 预设）
     # ── 通用设置 ───────────────────────────────────────────────
-    "default_provider":     "自动（按优先级）",
-    "default_size":         "1024x1024",
+    "default_provider": "自动（按优先级）",
+    "default_size": "1024x1024",
     "show_wizard_on_start": True,
     # 启动时后台检查 GitHub 最新发行版（仅提示，绝不自动下载）
     "update_check_on_start": True,
@@ -130,14 +135,14 @@ DEFAULT_CONFIG: dict = {
     # ── 付费边界（PAY-001）─────────────────────────────────────
     # False = 自动路由绝不使用付费接口（即使已配置 Key）；
     # 用户在下拉框显式选择付费接口不受此限制。
-    "paid_auto_opt_in":     False,
+    "paid_auto_opt_in": False,
     # 付费日预算（USD，估算值）：当日估算消耗达到上限后，
     # 自动路由剔除付费接口、显式选择付费接口会被弹窗阻断；0 = 不限。
     "paid_daily_budget_usd": 2.0,
     # ── 变体质量设置 ───────────────────────────────────────────
     # variant_quality: "standard"（速度优先）| "high"（质量优先）
     # high 模式：各接口使用更高步数/更好模型，耗时约增加 50~100%
-    "variant_quality":      "high",
+    "variant_quality": "high",
 }
 
 
@@ -154,6 +159,7 @@ def load_config() -> dict:
             cfg.update(saved)
     except Exception as e:
         import sys
+
         print(f"[warn] 配置加载失败，使用默认配置: {e}", file=sys.stderr)
 
     # 环境变量覆盖（最高优先级，用于 CI 密钥注入）

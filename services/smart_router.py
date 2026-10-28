@@ -7,6 +7,7 @@ services/smart_router.py — 兼容层（Phase 3 完成）
 
     from services.generation.router import get_provider_order
 """
+
 from services.generation.scenes import (  # noqa: F401
     KEYWORD_RULES as _KEYWORD_RULES,
     ROUTES as _ROUTES,

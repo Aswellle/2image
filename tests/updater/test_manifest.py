@@ -1,6 +1,7 @@
 """update.json manifest validation matrix (§4.2): every rule violation
 must be refused, and 404 must read as a failed check — never as
 "up to date"."""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -26,8 +27,7 @@ def _payload(**over):
         "assets": {
             "windows-x64-installer": {
                 "fileName": "2image-setup-v2.7.0.exe",
-                "downloadUrl": ("https://github.com/Aswellle/2image/releases"
-                                "/download/v2.7.0/2image-setup-v2.7.0.exe"),
+                "downloadUrl": ("https://github.com/Aswellle/2image/releases/download/v2.7.0/2image-setup-v2.7.0.exe"),
                 "size": 20480,
                 "sha256": VALID_SHA,
             },
@@ -42,6 +42,7 @@ def _payload(**over):
 
 
 # ── structural validation ────────────────────────────────────
+
 
 def test_valid_manifest_parses():
     m = mf.validate_manifest(_payload())
@@ -98,24 +99,24 @@ def test_rejects_empty_file_name():
         mf.validate_manifest(_payload(_asset={"fileName": ""}))
 
 
-@pytest.mark.parametrize("url", [
-    "http://github.com/Aswellle/2image/releases/download/v2.7.0/x.exe",
-    "https://evil.example/x.exe",
-    "https://github.com/other/repo/releases/download/v2.7.0/x.exe",
-    "ftp://github.com/x.exe",
-    "",
-])
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://github.com/Aswellle/2image/releases/download/v2.7.0/x.exe",
+        "https://evil.example/x.exe",
+        "https://github.com/other/repo/releases/download/v2.7.0/x.exe",
+        "ftp://github.com/x.exe",
+        "",
+    ],
+)
 def test_rejects_disallowed_download_url(url):
     with pytest.raises(UpdateError):
         mf.validate_manifest(_payload(_asset={"downloadUrl": url}))
 
 
 def test_allows_github_redirect_hosts():
-    p = _payload(_asset={
-        "downloadUrl": ("https://objects.githubusercontent.com/"
-                        "some/release/asset")})
-    assert mf.validate_manifest(p).installer.download_url.startswith(
-        "https://objects.githubusercontent.com/")
+    p = _payload(_asset={"downloadUrl": ("https://objects.githubusercontent.com/some/release/asset")})
+    assert mf.validate_manifest(p).installer.download_url.startswith("https://objects.githubusercontent.com/")
 
 
 @pytest.mark.parametrize("sha", ["", "abc123", "z" * 64, "A" * 63 + "g"])
@@ -132,6 +133,7 @@ def test_rejects_bad_size(size):
 
 # ── evaluate vs current version ─────────────────────────────
 
+
 def test_evaluate_returns_manifest_for_newer():
     m = mf.evaluate_manifest(_payload(), "2.6.0")
     assert m is not None and m.version == "2.6.1"
@@ -143,6 +145,7 @@ def test_evaluate_returns_none_for_same_or_older():
 
 
 # ── fetch ────────────────────────────────────────────────────
+
 
 def _session(resp=None, exc=None):
     session = MagicMock()

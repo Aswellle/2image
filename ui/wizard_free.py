@@ -78,6 +78,7 @@ class ConfigWizard(tk.Toplevel):
         # 用户主动关闭（跳过/保存/取消）→ 不再自动弹出
         self.cfg["show_wizard_on_start"] = False
         from config.settings import save_config
+
         save_config(self.cfg)
         self.destroy()
 

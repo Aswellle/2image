@@ -26,7 +26,7 @@ def _hex_to_rgb(value: str) -> tuple[int, int, int] | None:
     if len(value) != 6:
         return None
     try:
-        return tuple(int(value[i:i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+        return tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
     except ValueError:
         return None
 
@@ -36,9 +36,7 @@ def outline_color(bg: str) -> str:
     rgb = _hex_to_rgb(bg)
     if rgb is None:
         return "#ffffff"
-    return "#%02x%02x%02x" % tuple(
-        max(0, min(255, round(v + (255 - v) * _OUTLINE_WHITE_MIX))) for v in rgb
-    )
+    return "#%02x%02x%02x" % tuple(max(0, min(255, round(v + (255 - v) * _OUTLINE_WHITE_MIX))) for v in rgb)
 
 
 def outline_bounds(x: int, y: int, width: int, height: int) -> tuple[int, int, int, int]:

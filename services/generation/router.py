@@ -13,6 +13,7 @@ services/generation/scenes.py，过滤与健康感知排序在此统一执行：
 
 smart_router.get_provider_order 保留为兼容层，生产代码应直接 import 本模块。
 """
+
 from __future__ import annotations
 
 import logging
@@ -128,7 +129,7 @@ def get_provider_order(
     scene = scenes.scene_for_template(template_id) or scenes.detect_scene(prompt)
     base = scenes.route_for(scene)
     # 把未在场景列表中的接口追加到末尾（保证完整兜底）
-    for name in (fallback_order or DEFAULT_ORDER):
+    for name in fallback_order or DEFAULT_ORDER:
         if name not in base:
             base.append(name)
 
@@ -240,8 +241,7 @@ class Router:
         # Key check — 多键接口要求全部凭证就绪（如 Cloudflare 双凭证）
         required_keys = MULTI_KEY_PROVIDERS.get(manifest.id)
         if required_keys:
-            if not all(str(self.cfg.get(k, "") or "").strip()
-                       for k in required_keys):
+            if not all(str(self.cfg.get(k, "") or "").strip() for k in required_keys):
                 return False
         elif manifest.config_key and not self.cfg.get(manifest.config_key):
             return False

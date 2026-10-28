@@ -8,9 +8,9 @@ def test_installer_template_renders_versioned_paths_and_shortcut():
     assert f"AppVersion={version}" in script
     assert f"OutputBaseFilename=2image-setup-v{version}" in script
     assert f'OutputDir="{auto_build.INSTALLER_OUTPUT_DIR}"' in script
-    assert "2image.exe\"; DestDir: \"{app}\"; Flags: ignoreversion" in script
-    assert "2image_updater.exe\"; DestDir: \"{app}\"" in script
-    assert "Name: \"{userdesktop}\\2image\"" in script
+    assert '2image.exe"; DestDir: "{app}"; Flags: ignoreversion' in script
+    assert '2image_updater.exe"; DestDir: "{app}"' in script
+    assert 'Name: "{userdesktop}\\2image"' in script
     assert "Tasks: desktopicon" in script
     assert "{APP_VERSION}" not in script
     assert "{OUTPUT_DIR}" not in script

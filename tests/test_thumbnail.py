@@ -3,6 +3,7 @@
 覆盖：cache_key 内容敏感性、PilThumbCache LRU、render_square、
 ThumbnailLoader 优先级/代号取消/回调线程调度。
 """
+
 from __future__ import annotations
 
 import os
@@ -11,8 +12,7 @@ import time
 import pytest
 from PIL import Image
 
-from ui.history.thumbnail import (PilThumbCache, ThumbnailLoader,
-                                  cache_key, render_square)
+from ui.history.thumbnail import PilThumbCache, ThumbnailLoader, cache_key, render_square
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def test_lru_eviction():
     c.put("a", Image.new("RGB", (4, 4)))
     c.put("b", Image.new("RGB", (4, 4)))
     c.put("c", Image.new("RGB", (4, 4)))
-    assert c.get("a") is None      # 最旧被逐出
+    assert c.get("a") is None  # 最旧被逐出
     assert c.get("b") is not None
     assert c.get("c") is not None
     assert len(c) == 2
@@ -55,10 +55,10 @@ def test_lru_touch_refreshes_order():
     c = PilThumbCache(maxsize=2)
     c.put("a", Image.new("RGB", (4, 4)))
     c.put("b", Image.new("RGB", (4, 4)))
-    c.get("a")                     # 触摸 a，使其新于 b
+    c.get("a")  # 触摸 a，使其新于 b
     c.put("c", Image.new("RGB", (4, 4)))
     assert c.get("a") is not None  # a 仍在
-    assert c.get("b") is None      # b 被逐出
+    assert c.get("b") is None  # b 被逐出
 
 
 def test_cache_clear():
@@ -111,8 +111,7 @@ def test_loader_ready_callback(tk_root, make_loader, png_file):
     loader = make_loader(workers=1)
     results = []
     loader.set_generation(1)
-    loader.submit(png_file, 90, 0, 1,
-                  on_ready=results.append, on_missing=lambda: results.append("missing"))
+    loader.submit(png_file, 90, 0, 1, on_ready=results.append, on_missing=lambda: results.append("missing"))
     _pump(tk_root)
     assert results and results[0] != "missing"
     assert results[0].size == (90, 90)
@@ -122,8 +121,9 @@ def test_loader_missing_file(tk_root, make_loader, tmp_path):
     loader = make_loader(workers=1)
     results = []
     loader.set_generation(1)
-    loader.submit(str(tmp_path / "nope.png"), 90, 0, 1,
-                  on_ready=results.append, on_missing=lambda: results.append("missing"))
+    loader.submit(
+        str(tmp_path / "nope.png"), 90, 0, 1, on_ready=results.append, on_missing=lambda: results.append("missing")
+    )
     _pump(tk_root)
     assert results == ["missing"]
 
@@ -133,8 +133,14 @@ def test_loader_stale_generation_dropped(tk_root, make_loader, png_file):
     loader = make_loader(workers=1)
     results = []
     loader.set_generation(2)
-    loader.submit(png_file, 90, 0, 1,   # 旧代号 1
-                  on_ready=results.append, on_missing=lambda: results.append("missing"))
+    loader.submit(
+        png_file,
+        90,
+        0,
+        1,  # 旧代号 1
+        on_ready=results.append,
+        on_missing=lambda: results.append("missing"),
+    )
     _pump(tk_root, 0.8)
     assert results == []
 
@@ -144,16 +150,14 @@ def test_loader_uses_l2_cache(tk_root, make_loader, png_file):
     results = []
     loader.set_generation(1)
     for _ in range(3):
-        loader.submit(png_file, 90, 0, 1,
-                      on_ready=results.append, on_missing=lambda: None)
+        loader.submit(png_file, 90, 0, 1, on_ready=results.append, on_missing=lambda: None)
     _pump(tk_root)
     assert len(results) == 3
-    assert len(loader._pil) == 1     # 三次请求共用一份解码
+    assert len(loader._pil) == 1  # 三次请求共用一份解码
     assert results[0] is results[1]  # 同一 PIL 对象（L2 命中）
 
 
-def test_loader_shutdown_with_pending_jobs_is_crash_free(tk_root, make_loader,
-                                                         png_file):
+def test_loader_shutdown_with_pending_jobs_is_crash_free(tk_root, make_loader, png_file):
     """Regression: shutdown() used to push a bare object() sentinel into
     the PriorityQueue; with workers busy and jobs still queued, heappop
     then compared the unorderable sentinel against _Job and killed the
@@ -161,9 +165,8 @@ def test_loader_shutdown_with_pending_jobs_is_crash_free(tk_root, make_loader,
     _Job, so mixed-queue shutdown drains cleanly."""
     loader = make_loader(workers=4)
     loader.set_generation(1)
-    for i in range(40):   # far more work than 4 workers can drain at once
-        loader.submit(png_file, 90, i, 1,
-                      on_ready=lambda im: None, on_missing=lambda: None)
-    loader.shutdown()     # sentinel lands while real jobs are queued
+    for i in range(40):  # far more work than 4 workers can drain at once
+        loader.submit(png_file, 90, i, 1, on_ready=lambda im: None, on_missing=lambda: None)
+    loader.shutdown()  # sentinel lands while real jobs are queued
     for t in loader._threads:
         assert not t.is_alive()

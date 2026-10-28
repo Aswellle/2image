@@ -9,6 +9,7 @@ with a structured orchestrator that:
   - Classifies errors via ProviderError taxonomy
   - Only falls back on fallback=True errors
 """
+
 from __future__ import annotations
 
 import logging
@@ -127,11 +128,7 @@ class GenerationOrchestrator:
                 if status_cb:
                     from services.providers import display_name_for
 
-                    status_cb(
-                        _("status_provider_attempt",
-                          provider=display_name_for(provider_id), attempt=attempt)
-                    )
-
+                    status_cb(_("status_provider_attempt", provider=display_name_for(provider_id), attempt=attempt))
 
                 if log_cb:
                     log_cb(f"=== {msg} ===")
@@ -140,16 +137,10 @@ class GenerationOrchestrator:
                     ps = time.monotonic()
                     # Support both callables and objects with .generate()
                     if callable(fn):
-                        image_bytes, used_provider = fn(
-                            prompt, width, height, seed, cfg, log_cb
-                        )
+                        image_bytes, used_provider = fn(prompt, width, height, seed, cfg, log_cb)
                     else:
-                        image_bytes, used_provider = fn.generate(
-                            prompt, width, height, seed, cfg, log_cb
-                        )
+                        image_bytes, used_provider = fn.generate(prompt, width, height, seed, cfg, log_cb)
                     latency_ms = (time.monotonic() - ps) * 1000
-
-
 
                     health.record_success(latency_ms)
                     result.image_bytes = image_bytes
@@ -189,9 +180,7 @@ class GenerationOrchestrator:
                     # Retryable: apply backoff then retry
                     if attempt < self.retry_policy.max_attempts:
                         retry_after = getattr(exc, "retry_after", None)
-                        interrupted = self.retry_policy.interruptible_sleep(
-                            attempt, token, retry_after
-                        )
+                        interrupted = self.retry_policy.interruptible_sleep(attempt, token, retry_after)
                         if interrupted:
                             result.cancelled = True
                             raise GenerationCancelled("Cancelled during retry wait")
@@ -208,9 +197,7 @@ class GenerationOrchestrator:
                         log_cb(f"✗ {error_msg}")
 
                     if attempt < self.retry_policy.max_attempts:
-                        interrupted = self.retry_policy.interruptible_sleep(
-                            attempt, token
-                        )
+                        interrupted = self.retry_policy.interruptible_sleep(attempt, token)
                         if interrupted:
                             result.cancelled = True
                             raise GenerationCancelled("Cancelled during retry wait")

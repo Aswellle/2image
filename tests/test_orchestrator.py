@@ -4,6 +4,7 @@ tests/test_orchestrator.py — Orchestrator + health + circuit breaker tests
 Validates the GenerationOrchestrator, ProviderHealth, and
 circuit breaker using scripted fake providers.
 """
+
 from __future__ import annotations
 
 import time
@@ -157,9 +158,7 @@ class TestGenerationOrchestrator:
             "a": ScriptedProvider("a", ProviderScript().add_transient()),
             "b": ScriptedProvider("b", ProviderScript().add_success()),
         }
-        orch = GenerationOrchestrator(
-            providers, retry_policy=RetryPolicy(max_attempts=1), deadline_seconds=30
-        )
+        orch = GenerationOrchestrator(providers, retry_policy=RetryPolicy(max_attempts=1), deadline_seconds=30)
         result = orch.run("test", 64, 64, 1, {}, log_cb=lambda m: None)
         assert result.image_bytes is not None
         assert result.provider_id == "b"
@@ -169,9 +168,7 @@ class TestGenerationOrchestrator:
             "a": ScriptedProvider("a", ProviderScript().add_auth_failure()),
             "b": ScriptedProvider("b", ProviderScript().add_success()),
         }
-        orch = GenerationOrchestrator(
-            providers, retry_policy=RetryPolicy(max_attempts=3), deadline_seconds=30
-        )
+        orch = GenerationOrchestrator(providers, retry_policy=RetryPolicy(max_attempts=3), deadline_seconds=30)
         result = orch.run("test", 64, 64, 1, {}, log_cb=lambda m: None)
         # Should skip to b without retrying a
         assert result.provider_id == "b"
@@ -182,9 +179,7 @@ class TestGenerationOrchestrator:
             "a": ScriptedProvider("a", ProviderScript().add_transient()),
             "b": ScriptedProvider("b", ProviderScript().add_transient()),
         }
-        orch = GenerationOrchestrator(
-            providers, retry_policy=RetryPolicy(max_attempts=1), deadline_seconds=30
-        )
+        orch = GenerationOrchestrator(providers, retry_policy=RetryPolicy(max_attempts=1), deadline_seconds=30)
         result = orch.run("test", 64, 64, 1, {}, log_cb=lambda m: None)
         assert result.image_bytes is None
         assert len(result.errors) == 2
@@ -193,9 +188,7 @@ class TestGenerationOrchestrator:
         providers = {
             "a": ScriptedProvider("a", ProviderScript().add_transient()),
         }
-        orch = GenerationOrchestrator(
-            providers, retry_policy=RetryPolicy(max_attempts=3), deadline_seconds=30
-        )
+        orch = GenerationOrchestrator(providers, retry_policy=RetryPolicy(max_attempts=3), deadline_seconds=30)
         token = CancellationToken()
         token.cancel()
         with pytest.raises(Exception):
@@ -218,9 +211,7 @@ class TestGenerationOrchestrator:
         reg = get_health_registry()
         reg.reset()
         providers = {
-            "test_prov": ScriptedProvider(
-                "test_prov", ProviderScript().add_success()
-            ),
+            "test_prov": ScriptedProvider("test_prov", ProviderScript().add_success()),
         }
         orch = GenerationOrchestrator(providers, deadline_seconds=30)
         orch.run("test", 64, 64, 1, {}, log_cb=lambda m: None)
@@ -231,13 +222,9 @@ class TestGenerationOrchestrator:
         reg = get_health_registry()
         reg.reset()
         providers = {
-            "test_prov": ScriptedProvider(
-                "test_prov", ProviderScript().add_transient()
-            ),
+            "test_prov": ScriptedProvider("test_prov", ProviderScript().add_transient()),
         }
-        orch = GenerationOrchestrator(
-            providers, retry_policy=RetryPolicy(max_attempts=1), deadline_seconds=30
-        )
+        orch = GenerationOrchestrator(providers, retry_policy=RetryPolicy(max_attempts=1), deadline_seconds=30)
         orch.run("test", 64, 64, 1, {}, log_cb=lambda m: None)
         health = reg.get("test_prov")
         assert health.failures == 1
@@ -251,15 +238,9 @@ class TestGenerationOrchestrator:
             health.record_failure("transient")
 
         providers = {
-            "unhealthy_prov": ScriptedProvider(
-                "unhealthy_prov", ProviderScript().add_success()
-            ),
-            "healthy_prov": ScriptedProvider(
-                "healthy_prov", ProviderScript().add_success()
-            ),
+            "unhealthy_prov": ScriptedProvider("unhealthy_prov", ProviderScript().add_success()),
+            "healthy_prov": ScriptedProvider("healthy_prov", ProviderScript().add_success()),
         }
-        orch = GenerationOrchestrator(
-            providers, retry_policy=RetryPolicy(max_attempts=1), deadline_seconds=30
-        )
+        orch = GenerationOrchestrator(providers, retry_policy=RetryPolicy(max_attempts=1), deadline_seconds=30)
         result = orch.run("test", 64, 64, 1, {}, log_cb=lambda m: None)
         assert result.provider_id == "healthy_prov"

@@ -49,9 +49,17 @@ class PaidWizard(tk.Toplevel):
         self.geometry(f"820x{h}+{max(0, x)}+{max(0, y)}")
         self._build()
         for _var in [
-            self.oai_var, self.gpt_image_model_var, self.gpt_image_quality_var,
-            self.stab_var, self.stab_model_var, self.repl_var, self.repl_model_var,
-            self.ark_var, self.ark_model_var, self.bfl_var, self.bfl_model_var,
+            self.oai_var,
+            self.gpt_image_model_var,
+            self.gpt_image_quality_var,
+            self.stab_var,
+            self.stab_model_var,
+            self.repl_var,
+            self.repl_model_var,
+            self.ark_var,
+            self.ark_model_var,
+            self.bfl_var,
+            self.bfl_model_var,
         ]:
             _var.trace("w", lambda *_: setattr(self, "_dirty", True))
         self.bind("<Escape>", lambda _e: self._on_close())

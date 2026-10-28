@@ -8,10 +8,16 @@ v3 变体高质量模式（variant_hq）：
   · 跳过低质量蒸馏快速模型（SDXL-Lightning/sdxl-turbo），确保变体质量
   · 标准模式保持原有参数不变
 """
+
 import requests
 import time
 from typing import Callable, Tuple
-from services.providers._net import get_session as _get_session, validate_image_url as _validate_image_url, safe_error_text as _safe_error_text, safe_get_image as _safe_get_image
+from services.providers._net import (
+    get_session as _get_session,
+    validate_image_url as _validate_image_url,
+    safe_error_text as _safe_error_text,
+    safe_get_image as _safe_get_image,
+)
 
 PROVIDER_INFO = {
     "id": "siliconflow",
@@ -24,11 +30,11 @@ PROVIDER_INFO = {
 # ── 标准模式：速度与质量平衡（单张生成）──────────────────────────
 SF_STD_MODELS = [
     # (model_id,                                   max_sz, steps, use_guid, guidance)
-    ("black-forest-labs/FLUX.1-schnell",             1024,  8,   False, 0.0),
-    ("stabilityai/stable-diffusion-xl-base-1.0",     1024, 30,   True,  7.5),
-    ("ByteDance/SDXL-Lightning",                     1024,  4,   False, 0.0),
-    ("stabilityai/stable-diffusion-2-1",              768, 30,   True,  8.0),
-    ("stabilityai/sdxl-turbo",                        512,  2,   False, 0.0),
+    ("black-forest-labs/FLUX.1-schnell", 1024, 8, False, 0.0),
+    ("stabilityai/stable-diffusion-xl-base-1.0", 1024, 30, True, 7.5),
+    ("ByteDance/SDXL-Lightning", 1024, 4, False, 0.0),
+    ("stabilityai/stable-diffusion-2-1", 768, 30, True, 8.0),
+    ("stabilityai/sdxl-turbo", 512, 2, False, 0.0),
 ]
 
 # ── 高质量模式：变体批量生成专用（variant_hq=True）──────────────
@@ -39,9 +45,9 @@ SF_STD_MODELS = [
 #      这两个模型是批量时质量下降的主要元凶（fallback 后被选中）
 SF_HQ_MODELS = [
     # (model_id,                                   max_sz, steps, use_guid, guidance)
-    ("black-forest-labs/FLUX.1-dev",                 1024, 28,   True,  3.5),   # 最高质量
-    ("stabilityai/stable-diffusion-xl-base-1.0",     1024, 35,   True,  8.0),   # HQ SDXL
-    ("stabilityai/stable-diffusion-2-1",              768, 35,   True,  8.5),   # HQ SD2.1
+    ("black-forest-labs/FLUX.1-dev", 1024, 28, True, 3.5),  # 最高质量
+    ("stabilityai/stable-diffusion-xl-base-1.0", 1024, 35, True, 8.0),  # HQ SDXL
+    ("stabilityai/stable-diffusion-2-1", 768, 35, True, 8.5),  # HQ SD2.1
 ]
 
 # 高质量负向提示词（HQ 模式追加，降低瑕疵率）
@@ -53,24 +59,20 @@ _HQ_NEGATIVE = (
 )
 
 
-def try_siliconflow(prompt: str, w: int, h: int, seed: int,
-                    cfg: dict, log: Callable) -> Tuple[bytes, str]:
+def try_siliconflow(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("sf_key", "").strip()
     if not key:
-        raise ValueError(
-            "需要硅基流动 API Key！请在「⚙ 设置」中填写。\n"
-            "注册地址：https://cloud.siliconflow.cn"
-        )
+        raise ValueError("需要硅基流动 API Key！请在「⚙ 设置」中填写。\n注册地址：https://cloud.siliconflow.cn")
 
     # 根据是否为高质量变体模式选择不同模型列表
     hq_mode = bool(cfg.get("variant_hq", False))
     model_list = SF_HQ_MODELS if hq_mode else SF_STD_MODELS
-    mode_tag   = "HQ变体" if hq_mode else "标准"
+    mode_tag = "HQ变体" if hq_mode else "标准"
     log(f"► 硅基流动 SiliconFlow（{mode_tag}模式）…")
 
     headers = {
         "Authorization": f"Bearer {key}",
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
     }
 
     def snap(v, mx):
@@ -78,16 +80,18 @@ def try_siliconflow(prompt: str, w: int, h: int, seed: int,
 
     for model_id, max_sz, steps, use_guid, guidance in model_list:
         sw, sh = snap(w, max_sz), snap(h, max_sz)
-        log(f"  模型: {model_id.split('/')[-1]}  {sw}x{sh}  steps={steps}"
-            + (f"  guidance={guidance}" if use_guid else ""))
+        log(
+            f"  模型: {model_id.split('/')[-1]}  {sw}x{sh}  steps={steps}"
+            + (f"  guidance={guidance}" if use_guid else "")
+        )
 
         payload = {
-            "model":               model_id,
-            "prompt":              prompt,
-            "image_size":          f"{sw}x{sh}",
-            "batch_size":          1,
+            "model": model_id,
+            "prompt": prompt,
+            "image_size": f"{sw}x{sh}",
+            "batch_size": 1,
             "num_inference_steps": steps,
-            "seed":                seed % 2_147_483_647,
+            "seed": seed % 2_147_483_647,
         }
         if use_guid:
             payload["guidance_scale"] = guidance
@@ -97,8 +101,7 @@ def try_siliconflow(prompt: str, w: int, h: int, seed: int,
 
         try:
             resp = _get_session().post(
-                "https://api.siliconflow.cn/v1/images/generations",
-                headers=headers, json=payload, timeout=90
+                "https://api.siliconflow.cn/v1/images/generations", headers=headers, json=payload, timeout=90
             )
         except requests.exceptions.ConnectionError as e:
             raise ValueError(f"无法连接硅基流动: {e}")

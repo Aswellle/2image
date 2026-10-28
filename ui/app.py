@@ -295,8 +295,8 @@ class App:
     def _on_close_request(self) -> None:
         """主窗口关闭守卫：任务进行中先确认，防守护线程随窗口静默消失。"""
         if self._has_active_tasks() and not messagebox.askyesno(
-                _("dlg_exit_busy_title"), _("dlg_exit_busy_body"),
-                parent=self.root, icon="warning"):
+            _("dlg_exit_busy_title"), _("dlg_exit_busy_body"), parent=self.root, icon="warning"
+        ):
             return
         try:
             self.root.destroy()

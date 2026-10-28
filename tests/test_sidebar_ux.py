@@ -5,6 +5,7 @@
 · 搜索清除按钮与筛选状态条显隐
 · keep_scroll 刷新不抛错
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -91,6 +92,7 @@ def test_clear_search_empties_var(sidebar):
 
 def test_refresh_hist_keep_scroll_runs(sidebar, tk_root, in_memory_db):
     from data.repository import add_entry
+
     add_entry("a test prompt", "", "", "prov")
     tk_root.update()
     sidebar._refresh_hist(keep_scroll=True)
@@ -103,6 +105,7 @@ def test_refresh_hist_keep_scroll_runs(sidebar, tk_root, in_memory_db):
 def test_refresh_hist_preserves_yview(sidebar, tk_root, in_memory_db):
     """有内容时 keep_scroll=True 不重置滚动位置。"""
     from data.repository import add_entry
+
     for i in range(30):
         add_entry(f"prompt {i} " + "x" * 60, "", "", "prov")
     tk_root.update()
@@ -119,6 +122,7 @@ def test_refresh_hist_preserves_yview(sidebar, tk_root, in_memory_db):
 def test_loader_threads_shutdown_with_sidebar(tk_root, mock_app, in_memory_db):
     """宿主 Frame 销毁时 ThumbnailLoader 线程全部退出（CI 崩溃回归）。"""
     import time
+
     init_fonts()
     mock_app.root = tk_root
     frame = tk.Frame(tk_root)
@@ -126,7 +130,7 @@ def test_loader_threads_shutdown_with_sidebar(tk_root, mock_app, in_memory_db):
     sb = HistorySidebar(frame, mock_app)
     loader = sb._thumb_loader
     tk_root.update()
-    frame.destroy()          # <Destroy> 钩子应触发 shutdown
+    frame.destroy()  # <Destroy> 钩子应触发 shutdown
     time.sleep(0.1)
     assert loader._stopped is True
     assert not any(t.is_alive() for t in loader._threads)
@@ -135,6 +139,7 @@ def test_loader_threads_shutdown_with_sidebar(tk_root, mock_app, in_memory_db):
 def test_empty_search_state_offers_clear_action(sidebar, in_memory_db):
     """搜索无匹配的空态必须给出恢复路径，而非只有一行死文字。"""
     from data.repository import add_entry
+
     add_entry("a castle", "castle", "x.png", "P")
 
     sidebar.sv.set("zzz-no-hit")
@@ -154,22 +159,23 @@ def test_empty_search_state_offers_clear_action(sidebar, in_memory_db):
 def test_empty_first_use_state_has_guidance(sidebar):
     """首次使用空态应提示下一步动作，而非仅"暂无记录"。"""
     from config.i18n import _
+
     sidebar._refresh_hist()
     sidebar.app.root.update()
+
     def _walk(w):
         for c in w.winfo_children():
             yield c
             yield from _walk(c)
 
-    labels = " ".join(
-        str(w.cget("text")) for w in _walk(sidebar.hi) if isinstance(w, tk.Label)
-    )
+    labels = " ".join(str(w.cget("text")) for w in _walk(sidebar.hi) if isinstance(w, tk.Label))
     assert _("empty_first_use_hint") in labels
 
 
 def test_count_entries_respects_filters(in_memory_db):
     """count_entries 过滤计数与 get_all_entries 同语义。"""
     from data.repository import add_entry, count_entries, get_all_entries, update_tags
+
     e1 = add_entry("castle on hill", "castle", "x1.png", "P")
     e2 = add_entry("sunset beach", "sunset", "x2.png", "P")
     update_tags(e2["id"], "风景")
@@ -185,6 +191,7 @@ def test_count_entries_respects_filters(in_memory_db):
 def test_keyboard_navigation_moves_within_visible_list(sidebar, in_memory_db, tk_root):
     """方向键/Home/End 在过滤后的可见列表上移动并滚动入视。"""
     from data.repository import add_entry, get_entry
+
     ids = [add_entry(f"nav item {i}", f"nav {i}", f"n{i}.png", "P")["id"] for i in range(5)]
 
     sidebar._refresh_hist()
@@ -212,6 +219,7 @@ def test_nav_history_guarded_loads_visible_entry(app, in_memory_db, tk_root):
     """App 级导航经侧栏可见列表解析目标，而非未过滤全量。"""
     real, _ = app
     from data.repository import add_entry
+
     ids = [add_entry(f"nav {i}", f"nav {i}", f"m{i}.png", "P")["id"] for i in range(3)]
     real.sidebar._refresh_hist()
     tk_root.update()

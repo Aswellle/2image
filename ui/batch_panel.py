@@ -177,8 +177,11 @@ class _Cell:
         self.state = "discarded"
         self.canvas.delete("all")
         self.canvas.create_text(
-            CELL_W // 2, CELL_H // 2, text=_("batch_cell_discarded"),
-            font=F["input"], fill=C["text_muted"],
+            CELL_W // 2,
+            CELL_H // 2,
+            text=_("batch_cell_discarded"),
+            font=F["input"],
+            fill=C["text_muted"],
         )
         set_enabled(self.keep_btn, False)
         set_enabled(self.dis_btn, False)

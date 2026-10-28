@@ -3,6 +3,7 @@
 覆盖：语言注册表、set_language 持久化、翻译在重启（init_language）后生效、
 偏好对话框保存语义。
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -29,6 +30,7 @@ def test_supported_languages_cover_all_locales(app, tk_root):
 def test_set_language_persists(app, monkeypatch):
     a, saved = app
     import services.application.settings_controller as sc
+
     captured = {}
     monkeypatch.setattr(sc, "save_config", lambda c: captured.update(dict(c)))
     a.settings_controller.set_language("en")
@@ -40,8 +42,8 @@ def test_set_language_same_value_is_noop(app, monkeypatch):
     a, saved = app
     calls = []
     monkeypatch.setattr(a, "_toast", lambda m, l="info": calls.append(m))
-    a.settings_controller.set_language("zh-CN")   # 与当前一致
-    assert calls == []                            # 不提示、不保存
+    a.settings_controller.set_language("zh-CN")  # 与当前一致
+    assert calls == []  # 不提示、不保存
     assert "language" not in saved
 
 
@@ -61,7 +63,7 @@ def test_translation_applies_after_init_language():
     init_language({"language": "en"})
     assert _("menu_file") == "📁  File"  # 与 menu_tools 等一致带 emoji 前缀
     assert _("settings_language") == "Interface Language"
-    init_language({"language": "zh-TW"})   # 已移除的语言 → 回落 zh-CN
+    init_language({"language": "zh-TW"})  # 已移除的语言 → 回落 zh-CN
     assert _("menu_file") == "📁  文件"
     init_language({"language": "zh-CN"})
     assert _("menu_file") == "📁  文件"
@@ -69,7 +71,7 @@ def test_translation_applies_after_init_language():
 
 def test_unknown_language_falls_back_to_default():
     init_language({"language": "xx-YY"})
-    assert get_language() == "zh-CN"   # init_language 对未知代码回落默认
+    assert get_language() == "zh-CN"  # init_language 对未知代码回落默认
 
 
 def test_default_config_has_language_key():

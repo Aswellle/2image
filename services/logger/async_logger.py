@@ -4,6 +4,7 @@ services/logger/async_logger.py — Async structured logger
 Replaces synchronous file-per-log-call with QueueHandler +
 RotatingFileHandler pattern.  Worker thread handles all disk I/O.
 """
+
 from __future__ import annotations
 
 import json

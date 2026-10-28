@@ -4,14 +4,17 @@ ui/app_protocol.py — AppProtocol 接口族
 面板通过协议与 App 交互，不依赖具体 App 类。
 测试时注入 Mock 实现对应协议即可。
 """
+
 from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol, Optional
+
 if TYPE_CHECKING:
     import tkinter as tk
 
 
 class SidebarProtocol(Protocol):
     """HistorySidebar 依赖的 App 接口。"""
+
     @property
     def root(self) -> "tk.Tk": ...
     @property
@@ -42,6 +45,7 @@ class SidebarProtocol(Protocol):
 
 class MainContentProtocol(Protocol):
     """MainContent 依赖的 App 接口。"""
+
     @property
     def root(self) -> "tk.Tk": ...
     @property

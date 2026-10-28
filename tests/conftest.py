@@ -1,4 +1,5 @@
 """Pytest configuration and fixtures."""
+
 import time
 
 import pytest
@@ -52,8 +53,6 @@ skip_if_no_tk = pytest.mark.skipif(
 )
 
 
-
-
 @pytest.fixture(scope="session")
 def tk_session_root():
     """整个 pytest 会话共享一个 Tk root。
@@ -79,11 +78,11 @@ def tk_root(tk_session_root):
     return tk_session_root
 
 
-
 @pytest.fixture
 def in_memory_db():
     """Switch repository to in-memory SQLite."""
     from data import repository
+
     repository._set_test_db(":memory:")
     repository.init_db()
     yield
@@ -93,6 +92,7 @@ def in_memory_db():
 @pytest.fixture
 def mock_app():
     """Minimal mock AppProtocol for sidebar/main_content tests."""
+
     class MockApp:
         def __init__(self):
             self.root = None  # set later
@@ -104,19 +104,43 @@ def mock_app():
             self.MAX_NICK_LEN = 20
             self._log_calls = []
             self._st_calls = []
-        def _log(self, msg): self._log_calls.append(msg)
-        def _st(self, msg, k="ok"): self._st_calls.append((msg, k))
-        def _toast(self, msg, level="info"): self._st_calls.append((msg, level))
-        def _refresh_hist(self, load_all=False, keep_scroll=False): pass
-        def _refresh_tag_stats(self): pass
-        def _load_entry(self, e): pass
-        def _gen(self, event=None): pass
-        def _reset_view(self): pass
-        def _export(self): pass
-        def _open_viewer(self): pass
-        def _set_cmp_from_entry(self, e): pass
+
+        def _log(self, msg):
+            self._log_calls.append(msg)
+
+        def _st(self, msg, k="ok"):
+            self._st_calls.append((msg, k))
+
+        def _toast(self, msg, level="info"):
+            self._st_calls.append((msg, level))
+
+        def _refresh_hist(self, load_all=False, keep_scroll=False):
+            pass
+
+        def _refresh_tag_stats(self):
+            pass
+
+        def _load_entry(self, e):
+            pass
+
+        def _gen(self, event=None):
+            pass
+
+        def _reset_view(self):
+            pass
+
+        def _export(self):
+            pass
+
+        def _open_viewer(self):
+            pass
+
+        def _set_cmp_from_entry(self, e):
+            pass
+
         def _display_title(self, e):
             return e.get("nickname") or e.get("prompt", "")[:20]
+
     return MockApp()
 
 
@@ -137,23 +161,28 @@ def isolate_real_config(tmp_path, monkeypatch):
     用户配置丢失；DB/日志/词库路径此前同样未被护栏覆盖。
     """
     import config.settings as _settings
+
     monkeypatch.setattr(_settings, "CONFIG_FILE", str(tmp_path / "config.json"))
     monkeypatch.setattr(_settings, "APP_DIR", str(tmp_path))
 
     import data.repository as _repo
+
     monkeypatch.setattr(_repo, "DB_FILE", str(tmp_path / "history.db"))
 
     import services.logger as _logger
+
     monkeypatch.setattr(_logger, "LOG_FILE", str(tmp_path / "debug.log"))
 
     import data.file_ownership as _ownership
+
     monkeypatch.setattr(_ownership, "IMAGES_DIR", str(tmp_path / "images"))
 
     import services.phrase_library as _phrases
-    monkeypatch.setattr(_phrases, "_CUSTOM_FILE",
-                        str(tmp_path / "phrase_library.json"))
+
+    monkeypatch.setattr(_phrases, "_CUSTOM_FILE", str(tmp_path / "phrase_library.json"))
 
     import services.generation.budget as _budget
+
     monkeypatch.setattr(_budget, "SPEND_FILE", str(tmp_path / "spend.json"))
 
 
@@ -170,11 +199,10 @@ def app(tk_root, monkeypatch):
     init_fonts()
     cfg = dict(DEFAULT_CONFIG)
     cfg["show_wizard_on_start"] = False
-    cfg["sidebar_width"] = 999          # 超上限，应被钳制到 SIDEBAR_MAX
+    cfg["sidebar_width"] = 999  # 超上限，应被钳制到 SIDEBAR_MAX
     saved = {}
     monkeypatch.setattr(app_mod, "load_config", lambda: dict(cfg))
-    monkeypatch.setattr(app_mod, "save_config",
-                        lambda c: saved.update(dict(c)))
+    monkeypatch.setattr(app_mod, "save_config", lambda c: saved.update(dict(c)))
     # 共享会话 root 上以 Toplevel 承载 App，避免销毁整个解释器
     top = tk.Toplevel(tk_root)
     top.withdraw()
@@ -182,6 +210,6 @@ def app(tk_root, monkeypatch):
     tk_root.update()
     yield a, saved
     try:
-        top.destroy()   # 触发侧栏 <Destroy> 钩子 → loader shutdown
+        top.destroy()  # 触发侧栏 <Destroy> 钩子 → loader shutdown
     except tk.TclError:
         pass

@@ -3,6 +3,7 @@
 覆盖：描边色随画布底色派生、描边矩形贴合图片、图元叠放顺序
 （描边必须压在图片最外一圈像素上），以及平移/换帧后描边跟随。
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -10,13 +11,12 @@ import tkinter as tk
 import pytest
 from PIL import Image, ImageTk
 
-from ui.canvas_image import (draw_image, move_outline, outline_bounds,
-                             outline_color)
+from ui.canvas_image import draw_image, move_outline, outline_bounds, outline_color
 
 
 def _hex_to_rgb(value: str) -> tuple[int, int, int]:
     value = value.lstrip("#")
-    return tuple(int(value[i:i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+    return tuple(int(value[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
 
 
 # ── 描边色 ──────────────────────────────────────────────────
@@ -49,7 +49,7 @@ def test_outline_falls_back_to_white_on_bad_input():
 
 # ── 几何 ────────────────────────────────────────────────────
 @pytest.mark.parametrize("w,h", [(100, 80), (101, 81), (1, 1), (260, 200)])
-def test_outline_bounds_cover_image_extent(w,h):
+def test_outline_bounds_cover_image_extent(w, h):
     cx, cy = 200, 150
     left, top, right, bottom = outline_bounds(cx, cy, w, h)
     assert right - left + 1 == w
@@ -89,9 +89,7 @@ def test_draw_image_outline_uses_canvas_bg(canvas):
 
 def test_draw_image_applies_tags_to_both_items(canvas):
     photo = _photo()
-    image_id, outline_id = draw_image(
-        canvas, 150, 100, photo, "#111827", tags=("prev",), outline_tags=("prev",)
-    )
+    image_id, outline_id = draw_image(canvas, 150, 100, photo, "#111827", tags=("prev",), outline_tags=("prev",))
     assert "prev" in canvas.gettags(image_id)
     assert "prev" in canvas.gettags(outline_id)
     canvas.delete("prev")

@@ -1,6 +1,7 @@
 """
 tests/test_metrics.py — Provider request metrics tests
 """
+
 from __future__ import annotations
 
 from services.generation.metrics import (

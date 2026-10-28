@@ -16,9 +16,7 @@ from pathlib import Path
 import pytest
 
 UI_DIR = Path(__file__).resolve().parent.parent / "ui"
-APP_CONTROLLER_DIR = (
-    Path(__file__).resolve().parent.parent / "services" / "application"
-)
+APP_CONTROLLER_DIR = Path(__file__).resolve().parent.parent / "services" / "application"
 PANEL_FILES = [
     "sidebar.py",
     "main_content.py",
@@ -59,9 +57,12 @@ def _app_surface() -> set:
     for node in ast.walk(app_cls):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             surface.add(node.name)
-        elif (isinstance(node, ast.Attribute)
-              and isinstance(node.value, ast.Name) and node.value.id == "self"
-              and isinstance(node.ctx, ast.Store)):
+        elif (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "self"
+            and isinstance(node.ctx, ast.Store)
+        ):
             surface.add(node.attr)
     return surface
 
@@ -74,8 +75,12 @@ def _app_refs(path: Path) -> dict:
         if not isinstance(node, ast.Attribute):
             continue
         inner = node.value
-        if (isinstance(inner, ast.Attribute) and inner.attr == "app"
-                and isinstance(inner.value, ast.Name) and inner.value.id == "self"):
+        if (
+            isinstance(inner, ast.Attribute)
+            and inner.attr == "app"
+            and isinstance(inner.value, ast.Name)
+            and inner.value.id == "self"
+        ):
             refs.setdefault(node.attr, []).append(node.lineno)
     return refs
 
@@ -99,15 +104,12 @@ def test_panel_app_refs_exist_on_app(fname):
         pytest.skip(f"{fname} not present")
     surface = _app_surface()
     missing = {k: v for k, v in _app_refs(path).items() if k not in surface}
-    assert not missing, (
-        f"{fname} references self.app.<X> not defined on App: {missing}"
-    )
+    assert not missing, f"{fname} references self.app.<X> not defined on App: {missing}"
 
 
 @pytest.mark.parametrize(
     "fname",
-    sorted(p.name for p in APP_CONTROLLER_DIR.glob("*.py")
-           if p.name != "__init__.py"),
+    sorted(p.name for p in APP_CONTROLLER_DIR.glob("*.py") if p.name != "__init__.py"),
 )
 def test_app_controller_refs_exist_on_app(fname):
     """应用控制器的 self.app.<X> 引用必须真实存在于 App。
@@ -116,13 +118,8 @@ def test_app_controller_refs_exist_on_app(fname):
     误删——UI 面板护栏不扫描 services/application/，断链因此漏网。
     """
     surface = _app_surface()
-    missing = {
-        k: v for k, v in _app_refs(APP_CONTROLLER_DIR / fname).items()
-        if k not in surface
-    }
-    assert not missing, (
-        f"{fname} references self.app.<X> not defined on App: {missing}"
-    )
+    missing = {k: v for k, v in _app_refs(APP_CONTROLLER_DIR / fname).items() if k not in surface}
+    assert not missing, f"{fname} references self.app.<X> not defined on App: {missing}"
 
 
 def test_app_self_references_defined():
@@ -132,13 +129,15 @@ def test_app_self_references_defined():
     surface = _app_surface()
     missing = {}
     for node in ast.walk(tree):
-        if (isinstance(node, ast.Attribute)
-                and isinstance(node.value, ast.Name) and node.value.id == "self"
-                and not isinstance(node.ctx, ast.Store)
-                and node.attr not in surface):
+        if (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "self"
+            and not isinstance(node.ctx, ast.Store)
+            and node.attr not in surface
+        ):
             missing.setdefault(node.attr, []).append(node.lineno)
     # 内建/继承自 tk.Tk 的方法不算缺失
     builtin_like = {n for n in missing if not n.startswith("_") or n.startswith("__")}
-    unknown = {k: v for k, v in missing.items()
-               if k not in builtin_like and k != "root"}
+    unknown = {k: v for k, v in missing.items() if k not in builtin_like and k != "root"}
     assert not unknown, f"app.py references undefined self attributes: {unknown}"

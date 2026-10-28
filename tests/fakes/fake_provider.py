@@ -5,6 +5,7 @@ Lets tests define a sequence of outcomes (success, exceptions)
 per provider to verify orchestrator fallback, retry, and
 circuit-breaker behavior deterministically.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -34,9 +35,7 @@ class ProviderScript:
         return self
 
     def add_rate_limit(self, retry_after: float = 1.0) -> "ProviderScript":
-        self.outcomes.append(
-            ("error", ProviderRateLimitError("rate limited", retry_after=retry_after))
-        )
+        self.outcomes.append(("error", ProviderRateLimitError("rate limited", retry_after=retry_after)))
         return self
 
     def add_auth_failure(self) -> "ProviderScript":

@@ -343,8 +343,14 @@ class MainContent:
         self.pt.bind("<Control-Return>", lambda e: (self.app._gen(), "break")[1])
         # 提示词占位符：空输入时显示指引，输入即隐藏（与预览/搜索同一模式）
         self._pt_ph = tk.Label(
-            pf, text=_("prompt_placeholder"), font=F["label"], bg=C["entry"],
-            fg=C["text_muted"], bd=0, anchor="nw", justify="left",
+            pf,
+            text=_("prompt_placeholder"),
+            font=F["label"],
+            bg=C["entry"],
+            fg=C["text_muted"],
+            bd=0,
+            anchor="nw",
+            justify="left",
         )
         self._pt_ph.bind("<Button-1>", lambda _e: self.pt.focus_set())
         self._upd_pt_ph()
@@ -353,7 +359,9 @@ class MainContent:
         _pt_foot = tk.Frame(R, bg="#0d1a30")
         _pt_foot.pack(fill="x", padx=14)
 
-        self._char_lbl = tk.Label(_pt_foot, text=_("lbl_chars", n=0), font=F["mono_tiny"], bg="#0d1a30", fg=C["text_muted"])
+        self._char_lbl = tk.Label(
+            _pt_foot, text=_("lbl_chars", n=0), font=F["mono_tiny"], bg="#0d1a30", fg=C["text_muted"]
+        )
         self._char_lbl.pack(side="left", padx=6, pady=2)
 
         tk.Button(
@@ -546,9 +554,7 @@ class MainContent:
         # 没有对应菜单项，用户无从得知。其余快捷键由菜单栏承载。
         # 它是补充信息，窗口变窄时先让位给按钮（英文界面下这条要占 137px，
         # 硬留着会把「变体生成」挤掉）。
-        self._shortcut_lbl = tk.Label(
-            opt2, text=_("shortcut_hint"), font=F["small"], bg=C["bg"], fg=C["text_muted"]
-        )
+        self._shortcut_lbl = tk.Label(opt2, text=_("shortcut_hint"), font=F["small"], bg=C["bg"], fg=C["text_muted"])
         self._shortcut_lbl.pack(side="left", padx=6)
         opt2.bind("<Configure>", self._on_tools_row_resize)
 
@@ -746,9 +752,7 @@ class MainContent:
         # 次要提示：窗口够宽时才显示。它是解释性文字，优先级低于按钮，
         # 但 pack(side="right") 会先占住右侧空间——窄窗口下被压到几像素、
         # 内容不可读却仍在抢位。改为按工具栏实际宽度决定是否显示。
-        self._dblclick_hint = tk.Label(
-            tb, text=_("preview_dblclick_hint"), font=F["small"], bg="#0d1b2a", fg=C["sub"]
-        )
+        self._dblclick_hint = tk.Label(tb, text=_("preview_dblclick_hint"), font=F["small"], bg="#0d1b2a", fg=C["sub"])
         self._dblclick_hint.pack(side="right", padx=10)
         tb.bind("<Configure>", self._on_preview_toolbar_resize)
 
@@ -811,7 +815,9 @@ class MainContent:
 
         self._cmp_cv = tk.Canvas(self._cmp_right_wrap, bg="#0a0f1a", bd=0, highlightthickness=0)
         self._cmp_cv.pack(fill="both", expand=True)
-        self._cmp_cv.create_text(80, 50, text=_("compare_pick_hint"), font=F["input"], fill=C["text_muted"], anchor="center")
+        self._cmp_cv.create_text(
+            80, 50, text=_("compare_pick_hint"), font=F["input"], fill=C["text_muted"], anchor="center"
+        )
         self._cmp_cv.bind("<Configure>", self._on_cmp_resize)
 
     # ── 对比逻辑 ─────────────────────────────────────────────
@@ -1146,8 +1152,13 @@ class MainContent:
         self._prev_cv.delete("prev")
         self._prev_cv.itemconfig(self._prev_ph, text="")
         self._prev_item, self._prev_outline = draw_image(
-            self._prev_cv, cw // 2, ch // 2, self._prev_photo, "#111827",
-            tags=("prev",), outline_tags=("prev",),
+            self._prev_cv,
+            cw // 2,
+            ch // 2,
+            self._prev_photo,
+            "#111827",
+            tags=("prev",),
+            outline_tags=("prev",),
         )
 
     def _set_preview(self, data: bytes):
@@ -1447,13 +1458,17 @@ class MainContent:
         入口并给出提示，避免用户以为批量结果也套用了参考图。"""
         if locked:
             set_enabled(
-                self._variant_gen_btn, False,
-                bg=C["dis_bg"], text=_("btn_variant_gen") + _("i2i_not_supported"),
+                self._variant_gen_btn,
+                False,
+                bg=C["dis_bg"],
+                text=_("btn_variant_gen") + _("i2i_not_supported"),
             )
         else:
             set_enabled(
-                self._variant_gen_btn, True,
-                bg=self._variant_gen_btn_bg, text=_("btn_variant_gen"),
+                self._variant_gen_btn,
+                True,
+                bg=self._variant_gen_btn_bg,
+                text=_("btn_variant_gen"),
             )
         if hasattr(self, "_queue_panel"):
             self._queue_panel.set_img2img_lock(locked)
