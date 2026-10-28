@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -179,3 +180,46 @@ def test_count_entries_respects_filters(in_memory_db):
     assert count_entries(only_favorites=True) == 0
     # 与 get_all_entries 的过滤结果交叉验证
     assert len(get_all_entries(keyword="castle")) == count_entries(keyword="castle")
+
+
+def test_keyboard_navigation_moves_within_visible_list(sidebar, in_memory_db, tk_root):
+    """方向键/Home/End 在过滤后的可见列表上移动并滚动入视。"""
+    from data.repository import add_entry, get_entry
+    ids = [add_entry(f"nav item {i}", f"nav {i}", f"n{i}.png", "P")["id"] for i in range(5)]
+
+    sidebar._refresh_hist()
+    tk_root.update()
+
+    # 从无选中按下"下一条"：定位到最新一条（列表按 id 倒序显示）
+    sel = sidebar.navigate_selection(step=1)
+    assert sel == ids[-1]
+    sidebar.app.sel_id = sel  # 模拟 App._load_entry 落选中
+    # 相对移动：step=+1 沿显示顺序下移（新 → 旧）
+    sel = sidebar.navigate_selection(step=1)
+    assert sel == ids[-2]
+    sidebar.app.sel_id = sel
+    # 端点钳制：到列表底（最旧）后继续下移不再变化
+    assert sidebar.navigate_selection(step=10) == ids[0]
+    # Home = 列表首条（最新），End = 列表末条（最旧）
+    assert sidebar.navigate_selection(jump="home") == ids[-1]
+    assert sidebar.navigate_selection(jump="end") == ids[0]
+    # 空列表安全
+    sidebar._card_widgets.clear()
+    assert sidebar.navigate_selection(step=1) is None
+
+
+def test_nav_history_guarded_loads_visible_entry(app, in_memory_db, tk_root):
+    """App 级导航经侧栏可见列表解析目标，而非未过滤全量。"""
+    real, _ = app
+    from data.repository import add_entry
+    ids = [add_entry(f"nav {i}", f"nav {i}", f"m{i}.png", "P")["id"] for i in range(3)]
+    real.sidebar._refresh_hist()
+    tk_root.update()
+    real.sel_id = None
+
+    real._nav_history_guarded(delta=-1)
+    assert real.sel_id == ids[0]  # 无选中 + 上移 = 列表末条（最旧）
+    real._nav_history_guarded(delta=-1)
+    assert real.sel_id == ids[1]  # 继续上移 = 显示列表上一条
+    real._nav_history_guarded(delta=+1)
+    assert real.sel_id == ids[0]  # 下移折返

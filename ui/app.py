@@ -285,6 +285,10 @@ class App:
         r.bind("<Delete>", self._delete_selected_guarded)
         r.bind("<Left>", lambda e: self._nav_history_guarded(e, -1))
         r.bind("<Right>", lambda e: self._nav_history_guarded(e, +1))
+        r.bind("<Up>", lambda e: self._nav_history_guarded(e, -1))
+        r.bind("<Down>", lambda e: self._nav_history_guarded(e, +1))
+        r.bind("<Home>", self._nav_history_home)
+        r.bind("<End>", self._nav_history_end)
         # 退出守卫：生成/队列进行中先确认（doc §18 守则同样适用于关窗）
         r.protocol("WM_DELETE_WINDOW", self._on_close_request)
 
@@ -577,20 +581,26 @@ class App:
             return
         self._clr_log()
 
-    def _nav_history_guarded(self, event=None, delta: int = 1):
+    def _nav_history_guarded(self, event=None, delta: int = 1, jump: str | None = None):
+        """方向键/Home/End 在可见（过滤后）列表上移动选中并滚动入视。
+
+        此前走未过滤的 get_all_entries(limit=500)：筛选态下会选中
+        看不见的条目且列表不滚动，键盘导航形同盲走。
+        """
         if self._typing_focus():
             return
-        entries = get_all_entries(limit=500)
-        if not entries:
+        target = self.sidebar.navigate_selection(step=delta, jump=jump)
+        if target is None:
             return
-        ids = [e["id"] for e in entries]
-        if self.sel_id in ids:
-            i = max(0, min(len(ids) - 1, ids.index(self.sel_id) + delta))
-        else:
-            i = 0  # 无选中：先定位到最新一条，再按方向移动
-        target = next((e for e in entries if e["id"] == ids[i]), None)
-        if target is not None:
-            self._load_entry(target)
+        entry = get_entry(target)
+        if entry is not None:
+            self._load_entry(entry)
+
+    def _nav_history_home(self, event=None):
+        self._nav_history_guarded(event, jump="home")
+
+    def _nav_history_end(self, event=None):
+        self._nav_history_guarded(event, jump="end")
 
     def _toast(self, msg: str, level: str = "info"):
         """瞬态通知（UIUX §64）：快捷确认走 toast，不长期占据状态栏。"""

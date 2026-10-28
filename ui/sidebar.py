@@ -652,6 +652,33 @@ class HistorySidebar:
         sub_lbl.bind("<Button-1>", lambda ev, en=e: (self.app._load_entry(en), "break")[1])
         self._bind_scroll(sub_lbl)
 
+        # 悬停反馈：非选中卡片悬停提亮 + 手型光标，让"整卡可点"可被感知
+        hover_targets = [card, inn, right, _thumb_f, thumb_lbl, title_lbl, sub_lbl]
+
+        def _hover_on(_ev=None):
+            if self.app.sel_id != e["id"] and not is_fav:
+                for w in hover_targets:
+                    try:
+                        w.config(bg=C["card"])
+                    except tk.TclError:
+                        pass
+
+        def _hover_off(_ev=None):
+            if self.app.sel_id != e["id"] and not is_fav:
+                for w in hover_targets:
+                    try:
+                        w.config(bg=cbg)
+                    except tk.TclError:
+                        pass
+
+        for _hw in hover_targets:
+            _hw.bind("<Enter>", _hover_on, add="+")
+            _hw.bind("<Leave>", _hover_off, add="+")
+            try:
+                _hw.config(cursor="hand2")
+            except tk.TclError:
+                pass
+
         # ── 标签芯片 ─────────────────────────────────────────
         tags_str = e.get("tags", "") or ""
         tags_list = [t.strip() for t in tags_str.split(",") if t.strip()]
@@ -903,6 +930,52 @@ class HistorySidebar:
             except Exception:
                 pass
         self._prev_sel_id = new_id
+
+    # ══════════════════════════════════════════════════════════
+    #   键盘导航（§58）：在可见（过滤后）列表上移动并滚动入视
+    # ══════════════════════════════════════════════════════════
+    def visible_ids(self) -> list:
+        """当前可见卡片的 id，按显示顺序（键集分页追加顺序即显示顺序）。"""
+        return list(self._card_widgets.keys())
+
+    def navigate_selection(self, step: int = 0, jump: str | None = None):
+        """移动键盘选中项；返回目标 entry id，空列表返回 None。
+
+        以选中高亮充当键盘焦点指示（卡片为不可获焦 Frame 的既有结构），
+        选中变化后由 App._load_entry 统一刷新工作区与查看器。
+        """
+        ids = self.visible_ids()
+        if not ids:
+            return None
+        if jump == "home":
+            idx = 0
+        elif jump == "end":
+            idx = len(ids) - 1
+        else:
+            try:
+                idx = ids.index(self.app.sel_id)
+            except ValueError:
+                idx = 0 if step > 0 else len(ids) - 1
+            else:
+                idx = max(0, min(len(ids) - 1, idx + step))
+        target = ids[idx]
+        card = self._card_widgets.get(target, {}).get("card")
+        if card is not None:
+            self._reveal_card(card)
+        return target
+
+    def _reveal_card(self, card):
+        """仅当卡片越出视口时平移画布，不打断用户当前浏览位置。"""
+        self.hc.update_idletasks()
+        content_h = self.hi.winfo_reqheight() or 1
+        y = card.winfo_y()
+        h = max(1, card.winfo_height())
+        view_h = max(1, self.hc.winfo_height())
+        view_top = self.hc.yview()[0] * content_h
+        if y < view_top:
+            self.hc.yview_moveto(max(0.0, y / content_h))
+        elif y + h > view_top + view_h:
+            self.hc.yview_moveto(min(1.0, max(0.0, (y + h - view_h) / content_h)))
 
     # ══════════════════════════════════════════════════════════
     #   彻底修复：缩略图异步加载（双重校验防 widget ID 复用污染）
