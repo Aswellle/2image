@@ -116,20 +116,20 @@ class ImageViewerWindow(tk.Toplevel):
                 padx=10,
                 pady=5,
                 cursor="hand2",
-                activebackground="#1a4a7a",
+                activebackground=C["accent_hover"],
             )
             b.pack(side=side, padx=2, pady=6)
             return b
 
         def sep():
-            tk.Frame(tb, bg="#2a3a5a", width=1).pack(side="left", fill="y", padx=5, pady=8)
+            tk.Frame(tb, bg=C["sep"], width=1).pack(side="left", fill="y", padx=5, pady=8)
 
         tbtn(_("viewer_zoom_in"), self._zoom_in)
         tbtn(_("viewer_zoom_out"), self._zoom_out)
         tbtn(_("viewer_fit"), self._zoom_fit)
         tbtn(_("viewer_100"), self._zoom_100)
         sep()
-        self._crop_btn = tbtn(_("viewer_crop"), self._crop_toggle, color="#7c3aed")
+        self._crop_btn = tbtn(_("viewer_crop"), self._crop_toggle, color=C["purple"])
         sep()
         tbtn(_("viewer_save"), self._save_overwrite)
         tbtn(_("viewer_save_as"), self._save_as)
@@ -143,10 +143,10 @@ class ImageViewerWindow(tk.Toplevel):
         )
 
         # 画布
-        self.cv = tk.Canvas(self, bg="#111827", cursor="hand2", bd=0, highlightthickness=0)
+        self.cv = tk.Canvas(self, bg=C["inset"], cursor="hand2", bd=0, highlightthickness=0)
         self.cv.pack(fill="both", expand=True)
         self._ph_text = self.cv.create_text(
-            500, 340, text="", font=(F["_sans"], 16), fill="#9ab4cc", anchor="center", tags="placeholder"
+            500, 340, text="", font=(F["_sans"], 16), fill=C["text_muted"], anchor="center", tags="placeholder"
         )
 
         # 底部信息栏
@@ -158,7 +158,7 @@ class ImageViewerWindow(tk.Toplevel):
             return tk.Label(info_bar, text=text, font=F["mono"], bg=C["panel"], fg=fg or C["ok"])
 
         def vsep():
-            tk.Frame(info_bar, bg="#2a3a5a", width=1).pack(side="left", fill="y", pady=5, padx=6)
+            tk.Frame(info_bar, bg=C["sep"], width=1).pack(side="left", fill="y", pady=5, padx=6)
 
         self._info_res = infolbl(_("lbl_size") + " --")
         self._info_res.pack(side="left", padx=(14, 0))
@@ -182,8 +182,8 @@ class ImageViewerWindow(tk.Toplevel):
             self.cv,
             text="ℹ",
             font=F["body"],
-            bg="#1a2540",
-            fg="#4a7adf",
+            bg=C["card"],
+            fg=C["sash_hl"],
             bd=0,
             padx=6,
             pady=2,
@@ -199,8 +199,8 @@ class ImageViewerWindow(tk.Toplevel):
             self.cv,
             text="",
             font=F["mono_tiny"],
-            bg="#111827",  # 与 canvas bg 融合
-            fg="#c8d8f0",
+            bg=C["inset"],  # 与 canvas bg 融合
+            fg=C["chip_info_fg"],
             anchor="nw",
             justify="left",
             bd=0,
@@ -298,7 +298,7 @@ class ImageViewerWindow(tk.Toplevel):
             # 描边压在图片最外一圈像素上，必须在图片之后创建
             self._img_outline = self.cv.create_rectangle(
                 *outline_bounds(self._img_cx, self._img_cy, photo.width(), photo.height()),
-                outline=outline_color("#111827"),
+                outline=outline_color(C["inset"]),
                 width=1,
             )
         else:
@@ -405,7 +405,7 @@ class ImageViewerWindow(tk.Toplevel):
             self._meta_toggle_btn.config(fg=C["ok"])
         else:
             self._meta_text_lbl.place_forget()
-            self._meta_toggle_btn.config(fg="#4a7adf")
+            self._meta_toggle_btn.config(fg=C["sash_hl"])
 
     # ── 缩放 ───────────────────────────────────────────────────
     def _zoom_fit(self):
@@ -507,7 +507,7 @@ class ImageViewerWindow(tk.Toplevel):
             if self._crop_rect:
                 self.cv.delete(self._crop_rect)
             self._crop_rect = self.cv.create_rectangle(
-                self._crop_x0, self._crop_y0, event.x, event.y, outline="#e94560", width=2, dash=(6, 3), tags="crop"
+                self._crop_x0, self._crop_y0, event.x, event.y, outline=C["hl"], width=2, dash=(6, 3), tags="crop"
             )
         elif self._pan_last and self._img_item:
             dx = event.x - self._pan_last[0]
@@ -539,7 +539,7 @@ class ImageViewerWindow(tk.Toplevel):
             return
         self._crop_mode = not self._crop_mode
         if self._crop_mode:
-            self._crop_btn.config(bg="#dc2626", text=_("viewer_cancel_crop"))
+            self._crop_btn.config(bg=C["hl"], text=_("viewer_cancel_crop"))
             self.cv.config(cursor="crosshair")
             self._info_tip.config(text=_("viewer_crop_mode_tip"))
         else:
@@ -552,7 +552,7 @@ class ImageViewerWindow(tk.Toplevel):
             self.cv.delete(self._crop_rect)
             self._crop_rect = None
         if hasattr(self, "_crop_btn"):
-            self._crop_btn.config(bg="#7c3aed", text=_("viewer_crop"))
+            self._crop_btn.config(bg=C["purple"], text=_("viewer_crop"))
         self.cv.config(cursor="hand2")
         self._info_tip.config(text="")
 
@@ -611,7 +611,7 @@ class ImageViewerWindow(tk.Toplevel):
             text=_("viewer_apply_crop"),
             font=F["h2"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=28,
             pady=10,
@@ -679,9 +679,9 @@ class ImageViewerWindow(tk.Toplevel):
         preview = cropped.copy()
         preview.thumbnail((660, max_prev_h), Image.LANCZOS)
         ph = ImageTk.PhotoImage(preview)
-        img_frame = tk.Frame(win, bg="#111827")
+        img_frame = tk.Frame(win, bg=C["inset"])
         img_frame.pack(fill="both", expand=True)
-        img_lbl = tk.Label(img_frame, image=ph, bg="#111827")
+        img_lbl = tk.Label(img_frame, image=ph, bg=C["inset"])
         img_lbl.image = ph
         img_lbl.pack(expand=True)
 

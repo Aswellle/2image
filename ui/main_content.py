@@ -101,7 +101,7 @@ class _StrengthSlider:
         self.marks = marks
         self.var = variable
         self.cv = tk.Canvas(
-            parent, width=self.W, height=self.H, bg="#0a1628", bd=0, highlightthickness=0, cursor="hand2"
+            parent, width=self.W, height=self.H, bg=C["inset"], bd=0, highlightthickness=0, cursor="hand2"
         )
         self._gradient = self._build_gradient(60)
         self._draw()
@@ -166,8 +166,8 @@ class _StrengthSlider:
 
         # ── 手柄 ─────────────────────────────────────────────
         cy = TY + TH // 2
-        cv.create_oval(hx - HR - 1, cy - HR - 1, hx + HR + 1, cy + HR + 1, fill="#0a1628", outline="#5c6470", width=1)
-        cv.create_oval(hx - HR, cy - HR, hx + HR, cy + HR, fill="white", outline="#4a7adf", width=2)
+        cv.create_oval(hx - HR - 1, cy - HR - 1, hx + HR + 1, cy + HR + 1, fill=C["inset"], outline=C["sep"], width=1)
+        cv.create_oval(hx - HR, cy - HR, hx + HR, cy + HR, fill="white", outline=C["sash_hl"], width=2)
 
         # ── 数值标签（仅完整滑块显示，紧凑模式已在外部显示数值）────
         if self.marks:
@@ -181,8 +181,8 @@ class _StrengthSlider:
                 (0.9, _("strength_reconstruct")),
             ]:
                 mx = self._val_to_x(mv)
-                cv.create_line(mx, TY + TH, mx, TY + TH + 4, fill="#3a5a8a", width=1)
-                cv.create_text(mx, TY + TH + 14, text=mt, font=F["small"], fill="#4a6a9a", anchor="n")
+                cv.create_line(mx, TY + TH, mx, TY + TH + 4, fill=C["sep"], width=1)
+                cv.create_text(mx, TY + TH + 14, text=mt, font=F["small"], fill=C["text_muted"], anchor="n")
 
     # ── 事件 ──────────────────────────────────────────────────
     def _on_press(self, e):
@@ -356,11 +356,11 @@ class MainContent:
         self._upd_pt_ph()
 
         # ── 输入框底部辅助条：字数统计 + 一键复制 ─────────────
-        _pt_foot = tk.Frame(R, bg="#0d1a30")
+        _pt_foot = tk.Frame(R, bg=C["empty"])
         _pt_foot.pack(fill="x", padx=14)
 
         self._char_lbl = tk.Label(
-            _pt_foot, text=_("lbl_chars", n=0), font=F["mono_tiny"], bg="#0d1a30", fg=C["text_muted"]
+            _pt_foot, text=_("lbl_chars", n=0), font=F["mono_tiny"], bg=C["empty"], fg=C["text_muted"]
         )
         self._char_lbl.pack(side="left", padx=6, pady=2)
 
@@ -368,8 +368,8 @@ class MainContent:
             _pt_foot,
             text=_("btn_copy_prompt"),
             font=F["tiny"],
-            bg="#1e3060",
-            fg="#93c5fd",
+            bg=C["chip_info_bg"],
+            fg=C["chip_info_fg"],
             bd=0,
             padx=8,
             pady=2,
@@ -446,7 +446,6 @@ class MainContent:
             padx=16,
             pady=6,
             cursor="hand2",
-            activebackground="#c73652",
             command=self.app.gen_controller.generate_or_cancel,
         )
         self.gb.pack(side="left")
@@ -458,7 +457,7 @@ class MainContent:
             opt2,
             text=_("btn_phrase_lib"),
             font=F["body_b"],
-            bg="#065f46",
+            bg=C["keep_bg"],
             fg="white",
             bd=0,
             padx=12,
@@ -470,7 +469,7 @@ class MainContent:
             opt2,
             text=_("btn_prompt_wizard"),
             font=F["body_b"],
-            bg="#7c3aed",
+            bg=C["purple"],
             fg="white",
             bd=0,
             padx=12,
@@ -501,7 +500,7 @@ class MainContent:
             text="⊖",
             font=F["btn"],
             bg=C["acc"],
-            fg="#a0c8ff",
+            fg=C["chip_info_fg"],
             bd=0,
             width=2,
             pady=2,
@@ -526,13 +525,13 @@ class MainContent:
             text="⊕",
             font=F["btn"],
             bg=C["acc"],
-            fg="#a0c8ff",
+            fg=C["chip_info_fg"],
             bd=0,
             width=2,
             pady=2,
             cursor="hand2",
             activebackground="#4ecca3",
-            activeforeground="#0a1a0a",
+            activeforeground=C["ok_fg"],
             command=_inc_n,
         ).pack(side="left")
 
@@ -540,7 +539,7 @@ class MainContent:
             opt2,
             text=_("btn_variant_gen"),
             font=F["body_b"],
-            bg="#4a1d96",
+            bg=C["purple_deep"],
             fg="white",
             bd=0,
             padx=12,
@@ -549,7 +548,7 @@ class MainContent:
             command=self.app._gen_variants,
         )
         self._variant_gen_btn.pack(side="left")
-        self._variant_gen_btn_bg = "#4a1d96"  # 恢复用：禁用态会覆盖 bg
+        self._variant_gen_btn_bg = C["purple_deep"]  # 恢复用：禁用态会覆盖 bg
         # 唯一留在主界面的快捷键说明：Ctrl+Enter 在输入框内触发，
         # 没有对应菜单项，用户无从得知。其余快捷键由菜单栏承载。
         # 它是补充信息，窗口变窄时先让位给按钮（英文界面下这条要占 137px，
@@ -583,7 +582,6 @@ class MainContent:
             pady=6,
             cursor="hand2",
             relief="flat",
-            activebackground="#c73652",
             activeforeground="white",
             command=lambda: self._switch_mode("t2i"),
         )
@@ -599,7 +597,6 @@ class MainContent:
             pady=6,
             cursor="hand2",
             relief="flat",
-            activebackground="#1e3a5f",
             activeforeground="white",
             command=lambda: self._switch_mode("i2i"),
         )
@@ -629,13 +626,13 @@ class MainContent:
         self._nb.add(self.imf, text=_("tab_preview"))
         self._build_preview_tab()
 
-        self._var_frame = tk.Frame(self._nb, bg="#0a0f1a")
+        self._var_frame = tk.Frame(self._nb, bg=C["inset"])
         self._nb.add(self._var_frame, text=_("tab_variants"))
         self._batch_panel = BatchPanel(self._var_frame, self.app)
         self._batch_panel.pack(fill="both", expand=True)
 
         # ── 📋 顺序生成队列 Tab ───────────────────────────────
-        self._queue_frame = tk.Frame(self._nb, bg="#1a1a2e")
+        self._queue_frame = tk.Frame(self._nb, bg=C["bg"])
         self._nb.add(self._queue_frame, text=_("tab_queue"))
         self._queue_panel = QueuePanel(self._queue_frame, self.app)
         self._queue_panel.pack(fill="both", expand=True)
@@ -643,7 +640,7 @@ class MainContent:
         lf2 = tk.Frame(self._nb, bg=C["bg"])
         self._nb.add(lf2, text=_("tab_debug_log"))
         self.logt = scrolledtext.ScrolledText(
-            lf2, font=F["mono"], bg="#080818", fg="#4ecca3", insertbackground="white", bd=0, state="disabled"
+            lf2, font=F["mono"], bg=C["inset"], fg=C["ok"], insertbackground="white", bd=0, state="disabled"
         )
         self.logt.pack(fill="both", expand=True, padx=4, pady=4)
         tk.Button(
@@ -669,7 +666,7 @@ class MainContent:
     #   预览 Tab（含对比）— Fix-2: 补充 _cmp_label_b.pack()
     # ══════════════════════════════════════════════════════════
     def _build_preview_tab(self):
-        tb = tk.Frame(self.imf, bg="#0d1b2a", height=36)
+        tb = tk.Frame(self.imf, bg=C["tb"], height=36)
         tb.pack(fill="x")
         tb.pack_propagate(False)
 
@@ -752,7 +749,7 @@ class MainContent:
         # 次要提示：窗口够宽时才显示。它是解释性文字，优先级低于按钮，
         # 但 pack(side="right") 会先占住右侧空间——窄窗口下被压到几像素、
         # 内容不可读却仍在抢位。改为按工具栏实际宽度决定是否显示。
-        self._dblclick_hint = tk.Label(tb, text=_("preview_dblclick_hint"), font=F["small"], bg="#0d1b2a", fg=C["sub"])
+        self._dblclick_hint = tk.Label(tb, text=_("preview_dblclick_hint"), font=F["small"], bg=C["tb"], fg=C["sub"])
         self._dblclick_hint.pack(side="right", padx=10)
         tb.bind("<Configure>", self._on_preview_toolbar_resize)
 
@@ -761,7 +758,7 @@ class MainContent:
         # 列 1：主预览画布（一直存在，t2i/i2i 通用）
         # 列 2/3：对比分隔线 / 对比图（仅"选取对比图"后才 grid）
         # 切换模式只改变列 0 的宽度，不影响 Notebook/imf 本身的整体尺寸。
-        self._prev_host = tk.Frame(self.imf, bg="#111827")
+        self._prev_host = tk.Frame(self.imf, bg=C["inset"])
         self._prev_host.pack(fill="both", expand=True)
         self._prev_host.columnconfigure(0, weight=0, minsize=0)
         self._prev_host.columnconfigure(1, weight=1)
@@ -771,7 +768,7 @@ class MainContent:
         self._build_i2i_ref_column()  # 列 0，_switch_mode 按需 grid / grid_remove
 
         # 左半（A — 当前图）
-        left_wrap = tk.Frame(self._prev_host, bg="#111827")
+        left_wrap = tk.Frame(self._prev_host, bg=C["inset"])
         left_wrap.grid(row=0, column=1, sticky="nsew")
 
         # Fix-2: A 侧横幅（初始隐藏，activate 时 pack）
@@ -780,7 +777,7 @@ class MainContent:
         )
         # 注：初始不 pack，在 _set_compare_image 中动态 pack
 
-        self._prev_cv = tk.Canvas(left_wrap, bg="#111827", bd=0, highlightthickness=0)
+        self._prev_cv = tk.Canvas(left_wrap, bg=C["inset"], bd=0, highlightthickness=0)
         self._prev_cv.pack(fill="both", expand=True)
         self._prev_photo = None
         self._prev_item = None
@@ -791,7 +788,7 @@ class MainContent:
             200,
             text=_("preview_placeholder_detailed"),
             font=F["body"],
-            fill="#9ab4cc",
+            fill=C["text_muted"],
             anchor="center",
             justify="center",
         )
@@ -802,10 +799,10 @@ class MainContent:
         self._prev_cv.bind("<Button-5>", lambda e: "break")
 
         # 分隔线（对比时才 grid）
-        self._cmp_divider = tk.Frame(self._prev_host, bg="#4a1d96", width=3)
+        self._cmp_divider = tk.Frame(self._prev_host, bg=C["purple_deep"], width=3)
 
         # 右半（B — 对比图）
-        self._cmp_right_wrap = tk.Frame(self._prev_host, bg="#111827")
+        self._cmp_right_wrap = tk.Frame(self._prev_host, bg=C["inset"])
 
         # Fix-2: B 侧横幅 —— 在此 pack，跟随 _cmp_right_wrap 一同显示/隐藏
         self._cmp_label_b = tk.Label(
@@ -813,7 +810,7 @@ class MainContent:
         )
         self._cmp_label_b.pack(fill="x")  # ← Fix-2 补充此行
 
-        self._cmp_cv = tk.Canvas(self._cmp_right_wrap, bg="#0a0f1a", bd=0, highlightthickness=0)
+        self._cmp_cv = tk.Canvas(self._cmp_right_wrap, bg=C["inset"], bd=0, highlightthickness=0)
         self._cmp_cv.pack(fill="both", expand=True)
         self._cmp_cv.create_text(
             80, 50, text=_("compare_pick_hint"), font=F["input"], fill=C["text_muted"], anchor="center"
@@ -858,9 +855,9 @@ class MainContent:
             cursor="hand2",
             command=lambda: self._pick_cmp_file(win),
         ).pack(side="right", padx=12, pady=8)
-        tk.Label(hdr, text=_("compare_recent_count", n=len(entries)), font=F["small"], bg=C["acc"], fg="#93c5fd").pack(
-            side="right", padx=4
-        )
+        tk.Label(
+            hdr, text=_("compare_recent_count", n=len(entries)), font=F["small"], bg=C["acc"], fg=C["chip_info_fg"]
+        ).pack(side="right", padx=4)
 
         # ── 可滚动网格区域 ────────────────────────────────────
         outer = tk.Frame(win, bg=C["bg"])
@@ -940,15 +937,15 @@ class MainContent:
             inner.columnconfigure(ci, weight=1)
 
             # 格子容器
-            cell = tk.Frame(inner, bg=C["panel"], highlightbackground="#2a3a5a", highlightthickness=1)
+            cell = tk.Frame(inner, bg=C["panel"], highlightbackground=C["sep"], highlightthickness=1)
             cell.grid(row=ri, column=ci, padx=5, pady=5, sticky="nsew")
             cell.columnconfigure(0, weight=1)
 
             # 缩略图标签（居中，固定占位）
-            img_host = tk.Frame(cell, bg="#0f172a", width=THUMB, height=THUMB)
+            img_host = tk.Frame(cell, bg=C["empty"], width=THUMB, height=THUMB)
             img_host.pack(padx=8, pady=(8, 0))
             img_host.pack_propagate(False)
-            lbl = tk.Label(img_host, bg="#0f172a", text="⏳", font=F["disp_lg"], fg=C["text_muted"])
+            lbl = tk.Label(img_host, bg=C["empty"], text="⏳", font=F["disp_lg"], fg=C["text_muted"])
             lbl.pack(expand=True)
 
             # 异步加载缩略图
@@ -1018,13 +1015,12 @@ class MainContent:
                 cell,
                 text=_("btn_pick_this"),
                 font=F["body_b"],
-                bg="#7c3aed",
+                bg=C["purple"],
                 fg="white",
                 bd=0,
                 padx=14,
                 pady=5,
                 cursor="hand2",
-                activebackground="#5b21b6",
                 command=lambda p=path: _select(p, win),
             ).pack(pady=(6, 10))
 
@@ -1070,7 +1066,7 @@ class MainContent:
         img.thumbnail((cw - 4, ch - 4), Image.LANCZOS)
         self._cmp_photo = ImageTk.PhotoImage(img)
         self._cmp_cv.delete("all")
-        draw_image(self._cmp_cv, cw // 2, ch // 2, self._cmp_photo, "#0a0f1a")
+        draw_image(self._cmp_cv, cw // 2, ch // 2, self._cmp_photo, C["inset"])
 
     def _on_cmp_resize(self, event):
         if hasattr(self, "_cmp_resize_timer") and self._cmp_resize_timer:
@@ -1156,7 +1152,7 @@ class MainContent:
             cw // 2,
             ch // 2,
             self._prev_photo,
-            "#111827",
+            C["inset"],
             tags=("prev",),
             outline_tags=("prev",),
         )
@@ -1225,14 +1221,14 @@ class MainContent:
         # 图生图侧栏使用网格分配空间：上传、清除、强度和说明占固定行，
         # 参考图预览与紧凑接口摘要各自使用剩余空间，避免接口列表挤掉控件。
         """
-        _BG = "#0d1d35"
-        col = tk.Frame(self._prev_host, bg=_BG, highlightbackground="#1e3a5f", highlightthickness=1)
+        _BG = C["panel"]
+        col = tk.Frame(self._prev_host, bg=_BG, highlightbackground=C["sep"], highlightthickness=1)
         self._i2i_ref_col = col
         # 注意：此处不 grid，由 _switch_mode 控制
 
-        hdr = tk.Frame(col, bg="#122a4d")
+        hdr = tk.Frame(col, bg=C["card"])
         hdr.pack(side="top", fill="x")
-        tk.Label(hdr, text=_("i2i_ref_title"), font=F["small_b"], bg="#122a4d", fg="white", anchor="w").pack(
+        tk.Label(hdr, text=_("i2i_ref_title"), font=F["small_b"], bg=C["card"], fg="white", anchor="w").pack(
             fill="x", padx=12, pady=8
         )
 
@@ -1247,10 +1243,10 @@ class MainContent:
             body,
             width=200,
             height=76,
-            bg="#0a1525",
+            bg=C["empty"],
             bd=0,
             highlightthickness=1,
-            highlightbackground="#1e3a5f",
+            highlightbackground=C["sep"],
             cursor="hand2",
         )
         self._ref_prev_cv.grid(row=0, column=0, sticky="nsew", pady=(0, 4))
@@ -1264,13 +1260,12 @@ class MainContent:
             btn_row,
             text=_("btn_upload_ref"),
             font=F["small_b"],
-            bg="#1d4ed8",
+            bg=C["cmp_a"],
             fg="white",
             bd=0,
             padx=10,
             pady=5,
             cursor="hand2",
-            activebackground="#2563eb",
             command=self._pick_ref_image,
         )
         self._ref_pick_btn.pack(side="left", fill="x", expand=True)
@@ -1278,8 +1273,8 @@ class MainContent:
             btn_row,
             text=_("btn_clear"),
             font=F["small"],
-            bg="#2a1018",
-            fg="#f87171",
+            bg=C["neg_bg"],
+            fg=C["neg_fg"],
             bd=0,
             padx=10,
             pady=5,
@@ -1291,7 +1286,7 @@ class MainContent:
 
         str_row = tk.Frame(body, bg=_BG)
         str_row.grid(row=2, column=0, sticky="ew", pady=(0, 2))
-        tk.Label(str_row, text=_("lbl_strength"), font=F["small_b"], bg=_BG, fg="#7dd3fc").pack(
+        tk.Label(str_row, text=_("lbl_strength"), font=F["small_b"], bg=_BG, fg=C["chip_info_fg"]).pack(
             side="left", padx=(0, 8)
         )
         self._strength_slider = _StrengthSlider(str_row, self._ref_strength, w=120, h=30, marks=False)
@@ -1306,14 +1301,14 @@ class MainContent:
             body,
             text=_("strength_description"),
             font=F["tiny"],
-            bg="#102743",
-            fg="#a8c7e8",
+            bg=C["entry"],
+            fg=C["chip_info_fg"],
             anchor="w",
             padx=7,
             pady=3,
             wraplength=220,
             justify="left",
-            highlightbackground="#1e4a72",
+            highlightbackground=C["sep"],
             highlightthickness=1,
         ).grid(row=3, column=0, sticky="ew", pady=(0, 3))
 
@@ -1354,13 +1349,13 @@ class MainContent:
         """把图生图可用接口名称以竖向分行方式填入侧栏提示区。
         每次调用先销毁旧行再重建，保证列表长度变化时不会残留旧标签。
         """
-        _BG = "#0d1d35"
+        _BG = C["panel"]
         for lbl in self._ref_hint_rows:
             lbl.destroy()
         self._ref_hint_rows.clear()
 
         if not i2i_list:
-            self._ref_hint_title.config(text=_("i2i_no_providers"), fg="#f87171")
+            self._ref_hint_title.config(text=_("i2i_no_providers"), fg=C["neg_fg"])
             return
 
         # 提示区展示的是 stable id，需先映射成简短标签。
@@ -1370,7 +1365,7 @@ class MainContent:
             text=(
                 _("i2i_available_providers", n=len(names)) + "\n" + " · ".join(names[:3]) + "\n" + " · ".join(names[3:])
             ),
-            fg="#86efac",
+            fg=C["ok"],
         )
 
     def _expand_provider_popup(self):
@@ -1434,7 +1429,7 @@ class MainContent:
             self._i2i_ref_col.grid_remove()
         else:
             self._mode_t2i_btn.config(bg=C["panel"], fg=C["sub"])
-            self._mode_i2i_btn.config(bg="#1d4ed8", fg="white")
+            self._mode_i2i_btn.config(bg=C["cmp_a"], fg="white")
 
             self._i2i_ref_col.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
@@ -1485,7 +1480,7 @@ class MainContent:
             return
         # 图标按图形对象算 3:1（#4a8ac0 在此底色上 4.96:1），
         # 提示文字是正文，用与队列空态一致的前景色
-        cv.create_text(w // 2, h // 2 - 16, text="🖼", font=(F["_sans"], 30), fill="#4a8ac0")
+        cv.create_text(w // 2, h // 2 - 16, text="🖼", font=(F["_sans"], 30), fill=C["text_muted"])
         cv.create_text(w // 2, h // 2 + 22, text=_("ref_upload_hint"), font=F["small"], fill=C["text_muted"])
 
     def _update_ref_thumb(self):

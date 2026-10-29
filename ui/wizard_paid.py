@@ -90,7 +90,7 @@ class PaidWizard(tk.Toplevel):
         tk.Label(hdr, text=_("wizard_paid_header_title"), font=F["title"], bg=C["paid"], fg="white").pack(
             side="left", padx=20, pady=14
         )
-        tk.Label(hdr, text=_("wizard_paid_header_subtitle"), font=F["body_b"], bg=C["paid"], fg="#e9d5ff").pack(
+        tk.Label(hdr, text=_("wizard_paid_header_subtitle"), font=F["body_b"], bg=C["paid"], fg=C["purple_soft"]).pack(
             side="right", padx=20
         )
 
@@ -101,7 +101,7 @@ class PaidWizard(tk.Toplevel):
             text=_("wizard_paid_btn_save"),
             font=F["h2"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=24,
             pady=10,
@@ -113,7 +113,7 @@ class PaidWizard(tk.Toplevel):
             text=_("btn_close"),
             font=F["body"],
             bg=C["panel"],
-            fg="#c0cfe0",
+            fg=C["sub"],
             bd=0,
             padx=16,
             pady=10,
@@ -429,14 +429,16 @@ class PaidWizard(tk.Toplevel):
         tk.Label(f, text=sub, font=F["body"], bg=C["bg"], fg=C["warn"]).pack(anchor="w")
 
     def _info_card(self, parent, lines, px=24):
-        card = tk.Frame(parent, bg="#1a2a4a", highlightbackground="#2a3a5a", highlightthickness=1)
+        card = tk.Frame(parent, bg=C["panel"], highlightbackground=C["sep"], highlightthickness=1)
         card.pack(fill="x", padx=px, pady=(8, 0))
         for line in lines:
-            tk.Label(card, text=line, font=F["body"], bg="#1a2a4a", fg="#a0b8d0").pack(anchor="w", padx=16, pady=2)
+            tk.Label(card, text=line, font=F["body"], bg=C["panel"], fg=C["text_muted"]).pack(
+                anchor="w", padx=16, pady=2
+            )
         tk.Label(card, text="").pack(pady=2)
 
     def _divider(self, parent):
-        tk.Frame(parent, bg="#2a3a5a", height=1).pack(fill="x", padx=24, pady=12)
+        tk.Frame(parent, bg=C["sep"], height=1).pack(fill="x", padx=24, pady=12)
 
     def _link_btn(self, parent, text, url):
         tk.Button(

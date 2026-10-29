@@ -336,19 +336,19 @@ class App:
         )
         self._top_paid_lbl.pack(side="right", padx=(0, 16))
         # 分隔线
-        tk.Frame(bar, bg="#2a4a8a", width=1).pack(side="right", fill="y", pady=10)
+        tk.Frame(bar, bg=C["sash"], width=1).pack(side="right", fill="y", pady=10)
         # 免费接口数量
         self._top_free_lbl = tk.Label(
             bar, text=_("status_free_count", n=0, total=len(FREE_PROVIDERS)), font=F["body"], bg=C["acc"], fg=C["warn"]
         )
         self._top_free_lbl.pack(side="right", padx=(4, 8))
         # 接口配置按钮（原位于主内容区接口状态栏，移至顶栏节省垂直空间）
-        tk.Frame(bar, bg="#2a4a8a", width=1).pack(side="right", fill="y", pady=10)
+        tk.Frame(bar, bg=C["sash"], width=1).pack(side="right", fill="y", pady=10)
         tk.Button(
             bar,
             text=_("btn_paid_config"),
             font=F["small_b"],
-            bg="#7c3aed",
+            bg=C["purple"],
             fg="white",
             bd=0,
             padx=10,
@@ -921,7 +921,7 @@ class App:
         )
         self._top_paid_lbl.config(
             text=_("status_paid_count", n=paid_count, total=len(PAID_PROVIDERS)),
-            fg="#a78bfa" if paid_count else C["sub"],
+            fg=C["purple_soft"] if paid_count else C["sub"],
         )
 
     # ══════════════════════════════════════════════════════════

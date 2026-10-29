@@ -101,9 +101,9 @@ class _Tooltip:
                     win.wm_attributes("-alpha", 0.0)
                 except Exception:
                     pass
-                frm = tk.Frame(win, bg="#1e3a5f", highlightbackground="#4a7adf", highlightthickness=1)
+                frm = tk.Frame(win, bg=C["chip_info_bg"], highlightbackground=C["sash_hl"], highlightthickness=1)
                 frm.pack()
-                lbl = tk.Label(frm, font=F["small"], bg="#1e3a5f", fg="#eaeaea", padx=9, pady=5)
+                lbl = tk.Label(frm, font=F["small"], bg=C["chip_info_bg"], fg=C["text"], padx=9, pady=5)
                 lbl.pack()
                 _Tooltip._tip_win = win
                 _Tooltip._tip_lbl = lbl
@@ -343,7 +343,7 @@ class HistorySidebar:
         tk.Button(
             L,
             text=_("btn_clear_history"),
-            bg="#2a1018",
+            bg=C["neg_bg"],
             fg=C["hl"],
             bd=0,
             pady=5,
@@ -671,7 +671,7 @@ class HistorySidebar:
         sel = e["id"] == self.app.sel_id
         is_fav = bool(e.get("favorited", 0))
         cbg = C["card_sel"] if sel else (C["card_fav"] if is_fav else C["panel"])
-        border = C["hl"] if sel else (C["star_on"] if is_fav else "#2a3a5a")
+        border = C["hl"] if sel else (C["star_on"] if is_fav else C["sep"])
         wl = self._card_wraplength(self.app._sidebar_w)
 
         card = tk.Frame(self.hi, bg=cbg, highlightbackground=border, highlightthickness=1)
@@ -824,11 +824,11 @@ class HistorySidebar:
             text="⚖",
             font=F["input"],
             bg=cbg,
-            fg="#a78bfa",
+            fg=C["purple_soft"],
             bd=0,
             padx=4,
             cursor="hand2",
-            activebackground="#4a1d96",
+            activebackground=C["purple_deep"],
             command=lambda en=e: self.app._set_cmp_from_entry(en),
         )
         cmp_btn.pack(side="left", padx=(0, 2))
@@ -955,7 +955,7 @@ class HistorySidebar:
 
         def _sel_updater(is_selected, _is_fav, _card=card, _cbg_w=list(_cbg_widgets)):
             new_cbg = C["card_sel"] if is_selected else (C["card_fav"] if _is_fav else C["panel"])
-            new_border = C["hl"] if is_selected else (C["star_on"] if _is_fav else "#2a3a5a")
+            new_border = C["hl"] if is_selected else (C["star_on"] if _is_fav else C["sep"])
             try:
                 _card.config(highlightbackground=new_border)
                 for w in _cbg_w:
@@ -1114,7 +1114,7 @@ class HistorySidebar:
         hdr.pack(fill="x")
         tk.Label(hdr, text=_("lbl_edit_tag"), font=F["h2"], bg=C["acc"], fg="white").pack(side="left", padx=14, pady=8)
         tk.Label(
-            hdr, text=_("dlg_edit_tag_entry", name=title_str[:24]), font=F["body"], bg=C["acc"], fg="#c0d8ff"
+            hdr, text=_("dlg_edit_tag_entry", name=title_str[:24]), font=F["body"], bg=C["acc"], fg=C["chip_info_fg"]
         ).pack(side="right", padx=14)
 
         body = tk.Frame(win, bg=C["bg"])
@@ -1213,7 +1213,7 @@ class HistorySidebar:
             text=_("btn_confirm"),
             font=F["body"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=12,
             pady=5,
@@ -1238,7 +1238,7 @@ class HistorySidebar:
             text="✅  " + _("btn_save").strip(),
             font=F["btn"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=22,
             pady=8,
@@ -1337,7 +1337,7 @@ class HistorySidebar:
             text=_("btn_confirm"),
             font=F["small"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=8,
             pady=2,

@@ -93,7 +93,7 @@ class ConfigWizard(tk.Toplevel):
             text=_("btn_save_and_start"),
             font=F["h2"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=24,
             pady=10,
@@ -119,7 +119,7 @@ class ConfigWizard(tk.Toplevel):
         tk.Label(hdr, text=_("wz_hdr_title"), font=(F["_sans"], 16, "bold"), bg=C["acc"], fg="white").pack(
             side="left", padx=20, pady=14
         )
-        tk.Label(hdr, text=_("wz_hdr_subtitle"), font=F["body"], bg=C["acc"], fg="#c0cfe0").pack(side="right", padx=20)
+        tk.Label(hdr, text=_("wz_hdr_subtitle"), font=F["body"], bg=C["acc"], fg=C["sub"]).pack(side="right", padx=20)
 
         # 可滚动内容区
         fo = tk.Frame(self, bg=C["bg"])
@@ -200,8 +200,8 @@ class ConfigWizard(tk.Toplevel):
             sf_btns,
             text=_("wz_sf_register"),
             font=F["body"],
-            bg="#22c55e",
-            fg="white",
+            bg=C["ok"],
+            fg=C["ok_fg"],
             bd=0,
             padx=12,
             pady=5,
@@ -226,7 +226,7 @@ class ConfigWizard(tk.Toplevel):
         #   2. Pollinations.AI（完全免费，无需 Key）
         # ══════════════════════════════════════════════════════
         self._divider(inner)
-        self._section(inner, "2", _("wz_poll_title"), _("wz_poll_tag"), "#34d399", PX)
+        self._section(inner, "2", _("wz_poll_title"), _("wz_poll_tag"), C["ok"], PX)
         self._info_card(
             inner,
             [
@@ -236,7 +236,7 @@ class ConfigWizard(tk.Toplevel):
             ],
             PX,
         )
-        poll_f = tk.Frame(inner, bg=C["card"], highlightbackground="#22c55e", highlightthickness=1)
+        poll_f = tk.Frame(inner, bg=C["card"], highlightbackground=C["ok"], highlightthickness=1)
         poll_f.pack(fill="x", padx=PX, pady=(8, 0))
         poll_inner = tk.Frame(poll_f, bg=C["card"])
         poll_inner.pack(fill="x", padx=12, pady=10)
@@ -247,7 +247,7 @@ class ConfigWizard(tk.Toplevel):
             variable=self.poll_enabled_var,
             font=F["btn"],
             bg=C["card"],
-            fg="#34d399",
+            fg=C["ok"],
             activebackground=C["card"],
             activeforeground=C["text"],
             selectcolor=C["entry"],
@@ -261,7 +261,7 @@ class ConfigWizard(tk.Toplevel):
             poll_btns,
             text=_("wz_poll_website"),
             font=F["body"],
-            bg="#065f46",
+            bg=C["keep_bg"],
             fg="white",
             bd=0,
             padx=12,
@@ -352,7 +352,7 @@ class ConfigWizard(tk.Toplevel):
             cf_btns,
             text=_("wz_cf_register"),
             font=F["body"],
-            bg="#1d4ed8",
+            bg=C["cmp_a"],
             fg="white",
             bd=0,
             padx=12,
@@ -376,7 +376,7 @@ class ConfigWizard(tk.Toplevel):
             cf_btns,
             text=_("wz_cf_docs"),
             font=F["body"],
-            bg="#1e3a5a",
+            bg=C["chip_info_bg"],
             fg="white",
             bd=0,
             padx=12,
@@ -426,7 +426,7 @@ class ConfigWizard(tk.Toplevel):
             ml_btns,
             text=_("wz_ml_register"),
             font=F["body"],
-            bg="#7c3aed",
+            bg=C["purple"],
             fg="white",
             bd=0,
             padx=12,
@@ -452,7 +452,7 @@ class ConfigWizard(tk.Toplevel):
         #   5. Segmind（注册送 $5）
         # ══════════════════════════════════════════════════════
         self._divider(inner)
-        self._section(inner, "5", _("wz_sg_title"), _("wz_sg_tag"), "#f59e0b", PX)
+        self._section(inner, "5", _("wz_sg_title"), _("wz_sg_tag"), C["gold"], PX)
         self._info_card(
             inner,
             [
@@ -653,8 +653,8 @@ class ConfigWizard(tk.Toplevel):
             ta_btns,
             text=_("wz_ta_register"),
             font=F["body"],
-            bg="#059669",
-            fg="white",
+            bg=C["ok"],
+            fg=C["ok_fg"],
             bd=0,
             padx=12,
             pady=5,
@@ -679,7 +679,7 @@ class ConfigWizard(tk.Toplevel):
         #   9. Google Gemini Nano Banana（v5 新增，v7 更新）
         # ══════════════════════════════════════════════════════
         self._divider(inner)
-        self._section(inner, "9", _("wz_gm_title"), _("wz_gm_tag"), "#34d399", PX)
+        self._section(inner, "9", _("wz_gm_title"), _("wz_gm_tag"), C["ok"], PX)
         self._info_card(
             inner,
             [
@@ -715,8 +715,8 @@ class ConfigWizard(tk.Toplevel):
             gm_btns,
             text=_("wz_gm_register"),
             font=F["body"],
-            bg="#1a6b3c",
-            fg="white",
+            bg=C["ok"],
+            fg=C["ok_fg"],
             bd=0,
             padx=12,
             pady=5,
@@ -843,7 +843,7 @@ class ConfigWizard(tk.Toplevel):
             br_btns,
             text=_("wz_br_register"),
             font=F["body"],
-            bg="#7c3aed",
+            bg=C["purple"],
             fg="white",
             bd=0,
             padx=12,
@@ -862,7 +862,7 @@ class ConfigWizard(tk.Toplevel):
         tk.Label(qual_hdr, text=_("wz_qual_title"), font=F["h1"], bg=C["bg"], fg=C["text"]).pack(side="left")
         tk.Label(qual_hdr, text=_("wz_qual_subtitle"), font=F["body"], bg=C["bg"], fg=C["warn"]).pack(side="left")
 
-        qual_card = tk.Frame(inner, bg=C["card"], highlightbackground="#3a4a6a", highlightthickness=1)
+        qual_card = tk.Frame(inner, bg=C["card"], highlightbackground=C["sep"], highlightthickness=1)
         qual_card.pack(fill="x", padx=PX, pady=(4, 0))
         qual_inner = tk.Frame(qual_card, bg=C["card"])
         qual_inner.pack(fill="x", padx=16, pady=12)
@@ -916,7 +916,7 @@ class ConfigWizard(tk.Toplevel):
 
     def _info_card(self, parent, lines, px=24):
 
-        card = tk.Frame(parent, bg=C["card"], highlightbackground="#2a3a5a", highlightthickness=1)
+        card = tk.Frame(parent, bg=C["card"], highlightbackground=C["sep"], highlightthickness=1)
         card.pack(fill="x", padx=px, pady=(4, 0))
         for line in lines:
             tk.Label(card, text=line, font=F["body"], bg=C["card"], fg=C["sub"], anchor="w", justify="left").pack(
@@ -931,7 +931,7 @@ class ConfigWizard(tk.Toplevel):
         ).pack(fill="x", padx=px, pady=(6, 0))
 
     def _divider(self, parent):
-        tk.Frame(parent, bg="#2a3a5a", height=1).pack(fill="x", padx=24, pady=12)
+        tk.Frame(parent, bg=C["sep"], height=1).pack(fill="x", padx=24, pady=12)
 
     @staticmethod
     def _gb(frame: tk.Frame, entry) -> None:

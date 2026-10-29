@@ -68,7 +68,7 @@ class _Cell:
         )
 
         # 底部操作栏（固定高度，永远在 row=1）
-        self.bot = tk.Frame(self.frame, bg="#0a1220", height=BOT_H)
+        self.bot = tk.Frame(self.frame, bg=C["inset"], height=BOT_H)
         self.bot.grid(row=1, column=0, sticky="ew")
         self.bot.grid_propagate(False)  # 防止子控件撑开
 
@@ -118,7 +118,7 @@ class _Cell:
         self.cmp_btn.pack(side="left", pady=4)
 
         self.status_lbl = tk.Label(
-            self.bot, text=_("batch_status_waiting"), font=F["mono_tiny"], bg="#0a1220", fg=C["sub"]
+            self.bot, text=_("batch_status_waiting"), font=F["mono_tiny"], bg=C["inset"], fg=C["sub"]
         )
         self.status_lbl.pack(side="right", padx=6)
 
@@ -166,9 +166,9 @@ class _Cell:
             return
         self.bp._keep_cell(self)
         self.state = "kept"
-        set_enabled(self.keep_btn, False, text=_("batch_cell_kept"), bg="#34d399")
+        set_enabled(self.keep_btn, False, text=_("batch_cell_kept"), bg=C["ok"])
         set_enabled(self.dis_btn, False)
-        self.frame.config(highlightbackground="#34d399")
+        self.frame.config(highlightbackground=C["ok"])
 
     def _discard(self):
         if self.state not in ("done", "error"):
@@ -255,15 +255,15 @@ class BatchPanel(tk.Frame):
     # ── UI 构建 ──────────────────────────────────────────────
     def _build(self):
         # ── 顶部控制栏（存引用 self._ctrl）────────────────────
-        self._ctrl = tk.Frame(self, bg="#0a1220", height=44)
+        self._ctrl = tk.Frame(self, bg=C["inset"], height=44)
         self._ctrl.pack(fill="x")
         self._ctrl.pack_propagate(False)
 
-        tk.Label(self._ctrl, text=_("batch_panel_title"), font=F["small_b"], bg="#0a1220", fg=C["text"]).pack(
+        tk.Label(self._ctrl, text=_("batch_panel_title"), font=F["small_b"], bg=C["inset"], fg=C["text"]).pack(
             side="left", padx=10, pady=6
         )
 
-        self._progress_lbl = tk.Label(self._ctrl, text="", font=F["body"], bg="#0a1220", fg=C["warn"])
+        self._progress_lbl = tk.Label(self._ctrl, text="", font=F["body"], bg=C["inset"], fg=C["warn"])
         self._progress_lbl.pack(side="left", padx=8)
 
         self._stop_btn = tk.Button(
@@ -330,7 +330,7 @@ class BatchPanel(tk.Frame):
             self._cells.append(cell)
 
         # ── 对比面板（初始不 pack，通过 show/hide 切换）──────
-        self._cmp_frame = tk.Frame(self, bg="#0a0f1a")
+        self._cmp_frame = tk.Frame(self, bg=C["inset"])
         self._build_compare_pane()
 
         # ── 键盘快捷键 ────────────────────────────────────────
@@ -343,10 +343,10 @@ class BatchPanel(tk.Frame):
         f = self._cmp_frame
 
         # 标题栏
-        hdr = tk.Frame(f, bg="#0a1220", height=40)
+        hdr = tk.Frame(f, bg=C["inset"], height=40)
         hdr.pack(fill="x")
         hdr.pack_propagate(False)
-        tk.Label(hdr, text=_("batch_cmp_title"), font=F["btn"], bg="#0a1220", fg="white").pack(
+        tk.Label(hdr, text=_("batch_cmp_title"), font=F["btn"], bg=C["inset"], fg="white").pack(
             side="left", padx=12, pady=6
         )
         # ── 返回网格按钮（Fix-4: 点击后恢复 ctrl+grid_host）──
@@ -366,7 +366,7 @@ class BatchPanel(tk.Frame):
             hdr,
             text=_("batch_btn_swap"),
             font=F["body"],
-            bg="#4a3a8a",
+            bg=C["purple_deep"],
             fg="white",
             bd=0,
             padx=10,
@@ -386,18 +386,18 @@ class BatchPanel(tk.Frame):
         lw = tk.Frame(split, bg=C["bg"])
         lw.grid(row=0, column=0, sticky="nsew")
         tk.Label(lw, text=_("batch_cmp_label_a"), font=F["btn"], bg=C["cmp_a"], fg="white").pack(fill="x")
-        self._cmp_cv_a = tk.Canvas(lw, bg="#0a0f1a", bd=0, highlightthickness=0)
+        self._cmp_cv_a = tk.Canvas(lw, bg=C["inset"], bd=0, highlightthickness=0)
         self._cmp_cv_a.pack(fill="both", expand=True)
         self._cmp_ph_a = None
 
         # 分隔线
-        tk.Frame(split, bg="#2a3a5a", width=3).grid(row=0, column=1, sticky="ns")
+        tk.Frame(split, bg=C["sep"], width=3).grid(row=0, column=1, sticky="ns")
 
         # 右（B）
         rw = tk.Frame(split, bg=C["bg"])
         rw.grid(row=0, column=2, sticky="nsew")
         tk.Label(rw, text=_("batch_cmp_label_b"), font=F["btn"], bg=C["cmp_b"], fg="white").pack(fill="x")
-        self._cmp_cv_b = tk.Canvas(rw, bg="#0a0f1a", bd=0, highlightthickness=0)
+        self._cmp_cv_b = tk.Canvas(rw, bg=C["inset"], bd=0, highlightthickness=0)
         self._cmp_cv_b.pack(fill="both", expand=True)
         self._cmp_ph_b = None
 

@@ -20,15 +20,15 @@ class StatsDashboard:
         self.app = app
 
         # ── 颜色常量 ────────────────────────────────────────────
-        BG = "#111827"
-        PANEL = "#1a2540"
-        BORDER = "#1e3a5a"
-        TXT = "#e2e8f0"
-        SUB = "#94a3b8"
-        OK = "#4ecca3"
-        WARN = "#f0a500"
-        HL = "#e94560"
-        ACC = "#1d4ed8"
+        BG = C["bg"]
+        PANEL = C["card"]
+        BORDER = C["sep"]
+        TXT = C["text"]
+        SUB = C["text_muted"]
+        OK = C["ok"]
+        WARN = C["warn"]
+        HL = C["hl"]
+        ACC = C["cmp_a"]
 
         # 热力图 5+1 级颜色（深色主题青绿渐变）
         # Level 0 = #2d4270：比面板背景 #1a2540 明显亮的蓝色，
@@ -85,10 +85,10 @@ class StatsDashboard:
         win.geometry(f"1100x760+{max(0, x)}+{max(0, y)}")
 
         # ── 顶部标题栏 ──────────────────────────────────────────
-        hdr = tk.Frame(win, bg="#0f1e38", height=52)
+        hdr = tk.Frame(win, bg=C["empty"], height=52)
         hdr.pack(fill="x")
         hdr.pack_propagate(False)
-        tk.Label(hdr, text=_("stats_title"), font=F["disp"], bg="#0f1e38", fg=TXT, padx=20).pack(side="left", pady=12)
+        tk.Label(hdr, text=_("stats_title"), font=F["disp"], bg=C["empty"], fg=TXT, padx=20).pack(side="left", pady=12)
         refresh_btn = tk.Button(
             hdr,
             text=_("stats_refresh"),
@@ -105,7 +105,7 @@ class StatsDashboard:
         refresh_btn.pack(side="right", padx=16, pady=10)
         # 刷新时间
         now_str = datetime.now().strftime("%H:%M:%S")
-        tk.Label(hdr, text=_("stats_updated_at", time=now_str), font=F["small"], bg="#0f1e38", fg=SUB).pack(
+        tk.Label(hdr, text=_("stats_updated_at", time=now_str), font=F["small"], bg=C["empty"], fg=SUB).pack(
             side="right", padx=4, pady=10
         )
 
@@ -116,7 +116,7 @@ class StatsDashboard:
         body.pack(fill="both", expand=True)
 
         # 右侧年份面板（固定宽 86px）
-        right_rail = tk.Frame(body, bg="#0d1626", width=86)
+        right_rail = tk.Frame(body, bg=C["empty"], width=86)
         right_rail.pack(side="right", fill="y")
         right_rail.pack_propagate(False)
         tk.Frame(body, bg=BORDER, width=1).pack(side="right", fill="y")
@@ -165,13 +165,13 @@ class StatsDashboard:
 
         # ── 辅助：分区标题 ──────────────────────────────────────
         def _sec_title(icon: str, text: str, sub: str = ""):
-            fr = tk.Frame(inner, bg="#182032", highlightbackground=BORDER, highlightthickness=1)
+            fr = tk.Frame(inner, bg=C["panel"], highlightbackground=BORDER, highlightthickness=1)
             fr.pack(fill="x", padx=PX, pady=(20, 0))
-            row = tk.Frame(fr, bg="#182032")
+            row = tk.Frame(fr, bg=C["panel"])
             row.pack(fill="x", padx=14, pady=8)
-            tk.Label(row, text=f"{icon}  {text}", font=F["h2"], bg="#182032", fg=TXT).pack(side="left")
+            tk.Label(row, text=f"{icon}  {text}", font=F["h2"], bg=C["panel"], fg=TXT).pack(side="left")
             if sub:
-                tk.Label(row, text=sub, font=F["small_i"], bg="#182032", fg=SUB).pack(side="left", padx=10)
+                tk.Label(row, text=sub, font=F["small_i"], bg=C["panel"], fg=SUB).pack(side="left", padx=10)
 
         # ════════════════════════════════════════════════════════
         #   ① 汇总数字卡片
@@ -242,10 +242,10 @@ class StatsDashboard:
             tw = tk.Toplevel(win)
             tw.overrideredirect(True)
             tw.attributes("-topmost", True)
-            tw.configure(bg="#0f172a")
-            fr = tk.Frame(tw, bg="#7c3aed", highlightthickness=1)
+            tw.configure(bg=C["empty"])
+            fr = tk.Frame(tw, bg=C["purple"], highlightthickness=1)
             fr.pack(fill="both", expand=True)
-            tk.Label(fr, text=text, font=F["small"], bg="#0d1626", fg=TXT, padx=10, pady=5).pack()
+            tk.Label(fr, text=text, font=F["small"], bg=C["empty"], fg=TXT, padx=10, pady=5).pack()
             tw.update_idletasks()
             tw.geometry(f"+{x_root + 14}+{y_root + 14}")
             tip_win[0] = tw
@@ -329,7 +329,7 @@ class StatsDashboard:
                 # 零值格子：加细暗边框，形成可见网格感（参考 GitHub 热力图网格）
                 # 有数据格子：无边框（颜色自身足够醒目）
                 if is_today:
-                    outline = "#7c3aed"
+                    outline = C["purple"]
                     width = 1.5
                 elif level == 0:
                     outline = "#1e3560"  # 比填充色 #2d4270 略暗，形成微细边界
@@ -413,7 +413,7 @@ class StatsDashboard:
         def _build_year_buttons():
             for w in right_rail.winfo_children():
                 w.destroy()
-            tk.Label(right_rail, text=_("stats_year"), font=F["small_b"], bg="#0d1626", fg=SUB, pady=10).pack(fill="x")
+            tk.Label(right_rail, text=_("stats_year"), font=F["small_b"], bg=C["empty"], fg=SUB, pady=10).pack(fill="x")
             tk.Frame(right_rail, bg=BORDER, height=1).pack(fill="x")
             for yr in available_years:
                 is_sel = yr == _sel_year[0]
@@ -421,13 +421,12 @@ class StatsDashboard:
                     right_rail,
                     text=str(yr),
                     font=(F["_sans"], 11, "bold" if is_sel else ""),
-                    bg=ACC if is_sel else "#0d1626",
+                    bg=ACC if is_sel else C["empty"],
                     fg="white" if is_sel else SUB,
                     bd=0,
                     pady=10,
                     cursor="hand2",
                     relief="flat",
-                    activebackground="#1e40af",
                     command=lambda y=yr: _select_year(y),
                 )
                 btn.pack(fill="x")
@@ -472,20 +471,27 @@ class StatsDashboard:
                 model_part = parts[-1] if len(parts) > 1 else prov_name
                 prefix_part = "/".join(parts[:-1]) if len(parts) > 1 else ""
 
-                name_fr = tk.Frame(row, bg="#141e30")
+                name_fr = tk.Frame(row, bg=C["panel"])
                 name_fr.grid(row=0, column=0, sticky="nsew")
                 name_fr.grid_rowconfigure(0, weight=1)
                 name_fr.grid_rowconfigure(1, weight=1)
                 tk.Label(
-                    name_fr, text=prefix_part, font=F["tiny"], bg="#141e30", fg="#4a6a9a", anchor="e", padx=8
+                    name_fr, text=prefix_part, font=F["tiny"], bg=C["panel"], fg=C["text_muted"], anchor="e", padx=8
                 ).grid(row=0, column=0, sticky="sew")
                 tk.Label(
-                    name_fr, text=model_part, font=F["body_b"], bg="#141e30", fg=TXT, anchor="e", padx=8, wraplength=244
+                    name_fr,
+                    text=model_part,
+                    font=F["body_b"],
+                    bg=C["panel"],
+                    fg=TXT,
+                    anchor="e",
+                    padx=8,
+                    wraplength=244,
                 ).grid(row=1, column=0, sticky="new")
 
                 ratio = p["cnt"] / max_c
                 bar_color = BAR_COLORS[i % len(BAR_COLORS)]
-                bar_host = tk.Frame(row, bg="#1a2540", height=24)
+                bar_host = tk.Frame(row, bg=C["card"], height=24)
                 bar_host.grid(row=0, column=1, sticky="ew", padx=(8, 8), pady=11)
                 bar_host.grid_propagate(False)
                 bar_fill = tk.Frame(bar_host, bg=bar_color)
@@ -497,7 +503,7 @@ class StatsDashboard:
                     text=_("stats_count_suffix", count=p["cnt"]),
                     font=F["badge"],
                     bg=bar_color,
-                    fg="#0a1a0a",
+                    fg=C["ok_fg"],
                     anchor="center",
                     padx=6,
                 )
@@ -522,7 +528,7 @@ class StatsDashboard:
             RANK_COLORS = ["#f59e0b", "#94a3b8", "#b45309"] + ["#475569"] * 10
             for rank, (tag, cnt) in enumerate(stats["top_tags"], 1):
                 tc = tag_color(tag)
-                row = tk.Frame(tf, bg="#141e30", highlightbackground=BORDER, highlightthickness=1)
+                row = tk.Frame(tf, bg=C["panel"], highlightbackground=BORDER, highlightthickness=1)
                 row.pack(fill="x", pady=3)
 
                 # 排名
@@ -530,7 +536,7 @@ class StatsDashboard:
                     row,
                     text=f"#{rank}",
                     font=F["mono_lg"],
-                    bg="#141e30",
+                    bg=C["panel"],
                     fg=RANK_COLORS[rank - 1],
                     width=3,
                     anchor="e",
@@ -544,7 +550,7 @@ class StatsDashboard:
                 tk.Label(badge, text=f"  {tag}  ", font=F["body_b"], bg=tc, fg="white", pady=4).pack()
 
                 # 进度条（弹性）
-                bar_host = tk.Frame(row, bg="#1a2540", height=20)
+                bar_host = tk.Frame(row, bg=C["card"], height=20)
                 bar_host.pack(side="left", fill="x", expand=True, pady=7)
                 bar_host.pack_propagate(False)
                 ratio = cnt / max_tc
@@ -556,7 +562,7 @@ class StatsDashboard:
                     row,
                     text=_("stats_count_pct", count=cnt, pct=f"{pct_v:.0f}"),
                     font=F["mono_sm"],
-                    bg="#141e30",
+                    bg=C["panel"],
                     fg=SUB,
                     width=11,
                     anchor="w",

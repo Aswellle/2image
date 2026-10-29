@@ -12,7 +12,7 @@ ui/prompt_wizard.py  v3
        列 0 = 固定宽图标+文字标签（11pt bold）
        列 1 = ttk.Combobox 自动填满剩余宽度（columnconfigure weight=1）
      彻底解决下拉框宽度不足、文字被截断的问题。
-   · 自定义输入展开时的指导文字：("Arial",10,"italic") fg="#89b4fa"（亮蓝）
+   · 自定义输入展开时的指导文字：F["body_i"]，fg=C["guide"]（亮蓝）
      在深色背景上对比度高、清晰可辨。
    · 节标题：12pt bold 白色，行距宽松。
    · 窗口默认 1040×860，可缩放，min=780×640。
@@ -270,8 +270,8 @@ class PromptWizard(tk.Toplevel):
 
     # 键名存类属性，取词在 _set_template_state 运行时进行
     _TEMPLATE_BADGES = {
-        _TEMPLATE_IDLE: ("wizard_badge_idle", "#64748b"),
-        _TEMPLATE_PREVIEWING: ("wizard_badge_previewing", "#f0a500"),
+        _TEMPLATE_IDLE: ("wizard_badge_idle", C["text_muted"]),
+        _TEMPLATE_PREVIEWING: ("wizard_badge_previewing", C["warn"]),
         _TEMPLATE_PENDING_FILL: ("wizard_badge_pending_fill", C["ok"]),
     }
 
@@ -493,7 +493,6 @@ class PromptWizard(tk.Toplevel):
             pady=7,
             cursor="hand2",
             state="disabled",
-            activebackground="#047857",
             command=self._apply_template,
         )
         self._tmpl_apply_btn.pack(side="left", padx=12, pady=10)
@@ -687,12 +686,12 @@ class PromptWizard(tk.Toplevel):
         cat_colors = {
             "xhs": "#be185d",
             "emotional": "#b45309",
-            "knowledge": "#1d4ed8",
-            "general": "#065f46",
+            "knowledge": C["cmp_a"],
+            "general": C["keep_bg"],
             "wechat": "#1e40af",
             "ecom": "#047857",
             "video": "#7c2d12",
-            "ai_art": "#6d28d9",
+            "ai_art": C["dpurp"],
             "brand": "#0e7490",
         }
         self._tmpl_cards = {}
@@ -796,7 +795,6 @@ class PromptWizard(tk.Toplevel):
             pady=7,
             cursor="hand2",
             state="disabled",
-            activebackground="#3aad8a",
             command=self._use_prompt,
         )
         self._fill_btn.pack(side="left", padx=14, pady=8)
@@ -825,7 +823,6 @@ class PromptWizard(tk.Toplevel):
             pady=2,
             cursor="hand2",
             state="disabled",
-            activebackground="#991b1b",
             command=self._clear_template_content,
         )
         self._clear_btn.pack(side="right", padx=(0, 8))
@@ -885,7 +882,7 @@ class PromptWizard(tk.Toplevel):
             pady=6,
             cursor="hand2",
             state="disabled",
-            activebackground="#1a4a7a",
+            activebackground=C["accent_hover"],
             command=self._use_prompt,
         )
         self._use_btn.pack(side="left")
@@ -1001,9 +998,9 @@ class PromptWizard(tk.Toplevel):
             widget = getattr(self, widget_name, None)
             if widget is not None:
                 if is_pending_fill:
-                    set_enabled(widget, True, bg=C["ok"], fg="#0a1a0a")
+                    set_enabled(widget, True, bg=C["ok"], fg=C["ok_fg"])
                 else:
-                    set_enabled(widget, False, bg="#334155")
+                    set_enabled(widget, False, bg=C["surface_disabled"])
 
         for widget_name in ("_clear_btn",):
             widget = getattr(self, widget_name, None)
@@ -1218,11 +1215,11 @@ class PromptWizard(tk.Toplevel):
         sf_ok = bool(self.app.cfg.get("sf_key", "").strip())
         hf_ok = bool(self.app.cfg.get("hf_token", "").strip())
         if sf_ok:
-            text, bg, fg = _("wizard_model_configured"), "#064e3b", "#6ee7b7"
+            text, bg, fg = _("wizard_model_configured"), C["chip_ok_bg"], C["chip_ok_fg"]
         elif hf_ok:
-            text, bg, fg = _("wizard_backup_only"), "#1e3a5f", "#93c5fd"
+            text, bg, fg = _("wizard_backup_only"), C["chip_info_bg"], C["chip_info_fg"]
         else:
-            text, bg, fg = _("wizard_configure_key"), "#7c1d1d", "#fca5a5"
+            text, bg, fg = _("wizard_configure_key"), C["dis_bg"], C["chip_bad_fg"]
         try:
             self._key_status_btn.config(text=text, bg=bg, fg=fg, activebackground=bg, activeforeground=fg)
         except Exception:

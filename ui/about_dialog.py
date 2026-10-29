@@ -210,7 +210,7 @@ class AboutDialog(tk.Toplevel):
             text=_("about_download_install"),
             font=F["btn"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=18,
             pady=9,

@@ -101,7 +101,7 @@ class LLMWizard(tk.Toplevel):
             text=_("wizard_llm_btn_save_close"),
             font=F["h2"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=24,
             pady=10,
@@ -124,21 +124,21 @@ class LLMWizard(tk.Toplevel):
         self._status_lbl.pack(side="left", padx=16, pady=12)
 
         # ── 标题栏 ──────────────────────────────────────────────────
-        hdr = tk.Frame(self, bg="#4c1d95")  # 紫色，区别于生图向导的蓝色
+        hdr = tk.Frame(self, bg=C["purple_deep"])  # 紫色，区别于生图向导的蓝色
         hdr.pack(fill="x")
         tk.Label(
             hdr,
             text=_("wizard_llm_header_title"),
             font=(F["_sans"], 15, "bold"),
-            bg="#4c1d95",
+            bg=C["purple_deep"],
             fg="white",
         ).pack(side="left", padx=20, pady=14)
         tk.Label(
             hdr,
             text=_("wizard_llm_header_subtitle"),
             font=F["body"],
-            bg="#4c1d95",
-            fg="#d8b4fe",
+            bg=C["purple_deep"],
+            fg=C["purple_soft"],
         ).pack(side="right", padx=20)
 
         # ── 可滚动内容区 ────────────────────────────────────────────
@@ -192,28 +192,28 @@ class LLMWizard(tk.Toplevel):
         #   模型预设：自动 / DeepSeek Pro / DeepSeek Flash
         # ══════════════════════════════════════════════════════════
         self._section(
-            inner, "0", _("wizard_llm_preset_section_title"), _("wizard_llm_preset_section_sub"), "#c084fc", PX
+            inner, "0", _("wizard_llm_preset_section_title"), _("wizard_llm_preset_section_sub"), C["purple_soft"], PX
         )
-        preset_card = tk.Frame(inner, bg="#17233d", highlightbackground=C["purple"], highlightthickness=1)
+        preset_card = tk.Frame(inner, bg=C["panel"], highlightbackground=C["purple"], highlightthickness=1)
         preset_card.pack(fill="x", padx=PX, pady=(4, 0))
         self.preset_var = tk.StringVar(value=self.cfg.get("prompt_llm_preset", "siliconflow_auto"))
         self._preset_cards = {}
 
-        preset_header = tk.Frame(preset_card, bg="#17233d")
+        preset_header = tk.Frame(preset_card, bg=C["panel"])
         preset_header.pack(fill="x", padx=14, pady=(10, 5))
-        tk.Label(preset_header, text=_("wizard_llm_preset_header"), font=F["body_b"], bg="#17233d", fg="#e9d5ff").pack(
-            side="left"
-        )
-        tk.Label(preset_header, text=_("wizard_llm_preset_hint"), font=F["small"], bg="#17233d", fg="#94a3b8").pack(
-            side="left", padx=(10, 0)
-        )
-        tk.Label(preset_header, text=_("wizard_llm_current_badge"), font=F["small_b"], bg="#17233d", fg="#c084fc").pack(
-            side="right"
-        )
+        tk.Label(
+            preset_header, text=_("wizard_llm_preset_header"), font=F["body_b"], bg=C["panel"], fg=C["purple_soft"]
+        ).pack(side="left")
+        tk.Label(
+            preset_header, text=_("wizard_llm_preset_hint"), font=F["small"], bg=C["panel"], fg=C["text_muted"]
+        ).pack(side="left", padx=(10, 0))
+        tk.Label(
+            preset_header, text=_("wizard_llm_current_badge"), font=F["small_b"], bg=C["panel"], fg=C["purple_soft"]
+        ).pack(side="right")
 
         presets = [
             ("siliconflow_auto", _("wizard_llm_preset_auto_title"), _("wizard_llm_preset_auto_desc"), C["ok"]),
-            *[(key, name, _(desc), "#c084fc") for key, name, desc in _DEEPSEEK_PRESETS_INFO],
+            *[(key, name, _(desc), C["purple_soft"]) for key, name, desc in _DEEPSEEK_PRESETS_INFO],
         ]
 
         def _select_preset(key):
@@ -221,23 +221,28 @@ class LLMWizard(tk.Toplevel):
 
         for key, title, desc, accent in presets:
             card = tk.Frame(
-                preset_card, bg="#1a2238", highlightbackground="#2a3a5a", highlightthickness=1, cursor="hand2"
+                preset_card, bg=C["panel"], highlightbackground=C["sep"], highlightthickness=1, cursor="hand2"
             )
             card.pack(fill="x", padx=12, pady=4)
-            indicator = tk.Label(card, text="○", font=F["h2"], bg="#1a2238", fg="#64748b", cursor="hand2")
+            indicator = tk.Label(card, text="○", font=F["h2"], bg=C["panel"], fg=C["text_muted"], cursor="hand2")
             indicator.pack(side="left", padx=(12, 8), pady=9)
-            text_f = tk.Frame(card, bg="#1a2238", cursor="hand2")
+            text_f = tk.Frame(card, bg=C["panel"], cursor="hand2")
             text_f.pack(side="left", fill="x", expand=True, pady=7)
             title_lbl = tk.Label(
-                text_f, text=title, font=F["body_b"], bg="#1a2238", fg=accent, anchor="w", cursor="hand2"
+                text_f, text=title, font=F["body_b"], bg=C["panel"], fg=accent, anchor="w", cursor="hand2"
             )
             title_lbl.pack(fill="x")
             desc_lbl = tk.Label(
-                text_f, text=desc, font=F["small"], bg="#1a2238", fg=C["sub"], anchor="w", cursor="hand2"
+                text_f, text=desc, font=F["small"], bg=C["panel"], fg=C["sub"], anchor="w", cursor="hand2"
             )
             desc_lbl.pack(fill="x", pady=(2, 0))
             badge = tk.Label(
-                card, text=_("wizard_llm_click_select"), font=F["small_b"], bg="#1a2238", fg="#64748b", cursor="hand2"
+                card,
+                text=_("wizard_llm_click_select"),
+                font=F["small_b"],
+                bg=C["panel"],
+                fg=C["text_muted"],
+                cursor="hand2",
             )
             badge.pack(side="right", padx=12)
             self._preset_cards[key] = (card, indicator, text_f, title_lbl, desc_lbl, badge, accent)
@@ -246,7 +251,7 @@ class LLMWizard(tk.Toplevel):
 
         self.preset_var.trace_add("write", lambda *_: self._refresh_preset_cards())
         self._refresh_preset_cards()
-        tk.Label(preset_card, text="", bg="#17233d").pack(pady=4)
+        tk.Label(preset_card, text="", bg=C["panel"]).pack(pady=4)
 
         deepseek_row = tk.Frame(inner, bg=C["bg"])
         deepseek_row.pack(fill="x", padx=PX, pady=(10, 0))
@@ -276,7 +281,7 @@ class LLMWizard(tk.Toplevel):
             ds_btns,
             text=_("wizard_llm_deepseek_platform_btn"),
             font=F["body"],
-            bg="#2563eb",
+            bg=C["cmp_a"],
             fg="white",
             bd=0,
             padx=12,
@@ -346,7 +351,7 @@ class LLMWizard(tk.Toplevel):
             sf_btns,
             text=_("wizard_llm_sf_register_btn"),
             font=F["body"],
-            bg="#22c55e",
+            bg=C["ok"],
             fg="white",
             bd=0,
             padx=12,
@@ -450,7 +455,7 @@ class LLMWizard(tk.Toplevel):
                 text=line,
                 font=F["body_b"] if line.startswith("🔒") else F["body"],
                 bg="#0d1f0d",
-                fg="#4ade80" if line.startswith("🔒") else "#86efac",
+                fg=C["ok"] if line.startswith("🔒") else C["ok"],
                 anchor="w",
                 justify="left",
             ).pack(anchor="w", padx=14, pady=(8 if line.startswith("🔒") else 2, 2))
@@ -467,19 +472,19 @@ class LLMWizard(tk.Toplevel):
 
         if preset in {"deepseek_pro", "deepseek_flash"} and deepseek_ok:
             label = "DeepSeek Pro" if preset == "deepseek_pro" else "DeepSeek Flash"
-            bg, fg = "#312e81", "#c4b5fd"
+            bg, fg = C["chip_alt_bg"], C["purple_soft"]
             msg = _("wizard_llm_status_deepseek_ready", label=label)
         elif sf_ok:
-            bg, fg = "#064e3b", "#6ee7b7"
+            bg, fg = C["chip_ok_bg"], C["chip_ok_fg"]
             msg = _("wizard_llm_status_sf_ready")
         elif deepseek_ok:
-            bg, fg = "#312e81", "#c4b5fd"
+            bg, fg = C["chip_alt_bg"], C["purple_soft"]
             msg = _("wizard_llm_status_deepseek_select")
         elif hf_ok:
-            bg, fg = "#1e3a5f", "#93c5fd"
+            bg, fg = C["chip_info_bg"], C["chip_info_fg"]
             msg = _("wizard_llm_status_hf_only")
         else:
-            bg, fg = "#3b1515", "#fca5a5"
+            bg, fg = C["dis_bg"], C["chip_bad_fg"]
             msg = _("wizard_llm_status_none")
 
         banner = tk.Frame(parent, bg=bg)
@@ -501,17 +506,17 @@ class LLMWizard(tk.Toplevel):
         selected = self.preset_var.get()
         for key, (card, indicator, text_f, title_lbl, desc_lbl, badge, accent) in self._preset_cards.items():
             is_selected = key == selected
-            bg = "#2e1f5c" if is_selected else "#1a2238"
-            border = accent if is_selected else "#2a3a5a"
+            bg = "#2e1f5c" if is_selected else C["panel"]
+            border = accent if is_selected else C["sep"]
             card.config(bg=bg, highlightbackground=border)
-            indicator.config(text="●" if is_selected else "○", bg=bg, fg=accent if is_selected else "#64748b")
+            indicator.config(text="●" if is_selected else "○", bg=bg, fg=accent if is_selected else C["text_muted"])
             text_f.config(bg=bg)
             title_lbl.config(bg=bg)
-            desc_lbl.config(bg=bg, fg="#ddd6fe" if is_selected else C["sub"])
+            desc_lbl.config(bg=bg, fg=C["purple_soft"] if is_selected else C["sub"])
             badge.config(
                 text=_("wizard_llm_selected") if is_selected else _("wizard_llm_click_select"),
                 bg=bg,
-                fg=accent if is_selected else "#64748b",
+                fg=accent if is_selected else C["text_muted"],
             )
 
     def _info_card(self, parent, lines, px=24):

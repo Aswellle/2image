@@ -32,12 +32,12 @@ from ui.tooltip import fade_alpha
 
 
 _CAT_COLORS = {
-    "✨ 画质增强": "#065f46",
+    "✨ 画质增强": C["keep_bg"],
     "💡 光影效果": "#92400e",
-    "🎨 艺术风格": "#7c3aed",
-    "📐 构图方式": "#0f3460",
-    "📷 镜头参数": "#1d4ed8",
-    "🌙 氛围情绪": "#9f1239",
+    "🎨 艺术风格": C["purple"],
+    "📐 构图方式": C["acc"],
+    "📷 镜头参数": C["cmp_a"],
+    "🌙 氛围情绪": C["cmp_b"],
     "👤 人物细节": "#0369a1",
 }
 
@@ -145,30 +145,37 @@ class _PhraseTooltip:
         tip.overrideredirect(True)
         tip.attributes("-topmost", True)
         tip.attributes("-alpha", 0.0)  # 完全透明起步
-        tip.configure(bg="#0d0d1f")
+        tip.configure(bg=C["inset"])
         self._win = tip
 
         # ── 外框（紫色细边框）──────────────────────────────
-        border = tk.Frame(tip, bg="#7c3aed", highlightbackground="#7c3aed", highlightthickness=1)
+        border = tk.Frame(tip, bg=C["purple"], highlightbackground=C["purple"], highlightthickness=1)
         border.pack(fill="both", expand=True)
 
         # 词条英文标题栏
         title_bar = tk.Frame(border, bg="#1e1b4b")
         title_bar.pack(fill="x")
         tk.Label(
-            title_bar, text=f"  {self._phrase}", font=F["badge"], bg="#1e1b4b", fg="#c4b5fd", padx=6, pady=6, anchor="w"
+            title_bar,
+            text=f"  {self._phrase}",
+            font=F["badge"],
+            bg="#1e1b4b",
+            fg=C["purple_soft"],
+            padx=6,
+            pady=6,
+            anchor="w",
         ).pack(fill="x")
 
         # 分隔线
-        tk.Frame(border, bg="#4c1d95", height=1).pack(fill="x")
+        tk.Frame(border, bg=C["purple_deep"], height=1).pack(fill="x")
 
         # 中文说明正文
         tk.Label(
             border,
             text=self._desc,
             font=F["body"],
-            bg="#0d0d1f",
-            fg="#e2e8f0",
+            bg=C["inset"],
+            fg=C["text"],
             wraplength=280,
             justify="left",
             padx=11,
@@ -246,12 +253,14 @@ class PhrasePanel(tk.Toplevel):
     # ── 构建 UI ──────────────────────────────────────────────
     def _build(self):
         # ── 顶部标题栏 ────────────────────────────────────────
-        hdr = tk.Frame(self, bg="#7c3aed")
+        hdr = tk.Frame(self, bg=C["purple"])
         hdr.pack(fill="x")
-        tk.Label(hdr, text=_("phrase_title"), font=F["h1"], bg="#7c3aed", fg="white").pack(
+        tk.Label(hdr, text=_("phrase_title"), font=F["h1"], bg=C["purple"], fg="white").pack(
             side="left", padx=14, pady=10
         )
-        tk.Label(hdr, text=_("phrase_hint"), font=F["small"], bg="#7c3aed", fg="#d0b8ff").pack(side="left", padx=4)
+        tk.Label(hdr, text=_("phrase_hint"), font=F["small"], bg=C["purple"], fg=C["purple_soft"]).pack(
+            side="left", padx=4
+        )
 
         # ── 搜索栏 ────────────────────────────────────────────
         sf = tk.Frame(self, bg=C["panel"])
@@ -353,7 +362,7 @@ class PhrasePanel(tk.Toplevel):
             text=_("btn_add_to_category"),
             font=F["body"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],
             bd=0,
             padx=12,
             pady=4,
@@ -439,7 +448,7 @@ class PhrasePanel(tk.Toplevel):
             return
 
         color = _CAT_COLORS.get(self._cur_cat, C["acc"]) if not search_mode else C["acc"]
-        HL_BG = "#243a60"  # 悬停背景色
+        HL_BG = C["card_hl"]  # 悬停背景色
 
         # 常规模式为词条列表（归属当前分类）；搜索模式为 (分类, 词条) 对
         if search_mode:
@@ -559,7 +568,7 @@ class PhrasePanel(tk.Toplevel):
             self.app.pt.insert("end", f"{sep}{phrase}")
             # 闪烁反馈
             orig = self.app.pt.cget("bg")
-            self.app.pt.config(bg="#1a3a1a")
+            self.app.pt.config(bg=C["card_fav"])
             self.app.root.after(250, lambda: self.app.pt.config(bg=orig))
             self.app._log(f"📚 追加词条: {phrase}")
             # 同步更新字符计数器

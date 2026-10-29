@@ -33,7 +33,7 @@ _STATUS = {
     "running": (C["warn"], _("queue_running")),
     "done": (C["ok"], _("queue_done")),
     "failed": (C["hl"], _("queue_failed")),
-    "cancelled": ("#64748b", _("queue_cancelled")),
+    "cancelled": (C["text_muted"], _("queue_cancelled")),
 }
 
 
@@ -70,10 +70,10 @@ class _ItemWidget(tk.Frame):
         self._ph = None  # 防 GC
 
         # ── 左侧缩略图 ────────────────────────────────────────
-        host = tk.Frame(self, bg="#0a0f1a", width=self.THUMB, height=self.THUMB)
+        host = tk.Frame(self, bg=C["inset"], width=self.THUMB, height=self.THUMB)
         host.pack(side="left", padx=(8, 6), pady=8)
         host.pack_propagate(False)
-        self._thumb_lbl = tk.Label(host, bg="#0a0f1a", text="⏳", font=F["disp_lg"], fg=C["text_muted"])
+        self._thumb_lbl = tk.Label(host, bg=C["inset"], text="⏳", font=F["disp_lg"], fg=C["text_muted"])
         self._thumb_lbl.pack(expand=True)
 
         # ── 右侧信息区 ────────────────────────────────────────
@@ -91,7 +91,7 @@ class _ItemWidget(tk.Frame):
             row1, text=f"  #{item.item_id}  {item.added_at}", font=F["mono_tiny"], bg=C["panel"], fg=C["sub"]
         ).pack(side="left")
 
-        self._time_lbl = tk.Label(row1, text="", font=F["mono_tiny"], bg=C["panel"], fg="#64748b")
+        self._time_lbl = tk.Label(row1, text="", font=F["mono_tiny"], bg=C["panel"], fg=C["text_muted"])
         self._time_lbl.pack(side="left")
 
         tk.Button(
@@ -145,7 +145,7 @@ class _ItemWidget(tk.Frame):
 
     # ── 状态刷新 ──────────────────────────────────────────────
     def _refresh(self):
-        color, text = _STATUS.get(self._item.status, ("#888", self._item.status))
+        color, text = _STATUS.get(self._item.status, (C["text_muted"], self._item.status))
         self._st_lbl.config(text=text, fg=color)
         border = color if self._item.status in ("done", "failed", "running") else C["sep"]
         self.config(highlightbackground=border)
@@ -235,27 +235,26 @@ class QueuePanel(tk.Frame):
                 pady=4,
                 cursor="hand2",
                 command=cmd,
-                activebackground="#1e3060",
             )
             b.pack(side="left", padx=3)
             return b
 
-        self._add_btn = _btn(_("btn_add_queue"), self._add_from_app, "#065f46")
-        self._add_btn_bg = "#065f46"  # 恢复用：图生图锁定态会覆盖 bg
-        self._start_btn = _btn(_("queue_btn_start"), self._start, "#1e40af")
-        self._pause_btn = _btn(_("queue_btn_pause"), self._toggle_pause, "#7c3aed")
-        _btn(_("btn_stop"), self._stop, "#7f1d1d")
-        _btn(_("queue_btn_clear_done"), self._clear_done, "#7c2d12")
+        self._add_btn = _btn(_("btn_add_queue"), self._add_from_app, C["keep_bg"])
+        self._add_btn_bg = C["keep_bg"]  # 恢复用：图生图锁定态会覆盖 bg
+        self._start_btn = _btn(_("queue_btn_start"), self._start, C["cmp_a"])
+        self._pause_btn = _btn(_("queue_btn_pause"), self._toggle_pause, C["purple"])
+        _btn(_("btn_stop"), self._stop, C["dis_bg"])
+        _btn(_("queue_btn_clear_done"), self._clear_done, C["dis_bg"])
 
         # ── 状态信息条 ────────────────────────────────────────
-        bar = tk.Frame(self, bg="#0a0f1a", height=26)
+        bar = tk.Frame(self, bg=C["inset"], height=26)
         bar.pack(fill="x")
         bar.pack_propagate(False)
 
-        self._prog_lbl = tk.Label(bar, text=_("queue_empty_progress"), font=F["small"], bg="#0a0f1a", fg=C["sub"])
+        self._prog_lbl = tk.Label(bar, text=_("queue_empty_progress"), font=F["small"], bg=C["inset"], fg=C["sub"])
         self._prog_lbl.pack(side="left", padx=10, pady=4)
 
-        self._cnt_lbl = tk.Label(bar, text="", font=F["mono_sm_b"], bg="#0a0f1a", fg=C["ok"])
+        self._cnt_lbl = tk.Label(bar, text="", font=F["mono_sm_b"], bg=C["inset"], fg=C["ok"])
         self._cnt_lbl.pack(side="right", padx=10)
 
         # ── 可滚动列表 ────────────────────────────────────────
