@@ -286,20 +286,23 @@ Font keys: `_sans`, `disp`, `title`, `h1`, `h2`, `btn`, `body`, `body_b`, `body_
 
 ### Theme / Color System
 
-`config/theme.py` defines a single dark palette (`DARK_THEME`) plus helper utilities. The palette keys:
+`config/theme.py` defines a single dark palette (`DARK_THEME`) plus helper utilities. Core palette keys:
 
-- `bg` — `#0a0f1a` (background)
-- `panel` — `#0d1b2a` (surface)
-- `acc` — `#1e3a6a` (accent)
+- `bg` — `#1a1a2e` (background)
+- `panel` — `#16213e` (surface)
+- `acc` — `#0f3460` (accent)
 - `hl` — `#e94560` (highlight)
 - `text` — `#eaeaea` (primary text)
-- `sub` — `#7a8aaa` (subdued)
+- `sub` — `#c0cfe0` (subdued)
 - `ok` — `#4ecca3` (success)
 - `warn` — `#f0a500` (warning)
 
-**Dual theme access pattern** (known inconsistency):
+Extended semantic keys (added as the single source of truth for recurring UI patterns — `inset` deep wells, `purple_soft`/`purple_deep`, `ok_fg`, `chip_ok_*`/`chip_info_*`/`chip_bad_*`/`chip_alt_*` status chips); see `config/theme.py` for the full list. **UI code must reference colors via `C["token"]` — raw hex literals in `ui/` are frozen by `tests/test_ui_palette.py`** (only data-viz ramps, category/brand colors and algorithmic black/white poles are allowlisted).
+
+**Theme access pattern**:
 - Most UI files import `DARK_THEME` as a local `C` dict at module level (`from config.theme import DARK_THEME; C = DARK_THEME`)
 - `config/theme.py` also exports a global `C` (module-level alias of `DARK_THEME`) for semantic-token access; `config/design_tokens.py` derives `TOKENS` from the theme dict
+- Button press/disabled states derive automatically from normal colors via `ui/button_states.py` (`install_button_state_defaults(root)` class-binding) — do not hand-write `activebackground` shades
 - `tag_color(tag)` — deterministic hash-based color for tag labels
 
 ### i18n System
