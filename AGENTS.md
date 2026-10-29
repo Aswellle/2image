@@ -45,6 +45,7 @@ main.py  (entry: DPI → fonts → legacy-data migration → DB init → tk.Tk �
               ├── batch_panel.py     ← 6-cell variant grid
               ├── queue_panel.py     ← sequential generation queue
               ├── viewer.py          ← zoom/pan/crop image viewer
+              ├── icons.py           ← Segoe Fluent/MDL2 icon font glyphs (glyph()/icon_font())
               ├── prompt_wizard.py   ← AI prompt engineering UI
               ├── phrase_panel.py    ← phrase snippet browser
               ├── wizard_free.py     ← free API key config
@@ -283,6 +284,14 @@ code.config(font=F['mono'])        # 11pt monospace
 ```
 
 Font keys: `_sans`, `disp`, `title`, `h1`, `h2`, `btn`, `body`, `body_b`, `body_i`, `small`, `small_b`, `mono`, `mono_tiny`, `mono_sm_b`, `label`, `input`, `tiny`, `tiny_b`, `badge`, `display`.
+
+### Icon System
+
+`ui/icons.py` maps semantic names to **Segoe Fluent Icons / Segoe MDL2 Assets** glyphs (system icon fonts on Windows 10/11; falls back to `Segoe UI Emoji` if both missing). Icon-only widgets use `text=glyph("trash"), font=icon_font(11)` — PUA codepoints render as tofu in text fonts, so never mix glyphs into a label whose font is not `icon_font()`. Rules:
+
+- Icon-only buttons/labels/canvas items take Fluent glyphs colored via `fg` theme tokens (replaces the former color-emoji icons; codepoints were visually verified via screenshot grid).
+- Emoji + text mixed labels and log-line prefixes intentionally keep their emoji (single-font Label constraint; terminal-style logs) — do not "fix" them by swapping font.
+- New icon needs: add the codepoint to `_GLYPHS` in `ui/icons.py` after rendering a verification grid, not inline in panel code.
 
 ### Theme / Color System
 
