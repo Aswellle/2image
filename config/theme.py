@@ -35,6 +35,20 @@ DARK_THEME = {
     "dpurp": "#6d28d9",
     "gold": "#f59e0b",
     "paid": "#7c3aed",
+    # 紫色家族补充（付费/LLM 向导/变体生成的浅字与深填充）
+    "purple_soft": "#c4b5fd",
+    "purple_deep": "#4c1d95",
+    # 深井（预览画布 / 日志 / 变体格等最深一级内嵌表面）
+    "inset": "#0a0f1a",
+    # 成功底色上的墨绿文字（保留/按压/注册类 CTA）
+    "ok_fg": "#0a1a0a",
+    # 状态胶囊（成对取用；bad 态底色复用 dis_bg，alt 态文字用 purple_soft）
+    "chip_ok_bg": "#064e3b",
+    "chip_ok_fg": "#6ee7b7",
+    "chip_info_bg": "#1e3a5f",
+    "chip_info_fg": "#93c5fd",
+    "chip_bad_fg": "#fca5a5",
+    "chip_alt_bg": "#312e81",
     # 分隔 / 对比
     "sash": "#2a4a8a",
     "sash_hl": "#4a7adf",

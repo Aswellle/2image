@@ -21,21 +21,21 @@ from typing import Any
 class DesignTokens:
     """Semantic design token system."""
 
-    # Surface hierarchy
-    surface_app: str = "#0a0f1a"
-    surface_panel: str = "#0d1b2a"
-    surface_elevated: str = "#142238"
-    surface_overlay: str = "#1a2d4a"
+    # Surface hierarchy（默认值与 DARK_THEME 同步；theme.py 导入时覆盖）
+    surface_app: str = "#1a1a2e"
+    surface_panel: str = "#16213e"
+    surface_elevated: str = "#1e2d4a"
+    surface_overlay: str = "#243a60"
 
     # Text colors
     text_primary: str = "#eaeaea"
-    text_secondary: str = "#a0b0c0"
-    text_muted: str = "#7a8aaa"
-    text_inverse: str = "#0a0f1a"
+    text_secondary: str = "#c0cfe0"
+    text_muted: str = "#8a9aba"
+    text_inverse: str = "#ffffff"
 
     # Accent & state
-    accent: str = "#1e3a6a"
-    accent_hover: str = "#2a4f8a"
+    accent: str = "#0f3460"
+    accent_hover: str = "#1a4a7f"
     highlight: str = "#e94560"
 
     # Semantic colors
@@ -45,8 +45,8 @@ class DesignTokens:
     info: str = "#4a90d9"
 
     # Borders & dividers
-    border_subtle: str = "#1e2d4a"
-    border_focus: str = "#2a4f8a"
+    border_subtle: str = "#2a3a5a"
+    border_focus: str = "#4a7adf"
 
     # Spacing scale (px)
     space_xs: int = 4
