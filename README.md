@@ -2,12 +2,12 @@
 
 <img src="https://raw.githubusercontent.com/Aswellle/2image/main/assets/logo.png" alt="2image" width="200" />
 
-<h1>2image · 兔图</h1>
+<h1>2image</h1>
 <p><strong>桌面 AI 图片生成器 · 内置 23 个免费、付费及商用生图服务</strong></p>
 
 <p>
   一个工具，接入市面上主流的免费与付费生图 API，让创作门槛降到最低。<br/>
-  输入中文描述，一键生成 —— 无需编程，无需搭建，数据完全本地。
+  输入图像描述，一键生成 —— 无需编程，无需搭建，数据完全本地。
 </p>
 
 [![CI](https://github.com/Aswellle/2image/actions/workflows/ci.yml/badge.svg)](https://github.com/Aswellle/2image/actions)

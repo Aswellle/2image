@@ -7,7 +7,7 @@
 
 <p>
   One tool, all the major free and paid image generation APIs — minimal barrier to creation.<br/>
-  Describe in Chinese, generate with one click — no coding, no server setup, all data stays local.
+  Describe your image, generate with one click — no coding, no server setup, all data stays local.
 </p>
 
 [![CI](https://github.com/Aswellle/2image/actions/workflows/ci.yml/badge.svg)](https://github.com/Aswellle/2image/actions)
