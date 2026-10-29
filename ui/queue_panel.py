@@ -23,6 +23,7 @@ from typing import List, Optional
 from PIL import Image, ImageTk
 from config.fonts import F
 from config.theme import DARK_THEME as C
+from ui.icons import glyph, icon_font
 from config.i18n import _
 from ui.button_states import set_enabled
 from services.providers import provider_id_for
@@ -73,7 +74,7 @@ class _ItemWidget(tk.Frame):
         host = tk.Frame(self, bg=C["inset"], width=self.THUMB, height=self.THUMB)
         host.pack(side="left", padx=(8, 6), pady=8)
         host.pack_propagate(False)
-        self._thumb_lbl = tk.Label(host, bg=C["inset"], text="⏳", font=F["disp_lg"], fg=C["text_muted"])
+        self._thumb_lbl = tk.Label(host, bg=C["inset"], text=glyph("clock"), font=icon_font(20), fg=C["text_muted"])
         self._thumb_lbl.pack(expand=True)
 
         # ── 右侧信息区 ────────────────────────────────────────
@@ -96,8 +97,8 @@ class _ItemWidget(tk.Frame):
 
         tk.Button(
             row1,
-            text="✕",
-            font=F["small"],
+            text=glyph("close"),
+            font=icon_font(9),
             bg=C["panel"],
             fg=C["neg_fg"],
             bd=0,

@@ -19,6 +19,7 @@ from config.fonts import F
 from config.theme import C, TAG_PALETTE, tag_color
 from config.i18n import _
 from ui.button_states import set_enabled
+from ui.icons import glyph, icon_font
 from ui.canvas_image import draw_image
 from data.repository import get_all_entries, get_stats
 from services.providers import (
@@ -945,7 +946,7 @@ class MainContent:
             img_host = tk.Frame(cell, bg=C["empty"], width=THUMB, height=THUMB)
             img_host.pack(padx=8, pady=(8, 0))
             img_host.pack_propagate(False)
-            lbl = tk.Label(img_host, bg=C["empty"], text="⏳", font=F["disp_lg"], fg=C["text_muted"])
+            lbl = tk.Label(img_host, bg=C["empty"], text=glyph("clock"), font=icon_font(20), fg=C["text_muted"])
             lbl.pack(expand=True)
 
             # 异步加载缩略图
@@ -980,7 +981,7 @@ class MainContent:
                             def _empty(l_=l):
                                 try:
                                     if l_.winfo_exists():
-                                        l_.config(text="🖼", font=F["display"])
+                                        l_.config(text=glyph("image"), font=icon_font(28))
                                 except Exception:
                                     pass
 
@@ -1480,7 +1481,7 @@ class MainContent:
             return
         # 图标按图形对象算 3:1（#4a8ac0 在此底色上 4.96:1），
         # 提示文字是正文，用与队列空态一致的前景色
-        cv.create_text(w // 2, h // 2 - 16, text="🖼", font=(F["_sans"], 30), fill=C["text_muted"])
+        cv.create_text(w // 2, h // 2 - 16, text=glyph("image"), font=icon_font(30), fill=C["text_muted"])
         cv.create_text(w // 2, h // 2 + 22, text=_("ref_upload_hint"), font=F["small"], fill=C["text_muted"])
 
     def _update_ref_thumb(self):

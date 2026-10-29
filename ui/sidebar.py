@@ -11,6 +11,7 @@ from tkinter import ttk, messagebox
 from PIL import ImageTk
 from config.fonts import F
 from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color
+from ui.icons import glyph, icon_font
 from config.i18n import _
 from services.providers import provider_id_for
 from data.repository import (
@@ -215,8 +216,8 @@ class HistorySidebar:
         # P0-08: 清除搜索按钮（有输入时显示）
         _clr_btn = tk.Button(
             _srf,
-            text="✕",
-            font=F["small"],
+            text=glyph("close"),
+            font=icon_font(9),
             bd=0,
             bg=C["entry"],
             fg=C["sub"],
@@ -770,8 +771,8 @@ class HistorySidebar:
         # ✏ 重命名
         edit_btn = tk.Button(
             btn_row,
-            text="✏",
-            font=F["input"],
+            text=glyph("edit"),
+            font=icon_font(11),
             bg=cbg,
             fg=C["sub"],
             bd=0,
@@ -785,12 +786,12 @@ class HistorySidebar:
 
         # ★ 收藏
         star_fg = C["star_on"] if is_fav else C["text_muted"]
-        star_txt = "★" if is_fav else "☆"
+        star_txt = glyph("star_fill") if is_fav else glyph("star_outline")
         star_tip = _("tip_remove_from_favorites") if is_fav else _("tip_add_to_favorites")
         star_btn = tk.Button(
             btn_row,
             text=star_txt,
-            font=F["label"],
+            font=icon_font(12),
             bg=cbg,
             fg=star_fg,
             bd=0,
@@ -805,8 +806,8 @@ class HistorySidebar:
         # 🏷 标签
         tag_btn = tk.Button(
             btn_row,
-            text="🏷",
-            font=F["input"],
+            text=glyph("tag"),
+            font=icon_font(11),
             bg=cbg,
             fg=C["sub"],
             bd=0,
@@ -821,8 +822,8 @@ class HistorySidebar:
         # ⚖ 对比
         cmp_btn = tk.Button(
             btn_row,
-            text="⚖",
-            font=F["input"],
+            text=glyph("compare"),
+            font=icon_font(11),
             bg=cbg,
             fg=C["purple_soft"],
             bd=0,
@@ -837,8 +838,8 @@ class HistorySidebar:
         # 🗑 删除
         del_btn = tk.Button(
             btn_row,
-            text="🗑",
-            font=F["input"],
+            text=glyph("trash"),
+            font=icon_font(11),
             bg=cbg,
             fg=C["neg_fg"],
             bd=0,
@@ -1086,7 +1087,7 @@ class HistorySidebar:
                     return
                 if getattr(lbl, "_thumb_token", None) != tok:
                     return
-                lbl.config(text="🖼", font=F["display"], width=6, height=3)
+                lbl.config(text=glyph("image"), font=icon_font(24), width=6, height=3)
             except tk.TclError:
                 pass
 
@@ -1139,8 +1140,8 @@ class HistorySidebar:
                 tk.Label(fr, text=tag, font=F["small_b"], bg=tc, fg="white", padx=5, pady=2).pack(side="left")
                 tk.Button(
                     fr,
-                    text="✕",
-                    font=F["tiny"],
+                    text=glyph("close"),
+                    font=icon_font(8),
                     bg=tc,
                     fg="white",
                     bd=0,
@@ -1372,7 +1373,10 @@ class HistorySidebar:
             # 原地更新：仅改星号颜色 + 卡片背景，不重建列表
             cd["is_fav"] = new_fav
             try:
-                cd["star_btn"].config(text="★" if new_fav else "☆", fg=C["star_on"] if new_fav else C["text_muted"])
+                cd["star_btn"].config(
+                    text=glyph("star_fill") if new_fav else glyph("star_outline"),
+                    fg=C["star_on"] if new_fav else C["text_muted"],
+                )
                 cd["fn"](entry["id"] == self.app.sel_id, new_fav)
             except Exception:
                 self.app._refresh_hist()  # 退化：widget 已销毁则全量刷新

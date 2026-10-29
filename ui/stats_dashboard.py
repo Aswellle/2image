@@ -9,6 +9,7 @@ import math as _math
 
 from config.fonts import F
 from config.theme import C, TAG_PALETTE, tag_color
+from ui.icons import glyph, icon_font
 from config.i18n import _
 from data.repository import get_stats, get_year_heatmap, get_available_years, get_year_stats
 
@@ -184,16 +185,16 @@ class StatsDashboard:
             cards_f.columnconfigure(i, weight=1)
 
         card_data = [
-            ("🖼", _("stats_total_images"), stats["total"], "#0c2f5c", "#93c5fd"),
-            ("⭐", _("stats_favorites"), stats["favorites"], "#3b0764", "#c4b5fd"),
-            ("☀", _("stats_today"), stats["today"], "#052e16", "#6ee7b7"),
-            ("📅", _("stats_last_7d"), stats["week"], "#451a03", "#fcd34d"),
-            ("📆", _("stats_last_30d"), stats.get("month", 0), "#1e1b4b", "#a5b4fc"),
+            ("image", _("stats_total_images"), stats["total"], "#0c2f5c", "#93c5fd"),
+            ("star_fill", _("stats_favorites"), stats["favorites"], "#3b0764", "#c4b5fd"),
+            ("sun", _("stats_today"), stats["today"], "#052e16", "#6ee7b7"),
+            ("calendar", _("stats_last_7d"), stats["week"], "#451a03", "#fcd34d"),
+            ("clock", _("stats_last_30d"), stats.get("month", 0), "#1e1b4b", "#a5b4fc"),
         ]
         for col, (icon, label, value, bg_c, txt_c) in enumerate(card_data):
             cell = tk.Frame(cards_f, bg=bg_c, highlightbackground=BORDER, highlightthickness=1)
             cell.grid(row=0, column=col, padx=5, pady=4, sticky="nsew")
-            tk.Label(cell, text=icon, font=F["disp_lg"], bg=bg_c, fg=txt_c).pack(pady=(12, 2))
+            tk.Label(cell, text=glyph(icon), font=icon_font(18), bg=bg_c, fg=txt_c).pack(pady=(12, 2))
             tk.Label(cell, text=str(value), font=F["display_b"], bg=bg_c, fg="white").pack(pady=0)
             tk.Label(cell, text=label, font=F["body"], bg=bg_c, fg=txt_c).pack(pady=(2, 12))
 

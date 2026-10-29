@@ -12,6 +12,7 @@ import webbrowser
 from typing import Callable
 from config.fonts import F
 from config.theme import DARK_THEME as C
+from ui.icons import glyph, icon_font
 from config.i18n import _
 from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_MODELS
 
@@ -946,10 +947,18 @@ class ConfigWizard(tk.Toplevel):
         def toggle():
             showing[0] = not showing[0]
             entry.config(show="" if showing[0] else "*")
-            btn.config(text="🙈" if showing[0] else "👁")
+            btn.config(text=glyph("eye_off") if showing[0] else glyph("eye"))
 
         btn = tk.Button(
-            parent, text="👁", font=F["input"], bg=C["entry"], fg=C["sub"], bd=0, padx=8, cursor="hand2", command=toggle
+            parent,
+            text=glyph("eye"),
+            font=icon_font(11),
+            bg=C["entry"],
+            fg=C["sub"],
+            bd=0,
+            padx=8,
+            cursor="hand2",
+            command=toggle,
         )
         btn.pack(side="right", padx=4)
         self._gb(parent, entry)  # 绿边：idle 显示，获焦后隐藏

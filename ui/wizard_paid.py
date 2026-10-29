@@ -15,6 +15,7 @@ import webbrowser
 from typing import Callable
 from config.fonts import F
 from config.theme import DARK_THEME as C
+from ui.icons import glyph, icon_font
 from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_MODELS,
@@ -468,7 +469,15 @@ class PaidWizard(tk.Toplevel):
             entry.config(show="" if showing[0] else "*")
 
         eye = tk.Button(
-            parent, text="👁", font=F["body"], bg=C["entry"], fg=C["sub"], bd=0, padx=6, cursor="hand2", command=_toggle
+            parent,
+            text=glyph("eye"),
+            font=icon_font(10),
+            bg=C["entry"],
+            fg=C["sub"],
+            bd=0,
+            padx=6,
+            cursor="hand2",
+            command=_toggle,
         )
         eye.pack(side="right", padx=4)
         self._gb(parent, entry)

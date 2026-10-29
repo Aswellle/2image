@@ -25,6 +25,7 @@ from services.phrase_library import (
 )
 from config.fonts import F
 from config.theme import DARK_THEME as C
+from ui.icons import glyph, icon_font
 from config.i18n import _
 from ui.tooltip import DELAY_MS as TIP_DELAY_MS
 from ui.tooltip import FADE_FRAME_MS, FADE_FRAMES, MAX_ALPHA as TIP_MAX_ALPHA
@@ -265,7 +266,9 @@ class PhrasePanel(tk.Toplevel):
         # ── 搜索栏 ────────────────────────────────────────────
         sf = tk.Frame(self, bg=C["panel"])
         sf.pack(fill="x")
-        tk.Label(sf, text="🔍", font=F["input"], bg=C["panel"], fg=C["sub"]).pack(side="left", padx=(10, 4), pady=8)
+        tk.Label(sf, text=glyph("search"), font=icon_font(11), bg=C["panel"], fg=C["sub"]).pack(
+            side="left", padx=(10, 4), pady=8
+        )
         self._sv = tk.StringVar()
         self._sv.trace("w", lambda *_: self._apply_search())
         _sef = tk.Frame(sf, bg=C["entry"], highlightbackground=C["ok"], highlightthickness=1)
@@ -481,8 +484,8 @@ class PhrasePanel(tk.Toplevel):
             # ── 追加按钮 ───────────────────────────────────
             append_btn = tk.Button(
                 chip,
-                text="➕",
-                font=F["body"],
+                text=glyph("add"),
+                font=icon_font(10),
                 bg=color,
                 fg="white",
                 bd=0,
@@ -505,8 +508,8 @@ class PhrasePanel(tk.Toplevel):
 
                 tk.Button(
                     chip,
-                    text="🗑",
-                    font=F["small"],
+                    text=glyph("trash"),
+                    font=icon_font(9),
                     bg=C["card"],
                     fg=C["neg_fg"],
                     bd=0,
