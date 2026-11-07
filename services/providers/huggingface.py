@@ -22,6 +22,14 @@ v3 修复（2026-07）：
     stabilityai/stable-diffusion-xl-base-1.0 / stable-diffusion-2-1
     不再确认由 hf-inference 托管（社区反馈频繁 404）。移除这两个，
     换成 stabilityai/stable-diffusion-3-medium-diffusers。
+
+v4 校准（2026-11）：
+  · HF 公开 API 实测（GET /api/models?inference_provider=hf-inference
+    &pipeline_tag=text-to-image）hf-inference 在册文生图模型仅剩
+    stabilityai/stable-diffusion-3-medium-diffusers 一项；
+    FLUX.1-schnell 已不在 hf-inference 托管（router 路径会 404），
+    移除之——FLUX 系需求由 SiliconFlow / Together / Cloudflare 等
+    直连 provider 覆盖。
 """
 
 import base64
@@ -51,15 +59,13 @@ _HF_LOCK = threading.Lock()
 _LAST_DONE_TS = [0.0]
 _MIN_INTERVAL = 2.0  # HF 每次请求之间最少等 2s（宽松，主要靠锁串行）
 
-# 模型列表（已移除 sdxl-turbo/sd-v1-5/sdxl-base-1.0/sd-2.1，
-# 均已确认不再稳定挂在 HF hf-inference provider 上）
+# 模型列表（hf-inference 实测在册仅 SD3-medium；schnell/sdxl/sd2.1
+# 均已下架，保留则每次尝试都先吃一次 404）
 HF_MODELS = [
     # (model_id,                                            steps, guidance, max_w, max_h)
-    ("black-forest-labs/FLUX.1-schnell", 4, 0.0, 1024, 1024),
     ("stabilityai/stable-diffusion-3-medium-diffusers", 20, 7.0, 1024, 1024),
 ]
 HF_HQ_MODELS = [
-    ("black-forest-labs/FLUX.1-schnell", 8, 0.0, 1024, 1024),
     ("stabilityai/stable-diffusion-3-medium-diffusers", 28, 7.5, 1024, 1024),
 ]
 
