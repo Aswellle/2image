@@ -1,4 +1,17 @@
-"""services/providers/replicate_flux.py — Replicate FLUX"""
+"""services/providers/replicate_flux.py — Replicate FLUX（文生图）
+
+2026-11 对照 replicate.com 官方模型页内嵌 Input schema 校准：
+  · flux-2-pro：aspect_ratio=custom 时才使用 width/height（256–2048、
+    16 的倍数）；无 num_outputs 字段；image_input 支持最多 8 张参考图
+    （本 provider 暂只做文生图）
+  · flux-1.1-pro：width/height 同样仅 aspect_ratio=custom 生效
+    （256–1440、32 的倍数）；无 num_outputs
+  · flux-pro / flux-dev（FLUX 1.0）：width/height/steps/guidance 直传
+
+此前对所有模型统一发 width/height/num_outputs——width/height 因
+aspect_ratio 未设 custom 被忽略（出图恒 1:1），num_outputs 字段
+根本不存在于 1.1-pro / 2-pro 的 schema。
+"""
 
 import base64, time
 from services.generation.errors import (
@@ -26,27 +39,77 @@ PROVIDER_INFO = {
 
 
 _MODELS = {
+    "flux-2-pro": "black-forest-labs/flux-2-pro",
     "flux-1.1-pro": "black-forest-labs/flux-1.1-pro",
     "flux-pro": "black-forest-labs/flux-pro",
     "flux-dev": "black-forest-labs/flux-dev",
 }
+
+# 下拉可见顺序（官方在册的 FLUX.2 Pro 为默认，1.x 为 legacy）
+MODEL_ORDER = ["flux-2-pro", "flux-1.1-pro", "flux-pro", "flux-dev"]
+
+_FLUX2_DIMS = (256, 2048, 16)  # min, max, multiple
+_FLUX1_PRO_DIMS = (256, 1440, 32)
+
+
+def _clamp(w: int, h: int, lo: int, hi: int, mult: int) -> tuple[int, int]:
+    cw = max(lo, min(hi, round(w / mult) * mult))
+    ch = max(lo, min(hi, round(h / mult) * mult))
+    return cw, ch
+
+
+def _build_input(slug: str, prompt: str, w: int, h: int, seed: int) -> dict:
+    """按各模型官方 schema 构造 input。"""
+    seed = seed % 2147483647
+    if slug == "flux-2-pro":
+        cw, ch = _clamp(w, h, *_FLUX2_DIMS)
+        return {
+            "prompt": prompt,
+            "aspect_ratio": "custom",
+            "width": cw,
+            "height": ch,
+            "output_format": "png",
+            "seed": seed,
+        }
+    if slug == "flux-1.1-pro":
+        cw, ch = _clamp(w, h, *_FLUX1_PRO_DIMS)
+        return {
+            "prompt": prompt,
+            "aspect_ratio": "custom",
+            "width": cw,
+            "height": ch,
+            "output_format": "png",
+            "seed": seed,
+        }
+    # FLUX 1.0 pro/dev：width/height/steps/guidance 直传
+    body = {
+        "prompt": prompt,
+        "width": max(256, min(1440, round(w / 32) * 32)),
+        "height": max(256, min(1440, round(h / 32) * 32)),
+        "output_format": "png",
+        "seed": seed,
+    }
+    if slug == "flux-dev":
+        body.update({"num_inference_steps": 28, "guidance_scale": 3.5})
+    return body
 
 
 def try_replicate(prompt, w, h, seed, cfg, log):
     key = cfg.get("replicate_key", "").strip()
     if not key:
         raise ProviderConfigError("需要 Replicate API Token，请在「💎 付费接口配置」中填写")
-    slug = cfg.get("replicate_model", "flux-1.1-pro")
-    path = _MODELS.get(slug, _MODELS["flux-1.1-pro"])
-    mw = max(64, min(w, 1440) // 64 * 64)
-    mh = max(64, min(h, 1440) // 64 * 64)
-    log(f"► Replicate  模型={path}  {mw}×{mh}")
+    slug = cfg.get("replicate_model", "flux-2-pro")
+    if slug not in _MODELS:
+        slug = "flux-2-pro"  # 存量未知值（含旧下拉里的无效项）归一化
+    path = _MODELS[slug]
+    body_input = _build_input(slug, prompt, w, h, seed)
+    log(f"► Replicate  模型={path}  {body_input.get('width', '?')}×{body_input.get('height', '?')}")
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json", "Prefer": "wait"}
-    body = {"input": {"prompt": prompt, "width": mw, "height": mh, "num_outputs": 1, "seed": seed % 2147483647}}
-    if slug == "flux-dev":
-        body["input"].update({"num_inference_steps": 28, "guidance_scale": 3.5})
     resp = _get_session().post(
-        f"https://api.replicate.com/v1/models/{path}/predictions", headers=headers, json=body, timeout=90
+        f"https://api.replicate.com/v1/models/{path}/predictions",
+        headers=headers,
+        json={"input": body_input},
+        timeout=90,
     )
     log(f"  状态: {resp.status_code}")
     if resp.status_code == 401:

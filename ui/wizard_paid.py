@@ -16,6 +16,7 @@ from typing import Callable
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from ui.icons import glyph, icon_font
+from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
 from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_MODELS,
@@ -309,13 +310,13 @@ class PaidWizard(tk.Toplevel):
         opt3 = tk.Frame(inner, bg=C["bg"])
         opt3.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(opt3, text=_("wizard_paid_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
-        self.repl_model_var = tk.StringVar(value=self.cfg.get("replicate_model", "flux-1.1-pro"))
+        self.repl_model_var = tk.StringVar(value=self.cfg.get("replicate_model", "flux-2-pro"))
         ttk.Combobox(
             opt3,
             textvariable=self.repl_model_var,
             width=24,
             state="readonly",
-            values=["flux-1.1-pro", "flux-schnell", "flux-2-pro", "flux-kontext-pro"],
+            values=REPLICATE_MODEL_ORDER,
         ).pack(side="left", padx=(6, 0))
         btns3 = tk.Frame(inner, bg=C["bg"])
         btns3.pack(fill="x", padx=PX, pady=(8, 0))
