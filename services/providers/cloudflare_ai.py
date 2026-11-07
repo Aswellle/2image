@@ -41,7 +41,8 @@ _API_BASE = "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{
 _TIMEOUT = 60
 
 # 模型列表（按质量排序）
-# FLUX.1-schnell：12B 参数，质量最高，速度约 2-5s
+# FLUX.2-dev：2026-01 上线 Workers AI（BFL 合作），32B 开源旗舰
+# FLUX.1-schnell：12B 参数，速度快，约 2-5s
 # SDXL-base：质量好，生成速度稳定
 # SDXL-Lightning：最快，4步蒸馏，质量稍次
 _CF_MODELS = [
@@ -51,8 +52,10 @@ _CF_MODELS = [
     ("@cf/bytedance/stable-diffusion-xl-lightning", 4, 0.0, 1024),
 ]
 
-# HQ 模式：优先 FLUX，跳过 Lightning
+# HQ 模式：优先 FLUX.2-dev（REST 示例参数 prompt/steps/guidance），
+# 跳过 Lightning；参数不符时 provider 已有 400/422 换模型兜底
 _CF_HQ_MODELS = [
+    ("@cf/black-forest-labs/flux-2-dev", 8, 3.5, 1024),
     ("@cf/black-forest-labs/flux-1-schnell", 8, 0.0, 1024),
     ("@cf/stabilityai/stable-diffusion-xl-base-1.0", 30, 8.0, 1024),
 ]

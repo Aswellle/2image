@@ -34,12 +34,15 @@ PROVIDER_INFO = {
 
 
 # ── 标准模式：速度与质量平衡（单张生成）──────────────────────────
+# 2026-11 校准：stable-diffusion-2-1 已被 Stability 官方弃用（2025-11
+# 公告）且在架状态存疑，换为官方价格页在册的免费模型 Kwai-Kolors/Kolors
+# （快手可图，中文提示词友好）。
 SF_STD_MODELS = [
     # (model_id,                                   max_sz, steps, use_guid, guidance)
     ("black-forest-labs/FLUX.1-schnell", 1024, 8, False, 0.0),
     ("stabilityai/stable-diffusion-xl-base-1.0", 1024, 30, True, 7.5),
     ("ByteDance/SDXL-Lightning", 1024, 4, False, 0.0),
-    ("stabilityai/stable-diffusion-2-1", 768, 30, True, 8.0),
+    ("Kwai-Kolors/Kolors", 1024, 25, True, 5.0),
     ("stabilityai/sdxl-turbo", 512, 2, False, 0.0),
 ]
 
@@ -53,7 +56,7 @@ SF_HQ_MODELS = [
     # (model_id,                                   max_sz, steps, use_guid, guidance)
     ("black-forest-labs/FLUX.1-dev", 1024, 28, True, 3.5),  # 最高质量
     ("stabilityai/stable-diffusion-xl-base-1.0", 1024, 35, True, 8.0),  # HQ SDXL
-    ("stabilityai/stable-diffusion-2-1", 768, 35, True, 8.5),  # HQ SD2.1
+    ("Kwai-Kolors/Kolors", 1024, 30, True, 5.0),  # HQ 可图（免费档）
 ]
 
 # 高质量负向提示词（HQ 模式追加，降低瑕疵率）
