@@ -1,9 +1,16 @@
 """
-services/providers/fal_flux.py — fal.ai FLUX（文生图 + 图生图）
-· 文生图: fal-ai/flux-pro/v1.1-ultra（最高写实质量，4MP）
-· 图生图: fal-ai/flux-general/image-to-image（FLUX 风格迁移）
-API 均为队列提交 + 轮询模式
+services/providers/fal_flux.py — fal.ai FLUX.2 [pro]（文生图 + 图生图）
+· 文生图: fal-ai/flux-2-pro（官方旗舰，image_size 任意宽高，最高 4MP）
+· 图生图: fal-ai/flux-2-pro/edit（prompt + image_urls 指令式编辑，
+  最多 8 张参考图；FLUX.2 单模型同时承担生成与编辑）
+API 均为队列提交 + 轮询模式（queue.fal.run）
 Key: Header  Authorization: Key <key>
+
+2026-11 更新：对照 fal.ai 官方 openapi schema 核实——
+flux-2-pro 输入为 prompt/image_size{width,height}/seed/output_format/
+safety_tolerance/sync_mode；edit 端点必填 prompt+image_urls，
+image_size 缺省 auto（跟随参考图）。旧端点 flux-pro/v1.1-ultra 与
+flux-general/image-to-image 虽仍在线但已非官方主推。
 """
 
 import base64
@@ -27,7 +34,7 @@ from services.providers._net import (
 
 PROVIDER_INFO = {
     "id": "fal_flux",
-    "name": "fal.ai FLUX Ultra (高质量)",
+    "name": "fal.ai FLUX.2 Pro (高质量)",
     "category": "commercial",
     "config_key": "fal_key",
     "supports_img2img": True,
@@ -40,25 +47,15 @@ _MIN_INTV = 3.0  # 提交间隔
 _POLL_SEC = 3.0  # 轮询间隔
 _MAX_POLLS = 40  # 最多等 120s
 
-_QUEUE_T2I = "https://queue.fal.run/fal-ai/flux-pro/v1.1-ultra"
-_QUEUE_I2I = "https://queue.fal.run/fal-ai/flux-general/image-to-image"
-_QUEUE_BASE = _QUEUE_T2I  # 向后兼容
-
-_ASPECTS = [
-    ((1024, 1024), "1:1"),
-    ((1344, 768), "16:9"),
-    ((768, 1344), "9:16"),
-    ((1216, 832), "3:2"),
-    ((832, 1216), "2:3"),
-    ((1152, 896), "4:3"),
-    ((896, 1152), "3:4"),
-    ((1536, 640), "21:9"),
-]
+_QUEUE_T2I = "https://queue.fal.run/fal-ai/flux-2-pro"
+_QUEUE_I2I = "https://queue.fal.run/fal-ai/flux-2-pro/edit"
 
 
-def _best_aspect(w: int, h: int) -> str:
-    r = w / max(h, 1)
-    return min(_ASPECTS, key=lambda x: abs(x[0][0] / x[0][1] - r))[1]
+def _clamp_dims(w: int, h: int) -> dict:
+    """钳制到合理输出范围（256–2048、16 的倍数），供 image_size 使用。"""
+    cw = max(256, min(2048, round(w / 16) * 16))
+    ch = max(256, min(2048, round(h / 16) * 16))
+    return {"width": cw, "height": ch}
 
 
 def _poll_fal(request_id: str, queue_base: str, headers: dict, cfg: dict, log: Callable) -> bytes:
@@ -101,36 +98,31 @@ def try_fal_flux(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
 
     headers = {"Authorization": f"Key {key}", "Content-Type": "application/json"}
     ref_image = cfg.get("_ref_image")  # bytes or None
-    strength = cfg.get("_ref_strength", 0.6)
 
     if ref_image is not None:
-        # ── 图生图模式：flux-general/image-to-image ───────────────
+        # ── 图生图模式：flux-2-pro/edit（指令式编辑，image_urls 列表）──
         b64 = base64.b64encode(ref_image).decode()
-        image_url = f"data:image/png;base64,{b64}"
-        log(f"► fal.ai FLUX 图生图  强度={strength:.1f}")
+        log("► fal.ai FLUX.2 Pro  图生图（指令式编辑）")
         payload = {
             "prompt": prompt,
-            "image_url": image_url,
-            "strength": float(strength),
-            "image_size": {"width": w, "height": h},
+            "image_urls": [f"data:image/png;base64,{b64}"],
             "seed": seed % 2_147_483_647,
-            "num_images": 1,
+            "output_format": "png",
         }
         queue_base = _QUEUE_I2I
-        label = "fal.ai/FLUX-img2img"
+        label = "fal.ai/FLUX.2-Pro-edit"
     else:
-        # ── 文生图模式（原逻辑）──────────────────────────────────
-        aspect = _best_aspect(w, h)
-        log(f"► fal.ai FLUX Pro Ultra  宽高比={aspect}")
+        # ── 文生图模式：flux-2-pro，image_size 任意宽高 ──────────────
+        size = _clamp_dims(w, h)
+        log(f"► fal.ai FLUX.2 Pro  文生图  {size['width']}×{size['height']}")
         payload = {
             "prompt": prompt,
-            "aspect_ratio": aspect,
+            "image_size": size,
             "seed": seed % 2_147_483_647,
-            "output_format": "jpeg",
-            "raw": False,
+            "output_format": "png",
         }
         queue_base = _QUEUE_T2I
-        label = "fal.ai/FLUX-Ultra"
+        label = "fal.ai/FLUX.2-Pro"
 
     # ── 提交到队列（持锁以控制提交频率）──────────────────────────
     with _LOCK:
