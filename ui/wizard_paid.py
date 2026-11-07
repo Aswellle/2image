@@ -21,8 +21,8 @@ from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_MODELS,
     ARK_IMAGE_NAMES,
+    BFL_IMAGE_NAMES,
     BFL_TXT2IMG_DEFAULT,
-    BFL_TXT2IMG_MODELS,
     GPT_IMAGE_DEFAULT,
     GPT_IMAGE_NAMES,
 )
@@ -414,10 +414,17 @@ class PaidWizard(tk.Toplevel):
         opt5 = tk.Frame(inner, bg=C["bg"])
         opt5.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(opt5, text=_("wizard_paid_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
-        self.bfl_model_var = tk.StringVar(value=self.cfg.get("bfl_model", BFL_TXT2IMG_DEFAULT))
-        ttk.Combobox(opt5, textvariable=self.bfl_model_var, width=20, state="readonly", values=BFL_TXT2IMG_MODELS).pack(
-            side="left", padx=(6, 0)
+        self._bfl_name_to_id = {v: k for k, v in BFL_IMAGE_NAMES.items()}
+        self.bfl_model_var = tk.StringVar(
+            value=BFL_IMAGE_NAMES.get(self.cfg.get("bfl_model", BFL_TXT2IMG_DEFAULT), BFL_TXT2IMG_DEFAULT)
         )
+        ttk.Combobox(
+            opt5,
+            textvariable=self.bfl_model_var,
+            width=24,
+            state="readonly",
+            values=list(BFL_IMAGE_NAMES.values()),
+        ).pack(side="left", padx=(6, 0))
         btns5 = tk.Frame(inner, bg=C["bg"])
         btns5.pack(fill="x", padx=PX, pady=(8, 0))
         self._link_btn(btns5, _("wizard_paid_bfl_register_btn"), "https://api.bfl.ai/")
@@ -500,7 +507,8 @@ class PaidWizard(tk.Toplevel):
         self.cfg["volcengine_key"] = self.ark_var.get().strip()
         self.cfg["ark_model"] = ark_id
         self.cfg["bfl_key"] = self.bfl_var.get().strip()
-        self.cfg["bfl_model"] = self.bfl_model_var.get()
+        bfl_name = self.bfl_model_var.get()
+        self.cfg["bfl_model"] = self._bfl_name_to_id.get(bfl_name, BFL_TXT2IMG_DEFAULT)
         from config.settings import save_config
 
         save_config(self.cfg)  # 与免费配置向导一致：保存必须落盘
