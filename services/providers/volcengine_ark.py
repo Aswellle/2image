@@ -1,10 +1,14 @@
 """
 services/providers/volcengine_ark.py — 火山引擎豆包生图（文生图 + 图生图）
 
-支持模型：
-  · doubao-seedream-3-0-t2i  — 豆包文生图 3.0
-  · doubao-seedream-4-0-t2i  — 豆包文生图 4.0（最新最强）
-  · doubao-seededit-3-0-i2i  — 豆包图生图 3.0
+支持模型（正式 ID 为带日期快照，方舟文档示例同款）：
+  · doubao-seedream-4-5-251128  — Seedream 4.5（综合最佳，默认）
+  · doubao-seedream-4-0-250828  — Seedream 4.0（原生支持参考图编辑）
+  · doubao-seedream-3-0-t2i     — Seedream 3.0（旧版）
+  · doubao-seededit-3-0-i2i     — SeedEdit 3.0（旧版图生图通道）
+
+注意："-t2i" 后缀 ID 仅 3.0 时代有效，4.0 起官方模型表只收录带日期
+快照 ID，传 -t2i 后缀会报「模型不存在」。
 
 端点：POST https://ark.cn-beijing.volces.com/api/v3/images/generations
 认证：Header Authorization: Bearer <key>
@@ -22,7 +26,10 @@ import requests
 
 from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
+    ARK_IMAGE_MODELS,
     ARK_IMAGE_NAMES,
+    ARK_NATIVE_I2I_MODELS,
+    ARK_SEEDIT_30_I2I,
 )
 from services.generation.errors import (
     ProviderAuthError,
@@ -44,7 +51,7 @@ PROVIDER_INFO = {
     "name": "豆包 Seedream (火山引擎)",
     "category": "commercial",
     "config_key": "volcengine_key",
-    "description": "豆包 Seedream 3.0/4.0 文生图，SeedEdit 3.0 图生图",
+    "description": "豆包 Seedream 4.5/4.0 文生图与原生图生图，SeedEdit 3.0 兜底",
     "supports_img2img": True,
 }
 
@@ -83,12 +90,15 @@ def try_volcengine_ark(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
     if not key:
         raise ProviderConfigError("需要火山引擎 API Key，请在配置中填写")
 
-    # 模型选择：图生图自动使用 SeedEdit，文生图使用配置的模型
+    # 模型选择：文生图用配置模型；图生图优先用 Seedream 4.x 原生
+    # 参考图编辑（官方教程推荐，保持主体一致性优于旧 SeedEdit 3.0），
+    # 配置模型不支持原生编辑（如 3.0/SeedEdit）时回退 SeedEdit 3.0。
     ref_image = cfg.get("_ref_image")
-    if ref_image is not None:
-        model = "doubao-seededit-3-0-i2i"
-    else:
-        model = cfg.get("ark_model", ARK_IMAGE_DEFAULT)
+    model = cfg.get("ark_model", "").strip()
+    if model not in ARK_IMAGE_MODELS:
+        model = ARK_IMAGE_DEFAULT  # 存量无效值（如旧的 -t2i 后缀 ID）归一化
+    if ref_image is not None and model not in ARK_NATIVE_I2I_MODELS:
+        model = ARK_SEEDIT_30_I2I
 
     size_str = _best_size(w, h)
     display_name = ARK_IMAGE_NAMES.get(model, model)
