@@ -5,9 +5,13 @@ services/providers/bfl_flux.py — Black Forest Labs 官方 FLUX API（文生图
 响应: 提交返回 {id, polling_url}；轮询 polling_url 直到 status=="Ready"，
       图片地址在 result.sample（签名 URL，仅 10 分钟有效，需尽快下载）
 
-文生图用 flux-pro-1.1（width/height/seed），
-图生图用 flux-kontext-pro（input_image=base64 原图 + aspect_ratio，
-不支持 width/height——由模型自动贴近参考图尺寸）。
+FLUX.2 时代（2026-11 对照 docs.bfl.ml 核实）：
+  · /v1/flux-2-pro 为官方推荐默认端点，同一端点承担生成与编辑——
+    编辑即带 input_image（最多 8 张，base64 或 URL）
+  · 文生图模型由 cfg["bfl_model"] 从目录选择（flux-2-pro 默认，
+    可选 flux-2-pro-preview / flux-2-max / flux-2-flex / flux-pro-1.1）
+  · 图生图：配置为 FLUX.2 家族时直接带参考图编辑；配置为不支持
+    编辑输入的 flux-pro-1.1 时自动改走 flux-2-pro（官方编辑推荐端点）
 """
 
 import base64
@@ -15,7 +19,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
-from config.model_catalog import BFL_TXT2IMG_DEFAULT
+from config.model_catalog import BFL_FLUX2_PRO, BFL_FLUX_PRO_11, BFL_TXT2IMG_DEFAULT, BFL_TXT2IMG_MODELS
 from services.generation.errors import (
     ProviderAuthError,
     ProviderConfigError,
@@ -50,23 +54,12 @@ _TIMEOUT = 30
 _MAX_POLL = 60
 _POLL_INTERVAL = 2.0
 
-# aspect_ratio 供 flux-kontext-pro 使用（无 width/height 参数）
-_ASPECTS = [
-    (1 / 3, "3:7"),
-    (3, "7:3"),
-    (9 / 16, "9:16"),
-    (16 / 9, "16:9"),
-    (2 / 3, "2:3"),
-    (3 / 2, "3:2"),
-    (3 / 4, "3:4"),
-    (4 / 3, "4:3"),
-    (1, "1:1"),
-]
 
-
-def _best_aspect(w: int, h: int) -> str:
-    r = w / max(h, 1)
-    return min(_ASPECTS, key=lambda x: abs(x[0] - r))[1]
+def _clamp_dims(w: int, h: int) -> tuple[int, int]:
+    """钳制到 BFL 接受的范围（≥256、32 的倍数，长边 ≤1440）。"""
+    cw = max(256, min(1440, round(w / 32) * 32))
+    ch = max(256, min(1440, round(h / 32) * 32))
+    return cw, ch
 
 
 def try_bfl_flux(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
@@ -77,25 +70,27 @@ def try_bfl_flux(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
     headers = {"x-key": key, "Content-Type": "application/json"}
     ref_image = cfg.get("_ref_image")  # bytes or None（图生图参考图）
 
+    model = cfg.get("bfl_model", "").strip()
+    if model not in BFL_TXT2IMG_MODELS:
+        model = BFL_TXT2IMG_DEFAULT  # 存量未知值归一化到目录默认
+    cw, ch = _clamp_dims(w, h)
+
+    if ref_image is not None and model == BFL_FLUX_PRO_11:
+        # FLUX 1.1 Pro 不接受编辑输入，改走官方推荐的 FLUX.2 [pro] 编辑端点
+        model = BFL_FLUX2_PRO
+
+    payload = {
+        "prompt": prompt,
+        "width": cw,
+        "height": ch,
+        "seed": seed % 2_147_483_647,
+        "output_format": "png",
+    }
     if ref_image is not None:
-        model = "flux-kontext-pro"
-        payload = {
-            "prompt": prompt,
-            "input_image": base64.b64encode(ref_image).decode("ascii"),
-            "aspect_ratio": _best_aspect(w, h),
-            "seed": seed % 2_147_483_647,
-        }
-        log(f"► BFL {model}  图生图")
+        payload["input_image"] = base64.b64encode(ref_image).decode("ascii")
+        log(f"► BFL {model}  图生图  {cw}×{ch}")
     else:
-        # 文生图模型可通过 cfg["bfl_model"] 选择（默认与可选值见 config.model_catalog）
-        model = cfg.get("bfl_model", BFL_TXT2IMG_DEFAULT)
-        payload = {
-            "prompt": prompt,
-            "width": max(256, min(1440, round(w / 32) * 32)),
-            "height": max(256, min(1440, round(h / 32) * 32)),
-            "seed": seed % 2_147_483_647,
-        }
-        log(f"► BFL {model}  文生图  {payload['width']}×{payload['height']}")
+        log(f"► BFL {model}  文生图  {cw}×{ch}")
 
     with _LOCK:
         gap = time.time() - _LAST_DONE[0]
