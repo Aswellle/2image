@@ -20,7 +20,10 @@ from config.model_catalog import (
     GPT_IMAGE_2,
     GPT_IMAGE_25_FLARE,
     GPT_IMAGE_25_SUNBURST,
+    GPT_IMAGE_26_FLARE,
+    GPT_IMAGE_26_SUNBURST,
     GPT_IMAGE_DEFAULT,
+    GPT_IMAGE_MODELS,
     GPT_IMAGE_NAMES,
 )
 from services.generation.errors import (
@@ -40,7 +43,7 @@ PROVIDER_INFO = {
     "name": "OpenAI GPT-Image (付费)",
     "category": "paid",
     "config_key": "openai_key",
-    "description": "GPT-Image 系列：1/1.5/2/2.5-flare/2.5-sunburst",
+    "description": "GPT-Image 系列：2 / 2.5 / 2.6（flare·sunburst）",
     "supports_img2img": True,
 }
 
@@ -119,7 +122,7 @@ def _gpt2_size(w: int, h: int) -> str:
 
 def _size_for(model: str, w: int, h: int) -> str:
     """按模型路由尺寸取值：gpt-image-2+ 家族用任意尺寸，其余用预设。"""
-    if model in (GPT_IMAGE_2, GPT_IMAGE_25_FLARE, GPT_IMAGE_25_SUNBURST):
+    if model in GPT_IMAGE_MODELS:  # 目录内全部为 2+ 家族，均支持任意尺寸
         return _gpt2_size(w, h)
     return _best_size(w, h)
 
@@ -134,7 +137,11 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
     if not key:
         raise ProviderConfigError("需要 OpenAI API Key，请在「💎 付费接口配置」中填写")
 
-    model = cfg.get("gpt_image_model", GPT_IMAGE_DEFAULT)
+    model = cfg.get("gpt_image_model", "").strip()
+    if model not in GPT_IMAGE_MODELS:
+        # 目录外的存量值（已关停的 gpt-image-1 / 2026-12-01 移除的 1-mini、
+        # 1.5）归一化到默认，避免请求直接 404
+        model = GPT_IMAGE_DEFAULT
     quality = _normalize_quality(cfg.get("gpt_image_quality", "auto"))
     size_str = _size_for(model, w, h)
     ref_image = cfg.get("_ref_image")
