@@ -356,6 +356,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`config/fonts.py`|Font loading/caching, `F` dict, `init_fonts()`|
 |`config/theme.py`|`DARK_THEME` (single dark theme), `tag_color()`, global `C`|
 |`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (226 keys, 2 locales), `init_language()`|
+|`config/model_catalog.py`|每族图像模型「可选值+默认值+可读名称」唯一来源（OpenAI/Gemini/MiniMax/Ark/BFL/xAI/DashScope），被 settings 默认值、provider 兜底与向导下拉共同引用；一致性由 `tests/test_model_catalog_consistency.py` 锁定|
 |`data/repository.py`|SQLite schema (`history` table: id, timestamp, prompt, translated, image_path, provider, nickname, favorited), tags via junction table (`entry_tags`), full CRUD API, stats, heatmap, JSON→SQLite migration, `_set_test_db()` for in-memory testing|
 |`services/image_service.py`|`generate_image()` — iterates providers in order, catches `ValueError`, falls back; `save_image_file()` — saves bytes to disk|
 |`services/smart_router.py`|`get_provider_order()` — scene-aware routing: template→scene→providers, keyword detection, filters unavailable paid providers|
@@ -400,7 +401,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 ## Testing & QA
 
 - **Framework**: pytest（CI 矩阵 3.11/3.12 双版本 + coverage 上报）
-- **Test count**: 686 items across 49 test files（`pytest tests/` 全量约 4 分钟）
+- **Test count**: 695 items across 50 test files（`pytest tests/` 全量约 4 分钟）
 - **GUI**: 真实 Tk 会话级共享 root（`tk_session_root`），App 以 Toplevel 承载——规避 Windows 下反复创建/销毁解释器的 Tcl 崩溃
 
 ### Test Layout
