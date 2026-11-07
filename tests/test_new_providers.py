@@ -15,18 +15,20 @@ from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_NAMES,
     ARK_IMAGE_MODELS,
-    GPT_IMAGE_1,
-    GPT_IMAGE_1_MINI,
-    GPT_IMAGE_1_5,
+    ARK_SEEDREAM_40_T2I,
+    ARK_SEEDREAM_45_T2I,
     GPT_IMAGE_2,
     GPT_IMAGE_DEFAULT,
     GPT_IMAGE_NAMES,
     GPT_IMAGE_MODELS,
     GPT_IMAGE_25_FLARE,
     GPT_IMAGE_25_SUNBURST,
+    GPT_IMAGE_26_FLARE,
+    GPT_IMAGE_26_SUNBURST,
     GEMINI_IMAGE_DEFAULT,
     GEMINI_IMAGE_NAMES,
     GEMINI_IMAGE_MODELS,
+    GEMINI_NB_21,
     GEMINI_NB_V1,
     GEMINI_NB_V2,
     GEMINI_NB_V2_LITE,
@@ -41,14 +43,19 @@ class TestModelCatalog:
     """验证 model_catalog 常量完整性"""
 
     def test_gpt_image_models_complete(self):
-        """GPT-Image 系列应包含所有 6 个型号"""
-        assert GPT_IMAGE_1 in GPT_IMAGE_MODELS
-        assert GPT_IMAGE_1_MINI in GPT_IMAGE_MODELS
-        assert GPT_IMAGE_1_5 in GPT_IMAGE_MODELS
+        """GPT-Image 目录应为 2/2.5/2.6 五个在册型号（旧 1 系已移除）"""
         assert GPT_IMAGE_2 in GPT_IMAGE_MODELS
         assert GPT_IMAGE_25_FLARE in GPT_IMAGE_MODELS
         assert GPT_IMAGE_25_SUNBURST in GPT_IMAGE_MODELS
-        assert len(GPT_IMAGE_MODELS) == 6
+        assert GPT_IMAGE_26_FLARE in GPT_IMAGE_MODELS
+        assert GPT_IMAGE_26_SUNBURST in GPT_IMAGE_MODELS
+        assert len(GPT_IMAGE_MODELS) == 5
+
+    def test_gpt_image_retired_models_removed(self):
+        """已关停/即将移除的 gpt-image-1 系不得再出现在目录"""
+        assert "gpt-image-1" not in GPT_IMAGE_MODELS
+        assert "gpt-image-1-mini" not in GPT_IMAGE_MODELS
+        assert "gpt-image-1.5" not in GPT_IMAGE_MODELS
 
     def test_gpt_image_default_is_v2(self):
         """默认模型应为 gpt-image-2"""
@@ -60,24 +67,23 @@ class TestModelCatalog:
             assert model_id in GPT_IMAGE_NAMES, f"{model_id} 缺少可读名称"
             assert len(GPT_IMAGE_NAMES[model_id]) > 0
 
-    def test_gpt_image_legacy_marked(self):
-        """旧版模型应标记为 Legacy"""
-        from config.model_catalog import GPT_IMAGE_LEGACY
-
-        assert GPT_IMAGE_1 in GPT_IMAGE_LEGACY
-        assert GPT_IMAGE_2 not in GPT_IMAGE_LEGACY
+    def test_gpt_image_26_present(self):
+        """2026-11-04 发布的 2.6 系列应在目录中"""
+        assert GPT_IMAGE_26_FLARE in GPT_IMAGE_MODELS
+        assert GPT_IMAGE_26_SUNBURST in GPT_IMAGE_MODELS
 
     def test_gemini_models_complete(self):
-        """Gemini Nano Banana 系列应包含 4 个型号"""
+        """Gemini Nano Banana 系列应包含 5 个型号（含官方推荐的 2.1）"""
+        assert GEMINI_NB_21 in GEMINI_IMAGE_MODELS
         assert GEMINI_NB_V1 in GEMINI_IMAGE_MODELS
         assert GEMINI_NB_V2 in GEMINI_IMAGE_MODELS
         assert GEMINI_NB_V2_LITE in GEMINI_IMAGE_MODELS
         assert GEMINI_NB_PRO in GEMINI_IMAGE_MODELS
-        assert len(GEMINI_IMAGE_MODELS) == 4
+        assert len(GEMINI_IMAGE_MODELS) == 5
 
-    def test_gemini_default_is_v2(self):
-        """默认 Gemini 模型应为 Nano Banana 2"""
-        assert GEMINI_IMAGE_DEFAULT == GEMINI_NB_V2
+    def test_gemini_default_is_21(self):
+        """默认 Gemini 模型应为官方推荐的 Nano Banana 2.1"""
+        assert GEMINI_IMAGE_DEFAULT == GEMINI_NB_21
 
     def test_gemini_deprecated_marked(self):
         """v1 应标记为弃用"""
@@ -87,17 +93,18 @@ class TestModelCatalog:
         assert GEMINI_NB_V2 not in GEMINI_IMAGE_DEPRECATED
 
     def test_ark_models_complete(self):
-        """豆包系列应包含 3 个型号"""
-        from config.model_catalog import ARK_SEEDREAM_30_T2I, ARK_SEEDREAM_40_T2I, ARK_SEEDIT_30_I2I
+        """豆包系列应包含 4 个型号，4.0 用正式快照 ID"""
+        from config.model_catalog import ARK_SEEDREAM_30_T2I, ARK_SEEDIT_30_I2I
 
+        assert ARK_SEEDREAM_45_T2I in ARK_IMAGE_MODELS
+        assert ARK_SEEDREAM_40_T2I == "doubao-seedream-4-0-250828"
         assert ARK_SEEDREAM_30_T2I in ARK_IMAGE_MODELS
-        assert ARK_SEEDREAM_40_T2I in ARK_IMAGE_MODELS
         assert ARK_SEEDIT_30_I2I in ARK_IMAGE_MODELS
-        assert len(ARK_IMAGE_MODELS) == 3
+        assert len(ARK_IMAGE_MODELS) == 4
 
-    def test_ark_default_is_seedream_40(self):
-        """默认豆包模型应为 Seedream 4.0"""
-        assert ARK_IMAGE_DEFAULT == "doubao-seedream-4-0-t2i"
+    def test_ark_default_is_seedream_45(self):
+        """默认豆包模型应为 Seedream 4.5"""
+        assert ARK_IMAGE_DEFAULT == ARK_SEEDREAM_45_T2I
 
     def test_ark_names_readable(self):
         """所有豆包型号都应有可读名称"""
@@ -143,12 +150,31 @@ class TestVolcengineArkProvider:
         # 图片下载走 safe_get_image 安全通道（SSRF 校验），直接 mock 其返回
         mock_safe_get.return_value = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
-        cfg = {"volcengine_key": "test-key", "ark_model": "doubao-seedream-4-0-t2i"}
+        cfg = {"volcengine_key": "test-key", "ark_model": ARK_SEEDREAM_40_T2I}
         data, name = try_volcengine_ark("a cat", 64, 64, 42, cfg, print)
 
         assert data == b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
         assert "豆包" in name
         assert "Seedream 4.0" in name
+
+    @patch("services.providers.volcengine_ark._get_session")
+    @patch("services.providers.volcengine_ark._safe_get_image")
+    def test_invalid_model_normalized(self, mock_safe_get, mock_session):
+        """存量无效模型值（旧的 -t2i 后缀 ID）应归一化到目录默认"""
+        from services.providers.volcengine_ark import try_volcengine_ark
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"data": [{"url": "https://example.com/img.png"}]}
+        mock_session.return_value.post.return_value = mock_resp
+        mock_safe_get.return_value = b"\x89PNG" + b"\x00" * 50
+
+        cfg = {"volcengine_key": "test-key", "ark_model": "doubao-seedream-4-0-t2i"}
+        _, name = try_volcengine_ark("a cat", 64, 64, 42, cfg, print)
+        assert "Seedream 4.5" in name  # 归一化到 4.5 默认
+
+        sent_model = mock_session.return_value.post.call_args[1]["json"]["model"]
+        assert sent_model == ARK_IMAGE_DEFAULT
 
     @patch("services.providers.volcengine_ark._get_session")
     def test_text2image_b64_response(self, mock_session):
@@ -197,21 +223,20 @@ class TestVolcengineArkProvider:
 class TestOpenAIGPTImage25:
     """测试 OpenAI GPT-Image 2.5 型号支持"""
 
-    def test_gpt_image_25_in_size_routing(self):
-        """GPT-Image 2.5 型号应走 gpt-image-2+ 尺寸路由"""
+    def test_gpt_image_25_26_in_size_routing(self):
+        """GPT-Image 2.5 / 2.6 型号应走 gpt-image-2+ 尺寸路由"""
         from services.providers.openai_image import _size_for, _gpt2_size
 
-        for model in [GPT_IMAGE_25_FLARE, GPT_IMAGE_25_SUNBURST]:
+        for model in [GPT_IMAGE_25_FLARE, GPT_IMAGE_25_SUNBURST, GPT_IMAGE_26_FLARE, GPT_IMAGE_26_SUNBURST]:
             size = _size_for(model, 512, 512)
             assert size == _gpt2_size(512, 512)
 
-    def test_gpt_image_1_uses_preset(self):
-        """GPT-Image 1 家族应使用预设尺寸"""
-        from services.providers.openai_image import _size_for
+    def test_all_catalog_models_use_gpt2_routing(self):
+        """目录内全部在册型号均支持任意尺寸（旧 1 系预设路由已随目录移除）"""
+        from services.providers.openai_image import _size_for, _gpt2_size
 
-        for model in ["gpt-image-1", "gpt-image-1-mini", "gpt-image-1.5"]:
-            size = _size_for(model, 512, 512)
-            assert size == "1024x1024"
+        for model in GPT_IMAGE_MODELS:
+            assert _size_for(model, 512, 512) == _gpt2_size(512, 512)
 
 
 # ── Gemini Nano Banana 版本选择测试 ────────────────────────────────────────
@@ -237,11 +262,11 @@ class TestGeminiNanoBanana:
 
         call_args = mock_session.return_value.post.call_args
         url = call_args[0][0]
-        assert "gemini-3.1-flash-image" in url
+        assert "gemini-nano-banana-2.1" in url
 
     @patch("services.providers.gemini._get_session")
     def test_v1_model_selection(self, mock_session):
-        """应支持选择 v1 模型"""
+        """应支持选择 v1 legacy 模型（官方存活至 2027-03）"""
         from services.providers.gemini import try_gemini
 
         mock_resp = MagicMock()
