@@ -1019,35 +1019,6 @@ STRINGS = {
         "zh-CN": "📄 打开调试日志",
         "en": "📄 Open Debug Log",
     },
-    # ── 模型显示名称 ────────────────────────────────────────
-    "model_gpt_image_1": {
-        "zh-CN": "GPT-Image 1 (旧版)",
-        "en": "GPT-Image 1 (Legacy)",
-    },
-    "model_gpt_image_25_flare": {
-        "zh-CN": "GPT-Image 2.5 Flare (快速)",
-        "en": "GPT-Image 2.5 Flare (Fast)",
-    },
-    "model_gpt_image_25_sunburst": {
-        "zh-CN": "GPT-Image 2.5 Sunburst (最强)",
-        "en": "GPT-Image 2.5 Sunburst (Best)",
-    },
-    "model_gemini_nb_v1": {
-        "zh-CN": "Nano Banana v1 (即将下线)",
-        "en": "Nano Banana v1 (Deprecated)",
-    },
-    "model_ark_seedream_30": {
-        "zh-CN": "豆包 Seedream 3.0 (文生图)",
-        "en": "Doubao Seedream 3.0 (Text-to-Image)",
-    },
-    "model_ark_seedream_40": {
-        "zh-CN": "豆包 Seedream 4.0 (文生图, 最新)",
-        "en": "Doubao Seedream 4.0 (Text-to-Image, Latest)",
-    },
-    "model_ark_seedit_30": {
-        "zh-CN": "豆包 SeedEdit 3.0 (图生图)",
-        "en": "Doubao SeedEdit 3.0 (Image-to-Image)",
-    },
     "variant_kept": {
         "zh-CN": "✅ 已保留变体到历史记录",
         "en": "✅ Variant saved to history",
@@ -1826,12 +1797,12 @@ STRINGS = {
         "en": "OpenAI GPT-Image",
     },
     "wizard_paid_openai_section_sub": {
-        "zh-CN": "支持文生图+图生图  |  6 种模型可选  |  按量计费",
-        "en": "Text-to-image + Image-to-image  |  6 models  |  Pay-as-you-go",
+        "zh-CN": "支持文生图+图生图  |  5 种模型可选  |  按量计费",
+        "en": "Text-to-image + Image-to-image  |  5 models  |  Pay-as-you-go",
     },
     "wizard_paid_openai_info_1": {
-        "zh-CN": "• 模型族：GPT-Image 1 (旧版) / 1.5 / 2 / 2.5 Flare (快速) / 2.5 Sunburst (最强)",
-        "en": "• Model family: GPT-Image 1 (legacy) / 1.5 / 2 / 2.5 Flare (fast) / 2.5 Sunburst (best)",
+        "zh-CN": "• 模型族：GPT-Image 2 / 2.5 Flare (快速) / 2.5 Sunburst (最强) / 2.6 Flare (极速) / 2.6 Sunburst (最强·新)",
+        "en": "• Model family: GPT-Image 2 / 2.5 Flare (fast) / 2.5 Sunburst (best) / 2.6 Flare (fastest) / 2.6 Sunburst (best, new)",
     },
     "wizard_paid_openai_info_2": {
         "zh-CN": "• GPT-Image 2+ 支持任意分辨率（16 的倍数，长边 ≤3840）",
