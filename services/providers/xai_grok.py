@@ -1,29 +1,28 @@
 """
-services/providers/xai_grok.py  v3
+services/providers/xai_grok.py  v4
 ────────────────────────────────────────────────────────────────
 xAI Grok Imagine 图像模型
   端点: POST https://api.x.ai/v1/images/generations
   认证: Bearer Token
-  模型: grok-imagine-image-quality（OpenAI 兼容格式）
-  响应: {data:[{url: "..."}]}
+  模型: grok-imagine-image-2.0（官方推荐）/ grok-imagine-image
+  响应: {data:[{url: "..."} | {b64_json: "..."}]}
+
+v4 更新（2026-11，对照 docs.x.ai 官方模型页与生图指南核实）：
+  · grok-imagine-image-quality 已不在官方模型表（仅存
+    grok-imagine-image-2.0 与 grok-imagine-image），模型改由
+    config.model_catalog 目录提供（cfg["xai_model"] 可切换）
+  · 现已支持宽高比与分辨率控制：aspect_ratio 取最接近请求比例的
+    枚举值，resolution 按 长边≤1024→1k、否则 2k 映射
+  · quality 参数仅 2.0 支持，auto 档交由 API 自行决策，不显式传
 
 v3 修复（2026-07）：
-  · grok-2-image-1212 已于 2026-02-28 弃用，2026-05-15 退休波次进一步
-    整合到 grok-imagine-image-quality —— 旧模型 id 请求会直接失败
-  · 新模型据官方文档已支持图像编辑（图生图）和 aspect_ratio/分辨率
-    参数，但具体请求字段尚未逐一核实，此处暂不贸然加入未验证的参数
-    （避免猜测导致的 400），仍保持"不传 size"的保守请求体；
-    如需图生图/宽高比控制，请对照 https://docs.x.ai 最新文档补充。
+  · grok-2-image-1212 已于 2026-02-28 弃用，旧模型 id 请求直接失败
+  · 图片返回 url（临时托管）或 b64_json
 
-v2 修复（2026-03）：
-  · 移除 "size" 参数 —— xAI 官方文档明确说明 grok-2-image-1212
-    当前版本不支持调整尺寸、质量或风格（传入 size 会返回 HTTP 400）
-  · 图片固定输出 1024×1024 JPEG，由 API 自动决定
-
-额度说明（2026-03 现状，可能已变化）：
+额度说明（以官方页面为准）：
   · 新用户注册赠送 $25 免费额度（无需消费即可使用）
   · 消费满 $5 后可激活数据共享计划，额外获得 $150/月额度
-  · 按量计费：$0.07/张
+  · 按量计费：imagine-image $0.02/张、imagine-image-2.0 $0.04/张
   · 充值/管理：https://console.x.ai
 """
 
@@ -32,6 +31,7 @@ import threading
 import time
 import requests
 from typing import Callable, Tuple
+from config.model_catalog import XAI_IMAGE_DEFAULT, XAI_IMAGE_MODELS
 from services.generation.errors import (
     ProviderAuthError,
     ProviderConfigError,
@@ -63,9 +63,34 @@ _LAST_DONE = [0.0]
 _MIN_INTV = 2.0
 
 _ENDPOINT = "https://api.x.ai/v1/images/generations"
-_MODEL = "grok-imagine-image-quality"
 _TIMEOUT = 120
 _MAX_RETRIES = 3
+
+# 官方生图指南给出的 aspect_ratio 枚举（2026-11）
+_ASPECT_RATIOS = [
+    (1, 1),
+    (16, 9),
+    (9, 16),
+    (4, 3),
+    (3, 4),
+    (3, 2),
+    (2, 3),
+    (2, 1),
+    (1, 2),
+    (21, 9),
+    (9, 21),
+    (19, 10),
+    (10, 19),
+    (20, 9),
+    (9, 20),
+]
+
+
+def _aspect_ratio(w: int, h: int) -> str:
+    """取与请求宽高比最接近的官方枚举值。"""
+    r = w / max(h, 1)
+    rw, rh = min(_ASPECT_RATIOS, key=lambda s: abs(s[0] / s[1] - r))
+    return f"{rw}:{rh}"
 
 
 def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
@@ -77,20 +102,28 @@ def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
             "新用户赠送 $25 额度（约 350 张图），消费 $5 后可额外获得 $150/月"
         )
 
+    # 模型目录接线：存量配置值不在目录时归一化到默认（旧 -quality ID 已在册移除）
+    model = cfg.get("xai_model", "").strip()
+    if model not in XAI_IMAGE_MODELS:
+        model = XAI_IMAGE_DEFAULT
+
     headers = {
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
 
-    # ── 注意：grok-2-image-1212 当前不支持 size/quality/style 参数 ──
-    # 传入 size 会返回 HTTP 400 "Argument not supported: size"
-    # 图片固定生成 1024×1024 JPEG，API 自动决定尺寸
+    # 官方参数（docs.x.ai 生图指南）：aspect_ratio（15 档枚举）、
+    # resolution（1k/2k）、quality（仅 2.0，auto 即默认，不显式传）
     payload = {
-        "model": _MODEL,
+        "model": model,
         "prompt": prompt,
         "n": 1,
+        "aspect_ratio": _aspect_ratio(w, h),
+        "resolution": "1k" if max(w, h) <= 1024 else "2k",
         "response_format": "url",
     }
+    if seed and seed > 0:
+        payload["seed"] = seed % 2147483647
 
     # ── 持锁范围仅限限速等待：预占时间槽后立即放锁 ──────────────────
     # 修复：原版锁覆盖整个重试循环，429 退避与 HTTP 超时都持锁，
@@ -104,7 +137,9 @@ def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
     last_err = None
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
-            log(f"[xAI Grok] 尝试 {attempt}/{_MAX_RETRIES}（Aurora 模型，固定 1024×1024）…")
+            log(
+                f"[xAI Grok] 尝试 {attempt}/{_MAX_RETRIES}  模型={model}  比例={payload['aspect_ratio']}  {payload['resolution']}…"
+            )
             resp = _get_session().post(
                 _ENDPOINT,
                 headers=headers,
@@ -128,8 +163,8 @@ def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
 
             data = resp.json()
             image_bytes = _extract_image(data, log)
-            log("[xAI Grok] 生成成功 ✓ (Aurora / 1024×1024 JPEG)")
-            return (image_bytes, f"xAI/{_MODEL}")
+            log("[xAI Grok] 生成成功 ✓")
+            return (image_bytes, f"xAI/{model}")
 
         except ProviderError:
             raise  # 类型化错误直通：重试/回退由 orchestrator 按 code 决策
@@ -155,6 +190,7 @@ def _extract_image(data: dict, log: Callable) -> bytes:
 
     url = items[0].get("url", "")
     if url:
+        _validate_image_url(url)
         log(f"[xAI Grok] 下载图片：{url[:80]}…")
         return _safe_get_image(url, timeout=60)
 
