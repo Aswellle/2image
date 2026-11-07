@@ -15,8 +15,10 @@ import os
 from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     BFL_TXT2IMG_DEFAULT,
+    DASHSCOPE_DEFAULT,
     GEMINI_IMAGE_DEFAULT,
     GPT_IMAGE_DEFAULT,
+    XAI_IMAGE_DEFAULT,
 )
 
 # ─── 应用路径 ──────────────────────────────────────────────────
@@ -96,7 +98,7 @@ DEFAULT_CONFIG: dict = {
     "together_key": "",  # Together AI（FLUX.1 Free 免费端点）
     "gemini_key": "",  # Google Gemini API（免费 500次/天）
     "openrouter_key": "",  # OpenRouter（统一 Image API，免费可用性请自行核实）
-    "openrouter_model": "bytedance-seed/seedream-4.5",
+    "openrouter_model": "google/gemini-3.1-flash-image",  # OpenRouter 实测在册的图像模型（2026-11 模型表）
     # ── 付费接口 ──────────────────────────────────────────────
     "openai_key": "",
     "stability_key": "",
@@ -108,7 +110,7 @@ DEFAULT_CONFIG: dict = {
     "fal_key": "",  # fal.ai FLUX Ultra（4MP高清，最高写实质量）
     "recraft_key": "",  # Recraft v3（设计/插画/品牌VI）
     "recraft_style": "realistic_image",  # realistic_image | digital_illustration | vector_illustration
-    "recraft_model": "recraftv3",  # recraftv3（默认，稳） | recraftv4 | recraftv4_pro | recraftv4_1（更高画质）
+    "recraft_model": "recraftv4_1",  # 官方 API 默认即 recraftv4_1；recraftv3 为上一代
     # ── 新增接口（v7：GPT-Image / Nano Banana / 国内外新增供应商）──
     # ── 新增接口（v8：火山豆包）──────────────────────────────────
     "volcengine_key": "",  # 火山引擎 Ark API Key（豆包 Seedream 文生图 / SeedEdit 图生图）
@@ -121,7 +123,9 @@ DEFAULT_CONFIG: dict = {
     "gpt_image_model": GPT_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
     "gpt_image_quality": "auto",  # low | medium | high | auto
     "stability_model": "core",
-    "replicate_model": "flux-1.1-pro",
+    "dashscope_model": DASHSCOPE_DEFAULT,  # 可选值见 config.model_catalog（通义万相）
+    "xai_model": XAI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog（Grok Imagine）
+    "replicate_model": "flux-2-pro",
     "gemini_model": GEMINI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
     "bfl_model": BFL_TXT2IMG_DEFAULT,  # 可选值见 config.model_catalog（图生图固定 flux-kontext-pro）
     "deepseek_key": "",  # DeepSeek 官方 API Key（Pro / Flash 预设）
