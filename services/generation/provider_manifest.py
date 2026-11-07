@@ -194,10 +194,10 @@ COMMERCIAL_MANIFESTS: dict[str, ProviderManifest] = {
     ),
     "fal_flux": ProviderManifest(
         id="fal_flux",
-        name="fal.ai FLUX Ultra (高质量)",
+        name="fal.ai FLUX.2 Pro (高质量)",
         category="commercial",
         config_key="fal_key",
-        description="fal.ai FLUX Ultra",
+        description="fal.ai FLUX.2 Pro",
         supports_img2img=True,
         capabilities={"text2image", "img2img"},
     ),

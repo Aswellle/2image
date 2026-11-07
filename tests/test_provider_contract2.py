@@ -53,7 +53,10 @@ class TestFalFlux:
             patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
         ):
             data, used = mod.try_fal_flux("cat", 1024, 1024, 1, self.CFG, lambda s: None)
-        assert data == PNG_BYTES and "FLUX-Ultra" in used
+        assert data == PNG_BYTES and "FLUX.2-Pro" in used
+        assert "fal-ai/flux-2-pro" in sess.post.call_args.args[0]
+        body = sess.post.call_args.kwargs["json"]
+        assert body["image_size"] == {"width": 1024, "height": 1024}
 
     def test_i2i_uses_img2img_queue(self):
         import services.providers.fal_flux as mod
@@ -71,7 +74,9 @@ class TestFalFlux:
             patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
         ):
             mod.try_fal_flux("cat", 1024, 1024, 1, cfg, lambda s: None)
-        assert "image-to-image" in sess.post.call_args.args[0]
+        assert "fal-ai/flux-2-pro/edit" in sess.post.call_args.args[0]
+        body = sess.post.call_args.kwargs["json"]
+        assert body["image_urls"] and body["image_urls"][0].startswith("data:image/png;base64,")
 
     def test_401(self):
         import services.providers.fal_flux as mod
