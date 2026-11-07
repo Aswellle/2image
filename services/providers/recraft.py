@@ -9,11 +9,11 @@ Key: Header  Authorization: Bearer <key>
   digital_illustration — 数字插画（适合小红书/封面）
   vector_illustration  — 矢量插画（适合品牌/图标）
 
-UPGRADE 2026-07：Recraft 已发布 v4/v4.1（官方 API 默认 model 现为
-recraftv4_1），但 v3 仍未弃用，且官方文档说明 inpainting/outpainting
-/replace-background 等操作仍要求 v3。由于未能核实 v4.1 下 style 参数
-枚举是否与 v3 完全兼容，这里改为可通过 cfg["recraft_model"] 切换
-（默认仍是经过验证的 recraftv3），想用更高画质可自行设为 recraftv4_1。
+UPGRADE 2026-11：官方 API 默认 model 即 recraftv4_1（V4.1 于
+2026-02-17 GA、05-14 迭代；文档示例与「不传 model 时的默认值」均为
+recraftv4_1），默认随之切换；v3 未弃用，cfg["recraft_model"] 可切回
+recraftv3。注意 inpainting/outpainting/replace-background 等操作官方
+仍要求 v3——本 provider 只做文生图，不受影响。
 """
 
 import base64
@@ -44,6 +44,8 @@ PROVIDER_INFO = {
 }
 
 
+_DEFAULT_MODEL = "recraftv4_1"  # 官方 API 默认
+
 _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV = 2.0
@@ -72,7 +74,7 @@ def try_recraft(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
 
     size = _best_size(w, h)
     style = cfg.get("recraft_style", "realistic_image")
-    model = cfg.get("recraft_model", "recraftv3")
+    model = cfg.get("recraft_model", "").strip() or _DEFAULT_MODEL
     log(f"► Recraft {model}  尺寸={size}  风格={style}")
 
     with _LOCK:
