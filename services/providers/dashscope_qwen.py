@@ -14,8 +14,11 @@ services/providers/dashscope_qwen.py — 阿里云 DashScope 通义万相 / Qwen
 
 import threading
 import time
-import requests
 from typing import Callable, Tuple
+
+import requests
+
+from config.model_catalog import DASHSCOPE_DEFAULT, DASHSCOPE_MODELS
 from services.generation.errors import (
     ProviderAuthError,
     ProviderConfigError,
@@ -25,9 +28,15 @@ from services.generation.errors import (
 )
 from services.providers._net import (
     get_session as _get_session,
-    safe_error_text as _safe_error_text,
-    safe_get_image as _safe_get_image,
+)
+from services.providers._net import (
     raise_if_cancelled as _raise_if_cancelled,
+)
+from services.providers._net import (
+    safe_error_text as _safe_error_text,
+)
+from services.providers._net import (
+    safe_get_image as _safe_get_image,
 )
 
 PROVIDER_INFO = {
@@ -42,12 +51,23 @@ _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV = 2.0
 
+# 旧异步协议端点：wan2.5 及以下可用；wan2.6 仅新协议
+# （maas 域名 + workspace 子域），接入需另行改造，见
+# help.aliyun.com/zh/model-studio/text-to-image-v2-api-reference。
+# wanx2.1 系列已列入阿里云「停止新购及服务下线」公告，保留为 legacy。
 _SUBMIT_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis"
 _TASK_URL = "https://dashscope.aliyuncs.com/api/v1/tasks/{task_id}"
-_MODEL = "wanx2.1-t2i-turbo"
+
+_MODEL = DASHSCOPE_DEFAULT
 _TIMEOUT = 30
 _MAX_POLL = 30
 _POLL_INTERVAL = 8
+
+
+def _norm_model(model: str) -> str:
+    """目录外存量值归一化到默认（wanx2.1 旧值仍保留可用）。"""
+    model = (model or "").strip()
+    return model if model in DASHSCOPE_MODELS else DASHSCOPE_DEFAULT
 
 
 def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
@@ -61,7 +81,7 @@ def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
         "X-DashScope-Async": "enable",
     }
     payload = {
-        "model": cfg.get("dashscope_model", _MODEL),
+        "model": _norm_model(cfg.get("dashscope_model", "")),
         "input": {"prompt": prompt},
         "parameters": {
             "size": f"{w}*{h}",

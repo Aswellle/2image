@@ -46,8 +46,12 @@ _POLL_LOCK = threading.Lock()
 _LAST_DONE_TS = [0.0]  # 上次请求【完成】时间戳（关键：完成后才写入）
 
 _MIN_INTERVAL = 16.0  # 官方匿名限速 15s，留 1s 余量
-_POLL_MODELS_STD = ["flux", "flux-realism", "turbo"]
-_POLL_MODELS_HQ = ["flux", "flux-realism"]
+# 2026-11 实测校准（GET /image.pollinations.ai/models 与逐模型生成探测）：
+# 匿名层官方在册仅 "sana"，flux/turbo/gptimage 匿名可生成，
+# flux-realism 为已退役旧名（请求被静默回退，不再单列），
+# nanobanana/seedream/kontext 匿名层 403（需付费层）。
+_POLL_MODELS_STD = ["flux", "turbo", "sana"]
+_POLL_MODELS_HQ = ["flux", "gptimage", "sana"]
 _BASE_URL = "https://image.pollinations.ai/prompt/{prompt}"
 _TIMEOUT = 180
 _MAX_RETRY = 3
