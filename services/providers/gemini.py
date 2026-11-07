@@ -19,7 +19,7 @@ from typing import Callable, Tuple
 
 import requests
 
-from config.model_catalog import GEMINI_IMAGE_DEFAULT
+from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_MODELS
 from services.generation.errors import (
     ProviderConfigError,
     ProviderError,
@@ -69,9 +69,11 @@ def try_gemini(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable)
         "x-goog-api-key": key,
     }
 
-    # 可通过 cfg["gemini_model"] 切换图像模型（默认 gemini-2.5-flash-image，
-    # 也可选 gemini-3.1-flash-image 等最新 GA 模型）
-    model = cfg.get("gemini_model", _DEFAULT_MODEL)
+    # 可通过 cfg["gemini_model"] 切换图像模型（默认与可选值见
+    # config.model_catalog）；目录外存量值归一化到默认
+    model = cfg.get("gemini_model", "").strip()
+    if model not in GEMINI_IMAGE_MODELS:
+        model = GEMINI_IMAGE_DEFAULT
     endpoint = _ENDPOINT_TPL.format(model=model)
 
     ref_image = cfg.get("_ref_image")  # bytes or None（图生图参考图）

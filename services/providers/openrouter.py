@@ -43,10 +43,13 @@ _LAST_DONE = [0.0]
 _MIN_INTV = 3.0
 
 _ENDPOINT = "https://openrouter.ai/api/v1/images"
-# 官方文档 image-generation 指南里给出的示例模型 slug（已确认可用，
-# 非免费）；具体可用/免费模型请到 openrouter.ai/models?modality=image
-# 核实后在「付费接口配置」里的「图像模型」栏自行替换。
-_DEFAULT_MODEL = "bytedance-seed/seedream-4.5"
+# 默认模型取自 openrouter.ai 公开模型表实测（2026-11，GET /api/v1/models
+# 过滤 output_modalities 含 image 的 13 个在册模型）——图像阵容即
+# Gemini 系 + GPT-Image 系；旧默认 bytedance-seed/seedream-4.5 不在
+# 在册列表（请求会报模型不存在），且当前无 $0 价格的免费图像模型，
+# 保留 free 分类是延续现有归类，实际以账户余量为准，失败时会被
+# 调度器跳过。
+_DEFAULT_MODEL = "google/gemini-3.1-flash-image"
 _TIMEOUT = 120
 _MAX_RETRIES = 3
 
