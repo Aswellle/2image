@@ -10,13 +10,12 @@ v3 新增：
 """
 
 import tkinter as tk
-from tkinter import ttk
 import webbrowser
+from tkinter import ttk
 from typing import Callable
+
 from config.fonts import F
-from config.theme import DARK_THEME as C
-from ui.icons import glyph, icon_font
-from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
+from config.i18n import _
 from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_MODELS,
@@ -26,7 +25,8 @@ from config.model_catalog import (
     GPT_IMAGE_DEFAULT,
     GPT_IMAGE_NAMES,
 )
-from config.i18n import _
+from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
+from ui.icons import glyph, icon_font
 
 
 class PaidWizard(tk.Toplevel):

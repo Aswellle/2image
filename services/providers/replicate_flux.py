@@ -13,7 +13,9 @@ aspect_ratio 未设 custom 被忽略（出图恒 1:1），num_outputs 字段
 根本不存在于 1.1-pro / 2-pro 的 schema。
 """
 
-import base64, time
+import base64
+import time
+
 from services.generation.errors import (
     ProviderAuthError,
     ProviderConfigError,
@@ -24,9 +26,15 @@ from services.generation.errors import (
 )
 from services.providers._net import (
     get_session as _get_session,
-    safe_error_text as _safe_error_text,
-    safe_get_image as _safe_get_image,
+)
+from services.providers._net import (
     raise_if_cancelled as _raise_if_cancelled,
+)
+from services.providers._net import (
+    safe_error_text as _safe_error_text,
+)
+from services.providers._net import (
+    safe_get_image as _safe_get_image,
 )
 
 PROVIDER_INFO = {

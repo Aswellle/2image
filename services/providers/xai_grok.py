@@ -29,8 +29,10 @@ v3 修复（2026-07）：
 import base64
 import threading
 import time
-import requests
 from typing import Callable, Tuple
+
+import requests
+
 from config.model_catalog import XAI_IMAGE_DEFAULT, XAI_IMAGE_MODELS
 from services.generation.errors import (
     ProviderAuthError,
@@ -42,12 +44,16 @@ from services.generation.errors import (
 )
 from services.providers._net import (
     get_session as _get_session,
-    validate_image_url as _validate_image_url,
-    safe_error_text as _safe_error_text,
-    safe_get_image as _safe_get_image,
+)
+from services.providers._net import (
     raise_for_response,
 )
-
+from services.providers._net import (
+    safe_get_image as _safe_get_image,
+)
+from services.providers._net import (
+    validate_image_url as _validate_image_url,
+)
 
 PROVIDER_INFO = {
     "id": "xai_grok",
@@ -138,7 +144,8 @@ def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
             log(
-                f"[xAI Grok] 尝试 {attempt}/{_MAX_RETRIES}  模型={model}  比例={payload['aspect_ratio']}  {payload['resolution']}…"
+                f"[xAI Grok] 尝试 {attempt}/{_MAX_RETRIES}  模型={model}"
+                f"  比例={payload['aspect_ratio']}  {payload['resolution']}…"
             )
             resp = _get_session().post(
                 _ENDPOINT,

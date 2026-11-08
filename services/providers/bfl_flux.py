@@ -17,8 +17,10 @@ FLUX.2 时代（2026-11 对照 docs.bfl.ml 核实）：
 import base64
 import threading
 import time
-import requests
 from typing import Callable, Tuple
+
+import requests
+
 from config.model_catalog import BFL_FLUX2_PRO, BFL_FLUX_PRO_11, BFL_TXT2IMG_DEFAULT, BFL_TXT2IMG_MODELS
 from services.generation.errors import (
     ProviderAuthError,
@@ -31,9 +33,15 @@ from services.generation.errors import (
 )
 from services.providers._net import (
     get_session as _get_session,
-    safe_error_text as _safe_error_text,
-    safe_get_image as _safe_get_image,
+)
+from services.providers._net import (
     raise_if_cancelled as _raise_if_cancelled,
+)
+from services.providers._net import (
+    safe_error_text as _safe_error_text,
+)
+from services.providers._net import (
+    safe_get_image as _safe_get_image,
 )
 
 PROVIDER_INFO = {
