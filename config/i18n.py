@@ -1636,8 +1636,8 @@ STRINGS = {
         "en": "SiliconFlow Auto (Recommended)",
     },
     "wizard_llm_preset_auto_desc": {
-        "zh-CN": "按 DeepSeek V3 → Qwen → GLM 自动降级；复用 sf_key，适合免费/稳妥使用",
-        "en": "Auto-fallback DeepSeek V3 → Qwen → GLM; reuses sf_key, free & reliable",
+        "zh-CN": "按 DeepSeek-V3.2 → V3.1-Terminus → Qwen3 自动降级；复用 sf_key 免费额度",
+        "en": "Auto-fallback DeepSeek-V3.2 → V3.1-Terminus → Qwen3; reuses sf_key free credits",
     },
     "wizard_llm_click_select": {
         "zh-CN": "点击选择",
@@ -1648,28 +1648,28 @@ STRINGS = {
         "en": "✓ Selected",
     },
     "wizard_llm_deepseek_key_label": {
-        "zh-CN": "DeepSeek 官方 API Key（Pro / Flash 预设专用）:",
-        "en": "DeepSeek Official API Key (Pro / Flash preset only):",
+        "zh-CN": "DeepSeek 官方 API Key（Flash / Pro 预设专用）:",
+        "en": "DeepSeek Official API Key (Flash / Pro preset only):",
     },
     "wizard_llm_deepseek_platform_btn": {
         "zh-CN": "🌐 DeepSeek 官方平台",
         "en": "🌐 DeepSeek Official Platform",
     },
     "wizard_llm_deepseek_hint": {
-        "zh-CN": "提示：Pro / Flash 使用 DeepSeek 官方 API（api.deepseek.com），不能复用硅基流动 sf_key；未填 Key 时请选回「硅基流动自动」。",
-        "en": "Note: Pro / Flash use DeepSeek official API (api.deepseek.com), cannot reuse SiliconFlow sf_key; select 'SiliconFlow Auto' if no key filled.",
+        "zh-CN": "提示：DeepSeek 预设使用官方 API（api.deepseek.com）按量计费，不能复用硅基流动 sf_key；未填 Key 时请选「硅基流动自动」。",
+        "en": "Note: DeepSeek presets use the official API (api.deepseek.com) pay-as-you-go, cannot reuse SiliconFlow sf_key; select 'SiliconFlow Auto' if no key filled.",
     },
     "wizard_llm_sf_section_title": {
         "zh-CN": "硅基流动 SiliconFlow",
         "en": "SiliconFlow",
     },
     "wizard_llm_sf_section_sub": {
-        "zh-CN": "⭐ 强烈推荐 · DeepSeek V3 · 免费额度 · 国内访问快",
-        "en": "⭐ Recommended · DeepSeek V3 · Free credits · Fast in China",
+        "zh-CN": "⭐ 强烈推荐 · DeepSeek-V3.2 · 免费额度 · 国内访问快",
+        "en": "⭐ Recommended · DeepSeek-V3.2 · Free credits · Fast in China",
     },
     "wizard_llm_sf_info_1": {
-        "zh-CN": "• 注册即送免费 Token，DeepSeek V3-0324 / Qwen2.5-72B 等顶级模型均可调用",
-        "en": "• Free credits on signup; DeepSeek V3-0324 / Qwen2.5-72B and more available",
+        "zh-CN": "• 注册即送免费额度，DeepSeek-V3.2 / Qwen3 等现役模型均可调用",
+        "en": "• Free credits on signup; DeepSeek-V3.2 / Qwen3 and more available",
     },
     "wizard_llm_sf_info_2": {
         "zh-CN": "• 同一个 sf_key 同时用于生图和提示词生成，已在「免费配置」中填写则此处自动预填",
@@ -1699,42 +1699,6 @@ STRINGS = {
         "zh-CN": "📋 步骤：注册/登录 → 控制台 → API 密钥 → 新建密钥 → 复制（格式：sk-xxxxx）",
         "en": "📋 Steps: Sign up → Console → API Keys → Create → Copy (format: sk-xxxxx)",
     },
-    "wizard_llm_hf_section_title": {
-        "zh-CN": "HuggingFace",
-        "en": "HuggingFace",
-    },
-    "wizard_llm_hf_section_sub": {
-        "zh-CN": "🆓 完全免费 · 速度较慢 · 硅基流动不可用时自动切换",
-        "en": "🆓 Completely free · Slower · Auto-fallback when SiliconFlow unavailable",
-    },
-    "wizard_llm_hf_info_1": {
-        "zh-CN": "• 免费推理 API，Mixtral-8x7B / Zephyr-7b 两个模型按顺序自动尝试",
-        "en": "• Free inference API; Mixtral-8x7B / Zephyr-7b tried in order",
-    },
-    "wizard_llm_hf_info_2": {
-        "zh-CN": "• 生成质量低于硅基流动，且有并发限制（免费队列可能需等待 20~60 秒）",
-        "en": "• Lower quality than SiliconFlow; concurrency limits (free queue may wait 20-60s)",
-    },
-    "wizard_llm_hf_info_3": {
-        "zh-CN": "• 建议：已配置 sf_key 的情况下，hf_token 作为备用即可；也可只填 sf_key",
-        "en": "• Tip: If sf_key is set, hf_token is just a backup; sf_key alone is fine",
-    },
-    "wizard_llm_hf_key_label": {
-        "zh-CN": "HuggingFace Token（hf_token）:",
-        "en": "HuggingFace Token (hf_token):",
-    },
-    "wizard_llm_hf_register_btn": {
-        "zh-CN": "🌐 注册 HuggingFace（免费）",
-        "en": "🌐 Sign up HuggingFace (Free)",
-    },
-    "wizard_llm_hf_get_token_btn": {
-        "zh-CN": "🔑 获取 Access Token",
-        "en": "🔑 Get Access Token",
-    },
-    "wizard_llm_hf_steps": {
-        "zh-CN": "📋 步骤：注册/登录 → Settings → Access Tokens → New token → 复制（格式：hf_xxxxx）",
-        "en": "📋 Steps: Sign up → Settings → Access Tokens → New token → Copy (format: hf_xxxxx)",
-    },
     "wizard_llm_privacy_1": {
         "zh-CN": "• 密钥仅保存在本机 ~/2image/config.json，不上传至任何服务器",
         "en": "• Keys stored only locally in ~/2image/config.json, never uploaded",
@@ -1759,10 +1723,6 @@ STRINGS = {
         "zh-CN": "✅  检测到 DeepSeek 官方 Key；请选择 DeepSeek Pro 或 Flash 预设后使用",
         "en": "✅  DeepSeek key detected; select DeepSeek Pro or Flash preset to use",
     },
-    "wizard_llm_status_hf_only": {
-        "zh-CN": "⚠️  仅配置了 HuggingFace Token（兜底通道），建议同时配置硅基流动或 DeepSeek",
-        "en": "⚠️  Only HuggingFace Token configured (fallback); consider adding SiliconFlow or DeepSeek",
-    },
     "wizard_llm_status_none": {
         "zh-CN": "❌  尚未配置任何推理模型密钥，AI 提示词助手暂时无法使用，请至少配置一项",
         "en": "❌  No inference model key configured; AI Prompt Wizard unavailable. Please configure at least one.",
@@ -1772,8 +1732,8 @@ STRINGS = {
         "en": "⚠️  Pro / Flash preset requires DeepSeek official API Key",
     },
     "wizard_llm_warn_auto_need_key": {
-        "zh-CN": "⚠️  自动预设请至少填写硅基流动或 HuggingFace Key",
-        "en": "⚠️  Auto preset requires at least SiliconFlow or HuggingFace key",
+        "zh-CN": "⚠️  自动预设请填写硅基流动 Key",
+        "en": "⚠️  Auto preset requires a SiliconFlow key",
     },
     # ── 付费接口向导 (wizard_paid.py) ──────────────────────
     "wizard_paid_title": {
@@ -3247,32 +3207,24 @@ STRINGS = {
         "en": "AI_Images_",
     },
     "llm_info_sf_1": {
-        "zh-CN": "硅基流动自动预设的首选候选",
-        "en": "First choice for the SiliconFlow auto preset",
+        "zh-CN": "现役主力：推理与指令遵循最强（2025-12 上线）",
+        "en": "Current flagship: strongest reasoning & instruction following",
     },
     "llm_info_sf_2": {
-        "zh-CN": "硅基流动自动预设的稳定备用",
-        "en": "Stable fallback for the SiliconFlow auto preset",
+        "zh-CN": "上一代生产推荐版，稳定备用",
+        "en": "Previous production release, stable fallback",
     },
     "llm_info_sf_3": {
-        "zh-CN": "千问旗舰，英文创作能力强",
-        "en": "Qwen flagship; strong English writing",
-    },
-    "llm_info_sf_4": {
-        "zh-CN": "速度与质量均衡",
-        "en": "Balanced speed and quality",
-    },
-    "llm_info_sf_5": {
         "zh-CN": "轻量兜底，保证最低可用性",
         "en": "Lightweight fallback guaranteeing baseline availability",
     },
     "llm_info_ds_pro": {
-        "zh-CN": "质量优先 · 更强推理/指令遵循 · 官方 API 按量计费",
-        "en": "Quality-first · stronger reasoning/instruction following · pay-as-you-go official API",
+        "zh-CN": "质量优先 · deepseek-v4-pro · 官方 API 按量计费",
+        "en": "Quality-first · deepseek-v4-pro · pay-as-you-go official API",
     },
     "llm_info_ds_flash": {
-        "zh-CN": "速度优先 · 低延迟/低成本 · 官方 API 按量计费",
-        "en": "Speed-first · low latency/cost · pay-as-you-go official API",
+        "zh-CN": "现役 V4.1-Flash · 高性价比推理 · 官方 API 按量计费",
+        "en": "Current V4.1-Flash · cost-effective reasoning · pay-as-you-go official API",
     },
     "llm_info_hf_1": {
         "zh-CN": "效果较好，但速度受免费队列影响",

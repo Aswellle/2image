@@ -29,13 +29,13 @@ v4 核心优化：Token 预算控制 + 写实人像专项优化
   · 避免重复/冗余/纯装饰性词语
   · temperature 降至 0.60，减少"创意漂移"
 
-模型优先级（v3 已设置，v4 继承）：
-  ─ 第一梯队：DeepSeek V3-0324 / DeepSeek V3
-  ─ 第二梯队：Qwen2.5-72B / Qwen2.5-32B
-  ─ 第三梯队：GLM-4-9B（兜底）
+模型优先级（v4）：
+  ─ 第一梯队：DeepSeek-V3.2 / DeepSeek-V3.1-Terminus
+  ─ 兜底：Qwen3-8B
 """
 
 import re
+
 import requests
 
 # ══════════════════════════════════════════════════════════════
@@ -85,46 +85,38 @@ Before outputting: count your words. If >72, cut the lowest-priority words from 
 
 # ══════════════════════════════════════════════════════════════
 #   硅基流动模型候选列表（按优先级从高到低）
-#   ① DeepSeek V3 系列（最优先，写作指令遵循最强）
-#   ② Qwen2.5 系列（第二梯队）
-#   ③ GLM-4（兜底）
+#   ① DeepSeek-V3.2（现役主力，2025-12 上线 SF）
+#   ② DeepSeek-V3.1-Terminus（上一代生产推荐版，混合推理）
+#   ③ Qwen3-8B（轻量兜底）
 #
 # DeepSeek 官方 API（api.deepseek.com）另有独立的显式预设：
-#   · deepseek-v4-pro   — 质量/推理优先
-#   · deepseek-v4-flash — 速度/成本优先
+#   · deepseek-flash  — 现役主力（DeepSeek-V4.1-Flash），性价比高
+#   · deepseek-v4-pro — 质量优先（官方在册）
+#   （deepseek-chat / deepseek-reasoner 已于 2026-07-24 弃用；
+#    deepseek-v4-flash 已退役——请求会转由 Flash 服务并按 Flash 计费）
 # 它们不是 SiliconFlow 的模型 slug，不能混进 _SF_MODELS；由
 # prompt_llm_preset + deepseek_key 在 generate_prompt() 中单独路由。
 # ══════════════════════════════════════════════════════════════
 _SF_MODELS = [
-    # ─── 第一梯队：DeepSeek V3 系列 ──────────────────────────
-    "deepseek-ai/DeepSeek-V3-0324",  # 首选：最新版 V3，指令遵循最强
-    "deepseek-ai/DeepSeek-V3",  # 备用：原版 V3，稳定
-    # ─── 第二梯队：Qwen2.5 系列 ──────────────────────────────
-    "Qwen/Qwen2.5-72B-Instruct",  # 千问旗舰 72B，英文创作强
-    "Qwen/Qwen2.5-32B-Instruct",  # 千问 32B，速度均衡
-    # ─── 第三梯队：其他开源兜底 ──────────────────────────────
-    "THUDM/glm-4-9b-chat",  # GLM-4 轻量兜底
+    # ─── 第一梯队：DeepSeek V3.2（现役）──────────────────────
+    "deepseek-ai/DeepSeek-V3.2",  # 首选：2025-12 上线，推理/指令遵循强
+    # ─── 第二梯队：DeepSeek-V3.1-Terminus ────────────────────
+    "deepseek-ai/DeepSeek-V3.1-Terminus",  # 上一代生产推荐版，稳定
+    # ─── 兜底：Qwen3 轻量 ────────────────────────────────────
+    "Qwen/Qwen3-8B",  # 轻量兜底，保证最低可用性
 ]
 
 # ── DeepSeek 官方 API 预设（api.deepseek.com）────────────────────
 _DEEPSEEK_PRESET_MODELS = {
     "deepseek_pro": ("deepseek-v4-pro", "DeepSeek Pro"),
-    "deepseek_flash": ("deepseek-v4-flash", "DeepSeek Flash"),
+    "deepseek_flash": ("deepseek-flash", "DeepSeek Flash"),
 }
-
-# ── HuggingFace 备用通道（硅基流动完全不可用时）──────────────
-_HF_MODELS = [
-    "mistralai/Mixtral-8x7B-Instruct-v0.1",
-    "HuggingFaceH4/zephyr-7b-beta",
-]
 
 # ── 模型展示名（用于日志和 UI 提示，更易读）────────────────────
 _SF_MODEL_LABELS = {
-    "deepseek-ai/DeepSeek-V3-0324": "DeepSeek V3-0324 🥇",
-    "deepseek-ai/DeepSeek-V3": "DeepSeek V3",
-    "Qwen/Qwen2.5-72B-Instruct": "Qwen2.5-72B",
-    "Qwen/Qwen2.5-32B-Instruct": "Qwen2.5-32B",
-    "THUDM/glm-4-9b-chat": "GLM-4-9B",
+    "deepseek-ai/DeepSeek-V3.2": "DeepSeek-V3.2 🥇",
+    "deepseek-ai/DeepSeek-V3.1-Terminus": "DeepSeek-V3.1-Terminus",
+    "Qwen/Qwen3-8B": "Qwen3-8B",
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -1132,7 +1124,6 @@ def generate_prompt(
     user_msg = "\n".join(parts)
 
     sf_key = cfg.get("sf_key", "").strip()
-    hf_tok = cfg.get("hf_token", "").strip()
     deepseek_key = cfg.get("deepseek_key", "").strip()
     preset = cfg.get("prompt_llm_preset", "siliconflow_auto")
 
@@ -1147,8 +1138,6 @@ def generate_prompt(
         positive = _call_deepseek(deepseek_key, model, label, user_msg, log)
     elif sf_key:
         positive = _call_siliconflow(sf_key, user_msg, log)
-    elif hf_tok:
-        positive = _call_huggingface(hf_tok, user_msg, log)
     else:
         raise ValueError(
             "提示词助手需要配置 API Key。\n\n"
@@ -1333,40 +1322,6 @@ def _call_siliconflow(api_key: str, user_msg: str, log) -> str:
         "  · 当前套餐不包含所选模型\n\n"
         "候选模型列表：\n" + "\n".join(f"  {i + 1}. {_SF_MODEL_LABELS.get(m, m)}" for i, m in enumerate(_SF_MODELS))
     )
-
-
-def _call_huggingface(token: str, user_msg: str, log) -> str:
-    headers = {"Authorization": f"Bearer {token}"}
-    for model in _HF_MODELS:
-        log(f"🤖 提示词助手 › HF {model}…")
-        url = f"https://api-inference.huggingface.co/models/{model}"
-        prompt = f"<s>[INST] {_SYSTEM}\n\nUser request:\n{user_msg} [/INST]"
-        try:
-            resp = requests.post(
-                url,
-                headers=headers,
-                json={
-                    "inputs": prompt,
-                    "parameters": {
-                        "max_new_tokens": 160,  # 同步限制
-                        "temperature": 0.60,
-                        "return_full_text": False,
-                    },
-                },
-                timeout=45,
-            )
-            if resp.status_code == 200:
-                result = resp.json()
-                if isinstance(result, list) and result:
-                    text = result[0].get("generated_text", "").strip()
-                    text = _clean(text)
-                    if len(text) > 20:
-                        log(f"✓ HF {model} 成功（{_count_words(text)} 词）")
-                        return text
-            log(f"  HF {model}: HTTP {resp.status_code}")
-        except Exception as ex:
-            log(f"  HF {model}: {ex}")
-    raise ValueError("HuggingFace 模型均不可用，请改用硅基流动")
 
 
 def _clean(text: str) -> str:

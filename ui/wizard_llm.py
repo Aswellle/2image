@@ -15,35 +15,27 @@ AI 提示词助手的 Pro / Flash 预设。
 """
 
 import tkinter as tk
-from tkinter import ttk
 import webbrowser
+from tkinter import ttk
 from typing import Callable
 
 from config.fonts import F
+from config.i18n import _
+from config.settings import save_config
 from config.theme import DARK_THEME as C
 from ui.icons import glyph, icon_font
-from config.settings import save_config
-from config.i18n import _
-
 
 # ── 每个模型通道的展示信息 ────────────────────────────────────────
 # 说明文案存键名，渲染时经 _() 按当前语言解析（勿在模块级求值）
 _SF_MODELS_INFO = [
-    ("🥇 DeepSeek V3-0324", "llm_info_sf_1"),
-    ("   DeepSeek V3", "llm_info_sf_2"),
-    ("   Qwen2.5-72B-Instruct", "llm_info_sf_3"),
-    ("   Qwen2.5-32B-Instruct", "llm_info_sf_4"),
-    ("   GLM-4-9B-chat", "llm_info_sf_5"),
+    ("🥇 DeepSeek-V3.2", "llm_info_sf_1"),
+    ("   DeepSeek-V3.1-Terminus", "llm_info_sf_2"),
+    ("   Qwen3-8B", "llm_info_sf_3"),
 ]
 
 _DEEPSEEK_PRESETS_INFO = [
+    ("deepseek_flash", "DeepSeek Flash（推荐）", "llm_info_ds_flash"),
     ("deepseek_pro", "DeepSeek Pro", "llm_info_ds_pro"),
-    ("deepseek_flash", "DeepSeek Flash", "llm_info_ds_flash"),
-]
-
-_HF_MODELS_INFO = [
-    ("Mixtral-8x7B-Instruct", "llm_info_hf_1"),
-    ("Zephyr-7b-beta", "llm_info_hf_2"),
 ]
 
 
@@ -72,7 +64,7 @@ class LLMWizard(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
         self._build()
-        for v in (self.sf_var, self.deepseek_var, self.hf_var, self.preset_var):
+        for v in (self.sf_var, self.deepseek_var, self.preset_var):
             v.trace("w", lambda *_: setattr(self, "_dirty", True))
 
     # ──────────────────────────────────────────────────────────────
@@ -376,71 +368,6 @@ class LLMWizard(tk.Toplevel):
         self._hint(inner, _("wizard_llm_sf_steps"), PX)
 
         # ══════════════════════════════════════════════════════════
-        #   Section 2：HuggingFace（免费兜底）
-        # ══════════════════════════════════════════════════════════
-        self._divider(inner)
-        self._section(inner, "2", _("wizard_llm_hf_section_title"), _("wizard_llm_hf_section_sub"), "#60a5fa", PX)
-
-        self._info_card(
-            inner,
-            [
-                _("wizard_llm_hf_info_1"),
-                _("wizard_llm_hf_info_2"),
-                _("wizard_llm_hf_info_3"),
-            ],
-            PX,
-        )
-
-        hf_row = tk.Frame(inner, bg=C["bg"])
-        hf_row.pack(fill="x", padx=PX, pady=(10, 0))
-        tk.Label(hf_row, text=_("wizard_llm_hf_key_label"), font=F["btn"], bg=C["bg"], fg=C["text"]).pack(anchor="w")
-        ef1 = tk.Frame(hf_row, bg=C["entry"])
-        ef1.pack(fill="x", pady=(4, 0))
-        self.hf_var = tk.StringVar(value=self.cfg.get("hf_token", ""))
-        self.hf_entry = tk.Entry(
-            ef1,
-            textvariable=self.hf_var,
-            show="*",
-            bg=C["entry"],
-            fg=C["text"],
-            insertbackground="white",
-            font=F["input"],
-            bd=0,
-            relief="flat",
-        )
-        self.hf_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
-        self._eye_btn(ef1, self.hf_entry)
-
-        hf_btns = tk.Frame(inner, bg=C["bg"])
-        hf_btns.pack(fill="x", padx=PX, pady=(8, 0))
-        tk.Button(
-            hf_btns,
-            text=_("wizard_llm_hf_register_btn"),
-            font=F["body"],
-            bg="#f97316",
-            fg="white",
-            bd=0,
-            padx=12,
-            pady=5,
-            cursor="hand2",
-            command=lambda: webbrowser.open("https://huggingface.co/join"),
-        ).pack(side="left")
-        tk.Button(
-            hf_btns,
-            text=_("wizard_llm_hf_get_token_btn"),
-            font=F["body"],
-            bg=C["acc"],
-            fg="white",
-            bd=0,
-            padx=12,
-            pady=5,
-            cursor="hand2",
-            command=lambda: webbrowser.open("https://huggingface.co/settings/tokens"),
-        ).pack(side="left", padx=(8, 0))
-
-        self._hint(inner, _("wizard_llm_hf_steps"), PX)
-
-        # ══════════════════════════════════════════════════════════
         #   底部说明：数据安全
         # ══════════════════════════════════════════════════════════
         self._divider(inner)
@@ -467,7 +394,6 @@ class LLMWizard(tk.Toplevel):
     # ──────────────────────────────────────────────────────────────
     def _build_status_banner(self, parent, px):
         sf_ok = bool(self.cfg.get("sf_key", "").strip())
-        hf_ok = bool(self.cfg.get("hf_token", "").strip())
         deepseek_ok = bool(self.cfg.get("deepseek_key", "").strip())
         preset = self.cfg.get("prompt_llm_preset", "siliconflow_auto")
 
@@ -481,9 +407,6 @@ class LLMWizard(tk.Toplevel):
         elif deepseek_ok:
             bg, fg = C["chip_alt_bg"], C["purple_soft"]
             msg = _("wizard_llm_status_deepseek_select")
-        elif hf_ok:
-            bg, fg = C["chip_info_bg"], C["chip_info_fg"]
-            msg = _("wizard_llm_status_hf_only")
         else:
             bg, fg = C["dis_bg"], C["chip_bad_fg"]
             msg = _("wizard_llm_status_none")
@@ -568,19 +491,17 @@ class LLMWizard(tk.Toplevel):
     def _save(self):
         self._dirty = False
         sf = self.sf_var.get().strip()
-        hf = self.hf_var.get().strip()
         deepseek = self.deepseek_var.get().strip()
         preset = self.preset_var.get()
 
         if preset in {"deepseek_pro", "deepseek_flash"} and not deepseek:
             self._status_lbl.config(text=_("wizard_llm_warn_deepseek_needed"), fg=C["warn"])
             return
-        if preset == "siliconflow_auto" and not sf and not hf:
+        if preset == "siliconflow_auto" and not sf:
             self._status_lbl.config(text=_("wizard_llm_warn_auto_need_key"), fg=C["warn"])
             return
 
         self.cfg["sf_key"] = sf
-        self.cfg["hf_token"] = hf
         self.cfg["deepseek_key"] = deepseek
         self.cfg["prompt_llm_preset"] = preset
         save_config(self.cfg)
