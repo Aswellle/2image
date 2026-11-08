@@ -162,22 +162,41 @@ main.py
 
 ```python
 # services/providers/my_api.py
+from typing import Callable, Tuple
+
+from services.generation.errors import ProviderConfigError
+from services.providers._net import (
+    get_session,         # 线程独立共享 Session，勿自建 requests.Session
+    raise_for_response,  # HTTP 状态码 → 类型化 ProviderError
+    validate_image_url,  # 下载 API 返回的 URL 前必调（SSRF 防护）
+)
+
 PROVIDER_INFO = {
-    "id":         "my_api",
-    "name":       "我的接口",
-    "category":   "free",   # free | paid | commercial
-    "config_key": "my_api_key",
+    "id":         "my_api",     # 稳定 ID，缺省用文件名
+    "name":       "我的接口",   # 下拉框显示名
+    "category":   "free",       # free | paid | commercial
+    "config_key": "my_api_key", # 凭证在 cfg 中的键名
+    # "supports_img2img": True, # 支持参考图编辑时声明
 }
 
-def try_my_api(prompt, w, h, seed, cfg, log):
+def try_my_api(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("my_api_key", "").strip()
     if not key:
-        raise ValueError("需要 API Key")
-    # ... 调用接口 ...
+        raise ProviderConfigError("需要 MyAPI 的 API Key！注册地址：https://...")
+    resp = get_session().post(url, json=payload, timeout=60)
+    raise_for_response(resp, "my_api")  # HTTP 错误统一转类型化异常
+    # ...解析响应；下载返回的图片 URL 前先 validate_image_url(url)
     return image_bytes, "我的接口"
 ```
 
-免费或付费接口会自动出现在 UI 下拉菜单和智能路由中。商用分类也会被自动注册，可按项目的商用接口接入方式继续扩展。
+文件保存后即自动出现在主界面下拉菜单与智能路由的兜底序列中；可用性判断由 `config_key` 自动派生，无需手动注册。
+
+接入完整功能还需要：
+
+1. 把 `my_api_key` 加入 `config/settings.py` 的 `DEFAULT_CONFIG`
+2. 在 `ui/wizard_free.py`（免费）或 `ui/wizard_paid.py`（付费/商用）添加配置卡片，用户才有填写 Key 的入口
+3. 想参与场景智能路由：在 `services/generation/scenes.py` 的 `ROUTES` 中按场景加入稳定 ID
+4. 支持图生图的接口：声明 `"supports_img2img": True`，并在 `services/providers/__init__.py` 的 `WIZARD_CONFIGURED` 中登记配置入口，才会出现在图生图下拉框
 
 ---
 
