@@ -1285,7 +1285,7 @@ class MainContent:
         )
         self._ref_clear_btn.pack(side="left", padx=(6, 0))
 
-        str_row = tk.Frame(body, bg=_BG)
+        self._strength_row = str_row = tk.Frame(body, bg=_BG)
         str_row.grid(row=2, column=0, sticky="ew", pady=(0, 2))
         tk.Label(str_row, text=_("lbl_strength"), font=F["small_b"], bg=_BG, fg=C["chip_info_fg"]).pack(
             side="left", padx=(0, 8)
@@ -1298,7 +1298,7 @@ class MainContent:
         self._strength_val_lbl.pack(side="left", padx=(8, 0))
         self._ref_strength.trace("w", lambda *_: self._strength_val_lbl.config(text=f"{self._ref_strength.get():.1f}"))
 
-        tk.Label(
+        self._strength_desc = tk.Label(
             body,
             text=_("strength_description"),
             font=F["tiny"],
@@ -1311,7 +1311,8 @@ class MainContent:
             justify="left",
             highlightbackground=C["sep"],
             highlightthickness=1,
-        ).grid(row=3, column=0, sticky="ew", pady=(0, 3))
+        )
+        self._strength_desc.grid(row=3, column=0, sticky="ew", pady=(0, 3))
 
         # ── 低优先级信息：接口清单只使用预览剩余空间 ───────────
         self._ref_hint_frame = tk.Frame(body, bg=_BG)
@@ -1329,6 +1330,32 @@ class MainContent:
         self._ref_hint_title.pack(fill="x")
         # 图生图接口在紧凑侧栏中只显示为摘要，避免多行列表挤掉上传与强度控件。
         self._ref_hint_rows: list = []
+
+        # 强度滑杆只对消费 _ref_strength 的接口有意义（manifest 能力位
+        # ref_strength，当前仅 Stability SD3 图生图）；选定不支持的接口
+        # 时整行收起，避免可调但无效的哑控件。
+        self.pv.trace("w", lambda *_: self._update_strength_row())
+        self._update_strength_row()
+
+    def _update_strength_row(self):
+        """按当前接口选择显隐强度滑杆行；「自动」按任一可选接口支持判定。"""
+        from services.generation.provider_manifest import ALL_MANIFESTS
+
+        sel = self.pv.get()
+        honors = None
+        if sel and sel != _("provider_auto"):
+            for pid, m in ALL_MANIFESTS.items():
+                if m.supports_img2img and display_name_for(pid) == sel:
+                    honors = "ref_strength" in m.capabilities
+                    break
+        if honors is None:
+            honors = any("ref_strength" in ALL_MANIFESTS[n].capabilities for n in self._i2i_selectable_providers())
+        if honors:
+            self._strength_row.grid()
+            self._strength_desc.grid()
+        else:
+            self._strength_row.grid_remove()
+            self._strength_desc.grid_remove()
 
     def _i2i_selectable_providers(self) -> list:
         """支持图生图、且能在现有向导里配置 Key 的接口。
@@ -1436,6 +1463,7 @@ class MainContent:
 
             i2i_list = self._i2i_selectable_providers()
             self._update_ref_hint(i2i_list)
+            self._update_strength_row()
 
             # pv 保存的是 display name，i2i_list 是 stable id，比较前统一映射。
             i2i_display = [_provider_display(n) for n in i2i_list]

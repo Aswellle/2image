@@ -138,6 +138,7 @@ PAID_MANIFESTS: dict[str, ProviderManifest] = {
         config_key="stability_key",
         description="Stability AI Core",
         supports_img2img=True,
+        capabilities={"text2image", "img2img", "ref_strength"},
     ),
     "replicate_flux": ProviderManifest(
         id="replicate_flux",
