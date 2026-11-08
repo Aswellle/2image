@@ -26,6 +26,7 @@ from config.model_catalog import (
     GPT_IMAGE_NAMES,
 )
 from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
+from services.providers.replicate_flux import REPLICATE_IMAGE_NAMES
 from ui.icons import glyph, icon_font
 
 
@@ -310,13 +311,16 @@ class PaidWizard(tk.Toplevel):
         opt3 = tk.Frame(inner, bg=C["bg"])
         opt3.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(opt3, text=_("wizard_paid_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
-        self.repl_model_var = tk.StringVar(value=self.cfg.get("replicate_model", "flux-2-pro"))
+        self._replicate_name_to_id = {v: k for k, v in REPLICATE_IMAGE_NAMES.items()}
+        self.repl_model_var = tk.StringVar(
+            value=REPLICATE_IMAGE_NAMES.get(self.cfg.get("replicate_model", "flux-2-pro"), "flux-2-pro")
+        )
         ttk.Combobox(
             opt3,
             textvariable=self.repl_model_var,
-            width=24,
+            width=26,
             state="readonly",
-            values=REPLICATE_MODEL_ORDER,
+            values=[REPLICATE_IMAGE_NAMES.get(m, m) for m in REPLICATE_MODEL_ORDER],
         ).pack(side="left", padx=(6, 0))
         btns3 = tk.Frame(inner, bg=C["bg"])
         btns3.pack(fill="x", padx=PX, pady=(8, 0))
@@ -503,7 +507,7 @@ class PaidWizard(tk.Toplevel):
         self.cfg["stability_key"] = self.stab_var.get().strip()
         self.cfg["stability_model"] = self.stab_model_var.get()
         self.cfg["replicate_key"] = self.repl_var.get().strip()
-        self.cfg["replicate_model"] = self.repl_model_var.get()
+        self.cfg["replicate_model"] = self._replicate_name_to_id.get(self.repl_model_var.get(), "flux-2-pro")
         self.cfg["volcengine_key"] = self.ark_var.get().strip()
         self.cfg["ark_model"] = ark_id
         self.cfg["bfl_key"] = self.bfl_var.get().strip()

@@ -56,6 +56,14 @@ _MODELS = {
 # 下拉可见顺序（官方在册的 FLUX.2 Pro 为默认，1.x 为 legacy）
 MODEL_ORDER = ["flux-2-pro", "flux-1.1-pro", "flux-pro", "flux-dev"]
 
+# 下拉可读名称（zh-CN 单语策略，见 model_catalog 治理边界）
+REPLICATE_IMAGE_NAMES: dict[str, str] = {
+    "flux-2-pro": "Replicate FLUX.2 Pro (推荐)",
+    "flux-1.1-pro": "Replicate FLUX 1.1 Pro (旧版)",
+    "flux-pro": "Replicate FLUX Pro (旧版)",
+    "flux-dev": "Replicate FLUX Dev (旧版)",
+}
+
 _FLUX2_DIMS = (256, 2048, 16)  # min, max, multiple
 _FLUX1_PRO_DIMS = (256, 1440, 32)
 

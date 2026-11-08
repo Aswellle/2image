@@ -7,14 +7,15 @@ ui/wizard_free.py  v5
 """
 
 import tkinter as tk
-from tkinter import ttk
 import webbrowser
+from tkinter import ttk
 from typing import Callable
+
 from config.fonts import F
+from config.i18n import _
+from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_NAMES
 from config.theme import DARK_THEME as C
 from ui.icons import glyph, icon_font
-from config.i18n import _
-from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_MODELS
 
 
 class ConfigWizard(tk.Toplevel):
@@ -740,9 +741,16 @@ class ConfigWizard(tk.Toplevel):
         gm_mrow = tk.Frame(inner, bg=C["bg"])
         gm_mrow.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(gm_mrow, text=_("wz_gm_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
-        self.gm_model_var = tk.StringVar(value=self.cfg.get("gemini_model", GEMINI_IMAGE_DEFAULT))
+        self._gemini_name_to_id = {v: k for k, v in GEMINI_IMAGE_NAMES.items()}
+        self.gm_model_var = tk.StringVar(
+            value=GEMINI_IMAGE_NAMES.get(self.cfg.get("gemini_model", GEMINI_IMAGE_DEFAULT), GEMINI_IMAGE_DEFAULT)
+        )
         ttk.Combobox(
-            gm_mrow, textvariable=self.gm_model_var, width=26, state="readonly", values=GEMINI_IMAGE_MODELS
+            gm_mrow,
+            textvariable=self.gm_model_var,
+            width=26,
+            state="readonly",
+            values=list(GEMINI_IMAGE_NAMES.values()),
         ).pack(side="left", padx=(6, 20))
 
         # ══════════════════════════════════════════════════════
@@ -975,7 +983,9 @@ class ConfigWizard(tk.Toplevel):
         self.cfg["modelslab_key"] = self.ml_var.get().strip()
         self.cfg["together_key"] = self.ta_var.get().strip()  # v5 新增
         self.cfg["gemini_key"] = self.gm_var.get().strip()  # v5 新增
-        self.cfg["gemini_model"] = self.gm_model_var.get()  # 添加 Gemini 3.1 图像模型
+        self.cfg["gemini_model"] = self._gemini_name_to_id.get(
+            self.gm_model_var.get(), GEMINI_IMAGE_DEFAULT
+        )  # Gemini 图像模型（名称映射回 ID）
         self.cfg["pollinations_key"] = self.pk_var.get().strip()  # v7 新增
         self.cfg["dashscope_key"] = self.ds_var.get().strip()  # v7 新增
         self.cfg["bria_key"] = self.br_var.get().strip()  # v7 新增
