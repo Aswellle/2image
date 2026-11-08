@@ -12,12 +12,14 @@ v5 新增字段：
 
 import json
 import os
+
 from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     BFL_TXT2IMG_DEFAULT,
     DASHSCOPE_DEFAULT,
     GEMINI_IMAGE_DEFAULT,
     GPT_IMAGE_DEFAULT,
+    RECRAFT_DEFAULT,
     XAI_IMAGE_DEFAULT,
 )
 
@@ -110,7 +112,7 @@ DEFAULT_CONFIG: dict = {
     "fal_key": "",  # fal.ai FLUX Ultra（4MP高清，最高写实质量）
     "recraft_key": "",  # Recraft v3（设计/插画/品牌VI）
     "recraft_style": "realistic_image",  # realistic_image | digital_illustration | vector_illustration
-    "recraft_model": "recraftv4_1",  # 官方 API 默认即 recraftv4_1；recraftv3 为上一代
+    "recraft_model": RECRAFT_DEFAULT,  # 可选值见 config.model_catalog（Recraft）
     # ── 新增接口（v7：GPT-Image / Nano Banana / 国内外新增供应商）──
     # ── 新增接口（v8：火山豆包）──────────────────────────────────
     "volcengine_key": "",  # 火山引擎 Ark API Key（豆包 Seedream 文生图 / SeedEdit 图生图）
@@ -127,7 +129,7 @@ DEFAULT_CONFIG: dict = {
     "xai_model": XAI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog（Grok Imagine）
     "replicate_model": "flux-2-pro",
     "gemini_model": GEMINI_IMAGE_DEFAULT,  # 可选值见 config.model_catalog
-    "bfl_model": BFL_TXT2IMG_DEFAULT,  # 可选值见 config.model_catalog（图生图固定 flux-kontext-pro）
+    "bfl_model": BFL_TXT2IMG_DEFAULT,  # 可选值见 config.model_catalog（图生图走 FLUX.2 Pro input_image）
     "deepseek_key": "",  # DeepSeek 官方 API Key（Pro / Flash 预设）
     # ── 通用设置 ───────────────────────────────────────────────
     "default_provider": "自动（按优先级）",

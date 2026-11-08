@@ -5,6 +5,17 @@ settings.DEFAULT_CONFIG 的默认值、provider 的兜底默认（cfg.get 的 fa
 以及向导下拉（ui/wizard_free.py / ui/wizard_paid.py）的 values 列表均从这里引用，
 避免同一模型清单散落多处后漂移——新增 / 改名模型只需改这一处。
 
+治理边界（与 tests/test_model_catalog_consistency.py 的锁定范围一致）：
+  · 跨 provider 的模型族（OpenAI/Gemini/MiniMax/Ark/BFL/xAI/万相/Recraft）
+    全部收录于此；recraft/replicate 等单 provider 自有族中，Replicate 的
+    模型清单留在其 provider 模块（_MODELS/MODEL_ORDER）——因为它的每个
+    模型各有一套请求 schema（_build_input），schema 知识与清单必须同居，
+    一致性测试从 provider 侧桥接锁定。
+  · 显示名为 zh-CN 单语策略：括注（推荐/极速/旧版）直接服务主受众，
+    不经 i18n（config 层禁止 import ui/i18n）。
+  · 快照型 ID（如 Ark 的 doubao-seedream-4-5-251128）由官方轮替，
+    退役时需发版更新目录——这是接受已知维护成本的有意选择，不是遗漏。
+
 模型状态以 2026-11 各家官方文档/模型表核实为准：
   · OpenAI deprecations 页（gpt-image-1 已于 2026-10-23 关停，
     1-mini / 1.5 将于 2026-12-01 移除，2.6 系 2026-11-04 发布）
@@ -176,4 +187,19 @@ DASHSCOPE_NAMES: dict[str, str] = {
     DASHSCOPE_WAN25: "通义万相 2.5 (推荐)",
     DASHSCOPE_WAN21_TURBO: "万相 2.1 Turbo (旧版)",
     DASHSCOPE_WAN21_PLUS: "万相 2.1 Plus (旧版)",
+}
+
+# ── Recraft（provider: services/providers/recraft.py）────────────────────────
+# 官方 API 默认即 recraftv4_1（V4.1 2026-02-17 GA、05-14 迭代）；
+# v3 未弃用，但 inpainting/outpainting/replace-background 等编辑操作
+# 仍要求 v3（本 provider 仅文生图，不受影响）。
+RECRAFT_V41 = "recraftv4_1"
+RECRAFT_V3 = "recraftv3"
+
+RECRAFT_MODELS = [RECRAFT_V41, RECRAFT_V3]
+RECRAFT_DEFAULT = RECRAFT_V41
+
+RECRAFT_IMAGE_NAMES: dict[str, str] = {
+    RECRAFT_V41: "Recraft V4.1 (推荐)",
+    RECRAFT_V3: "Recraft V3 (旧版)",
 }

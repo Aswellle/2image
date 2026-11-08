@@ -19,8 +19,11 @@ recraftv3。注意 inpainting/outpainting/replace-background 等操作官方
 import base64
 import threading
 import time
-import requests
 from typing import Callable, Tuple
+
+import requests
+
+from config.model_catalog import RECRAFT_DEFAULT
 from services.generation.errors import (
     ProviderAuthError,
     ProviderConfigError,
@@ -31,8 +34,11 @@ from services.generation.errors import (
 )
 from services.providers._net import (
     get_session as _get_session,
-    validate_image_url as _validate_image_url,
+)
+from services.providers._net import (
     safe_error_text as _safe_error_text,
+)
+from services.providers._net import (
     safe_get_image as _safe_get_image,
 )
 
@@ -43,8 +49,6 @@ PROVIDER_INFO = {
     "config_key": "recraft_key",
 }
 
-
-_DEFAULT_MODEL = "recraftv4_1"  # 官方 API 默认
 
 _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
@@ -74,7 +78,7 @@ def try_recraft(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable
 
     size = _best_size(w, h)
     style = cfg.get("recraft_style", "realistic_image")
-    model = cfg.get("recraft_model", "").strip() or _DEFAULT_MODEL
+    model = cfg.get("recraft_model", "").strip() or RECRAFT_DEFAULT
     log(f"► Recraft {model}  尺寸={size}  风格={style}")
 
     with _LOCK:

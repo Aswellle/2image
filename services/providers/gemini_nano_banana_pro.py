@@ -14,16 +14,19 @@ Google Gemini 3 Pro Image ("Nano Banana Pro") — 旗舰级图像模型
 import base64
 import threading
 import time
-import requests
 from typing import Callable, Tuple
+
+import requests
+
+from config.model_catalog import GEMINI_NB_PRO
 from services.generation.errors import (
     ProviderConfigError,
     ProviderError,
     ProviderInvalidResponseError,
     ProviderTransientError,
 )
-from services.providers._net import get_session as _get_session, raise_for_response, safe_error_text as _safe_error_text
-
+from services.providers._net import get_session as _get_session
+from services.providers._net import raise_for_response
 
 PROVIDER_INFO = {
     "id": "gemini_nano_banana_pro",
@@ -38,7 +41,7 @@ _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV = 2.0
 
-_MODEL = "gemini-3-pro-image"
+_MODEL = GEMINI_NB_PRO  # 与目录值锁定（tests/test_model_catalog_consistency.py）
 _ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{_MODEL}:generateContent"
 _TIMEOUT = 120
 _MAX_RETRIES = 3

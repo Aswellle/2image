@@ -21,7 +21,7 @@ from typing import Callable, Tuple
 
 import requests
 
-from config.model_catalog import BFL_FLUX2_PRO, BFL_FLUX_PRO_11, BFL_TXT2IMG_DEFAULT, BFL_TXT2IMG_MODELS
+from config.model_catalog import BFL_FLUX2_PRO, BFL_TXT2IMG_DEFAULT, BFL_TXT2IMG_MODELS
 from services.generation.errors import (
     ProviderAuthError,
     ProviderConfigError,
@@ -86,8 +86,10 @@ def try_bfl_flux(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
         model = BFL_TXT2IMG_DEFAULT
     cw, ch = _clamp_dims(w, h)
 
-    if ref_image is not None and model == BFL_FLUX_PRO_11:
-        # FLUX 1.1 Pro 不接受编辑输入，改走官方推荐的 FLUX.2 [pro] 编辑端点
+    if ref_image is not None and model != BFL_FLUX2_PRO:
+        # 编辑输入（input_image）仅对 FLUX.2 [pro] 逐项验证过；1.1 Pro 不
+        # 接受编辑输入，2-max/2-flex/2-pro-preview 未验证——图生图一律
+        # 改走官方推荐的 FLUX.2 [pro] 编辑端点
         model = BFL_FLUX2_PRO
 
     payload = {
