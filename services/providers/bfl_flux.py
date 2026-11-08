@@ -80,7 +80,10 @@ def try_bfl_flux(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
 
     model = cfg.get("bfl_model", "").strip()
     if model not in BFL_TXT2IMG_MODELS:
-        model = BFL_TXT2IMG_DEFAULT  # 存量未知值归一化到目录默认
+        # 下拉为只读，目录外值与空值都归一化到目录默认
+        if model:
+            log(f"[BFL] 模型 {model!r} 不在目录，已归一化到默认 {BFL_TXT2IMG_DEFAULT}")
+        model = BFL_TXT2IMG_DEFAULT
     cw, ch = _clamp_dims(w, h)
 
     if ref_image is not None and model == BFL_FLUX_PRO_11:

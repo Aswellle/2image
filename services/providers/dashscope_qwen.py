@@ -64,10 +64,19 @@ _MAX_POLL = 30
 _POLL_INTERVAL = 8
 
 
-def _norm_model(model: str) -> str:
-    """目录外存量值归一化到默认（wanx2.1 旧值仍保留可用）。"""
+def _norm_model(model: str, log: Callable) -> str:
+    """模型选择：本族无向导下拉，cfg["dashscope_model"] 仅能手改——
+
+    目录外值按配置原样请求（自救助手），仅记日志提示；注意 wan2.6
+    走新协议（maas 域名），原样请求旧异步端点会报错，属预期。
+    空值/未知空串回落目录默认。
+    """
     model = (model or "").strip()
-    return model if model in DASHSCOPE_MODELS else DASHSCOPE_DEFAULT
+    if not model:
+        return DASHSCOPE_DEFAULT
+    if model not in DASHSCOPE_MODELS:
+        log(f"[万相] 模型 {model!r} 不在目录，按配置原样请求（如失败请改回 {DASHSCOPE_DEFAULT}）")
+    return model
 
 
 def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
@@ -81,7 +90,7 @@ def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
         "X-DashScope-Async": "enable",
     }
     payload = {
-        "model": _norm_model(cfg.get("dashscope_model", "")),
+        "model": _norm_model(cfg.get("dashscope_model", ""), log),
         "input": {"prompt": prompt},
         "parameters": {
             "size": f"{w}*{h}",

@@ -118,7 +118,10 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
     model = cfg.get("gpt_image_model", "").strip()
     if model not in GPT_IMAGE_MODELS:
         # 目录外的存量值（已关停的 gpt-image-1 / 2026-12-01 移除的 1-mini、
-        # 1.5）归一化到默认，避免请求直接 404
+        # 1.5）与空值都归一化到默认，避免请求直接 404；下拉为只读，
+        # 目录外值只会来自旧版本配置
+        if model:
+            log(f"[OpenAI] 模型 {model!r} 不在目录，已归一化到默认 {GPT_IMAGE_DEFAULT}")
         model = GPT_IMAGE_DEFAULT
     quality = _normalize_quality(cfg.get("gpt_image_quality", "auto"))
     size_str = _gpt2_size(w, h)  # 目录内全家族均支持任意尺寸

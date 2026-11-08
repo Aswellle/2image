@@ -70,9 +70,12 @@ def try_gemini(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable)
     }
 
     # 可通过 cfg["gemini_model"] 切换图像模型（默认与可选值见
-    # config.model_catalog）；目录外存量值归一化到默认
+    # config.model_catalog）；下拉为只读，目录外值只会来自旧版本配置，
+    # 归一化到默认
     model = cfg.get("gemini_model", "").strip()
     if model not in GEMINI_IMAGE_MODELS:
+        if model:
+            log(f"[Gemini] 模型 {model!r} 不在目录，已归一化到默认 {GEMINI_IMAGE_DEFAULT}")
         model = GEMINI_IMAGE_DEFAULT
     endpoint = _ENDPOINT_TPL.format(model=model)
 

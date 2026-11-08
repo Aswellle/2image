@@ -108,10 +108,14 @@ def try_xai_grok(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callabl
             "新用户赠送 $25 额度（约 350 张图），消费 $5 后可额外获得 $150/月"
         )
 
-    # 模型目录接线：存量配置值不在目录时归一化到默认（旧 -quality ID 已在册移除）
+    # 模型选择：本族无向导下拉，cfg["xai_model"] 仅能手改 config.json——
+    # 目录外值按配置原样请求（自救助手：官方上新快照 ID 可先行接入），
+    # 仅记日志提示；空值回落目录默认
     model = cfg.get("xai_model", "").strip()
-    if model not in XAI_IMAGE_MODELS:
+    if not model:
         model = XAI_IMAGE_DEFAULT
+    elif model not in XAI_IMAGE_MODELS:
+        log(f"[xAI] 模型 {model!r} 不在目录，按配置原样请求（如失败请改回 {XAI_IMAGE_DEFAULT}）")
 
     headers = {
         "Authorization": f"Bearer {key}",

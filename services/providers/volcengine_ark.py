@@ -96,7 +96,11 @@ def try_volcengine_ark(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
     ref_image = cfg.get("_ref_image")
     model = cfg.get("ark_model", "").strip()
     if model not in ARK_IMAGE_MODELS:
-        model = ARK_IMAGE_DEFAULT  # 存量无效值（如旧的 -t2i 后缀 ID）归一化
+        # 存量无效值（如旧的 -t2i 后缀 ID）与空值都归一化；下拉为只读，
+        # 目录外值只会来自旧版本配置
+        if model:
+            log(f"[豆包] 模型 {model!r} 不在目录，已归一化到默认 {ARK_IMAGE_DEFAULT}")
+        model = ARK_IMAGE_DEFAULT
     if ref_image is not None and model not in ARK_NATIVE_I2I_MODELS:
         model = ARK_SEEDIT_30_I2I
 

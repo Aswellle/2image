@@ -108,7 +108,10 @@ def try_replicate(prompt, w, h, seed, cfg, log):
         raise ProviderConfigError("需要 Replicate API Token，请在「💎 付费接口配置」中填写")
     slug = cfg.get("replicate_model", "flux-2-pro")
     if slug not in _MODELS:
-        slug = "flux-2-pro"  # 存量未知值（含旧下拉里的无效项）归一化
+        # 下拉为只读，目录外值（含旧下拉无效项与空值）归一化到默认
+        if slug:
+            log(f"[Replicate] 模型 {slug!r} 不在注册表，已归一化到默认 flux-2-pro")
+        slug = "flux-2-pro"
     path = _MODELS[slug]
     body_input = _build_input(slug, prompt, w, h, seed)
     log(f"► Replicate  模型={path}  {body_input.get('width', '?')}×{body_input.get('height', '?')}")

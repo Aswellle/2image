@@ -264,8 +264,8 @@ class TestGeminiNanoBanana:
     """测试 Gemini Nano Banana 版本选择"""
 
     @patch("services.providers.gemini._get_session")
-    def test_default_model_is_v2(self, mock_session):
-        """默认应使用 Nano Banana 2"""
+    def test_default_model_is_21(self, mock_session):
+        """默认应使用官方推荐的 Nano Banana 2.1"""
         from services.providers.gemini import try_gemini
 
         mock_resp = MagicMock()
