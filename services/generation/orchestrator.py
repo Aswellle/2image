@@ -93,6 +93,7 @@ class GenerationOrchestrator:
 
         order = provider_order or list(self.providers.keys())
         start_time = time.monotonic()
+        final_error: Exception | None = None  # 任务级：最后一个真实失败（跨 provider）
 
         for provider_id in order:
             # Check cancellation/deadline before each provider
@@ -164,6 +165,7 @@ class GenerationOrchestrator:
                 except ProviderError as exc:
                     result.attempts += 1
                     last_error = exc
+                    final_error = exc
                     health.record_failure(exc.code)
                     error_msg = f"[{provider_id}] {exc.code}: {exc}"
                     result.errors.append(error_msg)
@@ -191,6 +193,7 @@ class GenerationOrchestrator:
                     # Unknown error — classify as transient
                     result.attempts += 1
                     mapped = ProviderTransientError(f"{type(exc).__name__}: {exc}", provider=provider_id)
+                    final_error = mapped
                     health.record_failure(mapped.code)
                     error_msg = f"[{provider_id}] unexpected: {exc}"
                     result.errors.append(error_msg)
@@ -220,7 +223,7 @@ class GenerationOrchestrator:
 
         # 任务收尾总结：全链失败时给出最终错误码与下一步指引，
         # 用户不需要翻中间的逐次尝试记录就知道该怎么办。
-        if last_error is not None and log_cb and not result.cancelled:
-            log_cb(f"✗ 全部接口尝试失败 —— {format_error_record(last_error)}")
+        if final_error is not None and log_cb and not result.cancelled:
+            log_cb(f"✗ 全部接口尝试失败 —— {format_error_record(final_error)}")
 
         return result
