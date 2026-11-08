@@ -2205,10 +2205,6 @@ STRINGS = {
         "zh-CN": "✅ 模型已配置",
         "en": "✅ Model Configured",
     },
-    "wizard_backup_only": {
-        "zh-CN": "⚠️ 仅备用通道",
-        "en": "⚠️ Backup Channel Only",
-    },
     "wizard_configure_key": {
         "zh-CN": "🔑 配置模型密钥",
         "en": "🔑 Configure Model Key",
@@ -3269,14 +3265,6 @@ STRINGS = {
     "llm_info_ds_flash": {
         "zh-CN": "现役 V4.1-Flash · 高性价比推理 · 官方 API 按量计费",
         "en": "Current V4.1-Flash · cost-effective reasoning · pay-as-you-go official API",
-    },
-    "llm_info_hf_1": {
-        "zh-CN": "效果较好，但速度受免费队列影响",
-        "en": "Better quality, but speed depends on the free queue",
-    },
-    "llm_info_hf_2": {
-        "zh-CN": "轻量快速，效果一般",
-        "en": "Light and fast, moderate quality",
     },
     # ── P3 打磨配套文案 ────────────────────────────────────────
     "toast_fav_on": {

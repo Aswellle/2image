@@ -7,7 +7,7 @@ v4 核心优化：Token 预算控制 + 写实人像专项优化
 ════════════════════════════════════════════════════════════════
 
 【根本问题分析】
-  硅基流动 / HuggingFace 上的文生图模型均有 CLIP token 硬限制：
+  主流文生图模型均有 CLIP token 硬限制：
     · SDXL / SDXL-Lightning / SDXL-Turbo  → 77 token ≈ 55-60 词
     · SD 2.1 / SD 1.5                      → 77 token ≈ 55-60 词
     · FLUX.1-schnell（T5-XXL 侧）          → 256 token（但 >100 词后

@@ -23,22 +23,21 @@ import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from config.fonts import F
+from config.i18n import _
+from config.theme import DARK_THEME as C
 from services.prompt_assistant import (
+    _trim_to_budget,
+    apply_template,
     category_display,
     category_id,
     display_template,
     generate_prompt,
-    apply_template,
     get_templates_by_category,
     prompt_budget_info,
-    _trim_to_budget,
 )
-from config.fonts import F
-from config.theme import DARK_THEME as C
-from config.i18n import _
 from ui.button_states import set_enabled
 from ui.wizard_llm import LLMWizard
-
 
 # ══════════════════════════════════════════════════════════════
 #   维度预设数据（模块级只存键名，取词延迟到界面构建/使用时，
@@ -1213,11 +1212,8 @@ class PromptWizard(tk.Toplevel):
     def _update_key_status_btn(self):
         """根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"""
         sf_ok = bool(self.app.cfg.get("sf_key", "").strip())
-        hf_ok = bool(self.app.cfg.get("hf_token", "").strip())
         if sf_ok:
             text, bg, fg = _("wizard_model_configured"), C["chip_ok_bg"], C["chip_ok_fg"]
-        elif hf_ok:
-            text, bg, fg = _("wizard_backup_only"), C["chip_info_bg"], C["chip_info_fg"]
         else:
             text, bg, fg = _("wizard_configure_key"), C["dis_bg"], C["chip_bad_fg"]
         try:

@@ -5,13 +5,13 @@ AI 提示词助手 · 推理模型密钥配置向导
 独立于生图密钥向导（wizard_free/paid），专门引导用户配置
 用于生成生图提示词的 LLM 推理模型 API Key。
 
-支持的通道（按推荐顺序）：
-  1. 硅基流动 SiliconFlow  →  sf_key（自动候选：DeepSeek V3 / Qwen2.5-72B）
-  2. DeepSeek 官方 API      →  deepseek_key（显式 Pro / Flash 预设）
-  3. HuggingFace            →  hf_token（免费兜底：Mixtral / Zephyr）
+支持的通道（按推荐顺序，共 3 个预设）：
+  1. 硅基流动 SiliconFlow  →  sf_key（自动候选：DeepSeek-V3.2 / V3.1-Terminus / Qwen3-8B）
+  2. DeepSeek 官方 API      →  deepseek_key（显式 Flash / Pro 预设）
 
-硅基流动与 HuggingFace 的 Key 与生图配置共用；DeepSeek 官方 Key 专供
-AI 提示词助手的 Pro / Flash 预设。
+硅基流动的 Key 与生图配置共用；DeepSeek 官方 Key 专供 AI 提示词
+助手的 Flash / Pro 预设。（原 HuggingFace 兜底通道走已废弃的
+api-inference 端点，已随本向导移除。）
 """
 
 import tkinter as tk
