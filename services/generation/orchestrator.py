@@ -23,10 +23,10 @@ from services.generation.errors import (
     GenerationCancelled,
     ProviderError,
     ProviderTransientError,
+    format_error_record,
 )
 from services.generation.provider_health import get_health_registry
 from services.generation.retry_policy import RetryPolicy, get_retry_policy
-
 
 log = logging.getLogger(__name__)
 
@@ -169,7 +169,9 @@ class GenerationOrchestrator:
                     result.errors.append(error_msg)
 
                     if log_cb:
-                        log_cb(f"✗ {error_msg}")
+                        # 结构化记录：code/provider/detail/next 一行可检索，
+                        # next 为按错误码映射的用户下一步指引
+                        log_cb(f"✗ {format_error_record(exc)}")
 
                     if not exc.retryable:
                         # Don't retry this provider, move to next
@@ -188,13 +190,13 @@ class GenerationOrchestrator:
                 except Exception as exc:
                     # Unknown error — classify as transient
                     result.attempts += 1
-                    mapped = ProviderTransientError(f"{type(exc).__name__}: {exc}")
+                    mapped = ProviderTransientError(f"{type(exc).__name__}: {exc}", provider=provider_id)
                     health.record_failure(mapped.code)
                     error_msg = f"[{provider_id}] unexpected: {exc}"
                     result.errors.append(error_msg)
 
                     if log_cb:
-                        log_cb(f"✗ {error_msg}")
+                        log_cb(f"✗ {format_error_record(mapped)}")
 
                     if attempt < self.retry_policy.max_attempts:
                         interrupted = self.retry_policy.interruptible_sleep(attempt, token)
@@ -215,4 +217,10 @@ class GenerationOrchestrator:
 
         # All providers exhausted
         result.duration_ms = (time.monotonic() - start_time) * 1000
+
+        # 任务收尾总结：全链失败时给出最终错误码与下一步指引，
+        # 用户不需要翻中间的逐次尝试记录就知道该怎么办。
+        if last_error is not None and log_cb and not result.cancelled:
+            log_cb(f"✗ 全部接口尝试失败 —— {format_error_record(last_error)}")
+
         return result
