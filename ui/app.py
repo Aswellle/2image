@@ -7,21 +7,22 @@ ui/app.py — 主应用窗口  v5.2
   · App 保留协调/编排逻辑
 """
 
-import io
 import html
+import io
 import os
+import random
 import shutil
 import threading
 import tkinter as tk
+import webbrowser
 from datetime import datetime
 from tkinter import filedialog, messagebox, scrolledtext, ttk
-import webbrowser
-import random
 
+import requests
 from PIL import Image, ImageTk
 
-from config.settings import load_config, save_config
 from config.fonts import F
+from config.settings import load_config, save_config
 from data.repository import (
     add_entry,
     clear_all_entries,
@@ -29,18 +30,19 @@ from data.repository import (
     delete_entry,
     get_all_entries,
     get_all_tags,
+    get_available_years,
     get_entry,
     get_stats,
     get_year_heatmap,
-    get_available_years,
     get_year_stats,
     rename_entry,
     toggle_favorite,
     update_tags,
 )
+from services.application import GenerationController, MenuController, SettingsController
+from services.generation.errors import ProviderError
 from services.image_service import generate_image, save_image_file
 from services.logger import log_to_file
-from services.translation import has_chinese, translate_zh_to_en
 from services.providers import (
     FREE_PROVIDERS,
     MULTI_KEY_PROVIDERS,
@@ -48,27 +50,23 @@ from services.providers import (
     PAID_PROVIDERS,
     PROVIDER_KEYS,
 )
-
-
-from services.application import GenerationController, MenuController, SettingsController
-from services.generation.errors import ProviderError
+from services.translation import has_chinese, translate_zh_to_en
 
 MAX_NICK_LEN = 20  # 昵称/提示符显示截断长度
 
 
-from ui.viewer import ImageViewerWindow
+from config.i18n import _, get_language, init_language
+from config.theme import DARK_THEME as C
+from config.theme import TAG_PALETTE, init_theme, tag_color
 from ui.button_states import install_button_state_defaults
 from ui.components.toast import ToastManager
+from ui.main_content import MainContent
+from ui.phrase_panel import PhrasePanel
+from ui.prompt_wizard import PromptWizard
+from ui.sidebar import HistorySidebar
+from ui.viewer import ImageViewerWindow
 from ui.wizard_free import ConfigWizard
 from ui.wizard_paid import PaidWizard
-from ui.prompt_wizard import PromptWizard
-from ui.phrase_panel import PhrasePanel
-from ui.sidebar import HistorySidebar
-from ui.main_content import MainContent
-
-from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color, init_theme
-from config.i18n import _, init_language, get_language
-
 
 SIDEBAR_DEF = 360
 SIDEBAR_MIN = 240
@@ -837,6 +835,7 @@ class App:
         throttled to once per 24h, fails silently and only toasts when a
         newer stable release exists (never auto-downloads)."""
         import threading as _threading
+
         from services.updater import state as _upd_state
         from services.updater import version as _upd_ver
         from services.updater.manifest import fetch_manifest
@@ -986,6 +985,13 @@ class App:
         取文案（不再做字符串嗅探）；friendly 为调用方已归类的文案，
         直接展示。未命中任何归类时降级为通用失败提示，原始多行详情
         只进调试日志，不再把整段 provider 堆栈塞进单行状态栏。
+
+        呈现分三层：
+          · 状态栏：一句归类概述（用户第一眼）；
+          · 调试日志：format_error_record 结构化记录
+            （code/provider/detail/next，可定位可检索）；
+          · 弹窗：按错误码触发（配置类→配置指引弹窗），正文带
+            「下一步」指引——不再按消息子串嗅探，也不弹给纯网络类错误。
         """
         self.content.gb.config(state="normal", text=_("btn_generate"))
         self.content.pb.stop()
@@ -999,28 +1005,47 @@ class App:
             elif err.code == "not_configured" and err_text:
                 friendly = err_text
         if friendly is None:
-            if "429" in err_text or "rate limit" in err_text.lower():
+            if (
+                isinstance(err, requests.exceptions.Timeout)
+                or "timeout" in err_text.lower()
+                or "timed out" in err_text.lower()
+            ):
+                friendly = _("err_timeout")
+            elif isinstance(err, requests.exceptions.ConnectionError) or "connection" in err_text.lower():
+                friendly = _("err_connection")
+            elif "429" in err_text or "rate limit" in err_text.lower():
                 friendly = _("err_rate_limit")
             elif "401" in err_text or "403" in err_text:
                 friendly = _("err_api_key")
             elif "402" in err_text or _("err_balance_word") in err_text or "balance" in err_text.lower():
                 friendly = _("err_balance")
-            elif "timeout" in err_text.lower() or "timed out" in err_text.lower():
-                friendly = _("err_timeout")
-            elif "ConnectionError" in err_text or "connection" in err_text.lower():
-                friendly = _("err_connection")
             else:
                 friendly = _("status_failed")
 
         self._st(f"❌ {friendly}", "hl")
-        self._log(f"✗ {err_text}")
+        # 结构化日志：ProviderError 走 code/provider/detail/next 记录；
+        # 普通异常走 unhandled 记录——日志里始终有「下一步」可循。
+        try:
+            from services.generation.errors import format_error_record
+
+            self._log(f"✗ {format_error_record(err)}")
+        except Exception:
+            self._log(f"✗ {err_text}")
         cw = self.content._prev_cv.winfo_width() or 600
         ch = self.content._prev_cv.winfo_height() or 400
         self.content._prev_cv.itemconfig(self.content._prev_ph, text=_("preview_error"))
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
-        if any(k in err_text for k in ["API Key", "Key", "Token", "token", "401", "402", "403", _("err_balance_word")]):
+
+        # 弹窗按错误码触发：需要用户介入的配置/鉴权/配额类才打断，
+        # 网络与限流类只留状态栏与日志（自动重试/换源已兜住）。
+        dialog_codes = {"not_configured", "auth_failed", "quota_exhausted"}
+        if isinstance(err, ProviderError) and err.code in dialog_codes:
+            next_step = err.next_step
             self.root.after(
-                100, lambda: messagebox.showwarning(_("dlg_err_key_title"), _("dlg_err_key_body", err=err[:200]))
+                100,
+                lambda: messagebox.showwarning(
+                    _("dlg_err_key_title"), _("dlg_err_key_body", err=f"{err_text[:200]}\n\n{next_step}")
+                ),
             )
 
     def _cancelled(self) -> None:
