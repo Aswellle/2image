@@ -25,6 +25,7 @@ from config.model_catalog import (
     GPT_IMAGE_DEFAULT,
     GPT_IMAGE_NAMES,
 )
+from config.theme import DARK_THEME as C
 from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
 from services.providers.replicate_flux import REPLICATE_IMAGE_NAMES
 from ui.icons import glyph, icon_font
