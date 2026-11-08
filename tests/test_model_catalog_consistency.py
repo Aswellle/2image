@@ -202,3 +202,28 @@ def test_replicate_dropdown_order_matches_provider_registry():
 def test_minimax_family_single_model():
     """MiniMax 官方在册仅 image-01（2026-11 核实），防止臆测性新增。"""
     assert MINIMAX_IMAGE_MODELS == ["image-01"]
+
+
+def test_llm_chain_display_pinned():
+    """LLM 降级链与向导展示名互相锁定（防手同步漂移）。
+
+    图像族有 model_catalog + 一致性护栏；LLM 链只有 3+2 个模型且
+    降级链运行时自愈，故用轻量钉子替代完整目录。
+    """
+    import services.prompt_assistant as pa
+    import ui.wizard_llm as wz
+
+    # SF 展示清单的模型名必须逐一出现在运行时降级链或其展示名映射中
+    chain = set(pa._SF_MODELS)
+    labels = set(pa._SF_MODEL_LABELS)
+    assert chain == set(labels), "SF 降级链与展示名映射不一致"
+    for name, _desc in wz._SF_MODELS_INFO:
+        # 展示名带缩进/奖牌前缀，比对前剥离非模型字符
+        bare = name.strip().lstrip("🥇").strip()
+        assert any(label in bare or bare in label for label in pa._SF_MODEL_LABELS.values()), (
+            f"向导展示名 {name!r} 不对应链上任何模型"
+        )
+
+    # DeepSeek 预设：向导键集与运行时预设完全一致
+    wizard_keys = {key for key, _title, _desc in wz._DEEPSEEK_PRESETS_INFO}
+    assert wizard_keys == set(pa._DEEPSEEK_PRESET_MODELS)
