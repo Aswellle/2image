@@ -43,6 +43,7 @@ class OrchestratorResult:
     duration_ms: float = 0.0
     cancelled: bool = False
     deadline_exceeded: bool = False
+    final_error: Exception | None = None  # 最后一个真实失败（ProviderError 优先）
 
     def __post_init__(self):
         if self.errors is None:
@@ -227,7 +228,9 @@ class GenerationOrchestrator:
 
         # 任务收尾总结：全链失败时给出最终错误码与下一步指引，
         # 用户不需要翻中间的逐次尝试记录就知道该怎么办。
-        if final_error is not None and log_cb and not result.cancelled:
-            log_cb(f"✗ 全部接口尝试失败 —— {format_error_record(final_error)}")
+        if final_error is not None:
+            result.final_error = final_error
+            if log_cb and not result.cancelled:
+                log_cb(f"✗ 全部接口尝试失败 —— {format_error_record(final_error)}")
 
         return result

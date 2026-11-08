@@ -4,17 +4,19 @@ import pytest
 from services.image_service import generate_image
 
 
-def test_all_providers_fail_raises_runtimeerror():
-    """When all providers fail, generate_image should raise RuntimeError."""
-    cfg = {}  # no keys configured
-    # Only use providers that require API keys (they will raise ValueError)
-    key_required = [
-        "Google Gemini (免费500次/天)",
-        "硅基流动 SiliconFlow (★推荐)",
-        "OpenRouter (部分免费)",
-    ]
-    with pytest.raises(RuntimeError, match="所有接口均失败"):
-        generate_image("test prompt", 512, 512, 42, cfg, provider_order=key_required)
+def test_all_providers_fail_raises_typed_final_error():
+    """全链失败时重抛编排器的最后一个类型化错误（弹窗门控生产可达）。
+
+    三家需 Key 的接口在空配置下全部 ProviderConfigError——generate_image
+    应重抛 final_error（带 .provider 与 .next_step），而非裸 RuntimeError。
+    """
+    from services.generation.errors import ProviderConfigError
+
+    key_required = ["gemini", "siliconflow", "openrouter"]  # registry stable ids
+    with pytest.raises(ProviderConfigError) as ei:
+        generate_image("test prompt", 512, 512, 42, {}, provider_order=key_required)
+    assert ei.value.provider in key_required  # 编排器兜底填充来源
+    assert ei.value.next_step  # 弹窗门控与指引可用
 
 
 def test_runtimeerror_triggers_provider_fallback():

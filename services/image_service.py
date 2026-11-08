@@ -237,6 +237,12 @@ def generate_image(
             pass  # 预算记录失败绝不影响生成结果
         return result.image_bytes, shown
 
+    # 全链失败：优先重抛编排器标记的最后一个类型化错误——调用方
+    # （App._err）据此按错误码触发配置类弹窗与下一步指引；裸
+    # RuntimeError 会让弹窗门控在生产路径永不可达。
+    final_error = getattr(result, "final_error", None)
+    if isinstance(final_error, ProviderError):
+        raise final_error
     raise RuntimeError("所有接口均失败:\n" + "\n".join(result.errors))
 
 
