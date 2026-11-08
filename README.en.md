@@ -22,7 +22,7 @@
   &nbsp;·&nbsp;
   <a href="https://github.com/Aswellle/2image/issues">🐛 Report Issue</a>
   &nbsp;·&nbsp;
-  <a href="#quick-start">📖 Documentation</a>
+  <a href="#-quick-start">📖 Documentation</a>
 </p>
 
 <p>
@@ -37,7 +37,7 @@
 ---
 
 <a id="english"></a>
-## 🐇 What is 2image?
+## 🎨 What is 2image?
 
 **2image** is a Windows desktop AI image generation tool.
 
@@ -49,17 +49,17 @@ Just describe the scene you want, and 2image automatically calls the most suitab
 
 ## ✨ Key Features
 
-### 🎯 One Interface, 19 Selectable APIs
-Directly select from 19 free and paid image generation services on the main interface, covering Pollinations, SiliconFlow, Gemini, Qwen-Image, Bria AI, OpenAI GPT-Image, Black Forest Labs FLUX, and more. **Start with services that require no API key, then optionally configure free or paid APIs** — generation tries available services in priority order. 3 additional commercial services are also implemented (see below).
+### 🎯 One Interface, 18 Selectable APIs
+Directly select from 18 free and paid image generation services on the main interface, covering Pollinations, SiliconFlow, Gemini Nano Banana, Qwen-Image, Bria AI, OpenAI GPT-Image, Black Forest Labs FLUX, and more. **Start with services that require no API key, then optionally configure free or paid APIs** — generation tries available services in priority order. 5 additional commercial services are implemented (Doubao Seedream already offers a full config card in the paid wizard) — see below.
 
 ### 🆓 Zero-Cost Start
 **Pollinations.AI works without registration** — ready out of the box. Anonymous calls are subject to rate limits. After registering a few services with free tiers, you can unlock more high-quality models to cover everyday creative needs.
 
 ### 🧠 Smart Routing, One-Click Optimal
-Once services are configured, entering "banner design" prioritizes Ideogram (excellent for text-in-image); entering "e-commerce product photo" prioritizes fal.ai FLUX Ultra (photorealistic HD). Different scenes try suitable models in priority order, or you can manually specify an API.
+Once services are configured, entering "banner design" prioritizes Ideogram (excellent for text-in-image); entering "e-commerce product photo" prioritizes fal.ai FLUX.2 Pro (photorealistic HD). Different scenes try suitable models in priority order, or you can manually specify an API.
 
 ### 🖼 Image-to-Image (img2img)
-After uploading a reference image, the program shows only the img2img-capable APIs that have configuration entries. Use Stability AI's "strength" slider to control modification intensity; other supported models also receive the reference image. The main UI currently offers Stability AI, Nano Banana Pro, and Black Forest Labs FLUX; Gemini, OpenAI GPT-Image, MiniMax image-01, and Doubao SeedEdit implement reference-image handling but do not yet appear in the img2img dropdown due to registry declarations and configuration-entry limits. Batch variant and queue modes automatically lock to img2img to prevent the reference image from being ignored.
+After uploading a reference image, the program shows only the img2img-capable APIs that have configuration entries — currently 6: Stability AI (with a "strength" slider to control modification intensity), Nano Banana Pro, Black Forest Labs FLUX, the Gemini Nano Banana family, OpenAI GPT-Image, and Doubao Seedream (native reference-image editing). fal.ai and MiniMax implement reference-image handling but have no configuration entry yet, so they do not appear in the img2img dropdown. Batch variant and queue modes automatically lock to img2img to prevent the reference image from being ignored.
 
 ### 🎲 Batch Variants — 6 Images at Once
 Automatically generates multiple seed variants from the same prompt, compare and pick the best one — greatly improves creative efficiency. Supports standard mode and higher-quality mode (more steps / better models).
@@ -68,7 +68,7 @@ Automatically generates multiple seed variants from the same prompt, compare and
 Add multiple tasks to a queue and let the program generate them sequentially. Pause, resume, or stop at any time; newly added tasks are automatically included in the current round.
 
 ### 🔧 AI Prompt Optimization
-Built-in prompt optimization wizard turns vague ideas into high-quality English prompts. With a SiliconFlow key configured, it tries DeepSeek V3, Qwen, and GLM in order; you can also enter a DeepSeek official API key and manually choose quality-first Pro or speed-first Flash presets. Without SiliconFlow, the HuggingFace channel is available as fallback.
+Built-in prompt optimization wizard turns vague ideas into high-quality English prompts. With a SiliconFlow key configured, it tries DeepSeek-V3.2, V3.1-Terminus, and Qwen3-8B in fallback order; you can also enter a DeepSeek official API key and manually choose the quality-first Pro (deepseek-v4-pro) or speed-first Flash (deepseek-flash) preset.
 
 ### 🀄 Native Chinese Support
 Enter Chinese descriptions directly — the program automatically calls MyMemory to translate to English before sending to image APIs. No manual translation, no extra configuration.
@@ -85,7 +85,7 @@ All images, history, and configuration are saved on your machine (`~/2image/`). 
 1. Go to the [Releases page](https://github.com/Aswellle/2image/releases/latest)
 2. Download `2image-setup-v*.exe` (installer) or `2image-portable-v*.exe` (portable)
 3. Run — a configuration wizard appears on first launch
-4. No API key required to start generating (Pollinations.AI is free and unlimited)
+4. No API key required to start generating (Pollinations.AI is free without registration; anonymous calls are rate-limited)
 
 ### Option B: Run from Source
 
@@ -104,41 +104,41 @@ python main.py
 
 | API | Model | Free Tier | API Key Required |
 |---|---|---|---|
-| **Pollinations.AI** | FLUX Schnell | No fixed daily quota; anonymous calls rate-limited | ❌ No registration needed |
-| **SiliconFlow** ⭐ | FLUX.1-dev/schnell · SDXL | Free credits on signup | ✅ Free registration |
-| **Google Gemini** | Gemini 2.5 Flash Image (Nano Banana) | Per Google AI Studio current free tier | ✅ Free registration |
-| **Qwen-Image (Dashscope)** | wanx2.1-t2i-turbo | Free tier for new Alibaba Cloud users | ✅ Free registration |
+| **Pollinations.AI** | FLUX · Turbo · SANA (verified anonymous list; GPTImage in HQ mode) | No fixed daily quota; anonymous calls rate-limited | ❌ No registration needed |
+| **SiliconFlow** ⭐ | FLUX.1 · SDXL · Kolors | Free credits on signup | ✅ Free registration |
+| **Google Gemini** | Nano Banana family (2.1 default; 2 / 2 Lite / Pro switchable) | Per Google AI Studio current free tier | ✅ Free registration |
+| **Qwen-Image (Dashscope)** | wan2.5-t2i | Free tier for new Alibaba Cloud users | ✅ Free registration |
 | **Bria AI Fibo** | Fibo | 1000 free calls on signup | ✅ Free registration |
-| **Cloudflare Workers AI** | FLUX.1-schnell | 10k Neurons/day (~10–20 high-res images) | ✅ Free registration |
-| **HuggingFace** | FLUX · Stable Diffusion 3 Medium | Free inference API | ✅ Free registration |
+| **Cloudflare Workers AI** | FLUX.1-schnell · FLUX.2-dev (HQ mode) · SDXL | 10k Neurons/day (~10–20 high-res images) | ✅ Free registration |
+| **HuggingFace** | Stable Diffusion 3 Medium | Free inference API | ✅ Free registration |
 | **StableHorde** | SD series | Anonymous available | ❌ Optional registration |
-| **ModelsLab** | FLUX · SDXL | 100/day | ✅ Free registration |
-| **Together AI** | FLUX.1-schnell | Free availability per Together console | ✅ Free registration |
-| **OpenRouter** | Unified Image API | Per-model billing; see model page for free availability | ✅ Free registration |
-| **Segmind** | FLUX · SDXL | $5 free credits on signup | ✅ Free registration |
+| **ModelsLab** | FLUX · SDXL · Realistic Vision · SD 1.5 | 100/day | ✅ Free registration |
+| **Together AI** | FLUX.1-schnell (official free endpoint) | Free availability per Together console | ✅ Free registration |
+| **OpenRouter** | Unified Image API (default gemini-3.1-flash-image) | Per-model billing; see model page for free availability | ✅ Free registration |
+| **Segmind** | FLUX Schnell · SDXL · SD3 Medium | $5 free credits on signup | ✅ Free registration |
 
 ### Paid APIs
 
 | API | Features | Pricing |
 |---|---|---|
-| **💎 OpenAI GPT-Image** | Text-to-image & reference image editing, supports gpt-image-1 / mini | Per-request |
+| **💎 OpenAI GPT-Image** | gpt-image-2 default (2.5 / 2.6 Flare·Sunburst optional), text-to-image & reference image editing | Per-request |
 | **💎 Nano Banana Pro** | Gemini 3 Pro Image, high-quality img2img, reuses Gemini key | Pay-per-use |
-| **💎 Black Forest Labs FLUX** | Official FLUX text-to-image & Kontext img2img | Pay-per-use |
-| **💎 Stability AI** | Supports img2img, original Stable Diffusion | Per-request |
-| **💎 Replicate FLUX** | FLUX.1.1 Pro high resolution | Per-request |
-| **💎 xAI Grok Imagine** | Grok Imagine Image Quality model | Per-request |
+| **💎 Black Forest Labs FLUX** | Official FLUX.2 single endpoint for text-to-image & img2img (flux-2-pro default) | Pay-per-use |
+| **💎 Stability AI** | SD3.5-large / core, supports img2img with a "strength" control | Per-credit |
+| **💎 Replicate FLUX** | black-forest-labs/flux-2-pro officially hosted | Per-request |
+| **💎 xAI Grok Imagine** | grok-imagine-image-2.0, with aspect-ratio & resolution controls | Per-request |
 
 ### Commercial APIs
 
-These services are auto-discovered by the registry but are not yet integrated into the main UI dropdown — suitable for commercial use cases where you can add your own configuration entry points. (Doubao/Volcengine already has a key field in the paid wizard, but its category is `commercial`, so it does not appear in the main dropdown.)
+These services are auto-discovered by the registry but are not yet integrated into the main UI dropdown — suitable for commercial use cases where you can add your own configuration entry points. (Doubao Seedream already offers a full config card in the paid wizard — key and model selection — but its category is `commercial`, so it does not appear in the main dropdown.)
 
 | API | Features |
 |---|---|
-| **Ideogram v3** | Best for text-in-image: banners, logos, posters with readable text |
-| **fal.ai FLUX Ultra** | Up to 4MP ultra-HD photorealistic, best for product photos / portraits |
-| **Recraft v3** | Design / illustration / vector style, ideal for brand VI |
+| **Ideogram v4** | Best for text-in-image: banners, logos, posters with readable text |
+| **fal.ai FLUX.2 Pro** | Text-to-image `fal-ai/flux-2-pro` + instruction-based `/edit`, up to 4MP ultra-HD photorealistic — best for product photos / portraits |
+| **Recraft v4.1** | Design / illustration / vector style, ideal for brand VI (recraftv4_1 default; switchable back to v3) |
 | **MiniMax image-01** | Text-to-image & subject reference image creation (no dedicated config card) |
-| **Doubao Seedream (Volcengine)** | Seedream text-to-image / SeedEdit img2img |
+| **Doubao Seedream (Volcengine)** | Seedream 4.5 / 4.0 text-to-image + native reference-image editing, SeedEdit 3.0 fallback |
 
 ---
 
