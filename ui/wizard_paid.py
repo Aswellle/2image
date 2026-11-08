@@ -432,8 +432,8 @@ class PaidWizard(tk.Toplevel):
         ).pack(side="left", padx=(6, 0))
         btns5 = tk.Frame(inner, bg=C["bg"])
         btns5.pack(fill="x", padx=PX, pady=(8, 0))
-        self._link_btn(btns5, _("wizard_paid_bfl_register_btn"), "https://api.bfl.ai/")
-        self._link_btn(btns5, _("wizard_paid_bfl_key_btn"), "https://api.bfl.ai/keys")
+        self._link_btn(btns5, _("wizard_paid_bfl_register_btn"), "https://dashboard.bfl.ai")
+        self._link_btn(btns5, _("wizard_paid_bfl_key_btn"), "https://dashboard.bfl.ai/get-started")
         self._divider(inner)
 
     def _section(self, parent, icon, title, sub, px=24):

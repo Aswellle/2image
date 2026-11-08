@@ -1785,8 +1785,8 @@ STRINGS = {
         "en": "💎 Paid API Config",
     },
     "wizard_paid_header_subtitle": {
-        "zh-CN": "GPT-Image / 豆包 / Stability / Replicate",
-        "en": "GPT-Image / Doubao / Stability / Replicate",
+        "zh-CN": "GPT-Image / 豆包 / BFL / Stability / Replicate",
+        "en": "GPT-Image / Doubao / BFL / Stability / Replicate",
     },
     "wizard_paid_btn_save": {
         "zh-CN": "💾 保存配置",
@@ -1845,8 +1845,8 @@ STRINGS = {
         "en": "Stability AI  (Stable Image)",
     },
     "wizard_paid_stability_section_sub": {
-        "zh-CN": "Core ~¥0.02/张  |  Ultra ~¥0.06/张  |  SD3.5 ~¥0.47/张",
-        "en": "Core ~¥0.02/img  |  Ultra ~¥0.06/img  |  SD3.5 ~¥0.47/img",
+        "zh-CN": "Core 3 credits  |  Ultra 8 credits  |  SD3.5-Large 6.5 credits（1 credit = $0.01）",
+        "en": "Core 3 credits  |  Ultra 8 credits  |  SD3.5-Large 6.5 credits (1 credit = $0.01)",
     },
     "wizard_paid_stability_info_1": {
         "zh-CN": "• 支持 Core / Ultra / SD3.5-Large 三档，新用户赠送 25 Credits 试用",
@@ -1877,24 +1877,24 @@ STRINGS = {
         "en": "🔑 Get API Key",
     },
     "wizard_paid_replicate_section_title": {
-        "zh-CN": "Replicate  (FLUX / SD3)",
-        "en": "Replicate  (FLUX / SD3)",
+        "zh-CN": "Replicate  (FLUX)",
+        "en": "Replicate  (FLUX)",
     },
     "wizard_paid_replicate_section_sub": {
-        "zh-CN": "多种 FLUX 模型可选  |  社区模型丰富  |  按量计费",
-        "en": "Multiple FLUX models  |  Rich community models  |  Pay-as-you-go",
+        "zh-CN": "FLUX.2 Pro 现役  |  社区模型丰富  |  按量计费",
+        "en": "FLUX.2 Pro current  |  Rich community models  |  Pay-as-you-go",
     },
     "wizard_paid_replicate_info_1": {
-        "zh-CN": "• FLUX.1 系列：Pro / Dev / Schnell / Realism 多种风格",
-        "en": "• FLUX.1 series: Pro / Dev / Schnell / Realism styles",
+        "zh-CN": "• FLUX.2 Pro（默认）与 FLUX 1.1 Pro / Pro / Dev 多档可选",
+        "en": "• FLUX.2 Pro (default) plus FLUX 1.1 Pro / Pro / Dev tiers",
     },
     "wizard_paid_replicate_info_2": {
-        "zh-CN": "• 支持图生图（FLUX.1 Kontext 系列）和 ControlNet",
-        "en": "• Supports image-to-image (FLUX.1 Kontext series) and ControlNet",
+        "zh-CN": "• 官方托管 black-forest-labs 模型，社区模型生态丰富",
+        "en": "• Officially hosts black-forest-labs models; rich community ecosystem",
     },
     "wizard_paid_replicate_info_3": {
-        "zh-CN": "• $0.04~0.08/张，新用户赠送 $5 Credits",
-        "en": "• $0.04~0.08/img, $5 free Credits for new users",
+        "zh-CN": "• 约 $0.03~0.06/张（视模型与分辨率），注册赠送试用 Credits",
+        "en": "• ~$0.03~0.06/img (model & resolution dependent); trial credits on signup",
     },
     "wizard_paid_replicate_key_label": {
         "zh-CN": "Replicate API Token:",
@@ -1913,20 +1913,20 @@ STRINGS = {
         "en": "Volcengine Doubao Seedream",
     },
     "wizard_paid_ark_section_sub": {
-        "zh-CN": "Seedream 4.0 文生图 (最新最强)  |  SeedEdit 3.0 图生图  |  按量计费",
-        "en": "Seedream 4.0 text-to-image (latest)  |  SeedEdit 3.0 image-to-image  |  Pay-as-you-go",
+        "zh-CN": "Seedream 4.5 文生图 (官方最佳)  |  原生图生图  |  按量计费",
+        "en": "Seedream 4.5 text-to-image (best)  |  native image-to-image  |  Pay-as-you-go",
     },
     "wizard_paid_ark_info_1": {
-        "zh-CN": "• Seedream 4.0：最新最强模型，支持 1024x1024 ~ 2048x2048 多种尺寸",
-        "en": "• Seedream 4.0: latest & strongest, supports 1024x1024 ~ 2048x2048",
+        "zh-CN": "• Seedream 4.5（默认）：官方综合最佳，支持 1K ~ 4K 分辨率",
+        "en": "• Seedream 4.5 (default): official best overall, 1K ~ 4K resolutions",
     },
     "wizard_paid_ark_info_2": {
-        "zh-CN": "• Seedream 3.0：上一代模型，速度更快，成本更低",
-        "en": "• Seedream 3.0: previous gen, faster & cheaper",
+        "zh-CN": "• Seedream 4.0 / 3.0：旧版可选，速度更快、成本更低",
+        "en": "• Seedream 4.0 / 3.0: legacy options, faster & cheaper",
     },
     "wizard_paid_ark_info_3": {
-        "zh-CN": "• SeedEdit 3.0：图生图专用，自动在「图生图」模式下启用",
-        "en": "• SeedEdit 3.0: image-to-image only, auto-enabled in I2I mode",
+        "zh-CN": "• 图生图：4.x 原生参考图编辑（图生图模式自动启用），3.0 走 SeedEdit",
+        "en": "• I2I: Seedream 4.x native reference editing (auto in I2I mode); 3.0 uses SeedEdit",
     },
     "wizard_paid_ark_info_4": {
         "zh-CN": "• guidance_scale 建议 2.0~3.0，支持 watermark 开关",
@@ -1941,8 +1941,8 @@ STRINGS = {
         "en": "Volcengine API Key:",
     },
     "wizard_paid_ark_model_hint": {
-        "zh-CN": "  图生图自动用 SeedEdit",
-        "en": "  Image-to-image auto-uses SeedEdit",
+        "zh-CN": "  图生图自动走原生编辑",
+        "en": "  I2I auto-uses native editing",
     },
     "wizard_paid_ark_register_btn": {
         "zh-CN": "🌐 注册火山引擎",
@@ -1957,20 +1957,20 @@ STRINGS = {
         "en": "Black Forest Labs (FLUX Official)",
     },
     "wizard_paid_bfl_section_sub": {
-        "zh-CN": "FLUX.2 Pro / Flex  |  最高写实质量  |  按量计费",
-        "en": "FLUX.2 Pro / Flex  |  Best photorealism  |  Pay-as-you-go",
+        "zh-CN": "FLUX.2 Pro / Max / Flex  |  最高写实质量  |  按量计费",
+        "en": "FLUX.2 Pro / Max / Flex  |  Best photorealism  |  Pay-as-you-go",
     },
     "wizard_paid_bfl_info_1": {
-        "zh-CN": "• FLUX.2 Pro：官方最强模型，支持 2K 分辨率",
-        "en": "• FLUX.2 Pro: official best model, supports 2K resolution",
+        "zh-CN": "• FLUX.2 Pro（默认）：官方推荐，最高 4MP，单端点生成+编辑",
+        "en": "• FLUX.2 Pro (default): official recommendation, up to 4MP, one endpoint for generate & edit",
     },
     "wizard_paid_bfl_info_2": {
-        "zh-CN": "• FLUX.2 Flex：灵活风格，适合创意设计",
-        "en": "• FLUX.2 Flex: flexible style, ideal for creative design",
+        "zh-CN": "• FLUX.2 Max / Flex / Pro-Preview：最高画质 / 排版 / 抢先体验",
+        "en": "• FLUX.2 Max / Flex / Pro-Preview: best quality / typography / early access",
     },
     "wizard_paid_bfl_info_3": {
-        "zh-CN": "• FLUX Kontext Pro：图生图专用（自动在图生图模式启用）",
-        "en": "• FLUX Kontext Pro: image-to-image only (auto-enabled in I2I mode)",
+        "zh-CN": "• 图生图：input_image 参考图编辑（图生图模式自动走 FLUX.2 Pro）",
+        "en": "• I2I: input_image reference editing (auto-routes to FLUX.2 Pro in I2I mode)",
     },
     "wizard_paid_bfl_key_label": {
         "zh-CN": "BFL API Key:",
