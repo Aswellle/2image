@@ -321,6 +321,51 @@ class TestGeminiNanoBanana:
         assert "gemini-3-pro-image" in url
 
 
+class TestDashscopeHonor:
+    """通义万相无 UI 族策略：目录外手改值按原样请求。"""
+
+    @staticmethod
+    def _mock_session():
+        """提交返回 task_id，轮询直接 SUCCEEDED 带图。"""
+        sess = MagicMock()
+        sess.post.return_value = MagicMock(status_code=200, json=lambda: {"output": {"task_id": "t1"}})
+        sess.get.return_value = MagicMock(
+            status_code=200,
+            json=lambda: {
+                "output": {
+                    "task_status": "SUCCEEDED",
+                    "results": [{"url": "https://cdn.example.com/w.png"}],
+                }
+            },
+        )
+        return sess
+
+    @patch("services.providers.dashscope_qwen._safe_get_image", return_value=b"\x89PNG" + b"\x00" * 50)
+    @patch("services.providers.dashscope_qwen._get_session")
+    def test_unknown_model_honored(self, mock_session, _img):
+        from services.providers.dashscope_qwen import try_dashscope_qwen
+
+        mock_session.return_value = self._mock_session()
+        cfg = {"dashscope_key": "test-key", "dashscope_model": "wan2.6-t2i"}
+        with patch("services.providers.dashscope_qwen.time.sleep"):
+            try_dashscope_qwen("a cat", 1024, 1024, 42, cfg, lambda m: None)
+        body = mock_session.return_value.post.call_args.kwargs["json"]
+        assert body["model"] == "wan2.6-t2i"  # 原样送出（旧端点会报错属预期）
+
+    @patch("services.providers.dashscope_qwen._safe_get_image", return_value=b"\x89PNG" + b"\x00" * 50)
+    @patch("services.providers.dashscope_qwen._get_session")
+    def test_empty_falls_back_to_default(self, mock_session, _img):
+        from config.model_catalog import DASHSCOPE_DEFAULT
+        from services.providers.dashscope_qwen import try_dashscope_qwen
+
+        mock_session.return_value = self._mock_session()
+        cfg = {"dashscope_key": "test-key", "dashscope_model": ""}
+        with patch("services.providers.dashscope_qwen.time.sleep"):
+            try_dashscope_qwen("a cat", 1024, 1024, 42, cfg, lambda m: None)
+        body = mock_session.return_value.post.call_args.kwargs["json"]
+        assert body["model"] == DASHSCOPE_DEFAULT
+
+
 # ── Provider 注册表测试 ─────────────────────────────────────────────────────
 
 

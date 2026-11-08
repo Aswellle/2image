@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from services.generation.errors import ProviderAuthError, ProviderQuotaError
+from services.generation.errors import ProviderQuotaError
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"fake-image-data" * 100  # ≥1024B，满足 provider 的最小尺寸校验
 PNG_B64 = base64.b64encode(PNG_BYTES).decode("ascii")
@@ -437,6 +437,48 @@ class TestXaiGrok:
         with pytest.raises(ValueError, match="Key"):
             mod.try_xai_grok("cat", 1024, 1024, 1, {}, lambda s: None)
 
+    # ── 请求体钉子（2026-11 官方生图指南参数）──────────────────
+
+    def test_payload_model_aspect_resolution(self):
+        """默认模型/宽高比取最接近枚举/分辨率按长边分档。"""
+        import services.providers.xai_grok as mod
+        from config.model_catalog import XAI_IMAGE_DEFAULT
+
+        ok = _resp(200, json_data={"data": [{"b64_json": PNG_B64}]})
+        sess = MagicMock(post=MagicMock(return_value=ok))
+        with patch(f"{self.MOD}._get_session", return_value=sess):
+            mod.try_xai_grok("cat", 1344, 768, 7, self.CFG, lambda s: None)
+        body = sess.post.call_args.kwargs["json"]
+        assert body["model"] == XAI_IMAGE_DEFAULT
+        assert body["aspect_ratio"] == "16:9"  # 1.75 最贴近 16/9
+        assert body["resolution"] == "2k"  # 长边 1344 > 1024
+        assert body["n"] == 1 and body["prompt"] == "cat"
+
+        sess2 = MagicMock(post=MagicMock(return_value=ok))
+        with patch(f"{self.MOD}._get_session", return_value=sess2):
+            mod.try_xai_grok("cat", 1024, 1024, 7, self.CFG, lambda s: None)
+        body2 = sess2.post.call_args.kwargs["json"]
+        assert body2["aspect_ratio"] == "1:1" and body2["resolution"] == "1k"
+
+    def test_configured_model_honored_when_unknown(self):
+        """无 UI 族策略：目录外手改值按原样请求（自救助手），不静默改写。"""
+        import services.providers.xai_grok as mod
+
+        ok = _resp(200, json_data={"data": [{"b64_json": PNG_B64}]})
+        sess = MagicMock(post=MagicMock(return_value=ok))
+        cfg = {**self.CFG, "xai_model": "grok-imagine-image"}
+        with patch(f"{self.MOD}._get_session", return_value=sess):
+            _, used = mod.try_xai_grok("cat", 1024, 1024, 1, cfg, lambda s: None)
+        assert sess.post.call_args.kwargs["json"]["model"] == "grok-imagine-image"
+        assert "grok-imagine-image" in used
+
+        cfg_new = {**self.CFG, "xai_model": "grok-imagine-image-3.0"}
+        sess2 = MagicMock(post=MagicMock(return_value=ok))
+        with patch(f"{self.MOD}._get_session", return_value=sess2):
+            mod.try_xai_grok("cat", 1024, 1024, 1, cfg_new, lambda s: None)
+        # 未在册的新快照 ID 原样送出（warn-but-honor）
+        assert sess2.post.call_args.kwargs["json"]["model"] == "grok-imagine-image-3.0"
+
 
 # ── Together AI ────────────────────────────────────────────────
 
@@ -489,3 +531,123 @@ class TestTogetherAi:
 
         with pytest.raises(ValueError, match="Together"):
             mod.try_together_ai("cat", 1024, 1024, 1, {}, lambda s: None)
+
+
+# ── Replicate FLUX（按官方 schema 分家构造请求）────────────────
+
+
+class TestReplicateFlux:
+    MOD = "services.providers.replicate_flux"
+    CFG = {"replicate_key": "rk-test"}
+
+    def _mock(self):
+        ok = _resp(200, json_data={"id": "pred123", "status": "succeeded", "output": ["https://cdn.example.com/f.png"]})
+        return MagicMock(post=MagicMock(return_value=ok))
+
+    def test_flux2_pro_payload_shape(self):
+        import services.providers.replicate_flux as mod
+
+        sess = self._mock()
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+        ):
+            _, used = mod.try_replicate("cat", 1024, 1024, 5, self.CFG, lambda s: None)
+        inp = sess.post.call_args.kwargs["json"]["input"]
+        assert inp["prompt"] == "cat"
+        assert inp["aspect_ratio"] == "custom"
+        assert inp["width"] % 16 == 0 and inp["height"] % 16 == 0
+        assert 256 <= inp["width"] <= 2048 and 256 <= inp["height"] <= 2048
+        assert inp["output_format"] == "png"
+        assert "num_outputs" not in inp  # 官方 schema 无此字段
+        assert "black-forest-labs/flux-2-pro" in sess.post.call_args.args[0]
+        assert "flux-2-pro" in used
+
+    def test_flux_11_pro_clamps_32(self):
+        import services.providers.replicate_flux as mod
+
+        sess = self._mock()
+        cfg = {**self.CFG, "replicate_model": "flux-1.1-pro"}
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+        ):
+            mod.try_replicate("cat", 1000, 1000, 5, cfg, lambda s: None)
+        inp = sess.post.call_args.kwargs["json"]["input"]
+        assert inp["width"] % 32 == 0 and inp["height"] % 32 == 0
+        assert 256 <= inp["width"] <= 1440
+
+    def test_flux_dev_steps_guidance(self):
+        import services.providers.replicate_flux as mod
+
+        sess = self._mock()
+        cfg = {**self.CFG, "replicate_model": "flux-dev"}
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+        ):
+            mod.try_replicate("cat", 1024, 1024, 5, cfg, lambda s: None)
+        inp = sess.post.call_args.kwargs["json"]["input"]
+        assert inp["num_inference_steps"] == 28 and inp["guidance_scale"] == 3.5
+
+    def test_stale_slug_normalized(self):
+        """旧下拉里的无效项（flux-schnell 等）归一化到默认并记日志。"""
+        import services.providers.replicate_flux as mod
+
+        sess = self._mock()
+        cfg = {**self.CFG, "replicate_model": "flux-schnell"}
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+        ):
+            mod.try_replicate("cat", 1024, 1024, 5, cfg, lambda s: None)
+        assert "black-forest-labs/flux-2-pro" in sess.post.call_args.args[0]
+
+
+# ── BFL FLUX（FLUX.2 单端点生成+编辑）──────────────────────────
+
+
+class TestBflFlux:
+    MOD = "services.providers.bfl_flux"
+    CFG = {"bfl_key": "bk-test"}
+
+    def _ok(self):
+        return _resp(200, json_data={"id": "t1", "polling_url": "https://api.bfl.ai/v1/get_result?id=t1"})
+
+    def _poll_ready(self):
+        return _resp(200, json_data={"status": "Ready", "result": {"sample": "https://cdn.example.com/b.png"}})
+
+    def _run(self, cfg):
+        import services.providers.bfl_flux as mod
+
+        sess = MagicMock()
+        sess.post.return_value = self._ok()
+        sess.get.return_value = self._poll_ready()
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+        ):
+            out = mod.try_bfl_flux("cat", 1024, 1024, 9, cfg, lambda s: None)
+        return sess, out
+
+    def test_default_model_and_payload(self):
+        sess, (data, used) = self._run(self.CFG)
+        assert data == PNG_BYTES and "flux-2-pro" in used
+        assert sess.post.call_args.args[0].endswith("/v1/flux-2-pro")
+        body = sess.post.call_args.kwargs["json"]
+        assert body["prompt"] == "cat" and body["width"] % 32 == 0
+        assert body["output_format"] == "png"
+        assert "input_image" not in body
+
+    def test_i2i_forces_flux2_pro_for_unverified_models(self):
+        """编辑输入仅对 2-pro 验证：1.1-pro / 2-max 配置下图生图一律走 2-pro。"""
+        for model in ("flux-pro-1.1", "flux-2-max"):
+            sess, _ = self._run({**self.CFG, "bfl_model": model, "_ref_image": PNG_BYTES})
+            assert sess.post.call_args.args[0].endswith("/v1/flux-2-pro"), model
+            assert "input_image" in sess.post.call_args.kwargs["json"]
+
+    def test_i2i_keeps_configured_2pro(self):
+        sess, _ = self._run({**self.CFG, "bfl_model": "flux-2-pro", "_ref_image": PNG_BYTES})
+        assert sess.post.call_args.args[0].endswith("/v1/flux-2-pro")
+        body = sess.post.call_args.kwargs["json"]
+        assert body["input_image"]  # base64 参考图
