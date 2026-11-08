@@ -59,11 +59,10 @@ ALLOWED = {
     "#a5b4fc",
     # 热力格描边（比填充色略暗的派生边界）
     "#1e3560",
-    # provider 章节品牌色（wizard_free / wizard_llm）
+    # provider 章节品牌色（wizard_free）
     "#ff6a00",
     "#d97706",
     "#8b5cf6",
-    "#f97316",
     # 提示词模板分类色（prompt_wizard._CATEGORY_COLORS）
     "#be185d",
     "#1e40af",
