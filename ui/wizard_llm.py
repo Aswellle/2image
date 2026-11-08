@@ -446,10 +446,17 @@ class LLMWizard(tk.Toplevel):
     def _info_card(self, parent, lines, px=24):
         card = tk.Frame(parent, bg=C["card"], highlightbackground=C["sep"], highlightthickness=1)
         card.pack(fill="x", padx=px, pady=(4, 0))
+        labels = []
         for line in lines:
-            tk.Label(card, text=line, font=F["body"], bg=C["card"], fg=C["sub"], anchor="w", justify="left").pack(
-                anchor="w", padx=12, pady=2
-            )
+            lbl = tk.Label(card, text=line, font=F["body"], bg=C["card"], fg=C["sub"], anchor="w", justify="left")
+            lbl.pack(fill="x", anchor="w", padx=16, pady=2)
+            labels.append(lbl)
+        # 长行按卡片实际宽度换行：无 wraplength 的超宽标签会被 Tk 在
+        # 行内居中导致两端同时被裁切（可读性事故），这里绑定容器宽度。
+        card.bind(
+            "<Configure>",
+            lambda e, lbls=labels: [l.config(wraplength=max(200, e.width - 40)) for l in lbls],
+        )
         tk.Label(card, text="").pack(pady=2)
 
     def _hint(self, parent, text, px=24):
