@@ -28,6 +28,7 @@ from config.model_catalog import (
 from config.theme import DARK_THEME as C
 from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
 from services.providers.replicate_flux import REPLICATE_IMAGE_NAMES
+from ui.components import bind_wraplength
 from ui.icons import glyph, icon_font
 
 
@@ -452,12 +453,7 @@ class PaidWizard(tk.Toplevel):
             )
             lbl.pack(fill="x", anchor="w", padx=16, pady=2)
             labels.append(lbl)
-        # 长行按卡片实际宽度换行：无 wraplength 的超宽标签会被 Tk 在
-        # 行内居中导致两端同时被裁切（可读性事故），这里绑定容器宽度。
-        card.bind(
-            "<Configure>",
-            lambda e, lbls=labels: [l.config(wraplength=max(200, e.width - 40)) for l in lbls],
-        )
+        bind_wraplength(card, labels)
         tk.Label(card, text="").pack(pady=2)
 
     def _divider(self, parent):

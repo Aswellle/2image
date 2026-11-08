@@ -295,9 +295,26 @@ class LoadingIndicator(tk.Frame):
         self._after_id = None
 
 
+def bind_wraplength(card: "tk.Frame", labels: list, padx_total: int = 32, floor: int = 200) -> None:
+    """把标签换行宽度绑定到容器实际宽度（信息卡长行自适应折行）。
+
+    无 wraplength 的超宽标签会被 Tk 在行内居中导致两端同时被裁切；
+    padx_total 为标签左右内边距之和（缺省 padx=16×2），floor 防止
+    极窄容器下 wraplength 归零。
+    """
+
+    def _apply(event):
+        wrap = max(floor, event.width - padx_total - 8)
+        for lbl in labels:
+            lbl.config(wraplength=wrap)
+
+    card.bind("<Configure>", _apply)
+
+
 from ui.components.state_label import GenerationStateLabel
 
 __all__ = [
+    "bind_wraplength",
     "PrimaryButton",
     "SecondaryButton",
     "DangerButton",
