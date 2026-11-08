@@ -2837,8 +2837,8 @@ STRINGS = {
         "en": "🔑 Dashboard → API Keys",
     },
     "wz_ml_hint": {
-        "zh-CN": "📋 步骤：注册 → Dashboard → Account → API Keys → Copy Key",
-        "en": "📋 Steps: register → Dashboard → Account → API Keys → copy key",
+        "zh-CN": "📋 步骤：注册 → Dashboard → API Keys → Copy Key",
+        "en": "📋 Steps: register → Dashboard → API Keys → copy key",
     },
     "wz_sg_title": {
         "zh-CN": "Segmind API",
@@ -2885,8 +2885,8 @@ STRINGS = {
         "en": "• Free registration; use as a backup for the providers above",
     },
     "wz_hf_info2": {
-        "zh-CN": "• 支持 FLUX.1-schnell / SDXL 等模型，有速率限制",
-        "en": "• FLUX.1-schnell / SDXL and more, subject to rate limits",
+        "zh-CN": "• hf-inference 当前托管 Stable Diffusion 3 Medium，有速率限制",
+        "en": "• hf-inference currently hosts Stable Diffusion 3 Medium; rate limits apply",
     },
     "wz_hf_key_label": {
         "zh-CN": "HuggingFace Token:",
@@ -2933,8 +2933,8 @@ STRINGS = {
         "en": "🆓 FLUX.1 Free · free credits · high quality",
     },
     "wz_ta_info1": {
-        "zh-CN": "• 提供 FLUX.1-schnell-Free 免费图像生成端点，质量媲美付费模型",
-        "en": "• Free FLUX.1-schnell-Free endpoint with quality rivaling paid models",
+        "zh-CN": "• 提供 FLUX.1-schnell 免费图像生成端点，质量媲美付费模型",
+        "en": "• Free FLUX.1-schnell endpoint with quality rivaling paid models",
     },
     "wz_ta_info2": {
         "zh-CN": "• 注册即可使用，赠送初始 $5 额度，免费端点每月有一定配额",
@@ -2969,8 +2969,8 @@ STRINGS = {
         "en": "🆓 Free tier · no credit card · img2img supported",
     },
     "wz_gm_info1": {
-        "zh-CN": '• Google 图像模型 "Nano Banana"（Gemini 2.5 Flash Image），免费额度',
-        "en": '• Google\'s image model "Nano Banana" (Gemini 2.5 Flash Image) with a free tier',
+        "zh-CN": "• Google Nano Banana 系列图像模型（2.1 / 2 Lite / Pro 可切换），免费额度",
+        "en": "• Google Nano Banana image models (2.1 / 2 Lite / Pro switchable) with a free tier",
     },
     "wz_gm_info2": {
         "zh-CN": "• 通过 Google AI Studio 获取 API Key，登录 Google 账号即可，全程免费",
@@ -3013,8 +3013,8 @@ STRINGS = {
         "en": "🆓 Free credits for new users · fast direct connection in China",
     },
     "wz_ds_info1": {
-        "zh-CN": "• 阿里云 DashScope 平台，wanx2.1-t2i-turbo 模型，新用户有免费调用额度",
-        "en": "• Alibaba Cloud DashScope, wanx2.1-t2i-turbo model; free quota for new users",
+        "zh-CN": "• 阿里云 DashScope 平台，wan2.5-t2i 模型（现役默认），新用户有免费调用额度",
+        "en": "• Alibaba Cloud DashScope, wan2.5-t2i model (current default); free quota for new users",
     },
     "wz_ds_info2": {
         "zh-CN": "• 国内网络直连，无需代理，速度稳定",

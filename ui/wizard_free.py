@@ -446,7 +446,7 @@ class ConfigWizard(tk.Toplevel):
             padx=12,
             pady=5,
             cursor="hand2",
-            command=lambda: webbrowser.open("https://modelslab.com/dashboard/account/api-keys"),
+            command=lambda: webbrowser.open("https://modelslab.com/dashboard/api-keys"),
         ).pack(side="left", padx=(8, 0))
         self._hint(inner, _("wz_ml_hint"), PX)
 
