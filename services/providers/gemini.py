@@ -147,6 +147,8 @@ def try_gemini(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable)
             if attempt < _MAX_RETRIES:
                 time.sleep(3 * attempt)
 
+    if last_err is None:  # 全部尝试都被内联 429 消耗时没有任何错误记录
+        last_err = RuntimeError("全部尝试均触发速率限制（429）")
     raise ProviderTransientError(f"Gemini 全部重试失败：{last_err}")
 
 
