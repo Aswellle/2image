@@ -161,8 +161,13 @@ def try_replicate(prompt, w, h, seed, cfg, log):
     else:
         raise ProviderInvalidResponseError(f"Replicate 输出格式未知: {output}")
     if img_url.startswith("data:"):
+        if "," not in img_url:
+            raise ProviderInvalidResponseError(f"Replicate 返回畸形 data URI: {img_url[:60]}")
         log(f"  ✓ Replicate {slug} 成功（data URI）")
-        return base64.b64decode(img_url.split(",", 1)[1]), f"Replicate/{slug}"
+        try:
+            return base64.b64decode(img_url.split(",", 1)[1]), f"Replicate/{slug}"
+        except Exception as e:
+            raise ProviderInvalidResponseError(f"Replicate data URI base64 解码失败: {e}")
     log(f"  下载图片: {img_url[:60]}…")
     data = _safe_get_image(img_url, timeout=60)
     log(f"  ✓ Replicate {slug} 成功")

@@ -28,14 +28,8 @@ from services.generation.errors import (
 )
 from services.providers._net import (
     get_session as _get_session,
-)
-from services.providers._net import (
     raise_if_cancelled as _raise_if_cancelled,
-)
-from services.providers._net import (
     safe_error_text as _safe_error_text,
-)
-from services.providers._net import (
     safe_get_image as _safe_get_image,
 )
 
