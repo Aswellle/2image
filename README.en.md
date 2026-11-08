@@ -163,22 +163,41 @@ Just create a new file — the framework discovers it automatically:
 
 ```python
 # services/providers/my_api.py
+from typing import Callable, Tuple
+
+from services.generation.errors import ProviderConfigError
+from services.providers._net import (
+    get_session,         # shared per-thread Session — don't build your own
+    raise_for_response,  # HTTP status → typed ProviderError
+    validate_image_url,  # call before downloading any API-returned URL (SSRF guard)
+)
+
 PROVIDER_INFO = {
-    "id":         "my_api",
-    "name":       "My API",
-    "category":   "free",   # free | paid | commercial
-    "config_key": "my_api_key",
+    "id":         "my_api",      # stable ID; falls back to the file name
+    "name":       "My API",      # dropdown display name
+    "category":   "free",        # free | paid | commercial
+    "config_key": "my_api_key",  # cfg key for credentials
+    # "supports_img2img": True, # declare for reference-image support
 }
 
-def try_my_api(prompt, w, h, seed, cfg, log):
+def try_my_api(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("my_api_key", "").strip()
     if not key:
-        raise ValueError("API key required")
-    # ... call the API ...
+        raise ProviderConfigError("MyAPI API key required. Sign up: https://...")
+    resp = get_session().post(url, json=payload, timeout=60)
+    raise_for_response(resp, "my_api")  # HTTP failures become typed errors
+    # ...parse the response; call validate_image_url(url) before downloading
     return image_bytes, "My API"
 ```
 
-Free and paid APIs automatically appear in the UI dropdown and smart routing. Commercial APIs are also auto-registered — extend using the project's commercial API integration pattern.
+Once saved, the API appears automatically in the main dropdown and the smart-routing fallback order — availability is derived from `config_key`, no manual registration needed.
+
+To complete the integration:
+
+1. Add `my_api_key` to `DEFAULT_CONFIG` in `config/settings.py`
+2. Add a config card in `ui/wizard_free.py` (free) or `ui/wizard_paid.py` (paid/commercial) so users have an entry point to paste the key
+3. For scene-based smart routing, add the stable ID to `ROUTES` in `services/generation/scenes.py`
+4. For img2img support: declare `"supports_img2img": True` and register the config entry in `WIZARD_CONFIGURED` in `services/providers/__init__.py` to appear in the img2img dropdown
 
 ---
 
