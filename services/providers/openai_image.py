@@ -1,31 +1,23 @@
 """
 services/providers/openai_image.py — OpenAI GPT-Image（文生图 + 图生图）
 
-支持模型族：gpt-image-1 / 1-mini / 1.5 / 2 / 2.5-flare / 2.5-sunburst
-- gpt-image-1 系列：仅支持预设尺寸（1024x1024 / 1536x1024 / 1024x1536）
-- gpt-image-2+ 系列：支持任意 WIDTHxHEIGHT（16 的倍数，长边 ≤3840，宽高比 1:3–3:1）
-- gpt-image-2.5-flare：快速高质量日常生图
-- gpt-image-2.5-sunburst：最强图像生成与编辑
+支持模型族（可选值与默认见 config.model_catalog，2026-11 官方在册）：
+- gpt-image-2：平衡款稳定默认
+- gpt-image-2.5-flare / 2.5-sunburst：快速 / 最强特化
+- gpt-image-2.6-flare / 2.6-sunburst：极速 / 最强·新（2026-11-04 发布）
+- 全家族支持任意 WIDTHxHEIGHT（16 的倍数，长边 ≤3840，宽高比 1:3–3:1）
+- 已关停/移除的 gpt-image-1 系（1 / 1-mini / 1.5）不在目录内，
+  存量配置值在入口归一化到默认，请求不会带出旧 ID
 
 与 DALL-E 3 请求/响应的关键差异：
   · 不再有 response_format 参数——GPT-Image 系列固定返回 b64_json
   · quality 取值变为 low/medium/high/auto（原 standard/hd 已不适用）
-  · size 取值因模型而异（见上方说明）
   · 新增 /v1/images/edits 端点：传入参考图即可做图生图/局部编辑
 """
 
 import base64
 
-from config.model_catalog import (
-    GPT_IMAGE_2,
-    GPT_IMAGE_25_FLARE,
-    GPT_IMAGE_25_SUNBURST,
-    GPT_IMAGE_26_FLARE,
-    GPT_IMAGE_26_SUNBURST,
-    GPT_IMAGE_DEFAULT,
-    GPT_IMAGE_MODELS,
-    GPT_IMAGE_NAMES,
-)
+from config.model_catalog import GPT_IMAGE_DEFAULT, GPT_IMAGE_MODELS, GPT_IMAGE_NAMES
 from services.generation.errors import (
     ProviderAuthError,
     ProviderConfigError,
@@ -47,19 +39,12 @@ PROVIDER_INFO = {
     "supports_img2img": True,
 }
 
-# gpt-image-1 家族仅支持下列预设尺寸（取与请求最接近者）。
-_SIZES = {(1024, 1024): "1024x1024", (1536, 1024): "1536x1024", (1024, 1536): "1024x1536"}
-
-# gpt-image-2+ 任意尺寸约束（官方）：两边均为 16 的倍数；长边 ≤3840；
+# 任意尺寸约束（官方）：两边均为 16 的倍数；长边 ≤3840； 任意尺寸约束（官方）：两边均为 16 的倍数；长边 ≤3840；
 # 宽高比 1:3–3:1；总像素 0.65MP–8.3MP。
 _GPT2_MULT = 16
 _GPT2_LONG_MAX = 3840
 _GPT2_MIN_PX = 655_360
 _GPT2_MAX_PX = 8_294_400
-
-
-def _best_size(w, h) -> str:
-    return _SIZES[min(_SIZES.keys(), key=lambda s: abs(s[0] - w) + abs(s[1] - h))]
 
 
 def _gpt2_size(w: int, h: int) -> str:
@@ -120,13 +105,6 @@ def _gpt2_size(w: int, h: int) -> str:
     return f"{w}x{h}"
 
 
-def _size_for(model: str, w: int, h: int) -> str:
-    """按模型路由尺寸取值：gpt-image-2+ 家族用任意尺寸，其余用预设。"""
-    if model in GPT_IMAGE_MODELS:  # 目录内全部为 2+ 家族，均支持任意尺寸
-        return _gpt2_size(w, h)
-    return _best_size(w, h)
-
-
 def _normalize_quality(q: str) -> str:
     """把 DALL-E 时代的 standard/hd 归一化为 GPT-Image 体系值，其余原样。"""
     return {"standard": "medium", "hd": "high"}.get(q, q)
@@ -143,7 +121,7 @@ def try_openai_image(prompt, w, h, seed, cfg, log):
         # 1.5）归一化到默认，避免请求直接 404
         model = GPT_IMAGE_DEFAULT
     quality = _normalize_quality(cfg.get("gpt_image_quality", "auto"))
-    size_str = _size_for(model, w, h)
+    size_str = _gpt2_size(w, h)  # 目录内全家族均支持任意尺寸
     ref_image = cfg.get("_ref_image")
 
     headers = {"Authorization": f"Bearer {key}"}

@@ -64,13 +64,15 @@ def test_gpt2_size_clamps_extreme_edges():
     _assert_gpt2_size(_gpt2_size(200, 4000))
 
 
-def test_size_for_routes_by_model():
-    from services.providers.openai_image import _size_for
+def test_gpt2_size_respects_constraints():
+    """目录内全家族走任意尺寸路由；尺寸输出恒满足 16 倍数与官方约束。"""
+    from services.providers.openai_image import _gpt2_size
 
-    # gpt-image-2 用任意尺寸，gpt-image-1 家族用预设；同一请求二者不同
-    assert _size_for("gpt-image-2", 512, 512) != _size_for("gpt-image-1", 512, 512)
-    assert _size_for("gpt-image-1", 1024, 1024) == "1024x1024"
-    assert _size_for("gpt-image-1-mini", 512, 512) == "1024x1024"
+    for w, h in ((512, 512), (1344, 768), (200, 4000)):
+        size = _gpt2_size(w, h)
+        sw, sh = map(int, size.split("x"))
+        assert sw % 16 == 0 and sh % 16 == 0
+        assert max(sw, sh) <= 3840
 
 
 def test_normalize_quality_maps_legacy_values():

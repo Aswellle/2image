@@ -26,7 +26,6 @@ from config.model_catalog import (
     GPT_IMAGE_26_FLARE,
     GPT_IMAGE_26_SUNBURST,
     GEMINI_IMAGE_DEFAULT,
-    GEMINI_IMAGE_NAMES,
     GEMINI_IMAGE_MODELS,
     GEMINI_NB_21,
     GEMINI_NB_V1,
@@ -223,20 +222,39 @@ class TestVolcengineArkProvider:
 class TestOpenAIGPTImage25:
     """测试 OpenAI GPT-Image 2.5 型号支持"""
 
-    def test_gpt_image_25_26_in_size_routing(self):
-        """GPT-Image 2.5 / 2.6 型号应走 gpt-image-2+ 尺寸路由"""
-        from services.providers.openai_image import _size_for, _gpt2_size
+    @patch("services.providers.openai_image._get_session")
+    def test_gpt_image_25_26_any_size(self, mock_session):
+        """GPT-Image 2.5 / 2.6 型号请求应带任意尺寸（gpt-image-2+ 家族）"""
+        from services.providers.openai_image import _gpt2_size, try_openai_image
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"data": [{"b64_json": base64.b64encode(b"img").decode()}]}
+        mock_session.return_value.post.return_value = mock_resp
 
         for model in [GPT_IMAGE_25_FLARE, GPT_IMAGE_25_SUNBURST, GPT_IMAGE_26_FLARE, GPT_IMAGE_26_SUNBURST]:
-            size = _size_for(model, 512, 512)
-            assert size == _gpt2_size(512, 512)
+            cfg = {"openai_key": "test-key", "gpt_image_model": model}
+            try_openai_image("a cat", 512, 512, 42, cfg, lambda m: None)
+            body = mock_session.return_value.post.call_args.kwargs.get("json") or {}
+            assert body.get("model") == model
+            assert body.get("size") == _gpt2_size(512, 512)
 
-    def test_all_catalog_models_use_gpt2_routing(self):
-        """目录内全部在册型号均支持任意尺寸（旧 1 系预设路由已随目录移除）"""
-        from services.providers.openai_image import _size_for, _gpt2_size
+    @patch("services.providers.openai_image._get_session")
+    def test_stale_gpt_image_1_normalized(self, mock_session):
+        """存量 gpt-image-1 系配置值应归一化到默认（旧 ID 已关停/移除）"""
+        from services.providers.openai_image import try_openai_image
+        from config.model_catalog import GPT_IMAGE_DEFAULT
 
-        for model in GPT_IMAGE_MODELS:
-            assert _size_for(model, 512, 512) == _gpt2_size(512, 512)
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"data": [{"b64_json": base64.b64encode(b"img").decode()}]}
+        mock_session.return_value.post.return_value = mock_resp
+
+        for stale in ("gpt-image-1", "gpt-image-1-mini", "gpt-image-1.5"):
+            cfg = {"openai_key": "test-key", "gpt_image_model": stale}
+            try_openai_image("a cat", 512, 512, 42, cfg, lambda m: None)
+            body = mock_session.return_value.post.call_args.kwargs.get("json") or {}
+            assert body.get("model") == GPT_IMAGE_DEFAULT
 
 
 # ── Gemini Nano Banana 版本选择测试 ────────────────────────────────────────
