@@ -7,7 +7,7 @@ Desktop text-to-image generation tool (文字生图工具, app name: **2image**)
 - **Language**: Python 3.11+
 - **GUI**: tkinter + ttk (stdlib, no external GUI framework)
 - **Packaging**: PyInstaller → Inno Setup → Windows `.exe` installer
-- **Version**: 2.8.0 (managed via `version.json`)
+- **Version**: 2.9.0 (managed via `version.json`)
 - **Platform**: Windows-only (uses `ctypes.windll` for DPI awareness)
 - **Dependencies**: `requirements.txt` — runtime: `Pillow>=10,<11`, `requests>=2.31,<3`; dev: `pytest`, `pytest-cov`, `ruff`. Everything else is stdlib (`tkinter`, `sqlite3`, `threading`, `json`, `ctypes`, `pathlib`, `concurrent.futures`, …)
 - **Package management**: `requirements.txt` (pip) + `pyproject.toml` (ruff: target py311, line-length 120, isort/pyflakes rules; pytest `--tb=short`; coverage `fail_under = 68`). No poetry/uv/setup.py
@@ -115,7 +115,7 @@ python auto_build.py
 
 # Or build installer with custom parameters
 python tools/build_inno_installer.py \
-  --app-name "2image" --version 2.8.0 \
+  --app-name "2image" --version 2.9.0 \
   --src-dir . --out-dir dist --iscc-path ISCC
 ```
 
@@ -378,7 +378,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`ui/about_dialog.py`|About 窗口 — 状态机驱动的检查更新/下载/安装流程，任务运行守卫与便携版分支（懒单例）|
 |`main.spec`|PyInstaller spec (console=False, icon + fonts in `datas`, provider modules auto-populated as `hiddenimports`)|
 |`auto_build.py`|Build orchestrator: version read → PyInstaller → Inno Setup → .exe installer|
-|`version.json`|`{"version": "2.8.0"}`|
+|`version.json`|`{"version": "2.9.0"}`|
 |`tests/conftest.py`|pytest fixtures: `tk_root` (real Tk), `in_memory_db` (SQLite :memory:), `mock_app` (hand-rolled AppProtocol mock)|
 
 ---
@@ -512,7 +512,7 @@ python auto_build.py
 
 # Custom build
 python tools/build_inno_installer.py \
-  --app-name "2image" --version 2.8.0 \
+  --app-name "2image" --version 2.9.0 \
   --src-dir . --out-dir dist --iscc-path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 ```
 
