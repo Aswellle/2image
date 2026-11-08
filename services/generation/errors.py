@@ -22,6 +22,21 @@ Mapping guide:
 
 from __future__ import annotations
 
+# ── 按错误码的「下一步」用户指引（zh-CN）────────────────────────
+# 与 ProviderError.code 一一对应；UI 弹窗 / 状态栏 / 日志记录共用，
+# 让用户对每个失败类型都知道下一步该做什么。
+NEXT_STEP_BY_CODE: dict[str, str] = {
+    "not_configured": "在「🆓 免费配置」或「💎 付费接口配置」中填写该接口的 API Key",
+    "auth_failed": "打开配置向导重新粘贴该接口的 API Key，确认账号有效且 Key 未被重置",
+    "quota_exhausted": "前往该接口的控制台充值，或等待调度器自动尝试其他接口",
+    "rate_limited": "等待约 30 秒再试；批量任务会自动退避重试",
+    "policy_rejected": "调整提示词（移除敏感词/真人名/品牌）或更换其他接口",
+    "invalid_request": "更换尺寸或模型组合后重试；该接口已被自动跳过",
+    "invalid_response": "稍后重试；若持续出现多为该接口服务端异常，可切换其他接口",
+    "transient": "检查网络/代理后重试；批量任务会自动退避并尝试其他接口",
+    "provider_error": "查看「调试日志」中的完整错误详情",
+}
+
 
 class ProviderError(ValueError):
     """Base for all provider-domain errors.
@@ -35,6 +50,17 @@ class ProviderError(ValueError):
     code: str = "provider_error"
     retryable: bool = False
     fallback: bool = True
+
+    def __init__(self, message: str = "", provider: str | None = None) -> None:
+        super().__init__(message)
+        # 产生错误的接口（稳定 ID）；_net 的统一抛错出口会填充，
+        # provider 内的本地 raise 不传则保持 None（消息自带接口名）。
+        self.provider = provider
+
+    @property
+    def next_step(self) -> str:
+        """按错误码的用户下一步指引（zh-CN），UI / 日志共用。"""
+        return NEXT_STEP_BY_CODE.get(self.code, "")
 
 
 class ProviderConfigError(ProviderError):
@@ -136,31 +162,54 @@ class DeadlineExceeded(Exception):
     code = "deadline_exceeded"
 
 
-def classify_http_error(status_code: int, message: str = "") -> ProviderError:
+def classify_http_error(status_code: int, message: str = "", provider: str | None = None) -> ProviderError:
     """
     Convert an HTTP status code to the appropriate ProviderError.
 
     This is the SINGLE source of truth for HTTP→domain mapping.
     All provider adapters MUST use this instead of hand-mapping.
+
+    ``provider``（可选）写入错误的 .provider 属性，供 UI 弹窗与
+    结构化日志标注失败来源。
     """
+    err: ProviderError
     if status_code in (400, 422):
-        return ProviderInvalidRequestError(message or f"HTTP {status_code}")
-    if status_code == 401:
-        return ProviderAuthError(message or "Unauthorized")
-    if status_code == 402:
-        return ProviderQuotaError(message or "Payment required")
-    if status_code == 403:
-        return ProviderAuthError(message or "Forbidden")
-    if status_code == 404:
-        return ProviderAuthError(message or "Not found")
-    if status_code == 408:
-        return ProviderTransientError(message or "Request timeout")
-    if status_code == 429:
-        return ProviderRateLimitError(message or "Rate limited")
-    if status_code in (500, 502, 503, 504):
-        return ProviderTransientError(message or f"HTTP {status_code}")
-    if status_code >= 500:
-        return ProviderTransientError(message or f"HTTP {status_code}")
-    if status_code >= 400:
-        return ProviderInvalidRequestError(message or f"HTTP {status_code}")
-    return ProviderError(message or f"Unexpected HTTP {status_code}")
+        err = ProviderInvalidRequestError(message or f"HTTP {status_code}")
+    elif status_code == 401:
+        err = ProviderAuthError(message or "Unauthorized")
+    elif status_code == 402:
+        err = ProviderQuotaError(message or "Payment required")
+    elif status_code == 403:
+        err = ProviderAuthError(message or "Forbidden")
+    elif status_code == 404:
+        err = ProviderAuthError(message or "Not found")
+    elif status_code == 408:
+        err = ProviderTransientError(message or "Request timeout")
+    elif status_code == 429:
+        err = ProviderRateLimitError(message or "Rate limited")
+    elif status_code in (500, 502, 503, 504):
+        err = ProviderTransientError(message or f"HTTP {status_code}")
+    elif status_code >= 500:
+        err = ProviderTransientError(message or f"HTTP {status_code}")
+    elif status_code >= 400:
+        err = ProviderInvalidRequestError(message or f"HTTP {status_code}")
+    else:
+        err = ProviderError(message or f"Unexpected HTTP {status_code}")
+    if provider:
+        err.provider = provider
+    return err
+
+
+def format_error_record(err: BaseException) -> str:
+    """把异常格式化为单行结构化记录（写 debug.log 用）。
+
+    ProviderError → ``code=… provider=… detail=… next=…``；
+    其他异常 → ``code=unhandled type=… detail=…``。
+    """
+    if isinstance(err, ProviderError):
+        detail = str(err).replace("\n", " ")
+        provider = getattr(err, "provider", None) or "-"
+        next_step = err.next_step or "-"
+        return f"code={err.code} provider={provider} detail={detail[:300]} next={next_step}"
+    detail = f"{type(err).__name__}: {err}".replace("\n", " ")
+    return f"code=unhandled provider=- detail={detail[:300]} next=查看「调试日志」"

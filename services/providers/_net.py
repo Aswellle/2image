@@ -13,7 +13,6 @@ services/providers/_net.py — 共享 HTTP 工具
 import ipaddress
 import socket
 import threading
-from contextlib import contextmanager
 from urllib.parse import urlparse
 
 import requests
@@ -144,6 +143,9 @@ def raise_provider_error(
     抛出 ``ProviderError`` 家族（ValueError 子类）——旧契约的
     except ValueError 链照常兜底，orchestrator 按 ``.code``
     做重试/回退决策，不再依赖错误字符串嗅探。
+
+    ``.provider`` 始终填充（UI 弹窗与结构化日志标注失败来源），
+    ``.next_step`` 按错误码自动携带（用户下一步指引）。
     """
     from services.generation.errors import (
         ProviderConfigError,
@@ -155,19 +157,23 @@ def raise_provider_error(
     )
 
     msg = f"{provider}: {detail}" if detail else provider
+    err: Exception
     if kind == "config":
-        raise ProviderConfigError(msg)
-    if kind == "rate_limit":
-        raise ProviderRateLimitError(msg)
-    if kind == "quota":
-        raise ProviderQuotaError(msg)
-    if kind == "invalid_response":
-        raise ProviderInvalidResponseError(msg)
-    if kind == "transient":
-        raise ProviderTransientError(msg)
-    if status:
-        raise classify_http_error(status, msg)
-    raise ProviderTransientError(msg)
+        err = ProviderConfigError(msg)
+    elif kind == "rate_limit":
+        err = ProviderRateLimitError(msg)
+    elif kind == "quota":
+        err = ProviderQuotaError(msg)
+    elif kind == "invalid_response":
+        err = ProviderInvalidResponseError(msg)
+    elif kind == "transient":
+        err = ProviderTransientError(msg)
+    elif status:
+        err = classify_http_error(status, msg)
+    else:
+        err = ProviderTransientError(msg)
+    err.provider = provider
+    raise err
 
 
 def raise_for_response(resp, provider: str) -> None:
