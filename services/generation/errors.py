@@ -22,9 +22,11 @@ Mapping guide:
 
 from __future__ import annotations
 
-# ── 按错误码的「下一步」用户指引（zh-CN）────────────────────────
-# 与 ProviderError.code 一一对应；UI 弹窗 / 状态栏 / 日志记录共用，
-# 让用户对每个失败类型都知道下一步该做什么。
+# ── 按错误码的「下一步」用户指引（zh-CN 单语策略）──────────────
+# 与 ProviderError 子类的 code 一一对应（tests/test_error_experience.py
+# 有子类覆盖率断言）；复用于日志记录（§35 豁免）与弹窗。指引文案
+# 同 model_catalog 的 zh-CN 单语策略：主受众 zh，en 走状态栏概述。
+# 新增错误码子类时必须在本表补条目，否则日志 next= 为 "-"。
 NEXT_STEP_BY_CODE: dict[str, str] = {
     "not_configured": "在「🆓 免费配置」或「💎 付费接口配置」中填写该接口的 API Key",
     "auth_failed": "打开配置向导重新粘贴该接口的 API Key，确认账号有效且 Key 未被重置",
@@ -35,6 +37,7 @@ NEXT_STEP_BY_CODE: dict[str, str] = {
     "invalid_response": "稍后重试；若持续出现多为该接口服务端异常，可切换其他接口",
     "transient": "检查网络/代理后重试；批量任务会自动退避并尝试其他接口",
     "provider_error": "查看「调试日志」中的完整错误详情",
+    "payload_too_large": "接口返回的图片超出本机大小上限，已自动跳过该结果",
 }
 
 
@@ -210,6 +213,6 @@ def format_error_record(err: BaseException) -> str:
         detail = str(err).replace("\n", " ")
         provider = getattr(err, "provider", None) or "-"
         next_step = err.next_step or "-"
-        return f"code={err.code} provider={provider} detail={detail[:300]} next={next_step}"
+        return f"code={err.code} provider={provider} detail={detail[:500]} next={next_step}"
     detail = f"{type(err).__name__}: {err}".replace("\n", " ")
-    return f"code=unhandled provider=- detail={detail[:300]} next=查看「调试日志」"
+    return f"code=unhandled provider=- detail={detail[:500]} next=查看「调试日志」"

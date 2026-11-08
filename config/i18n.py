@@ -403,13 +403,49 @@ STRINGS = {
         "zh-CN": "批量生成暂不支持图生图模式\n请切换到「📝 文生图」后再批量生成",
         "en": "Batch generation does not support img2img mode.\nSwitch to text-to-image first.",
     },
-    "dlg_err_key_title": {
+    "err_next_not_configured": {
+        "zh-CN": "在「🆓 免费配置」或「💎 付费接口配置」中填写该接口的 API Key",
+        "en": "Fill in this provider's API key in 🆓 Free Config or 💎 Paid Config",
+    },
+    "err_next_auth_failed": {
+        "zh-CN": "打开配置向导重新粘贴该接口的 API Key，确认账号有效且 Key 未被重置",
+        "en": "Re-paste this provider's API key in the config wizard; verify the account is active",
+    },
+    "err_next_quota_exhausted": {
+        "zh-CN": "前往该接口的控制台充值，或等待调度器自动尝试其他接口",
+        "en": "Top up at the provider console, or let the scheduler try other providers",
+    },
+    "err_next_rate_limited": {
+        "zh-CN": "等待约 30 秒再试；批量任务会自动退避重试",
+        "en": "Wait ~30 seconds and retry; batch jobs back off automatically",
+    },
+    "err_next_policy_rejected": {
+        "zh-CN": "调整提示词（移除敏感词/真人名/品牌）或更换其他接口",
+        "en": "Adjust the prompt (remove sensitive terms/real names/brands) or switch providers",
+    },
+    "err_next_invalid_request": {
+        "zh-CN": "更换尺寸或模型组合后重试；该接口已被自动跳过",
+        "en": "Try a different size/model combination; this provider was skipped",
+    },
+    "err_next_invalid_response": {
+        "zh-CN": "稍后重试；若持续出现多为该接口服务端异常，可切换其他接口",
+        "en": "Retry later; persistent failures usually mean a server-side issue — switch providers",
+    },
+    "err_next_transient": {
+        "zh-CN": "检查网络/代理后重试；批量任务会自动退避并尝试其他接口",
+        "en": "Check network/proxy and retry; batch jobs back off and try other providers",
+    },
+    "err_next_payload_too_large": {
+        "zh-CN": "接口返回的图片超出本机大小上限，已自动跳过该结果",
+        "en": "The returned image exceeds the local size cap and was skipped",
+    },
+    "dlg_err_title": {
         "zh-CN": "需要配置 API Key",
         "en": "API key configuration needed",
     },
-    "dlg_err_key_body": {
-        "zh-CN": "{err}\n\n点击「🆓 免费配置」配置硅基流动 API Key。",
-        "en": '{err}\n\nClick "🆓 Free Config" to set up a SiliconFlow API key.',
+    "dlg_err_body": {
+        "zh-CN": "{err}",
+        "en": "{err}",
     },
     "dlg_need_generate_first": {
         "zh-CN": "请先生成或选择一张图片",

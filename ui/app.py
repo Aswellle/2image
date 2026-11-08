@@ -55,7 +55,7 @@ from services.translation import has_chinese, translate_zh_to_en
 MAX_NICK_LEN = 20  # 昵称/提示符显示截断长度
 
 
-from config.i18n import _, get_language, init_language
+from config.i18n import STRINGS, _, get_language, init_language
 from config.theme import DARK_THEME as C
 from config.theme import TAG_PALETTE, init_theme, tag_color
 from ui.button_states import install_button_state_defaults
@@ -93,7 +93,12 @@ _CODE_MSG_KEYS = {
     "invalid_request": "err_invalid_request",
     "invalid_response": "err_invalid_response",
     "transient": "err_connection",
+    "payload_too_large": "err_invalid_response",
 }
+
+# 需要用户离开应用去处理（向导 / 接口控制台）才弹窗打断的错误码；
+# 其余类型由状态栏概述 + 自动重试/换源兜住，不打断。
+_DIALOG_CODES = frozenset({"not_configured", "auth_failed", "quota_exhausted"})
 
 
 class App:
@@ -1036,16 +1041,16 @@ class App:
         self.content._prev_cv.itemconfig(self.content._prev_ph, text=_("preview_error"))
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
 
-        # 弹窗按错误码触发：需要用户介入的配置/鉴权/配额类才打断，
-        # 网络与限流类只留状态栏与日志（自动重试/换源已兜住）。
-        dialog_codes = {"not_configured", "auth_failed", "quota_exhausted"}
-        if isinstance(err, ProviderError) and err.code in dialog_codes:
-            next_step = err.next_step
+        # 弹窗按错误码触发（_DIALOG_CODES）：需离开应用处理的类型才
+        # 打断；指引文案按语言解析（err_next_<code> 键表），缺失时
+        # 回落 errors 层的 zh-CN 单语值。
+        if isinstance(err, ProviderError) and err.code in _DIALOG_CODES:
+            next_key = f"err_next_{err.code}"
+            next_text = _(next_key) if next_key in STRINGS else err.next_step
+            body = f"{err_text[:200]}\n\n{next_text}".strip()
             self.root.after(
                 100,
-                lambda: messagebox.showwarning(
-                    _("dlg_err_key_title"), _("dlg_err_key_body", err=f"{err_text[:200]}\n\n{next_step}")
-                ),
+                lambda: messagebox.showwarning(_("dlg_err_title"), _("dlg_err_body", err=body)),
             )
 
     def _cancelled(self) -> None:

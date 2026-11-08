@@ -91,9 +91,7 @@ class TestFormatErrorRecord:
 class TestUiErrDialogGating:
     """弹窗按错误码触发：配置/鉴权/配额弹，网络与限流不弹。"""
 
-    def _make_app(self):
-        import tkinter as tk
-
+    def _make_app(self, monkeypatch, tk_session_root):
         import data.repository as repo
         import ui.app as app_mod
         from config.fonts import init_fonts
@@ -104,61 +102,72 @@ class TestUiErrDialogGating:
         init_fonts()
         cfg = dict(DEFAULT_CONFIG)
         cfg["show_wizard_on_start"] = False
-        app_mod.load_config = lambda: dict(cfg)
-        app_mod.save_config = lambda c: None
-        top = tk.Toplevel()
-        return app_mod, app_mod.App(top), top
+        # monkeypatch 保证会话结束恢复模块全局（不泄漏到其他测试）
+        monkeypatch.setattr(app_mod, "load_config", lambda: dict(cfg))
+        monkeypatch.setattr(app_mod, "save_config", lambda c: None)
+        # 会话级共享 root 上以 Toplevel 承载，规避 Windows 下反复
+        # 创建/销毁 Tcl 解释器的崩溃（conftest 既有约定）
+        from tkinter import Toplevel
 
-    def test_dialog_codes_set(self):
-        # 弹窗码表以常量形式存在于 _err 源码中（AST 免 Tk 依赖）
-        import ast
-        import pathlib
+        top = Toplevel(tk_session_root)
+        app = app_mod.App(top)
+        tk_session_root.update()
+        return app_mod, app, top
 
-        src = pathlib.Path("ui/app.py").read_text(encoding="utf-8")
-        tree = ast.parse(src)
-        found = None
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Assign) and any(getattr(t, "id", "") == "dialog_codes" for t in node.targets):
-                found = {e.value for e in node.value.elts}
-        assert found == {"not_configured", "auth_failed", "quota_exhausted"}
+    def test_dialog_codes_constant(self):
+        """弹窗码表为模块级常量，且是错误分类子集。"""
+        import services.generation.errors as err_mod
+        from ui.app import _DIALOG_CODES
 
-    def test_showwarning_only_for_dialog_codes(self):
+        assert _DIALOG_CODES == {"not_configured", "auth_failed", "quota_exhausted"}
+        subclass_codes = self._subclass_codes(err_mod)
+        assert _DIALOG_CODES <= subclass_codes
+
+    @staticmethod
+    def _subclass_codes(err_mod):
+        codes = set()
+        stack = [err_mod.ProviderError]
+        while stack:
+            cls = stack.pop()
+            stack.extend(cls.__subclasses__())
+            codes.add(cls.code)
+        return codes
+
+    def test_taxonomy_guidance_coverage(self):
+        """每个 ProviderError 子类的 code 都必须有下一步指引（防新增漏配）。"""
+        import services.generation.errors as err_mod
+
+        subclass_codes = self._subclass_codes(err_mod)
+        missing = subclass_codes - set(NEXT_STEP_BY_CODE)
+        assert not missing, f"新增错误码缺少 next_step 指引: {missing}"
+
+    def test_showwarning_only_for_dialog_codes(self, monkeypatch, tk_session_root):
         """网络/限流类错误不触发 messagebox，配置类触发一次。"""
-        app_mod, app, top = self._make_app()
-        try:
-            calls = []
+        app_mod, app, top = self._make_app(monkeypatch, tk_session_root)
+        calls = []
 
-            def _run_after(delay, cb, *a):
-                cb()  # 立即执行 after 回调，不等事件循环
+        def _run_after(delay, cb, *a):
+            cb()  # 立即执行 after 回调，不等事件循环
 
-            with patch("ui.app.messagebox") as mb, patch.object(app.root, "after", side_effect=_run_after):
-                mb.showwarning.side_effect = lambda *a, **k: calls.append(a)
-                app._err(ProviderAuthError("Key 无效", provider="gemini"))
-                assert len(calls) == 1
-                # 正文含原始错误与下一步指引
-                assert "Key 无效" in calls[0][1]
-                app._err(ProviderTransientError("网络错误", provider="gemini"))
-                assert len(calls) == 1  # 不弹
-                app._err(ProviderConfigError("需要配置 API Key"))
-                assert len(calls) == 2
-        finally:
-            try:
-                top.destroy()
-            except Exception:
-                pass
+        with patch("ui.app.messagebox") as mb, patch.object(app.root, "after", side_effect=_run_after):
+            mb.showwarning.side_effect = lambda *a, **k: calls.append(a)
+            app._err(ProviderAuthError("Key 无效", provider="gemini"))
+            assert len(calls) == 1
+            # 正文含原始错误与下一步指引
+            assert "Key 无效" in calls[0][1]
+            app._err(ProviderTransientError("网络错误", provider="gemini"))
+            assert len(calls) == 1  # 不弹
+            app._err(ProviderConfigError("需要配置 API Key"))
+            assert len(calls) == 2
+        top.destroy()
 
-    def test_structured_log_written(self):
-        app_mod, app, top = self._make_app()
-        try:
-            logs = []
-            with patch.object(app, "_log", side_effect=lambda m: logs.append(m)):
-                app._err(ProviderAuthError("Key 无效", provider="gemini"))
-            joined = "\n".join(logs)
-            assert "code=auth_failed" in joined
-            assert "provider=gemini" in joined
-            assert "next=" in joined
-        finally:
-            try:
-                top.destroy()
-            except Exception:
-                pass
+    def test_structured_log_written(self, monkeypatch, tk_session_root):
+        app_mod, app, top = self._make_app(monkeypatch, tk_session_root)
+        logs = []
+        with patch.object(app, "_log", side_effect=lambda m: logs.append(m)):
+            app._err(ProviderAuthError("Key 无效", provider="gemini"))
+        joined = "\n".join(logs)
+        assert "code=auth_failed" in joined
+        assert "provider=gemini" in joined
+        assert "next=" in joined
+        top.destroy()
