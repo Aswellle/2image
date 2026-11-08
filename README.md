@@ -22,7 +22,7 @@
   &nbsp;·&nbsp;
   <a href="https://github.com/Aswellle/2image/issues">🐛 反馈问题</a>
   &nbsp;·&nbsp;
-  <a href="#快速上手">📖 使用文档</a>
+  <a href="#-快速上手">📖 使用文档</a>
 </p>
 
 <p>
@@ -36,11 +36,11 @@
 ---
 
 <a id="中文"></a>
-## 🐇 什么是 2image（兔图）？
+## 🎨 什么是 2image？
 
-**2image · 兔图** 是一款运行在Windows桌面的AI图片生成工具。
+**2image** 是一款运行在 Windows 桌面的 AI 图片生成工具。
 
-只需描述你想要的画面，兔图就会自动调用最合适的生图接口为你生成——无需任何编程基础，无需搭建服务，不用担心数据外泄，所有内容都保存在你自己的电脑上。
+只需描述你想要的画面，2image 就会自动调用最合适的生图接口为你生成——无需任何编程基础，无需搭建服务，不用担心数据外泄，所有内容都保存在你自己的电脑上。
 
 > "一个工具，接入市面上主流的免费与付费生图API，让创作门槛降到最低。"
 
@@ -48,17 +48,17 @@
 
 ## ✨ 核心亮点
 
-### 🎯 一个界面，19 个可选接口
-主界面可直接选择 19 个免费与付费生图服务，覆盖 Pollinations、硅基流动、Gemini、通义万相、Bria AI、OpenAI GPT-Image 与 Black Forest Labs FLUX 等。**可先使用无需 Key 的服务，再按需配置免费或付费 API**；生成会按当前优先序列依次尝试可用服务。另有 3 个商用服务实现，见下方说明。
+### 🎯 一个界面，18 个可选接口
+主界面可直接选择 18 个免费与付费生图服务，覆盖 Pollinations、硅基流动、Gemini Nano Banana、通义万相、Bria AI、OpenAI GPT-Image 与 Black Forest Labs FLUX 等。**可先使用无需 Key 的服务，再按需配置免费或付费 API**；生成会按当前优先序列依次尝试可用服务。另有 5 个商用服务实现（其中豆包 Seedream 已支持在付费配置向导中配置），见下方说明。
 
 ### 🆓 零成本起步
 **Pollinations.AI 无需注册即可体验**，开箱即用；匿名调用仍受频率限制。注册几个提供免费额度的服务后，还能解锁更多高质量模型，覆盖日常创作需求。
 
 ### 🧠 智能路由，一键最优
-配置可用服务后，输入「banner 设计」会优先排列 Ideogram（擅长文字入图）；输入「电商产品图」会优先排列 fal.ai FLUX Ultra（写实高清）。不同场景按优先序列尝试适合的模型，也可手动指定接口。
+配置可用服务后，输入「banner 设计」会优先排列 Ideogram（擅长文字入图）；输入「电商产品图」会优先排列 fal.ai FLUX.2 Pro（写实高清）。不同场景按优先序列尝试适合的模型，也可手动指定接口。
 
 ### 🖼 图生图（img2img）
-上传参考图后，程序会只显示已接入且已有配置入口的图生图接口；可使用 Stability AI 的「变化强度」控制改动幅度，其他支持的模型会一并接收参考图。当前主界面可选 Stability AI、Nano Banana Pro 与 Black Forest Labs FLUX；Gemini、OpenAI GPT-Image、MiniMax image-01 与豆包 SeedEdit 已实现参考图逻辑，但受注册表声明与配置入口限制，暂未出现在图生图下拉框中。批量变体和顺序队列会在图生图模式下自动锁定，避免参考图被忽略。
+上传参考图后，程序会只显示已接入且已有配置入口的图生图接口，当前共 6 个：Stability AI（「变化强度」滑杆控制改动幅度）、Nano Banana Pro、Black Forest Labs FLUX、Gemini Nano Banana 系列、OpenAI GPT-Image 与豆包 Seedream（原生参考图编辑）。fal.ai 与 MiniMax 已实现参考图逻辑，但暂无配置入口，未出现在图生图下拉框中。批量变体和顺序队列会在图生图模式下自动锁定，避免参考图被忽略。
 
 ### 🎲 批量变体，一次生成 6 张
 同一提示词自动生成多张不同种子的变体，对比挑选最满意的一张，极大提升创作效率。支持标准模式与高质量模式（更高步数 / 更好模型）。
@@ -67,13 +67,13 @@
 将多个任务加入队列，让程序按顺序自动生成。可随时暂停、继续或停止，中途新增任务也会自动纳入当前轮次。
 
 ### 🔧 AI 提示词优化
-内置提示词优化向导，可将模糊想法整理成高质量英文提示词。填写硅基流动 Key 后会按 DeepSeek V3、Qwen 与 GLM 候选顺序尝试；也可填写 DeepSeek 官方 API Key，手动选择质量优先的 Pro 或速度优先的 Flash 预设。未配置硅基流动时，可改用 HuggingFace 通道。
+内置提示词优化向导，可将模糊想法整理成高质量英文提示词。填写硅基流动 Key 后会按 DeepSeek-V3.2、V3.1-Terminus 与 Qwen3-8B 候选顺序自动降级尝试；也可填写 DeepSeek 官方 API Key，手动选择质量优先的 Pro（deepseek-v4-pro）或速度优先的 Flash（deepseek-flash）预设。
 
 ### 🀄 中文原生支持
 直接输入中文描述，程序自动调用 MyMemory 翻译为英文再送入生图接口——无需手动翻译，无需额外配置。
 
 ### 🔒 数据完全本地
-所有图片、历史记录、配置均保存在你的电脑（`~/2image/`），不上传任何用户数据。
+所有图片、历史记录、配置均保存在你的电脑（`~/2image/`），不上传任何用户数据。分发给其他人的安装包不含任何个人信息或 API Key。
 
 ---
 
@@ -84,7 +84,7 @@
 1. 前往 [Releases 页面](https://github.com/Aswellle/2image/releases/latest)
 2. 下载 `2image-setup-v*.exe`（安装包）或 `2image-portable-v*.exe`（便携版）
 3. 运行，首次启动会弹出配置向导
-4. 不配置任何 Key 也可直接生成（Pollinations.AI 免费无限额）
+4. 不配置任何 Key 也可直接生成（Pollinations.AI 免注册，匿名调用受频率限制）
 
 ### 方式二：从源码运行
 
@@ -103,41 +103,41 @@ python main.py
 
 | 接口 | 模型 | 免费额度 | 是否需要 Key |
 |---|---|---|---|
-| **Pollinations.AI** | FLUX Schnell | 无固定日配额，匿名调用有频率限制 | ❌ 无需注册 |
-| **硅基流动 SiliconFlow** ⭐ | FLUX.1-dev/schnell · SDXL | 注册送免费额度 | ✅ 免费注册 |
-| **Google Gemini** | Gemini 2.5 Flash Image（Nano Banana） | 以 Google AI Studio 当前免费额度为准 | ✅ 免费注册 |
-| **通义万相 Qwen-Image** | wanx2.1-t2i-turbo | 阿里云新用户免费额度 | ✅ 免费注册 |
+| **Pollinations.AI** | FLUX · Turbo · SANA（匿名层实测名单，高质量档含 GPTImage） | 无固定日配额，匿名调用有频率限制 | ❌ 无需注册 |
+| **硅基流动 SiliconFlow** ⭐ | FLUX.1 · SDXL · Kolors | 注册送免费额度 | ✅ 免费注册 |
+| **Google Gemini** | Nano Banana 系列（2.1 默认，2 / 2 Lite / Pro 可切换） | 以 Google AI Studio 当前免费额度为准 | ✅ 免费注册 |
+| **通义万相 Qwen-Image** | wan2.5-t2i | 阿里云新用户免费额度 | ✅ 免费注册 |
 | **Bria AI Fibo** | Fibo | 注册送 1000 次调用 | ✅ 免费注册 |
-| **Cloudflare Workers AI** | FLUX.1-schnell | 1 万 Neurons/天（约 10–20 张高分辨率图） | ✅ 免费注册 |
-| **HuggingFace** | FLUX · Stable Diffusion 3 Medium | 免费推理 API | ✅ 免费注册 |
+| **Cloudflare Workers AI** | FLUX.1-schnell · FLUX.2-dev（高质量档）· SDXL | 1 万 Neurons/天（约 10–20 张高分辨率图） | ✅ 免费注册 |
+| **HuggingFace** | Stable Diffusion 3 Medium | 免费推理 API | ✅ 免费注册 |
 | **StableHorde** | SD 系列 | 匿名可用 | ❌ 可选注册 |
-| **ModelsLab** | FLUX · SDXL | 100 次/天 | ✅ 免费注册 |
-| **Together AI** | FLUX.1-schnell | 免费可用性请以 Together 控制台为准 | ✅ 免费注册 |
-| **OpenRouter** | 统一 Image API | 按所选模型计费，免费可用性请以模型页为准 | ✅ 免费注册 |
-| **Segmind** | FLUX · SDXL | 注册送 $5 额度 | ✅ 免费注册 |
+| **ModelsLab** | FLUX · SDXL · Realistic Vision · SD 1.5 | 100 次/天 | ✅ 免费注册 |
+| **Together AI** | FLUX.1-schnell（官方免费端点） | 免费可用性请以 Together 控制台为准 | ✅ 免费注册 |
+| **OpenRouter** | 统一 Image API（默认 gemini-3.1-flash-image） | 按所选模型计费，免费可用性请以模型页为准 | ✅ 免费注册 |
+| **Segmind** | FLUX Schnell · SDXL · SD3 Medium | 注册送 $5 额度 | ✅ 免费注册 |
 
 ### 付费接口
 
 | 接口 | 特点 | 定价参考 |
 |---|---|---|
-| **💎 OpenAI GPT-Image** | 文生图与参考图编辑，支持 gpt-image-1 / mini | 按次计费 |
+| **💎 OpenAI GPT-Image** | gpt-image-2 默认（2.5 / 2.6 Flare·Sunburst 可选），文生图与参考图编辑 | 按次计费 |
 | **💎 Nano Banana Pro** | Gemini 3 Pro Image，高画质图生图，复用 Gemini Key | 按量计费 |
-| **💎 Black Forest Labs FLUX** | 官方 FLUX 文生图与 Kontext 图生图 | 按量计费 |
-| **💎 Stability AI** | 支持图生图，Stable Diffusion 原厂 | 按次计费 |
-| **💎 Replicate FLUX** | FLUX.1.1 Pro 高分辨率 | 按次计费 |
-| **💎 xAI Grok Imagine** | Grok Imagine Image Quality 模型 | 按次计费 |
+| **💎 Black Forest Labs FLUX** | 官方 FLUX.2 单端点文生图与图生图（flux-2-pro 默认） | 按量计费 |
+| **💎 Stability AI** | SD3.5-large / core，支持图生图与「变化强度」控制 | 按积分计费 |
+| **💎 Replicate FLUX** | black-forest-labs/flux-2-pro 官方托管 | 按次计费 |
+| **💎 xAI Grok Imagine** | grok-imagine-image-2.0，接入宽高比与分辨率控制 | 按次计费 |
 
 ### 商业变现接口
 
-以下服务已由注册表自动发现；当前尚未接入常规的主界面下拉菜单，适合需要自行补充配置入口的商用场景（豆包已在付费配置向导中提供 Key 输入，但分类仍为 commercial，因此不出现在主界面下拉菜单）。
+以下服务已由注册表自动发现；当前尚未接入常规的主界面下拉菜单，适合需要自行补充配置入口的商用场景（豆包 Seedream 已在付费配置向导中提供完整配置卡片——Key 与模型选择，但分类仍为 commercial，因此不出现在主界面下拉菜单）。
 
 | 接口 | 特点 |
 |---|---|
-| **Ideogram v3** | 文字入图首选，Banner / LOGO / 海报中文字可读 |
-| **fal.ai FLUX Ultra** | 最高 4MP 超清写实，产品图 / 人像首选 |
-| **Recraft v3** | 设计 / 插画 / 矢量风格，品牌 VI 利器 |
+| **Ideogram v4** | 文字入图首选，Banner / LOGO / 海报中文字可读 |
+| **fal.ai FLUX.2 Pro** | 文生图 `fal-ai/flux-2-pro` + 指令式编辑 `/edit`，最高 4MP 超清写实，产品图 / 人像首选 |
+| **Recraft v4.1** | 设计 / 插画 / 矢量风格，品牌 VI 利器（默认 recraftv4_1，可切回 v3） |
 | **MiniMax image-01** | 文生图与主体参考图创作（无独立配置卡片） |
-| **豆包 Seedream（火山引擎）** | Seedream 文生图 / SeedEdit 图生图 |
+| **豆包 Seedream（火山引擎）** | Seedream 4.5 / 4.0 文生图 + 原生参考图编辑，SeedEdit 3.0 兜底 |
 
 ---
 
