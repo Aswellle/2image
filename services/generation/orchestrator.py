@@ -166,6 +166,10 @@ class GenerationOrchestrator:
                     result.attempts += 1
                     last_error = exc
                     final_error = exc
+                    # provider 内本地 raise 不带来源（_net 出口才有），
+                    # 这里以编排器已知的管理 ID 兜底填充
+                    if not getattr(exc, "provider", None):
+                        exc.provider = provider_id
                     health.record_failure(exc.code)
                     error_msg = f"[{provider_id}] {exc.code}: {exc}"
                     result.errors.append(error_msg)
