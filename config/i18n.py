@@ -1631,6 +1631,14 @@ STRINGS = {
         "zh-CN": "◉ 当前使用",
         "en": "◉ Active",
     },
+    "wizard_llm_preset_flash_title": {
+        "zh-CN": "DeepSeek Flash（推荐）",
+        "en": "DeepSeek Flash (Recommended)",
+    },
+    "wizard_llm_preset_pro_title": {
+        "zh-CN": "DeepSeek Pro",
+        "en": "DeepSeek Pro",
+    },
     "wizard_llm_preset_auto_title": {
         "zh-CN": "硅基流动自动（推荐）",
         "en": "SiliconFlow Auto (Recommended)",

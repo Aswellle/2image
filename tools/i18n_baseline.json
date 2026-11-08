@@ -6,102 +6,102 @@
  },
  {
   "file": "ui/app.py",
-  "line": 102,
+  "line": 100,
   "text": "主窗口控制器 v5.2。侧栏/主区控件已提取至独立模块。"
  },
  {
   "file": "ui/app.py",
-  "line": 310,
+  "line": 308,
   "text": "主窗口关闭守卫：任务进行中先确认，防守护线程随窗口静默消失。"
  },
  {
   "file": "ui/app.py",
-  "line": 435,
+  "line": 433,
   "text": "当前窗口下侧栏允许的最大宽度。\n\n        侧栏上限不能是固定值：窗口缩到最小（1000px）时若侧栏仍可拖到\n "
  },
  {
   "file": "ui/app.py",
-  "line": 483,
+  "line": 481,
   "text": "双击分隔条恢复默认宽度（§41）。"
  },
  {
   "file": "ui/app.py",
-  "line": 498,
+  "line": 496,
   "text": "Ctrl+\\ 折叠/展开历史侧栏（§42）：折叠后工作区获得完整宽度。"
  },
  {
   "file": "ui/app.py",
-  "line": 552,
+  "line": 550,
   "text": "焦点在可编辑控件上时不拦截编辑类按键。"
  },
  {
   "file": "ui/app.py",
-  "line": 560,
+  "line": 558,
   "text": "Esc 关闭最上层覆盖窗口（查看器/提示词助手/词库）。"
  },
  {
   "file": "ui/app.py",
-  "line": 587,
+  "line": 585,
   "text": "Ctrl+B 打开词库；焦点在输入框时让给编辑键。"
  },
  {
   "file": "ui/app.py",
-  "line": 593,
+  "line": 591,
   "text": "Ctrl+L 清空调试日志；焦点在输入框时让给编辑键。"
  },
  {
   "file": "ui/app.py",
-  "line": 599,
+  "line": 597,
   "text": "方向键/Home/End 在可见（过滤后）列表上移动选中并滚动入视。\n\n        此前走未过滤的 get_all_"
  },
  {
   "file": "ui/app.py",
-  "line": 620,
+  "line": 618,
   "text": "瞬态通知（UIUX §64）：快捷确认走 toast，不长期占据状态栏。"
  },
  {
   "file": "ui/app.py",
-  "line": 647,
+  "line": 645,
   "text": "仅清理选中项关联的预览/对比状态。\n\n        删除历史条目等场景使用：保留用户正在输入的提示词草稿、\n     "
  },
  {
   "file": "ui/app.py",
-  "line": 719,
+  "line": 717,
   "text": "保留变体后刷新历史列表并自动预览。\n\n        修复：\n          · 接收 batch_panel 传来"
  },
  {
   "file": "ui/app.py",
-  "line": 892,
+  "line": 891,
   "text": "根据当前自动发现的 Provider 注册表实时统计顶栏可用接口数。\n\n        不再维护易过期的手写 key 列"
  },
  {
   "file": "ui/app.py",
-  "line": 954,
+  "line": 953,
   "text": "单张生成成功回调：恢复按钮、刷新预览/历史/查看器。\n\n        b8dd17b 重构中误删导致生成成功后界面不更"
  },
  {
   "file": "ui/app.py",
-  "line": 983,
+  "line": 982,
   "text": "Handle generation error (kept in App for UI state access).\n\n"
  },
  {
   "file": "ui/app.py",
-  "line": 1027,
+  "line": 1052,
   "text": "单图生成被用户取消：恢复控件并提示（与 _err 同构的收尾）。"
  },
  {
   "file": "ui/app.py",
-  "line": 1035,
+  "line": 1060,
   "text": "导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"
  },
  {
   "file": "ui/app.py",
-  "line": 131,
+  "line": 129,
   "text": "简体中文"
  },
  {
   "file": "ui/app.py",
-  "line": 1040,
+  "line": 1065,
   "text": "AI生图_"
  },
  {
@@ -406,47 +406,52 @@
  },
  {
   "file": "ui/main_content.py",
-  "line": 1334,
+  "line": 1341,
+  "text": "按当前接口选择显隐强度滑杆行；「自动」按任一可选接口支持判定。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1361,
   "text": "支持图生图、且能在现有向导里配置 Key 的接口。\n\n        真实条件是「向导里有没有该接口的 Key 配置卡片"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1350,
+  "line": 1377,
   "text": "把图生图可用接口名称以竖向分行方式填入侧栏提示区。\n        每次调用先销毁旧行再重建，保证列表长度变化时不会残留"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1373,
+  "line": 1400,
   "text": "postcommand：把弹出 Listbox 撑到最长条目的实际像素宽。\n\n        ttk.Combobox "
  },
  {
   "file": "ui/main_content.py",
-  "line": 1394,
+  "line": 1421,
   "text": "切换文生图/图生图。\n\n        图生图的参考图侧栏固定在预览 Tab 内部（_prev_host 第 0 列），"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1453,
+  "line": 1481,
   "text": "批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个\n        入口并给出提示，避免用户以为批量结果也套"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1473,
+  "line": 1501,
   "text": "在参考图预览 Canvas 上绘制占位符（尺寸取实际渲染宽高，\n        侧栏展开动画期间会随每一帧的宽度实时重绘"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1488,
+  "line": 1516,
   "text": "将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1505,
+  "line": 1533,
   "text": "弹出文件选择器，读取参考图字节并更新预览和 UI 状态。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1526,
+  "line": 1554,
   "text": "清除参考图，恢复占位符。"
  },
  {
@@ -731,17 +736,17 @@
  },
  {
   "file": "ui/wizard_free.py",
-  "line": 21,
+  "line": 22,
   "text": "免费接口配置向导（v5）。"
  },
  {
   "file": "ui/wizard_free.py",
-  "line": 66,
+  "line": 67,
   "text": "关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"
  },
  {
   "file": "ui/wizard_free.py",
-  "line": 939,
+  "line": 953,
   "text": "绿边 idle，获焦后变隐形。"
  },
  {
@@ -751,12 +756,12 @@
  },
  {
   "file": "ui/wizard_llm.py",
-  "line": 51,
+  "line": 43,
   "text": "AI 提示词助手模型密钥配置向导（模态对话框）。"
  },
  {
   "file": "ui/wizard_llm.py",
-  "line": 506,
+  "line": 429,
   "text": "把当前 preset_var 的值投射为整行卡片的明确选中态。"
  },
  {
@@ -766,12 +771,12 @@
  },
  {
   "file": "ui/wizard_paid.py",
-  "line": 32,
+  "line": 35,
   "text": "付费接口（OpenAI / Stability AI / Replicate / xAI / 豆包）配置窗口。"
  },
  {
   "file": "ui/wizard_paid.py",
-  "line": 71,
+  "line": 74,
   "text": "关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"
  },
  {

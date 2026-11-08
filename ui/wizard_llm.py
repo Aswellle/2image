@@ -34,8 +34,8 @@ _SF_MODELS_INFO = [
 ]
 
 _DEEPSEEK_PRESETS_INFO = [
-    ("deepseek_flash", "DeepSeek Flash（推荐）", "llm_info_ds_flash"),
-    ("deepseek_pro", "DeepSeek Pro", "llm_info_ds_pro"),
+    ("deepseek_flash", "wizard_llm_preset_flash_title", "llm_info_ds_flash"),
+    ("deepseek_pro", "wizard_llm_preset_pro_title", "llm_info_ds_pro"),
 ]
 
 
@@ -206,7 +206,7 @@ class LLMWizard(tk.Toplevel):
 
         presets = [
             ("siliconflow_auto", _("wizard_llm_preset_auto_title"), _("wizard_llm_preset_auto_desc"), C["ok"]),
-            *[(key, name, _(desc), C["purple_soft"]) for key, name, desc in _DEEPSEEK_PRESETS_INFO],
+            *[(key, _(name), _(desc), C["purple_soft"]) for key, name, desc in _DEEPSEEK_PRESETS_INFO],
         ]
 
         def _select_preset(key):
