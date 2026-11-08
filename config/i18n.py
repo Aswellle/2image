@@ -1761,8 +1761,8 @@ STRINGS = {
         "en": "Text-to-image + Image-to-image  |  5 models  |  Pay-as-you-go",
     },
     "wizard_paid_openai_info_1": {
-        "zh-CN": "• 模型族：GPT-Image 2 / 2.5 Flare (快速) / 2.5 Sunburst (最强) / 2.6 Flare (极速) / 2.6 Sunburst (最强·新)",
-        "en": "• Model family: GPT-Image 2 / 2.5 Flare (fast) / 2.5 Sunburst (best) / 2.6 Flare (fastest) / 2.6 Sunburst (best, new)",
+        "zh-CN": "• 模型族：GPT-Image 2 / 2.5 / 2.6（完整清单见下方「模型」下拉，2.6 为 2026-11 最新）",
+        "en": "• Model family: GPT-Image 2 / 2.5 / 2.6 (full list in the Model dropdown; 2.6 is the newest, Nov 2026)",
     },
     "wizard_paid_openai_info_2": {
         "zh-CN": "• GPT-Image 2+ 支持任意分辨率（16 的倍数，长边 ≤3840）",
@@ -2649,8 +2649,8 @@ STRINGS = {
         "en": "★ Highly recommended · fast · free credits on signup",
     },
     "wz_sf_info1": {
-        "zh-CN": "• 中国国产云平台，注册即送免费额度，支持 FLUX.1-schnell / SDXL 等",
-        "en": "• Chinese cloud platform with free credits on signup; FLUX.1-schnell / SDXL and more",
+        "zh-CN": "• 中国国产云平台，注册即送免费额度，支持 FLUX.1-schnell / SDXL / Kolors（可图）等",
+        "en": "• Chinese cloud platform with free credits on signup; FLUX.1-schnell / SDXL / Kolors and more",
     },
     "wz_sf_info2": {
         "zh-CN": "• 生图速度约 2~5 秒，推理质量高，支持最大 1024×1024",
