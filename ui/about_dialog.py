@@ -34,6 +34,7 @@ from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
 from ui.button_states import set_enabled
+from ui.components import bind_wraplength
 
 from services.updater import (
     RELEASES_PAGE,
@@ -89,7 +90,7 @@ class AboutDialog(tk.Toplevel):
         self.app = parent_app
         self.root = parent_app.root
         self.title(_("about_title"))
-        self.geometry("640x680")
+        self.geometry("720x680")
         self.resizable(False, True)
         self.configure(bg=C["bg"])
         self.transient(self.root)
@@ -120,7 +121,10 @@ class AboutDialog(tk.Toplevel):
         self._ver_lbl = tk.Label(body, text="", font=F["h2"], bg=C["bg"], fg=C["text"])
         self._ver_lbl.pack(anchor="w", pady=(14, 2))
 
-        tk.Label(body, text=_("about_repo_hint"), font=F["small"], bg=C["bg"], fg=C["sub"]).pack(anchor="w")
+        # 仓库说明行：英文文案比窗口宽时会两侧同时被裁，绑定换行宽度
+        self._repo_lbl = tk.Label(body, text=_("about_repo_hint"), font=F["small"], bg=C["bg"], fg=C["sub"])
+        self._repo_lbl.pack(fill="x", anchor="w")
+        bind_wraplength(body, [self._repo_lbl], padx_total=0, floor=280)
 
         row = tk.Frame(body, bg=C["bg"])
         row.pack(fill="x", pady=(12, 4))

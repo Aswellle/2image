@@ -537,7 +537,7 @@ STRINGS = {
     },
     "about_download_install": {
         "zh-CN": "⬇ 下载并安装",
-        "en": "⬇ Download && Install",
+        "en": "⬇ Download & Install",
     },
     "about_downloading": {
         "zh-CN": "下载中 {tag}：{pct}%（{done} / {total} MB · {speed} MB/s）",
