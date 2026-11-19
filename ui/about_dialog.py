@@ -34,6 +34,7 @@ from config.fonts import F
 from config.theme import DARK_THEME as C
 from config.i18n import _
 from ui.button_states import set_enabled
+from config.ui_geometry import fit_to_workarea, scaled
 from ui.components import bind_wraplength
 
 from services.updater import (
@@ -90,7 +91,8 @@ class AboutDialog(tk.Toplevel):
         self.app = parent_app
         self.root = parent_app.root
         self.title(_("about_title"))
-        self.geometry("820x680")
+        _w, _h = fit_to_workarea(self, scaled(self, 820), scaled(self, 680))
+        self.geometry(f"{_w}x{_h}")
         self.resizable(False, True)
         self.configure(bg=C["bg"])
         self.transient(self.root)

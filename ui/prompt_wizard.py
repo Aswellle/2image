@@ -36,6 +36,7 @@ from services.prompt_assistant import (
     get_templates_by_category,
     prompt_budget_info,
 )
+from config.ui_geometry import scaled
 from ui.button_states import set_enabled
 from ui.wizard_llm import LLMWizard
 
@@ -286,11 +287,13 @@ class PromptWizard(tk.Toplevel):
         self.title(_("wizard_title") + " — " + _("wizard_pro_suffix"))
         screen_w = self.winfo_screenwidth()
         screen_h = self.winfo_screenheight()
-        window_w = min(1040, max(780, screen_w - 80))
-        window_h = min(860, max(680, screen_h - 48))
+        # 窗口几何按缩放系数放大（高 DPI 下字体放大，固定逻辑窗宽
+        # 会让内容溢出窗口右缘）
+        window_w = min(scaled(self, 1040), max(scaled(self, 780), screen_w - 80))
+        window_h = min(scaled(self, 860), max(scaled(self, 680), screen_h - 48))
         self.geometry(f"{window_w}x{window_h}")
         self.configure(bg=C["bg"])
-        self.minsize(780, 680)
+        self.minsize(scaled(self, 780), scaled(self, 680))
         self.resizable(True, True)
 
         # 居中，并为窗口装饰预留空间，避免底部操作栏落到屏幕外。

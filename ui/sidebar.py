@@ -3,14 +3,14 @@ ui/sidebar.py — History sidebar extracted from App  v5.1
 ─────────────────────────────────────────────────
 """
 
-import threading
 import os
 import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import ImageTk
 from config.fonts import F
-from config.theme import DARK_THEME as C, TAG_PALETTE, tag_color
+from config.ui_geometry import scaled
+from config.theme import DARK_THEME as C, tag_color
 from ui.icons import glyph, icon_font
 from config.i18n import _
 from services.providers import provider_id_for
@@ -19,7 +19,6 @@ from data.repository import (
     get_all_tags,
     count_entries,
     get_entries_keyset,
-    get_stats,
     update_tags,
     rename_entry,
     toggle_favorite,
@@ -1107,9 +1106,11 @@ class HistorySidebar:
         win.resizable(False, False)
         win.grab_set()
         win.update_idletasks()
-        x = self.app.root.winfo_x() + (self.app.root.winfo_width() - 440) // 2
-        y = self.app.root.winfo_y() + (self.app.root.winfo_height() - 460) // 2
-        win.geometry(f"440x460+{max(0, x)}+{max(0, y)}")
+        # 窗口几何按缩放系数放大（高 DPI 下字体放大）
+        tw, th = scaled(win, 440), scaled(win, 460)
+        x = self.app.root.winfo_x() + (self.app.root.winfo_width() - tw) // 2
+        y = self.app.root.winfo_y() + (self.app.root.winfo_height() - th) // 2
+        win.geometry(f"{tw}x{th}+{max(0, x)}+{max(0, y)}")
 
         hdr = tk.Frame(win, bg=C["acc"])
         hdr.pack(fill="x")

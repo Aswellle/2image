@@ -23,6 +23,7 @@ from config.fonts import F
 from config.i18n import _
 from config.settings import save_config
 from config.theme import DARK_THEME as C
+from config.ui_geometry import fit_to_workarea, scaled
 from ui.components import bind_follower_wrap, bind_wraplength
 from ui.icons import glyph, icon_font
 
@@ -51,17 +52,18 @@ class LLMWizard(tk.Toplevel):
         self._dirty = False
 
         self.title(_("wizard_llm_title"))
-        self.geometry("780x700")
         self.configure(bg=C["bg"])
         self.resizable(True, True)
-        self.minsize(640, 520)
+        self.minsize(scaled(self, 640), scaled(self, 520))
         self.grab_set()
         self.focus_set()
 
+        # 窗口几何按缩放系数放大并钳制屏幕
         self.update_idletasks()
-        x = parent.winfo_x() + (parent.winfo_width() - 780) // 2
-        y = parent.winfo_y() + (parent.winfo_height() - 700) // 2
-        self.geometry(f"780x700+{max(0, x)}+{max(0, y)}")
+        w, h = fit_to_workarea(self, scaled(self, 780), scaled(self, 700))
+        x = parent.winfo_x() + (parent.winfo_width() - w) // 2
+        y = parent.winfo_y() + (parent.winfo_height() - h) // 2
+        self.geometry(f"{w}x{h}+{max(0, x)}+{max(0, y)}")
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
         self._build()

@@ -26,6 +26,7 @@ from services.providers import (
     PAID_PROVIDERS,
     display_name_for,
 )
+from config.ui_geometry import fit_to_workarea, scaled
 from ui.components import mapped_children_width
 from ui.batch_panel import BatchPanel
 from ui.queue_panel import QueuePanel
@@ -827,9 +828,10 @@ class MainContent:
         win.title(_("btn_pick_compare"))
         win.configure(bg=C["bg"])
         win.resizable(True, True)
-        win.minsize(700, 500)
+        win.minsize(scaled(win, 700), scaled(win, 500))
         win.update_idletasks()
-        ww, wh = 980, 720
+        # 窗口几何按缩放系数放大并钳制屏幕
+        ww, wh = fit_to_workarea(win, scaled(win, 980), scaled(win, 720))
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() - ww) // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() - wh) // 2
         win.geometry(f"{ww}x{wh}+{max(0, x)}+{max(0, y)}")

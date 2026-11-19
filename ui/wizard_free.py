@@ -15,6 +15,7 @@ from config.fonts import F
 from config.i18n import _
 from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_NAMES
 from config.theme import DARK_THEME as C
+from config.ui_geometry import scaled
 from ui.components import bind_follower_wrap, bind_wraplength
 from ui.icons import glyph, icon_font
 
@@ -30,18 +31,20 @@ class ConfigWizard(tk.Toplevel):
         self._dirty = False
 
         self.title(_("wizard_free_title"))
-        self.geometry("820x960")
         self.configure(bg=C["bg"])
         self.resizable(True, True)
-        self.minsize(680, 600)
+        self.minsize(scaled(self, 680), scaled(self, 600))
         self.grab_set()
         self.focus_set()
         self.update_idletasks()
+        # 窗口几何按缩放系数放大并钳制屏幕（高 DPI 下字体放大，
+        # 固定逻辑窗宽会让内容溢出窗口右缘）
+        w = scaled(self, 820)
         sh = self.winfo_screenheight()
-        h = min(960, sh - 80)
-        x = parent.winfo_x() + (parent.winfo_width() - 820) // 2
+        h = min(scaled(self, 960), sh - 80)
+        x = parent.winfo_x() + (parent.winfo_width() - w) // 2
         y = parent.winfo_y() + (parent.winfo_height() - h) // 2
-        self.geometry(f"820x{h}+{max(0, x)}+{max(0, y)}")
+        self.geometry(f"{w}x{h}+{max(0, x)}+{max(0, y)}")
         self.bind("<Escape>", lambda _e: self._on_close())
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._build()

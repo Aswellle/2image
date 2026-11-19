@@ -28,6 +28,7 @@ from config.model_catalog import (
 from config.theme import DARK_THEME as C
 from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
 from services.providers.replicate_flux import REPLICATE_IMAGE_NAMES
+from config.ui_geometry import scaled
 from ui.components import bind_wraplength
 from ui.icons import glyph, icon_font
 
@@ -44,14 +45,16 @@ class PaidWizard(tk.Toplevel):
         self.title(_("wizard_paid_title"))
         self.configure(bg=C["bg"])
         self.resizable(True, True)
-        self.minsize(680, 560)
+        self.minsize(scaled(self, 680), scaled(self, 560))
         self.focus_set()
         self.update_idletasks()
+        # 窗口几何按缩放系数放大并钳制屏幕
+        w = scaled(self, 820)
         sh = self.winfo_screenheight()
-        h = min(720, sh - 80)
-        x = parent.winfo_x() + (parent.winfo_width() - 820) // 2
+        h = min(scaled(self, 720), sh - 80)
+        x = parent.winfo_x() + (parent.winfo_width() - w) // 2
         y = parent.winfo_y() + (parent.winfo_height() - h) // 2
-        self.geometry(f"820x{h}+{max(0, x)}+{max(0, y)}")
+        self.geometry(f"{w}x{h}+{max(0, x)}+{max(0, y)}")
         self._build()
         for _var in [
             self.oai_var,

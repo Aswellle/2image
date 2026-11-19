@@ -18,6 +18,7 @@ from queue import Queue, Empty
 
 from PIL import Image, ImageTk
 from config.fonts import F
+from config.ui_geometry import fit_to_workarea, scaled
 from config.theme import DARK_THEME as C
 from config.i18n import _
 from config.settings import IMAGES_DIR
@@ -81,18 +82,21 @@ class ImageViewerWindow(tk.Toplevel):
         self._polling = False
 
         self.title(_("viewer_title"))
-        self.geometry("1020x740")
         self.configure(bg=C["bg"])
-        self.minsize(640, 480)
+        # 窗口几何按缩放系数放大并钳制屏幕（高 DPI 下字体放大，
+        # 固定逻辑窗宽会让内容溢出窗口右缘）
+        vw, vh = fit_to_workarea(self, scaled(self, 1020), scaled(self, 740))
+        self.geometry(f"{vw}x{vh}")
+        self.minsize(scaled(self, 640), scaled(self, 480))
 
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
         # 居中
         self.update_idletasks()
-        px = parent_app.root.winfo_x() + (parent_app.root.winfo_width() - 1020) // 2
-        py = parent_app.root.winfo_y() + (parent_app.root.winfo_height() - 740) // 2
-        self.geometry(f"1020x740+{max(0, px)}+{max(0, py)}")
+        px = parent_app.root.winfo_x() + (parent_app.root.winfo_width() - vw) // 2
+        py = parent_app.root.winfo_y() + (parent_app.root.winfo_height() - vh) // 2
+        self.geometry(f"{vw}x{vh}+{max(0, px)}+{max(0, py)}")
 
         self.bind("<Map>", self._on_mapped)
 
@@ -582,7 +586,7 @@ class ImageViewerWindow(tk.Toplevel):
         win.configure(bg=C["bg"])
         win.grab_set()
         win.resizable(True, True)
-        win.minsize(520, 480)
+        win.minsize(scaled(win, 520), scaled(win, 480))
 
         cropped = self._img_orig.crop((sx, sy, ex, ey))
 

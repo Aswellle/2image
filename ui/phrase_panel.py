@@ -29,6 +29,7 @@ from ui.icons import glyph, icon_font
 from config.i18n import _
 from ui.tooltip import DELAY_MS as TIP_DELAY_MS
 from ui.tooltip import FADE_FRAME_MS, FADE_FRAMES, MAX_ALPHA as TIP_MAX_ALPHA
+from config.ui_geometry import fit_to_workarea, scaled
 from ui.tooltip import fade_alpha
 
 
@@ -235,15 +236,16 @@ class PhrasePanel(tk.Toplevel):
         self._tips: list[_PhraseTooltip] = []  # 持有引用防 GC
 
         self.title(_("phrase_title"))
-        self.geometry("820x560")
         self.configure(bg=C["bg"])
         self.resizable(True, True)
-        self.minsize(640, 460)
+        self.minsize(scaled(self, 640), scaled(self, 460))
 
+        # 窗口几何按缩放系数放大并钳制屏幕
         self.update_idletasks()
-        rx = parent_app.root.winfo_x() + (parent_app.root.winfo_width() - 820) // 2
-        ry = parent_app.root.winfo_y() + (parent_app.root.winfo_height() - 560) // 2
-        self.geometry(f"820x560+{max(0, rx)}+{max(0, ry)}")
+        pw, ph = fit_to_workarea(self, scaled(self, 820), scaled(self, 560))
+        rx = parent_app.root.winfo_x() + (parent_app.root.winfo_width() - pw) // 2
+        ry = parent_app.root.winfo_y() + (parent_app.root.winfo_height() - ph) // 2
+        self.geometry(f"{pw}x{ph}+{max(0, rx)}+{max(0, ry)}")
 
         self._build()
         self.bind("<Escape>", lambda _e: self._on_close())

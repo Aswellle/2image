@@ -5,10 +5,10 @@ ui/stats_dashboard.py — 统计仪表板
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, date as _date, timedelta as _td
-import math as _math
 
 from config.fonts import F
-from config.theme import C, TAG_PALETTE, tag_color
+from config.ui_geometry import fit_to_workarea, scaled
+from config.theme import C, tag_color
 from ui.icons import glyph, icon_font
 from config.i18n import _
 from data.repository import get_stats, get_year_heatmap, get_available_years, get_year_stats
@@ -79,11 +79,13 @@ class StatsDashboard:
         win.title(_("stats_title"))
         win.configure(bg=BG)
         win.resizable(True, True)
-        win.minsize(1000, 660)
+        win.minsize(scaled(win, 1000), scaled(win, 660))
         win.update_idletasks()
-        x = parent.winfo_x() + (parent.winfo_width() - 1100) // 2
-        y = parent.winfo_y() + (parent.winfo_height() - 760) // 2
-        win.geometry(f"1100x760+{max(0, x)}+{max(0, y)}")
+        # 窗口几何按缩放系数放大并钳制屏幕
+        sw, shh = fit_to_workarea(win, scaled(win, 1100), scaled(win, 760))
+        x = parent.winfo_x() + (parent.winfo_width() - sw) // 2
+        y = parent.winfo_y() + (parent.winfo_height() - shh) // 2
+        win.geometry(f"{sw}x{shh}+{max(0, x)}+{max(0, y)}")
 
         # ── 顶部标题栏 ──────────────────────────────────────────
         hdr = tk.Frame(win, bg=C["empty"], height=52)
