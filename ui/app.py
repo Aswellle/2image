@@ -20,6 +20,7 @@ from PIL import Image
 
 from config.fonts import F
 from config.settings import load_config, save_config
+from config.ui_geometry import fit_to_workarea, scaled, ui_scale
 from data.repository import (
     get_all_entries,
     get_entry,
@@ -89,18 +90,24 @@ class App:
 
     def __init__(self, root: tk.Tk):
         self.root = root
+        self._SASH_W = scaled(root, SASH_W)
+        self._SIDEBAR_DEF = scaled(root, SIDEBAR_DEF)
+        self._SIDEBAR_MIN = scaled(root, SIDEBAR_MIN)
+        self._SIDEBAR_MAX = scaled(root, SIDEBAR_MAX)
+        self._CONTENT_MIN = scaled(root, CONTENT_MIN)
         root.title(_("app_title"))
-        screen_w = root.winfo_screenwidth()
-        screen_h = root.winfo_screenheight()
-        window_w = min(1380, int(screen_w * 0.98))
-        window_h = min(920, int(screen_h * 0.95))
+        # 窗口几何按系统缩放系数放大（DPI 感知进程下字体随缩放放大，
+        # 固定逻辑窗宽会让内容按物理像素溢出），并钳制到屏幕工作区
+        self._ui_scale = ui_scale(root)
+        window_w, window_h = fit_to_workarea(root, scaled(root, 1380), scaled(root, 920))
         root.geometry(f"{window_w}x{window_h}")
         root.configure(bg=C["bg"])
-        root.minsize(min(1000, window_w), min(720, window_h))
+        root.minsize(min(scaled(root, 1000), window_w), min(scaled(root, 720), window_h))
         # 所有按钮的按压/禁用态兜底（详见 ui/button_states.py）。
         # 必须在建任何控件之前装好，才能覆盖启动即上屏的按钮。
         install_button_state_defaults(root)
-        if screen_w < 1400 or screen_h < 800:
+        if window_w < scaled(root, 1380) or window_h < scaled(root, 920):
+            # 屏幕放不下缩放后的默认窗口 → 直接最大化
             root.state("zoomed")
 
         self.cfg = load_config()
@@ -131,7 +138,11 @@ class App:
 
         # Sidebar width（§41：持久化；§42：可折叠）
         self._sidebar_w = max(
-            SIDEBAR_MIN, min(SIDEBAR_MAX, int(self.cfg.get("sidebar_width", SIDEBAR_DEF) or SIDEBAR_DEF))
+            self._SIDEBAR_MIN,
+            min(
+                self._SIDEBAR_MAX,
+                int(self.cfg.get("sidebar_width", self._SIDEBAR_DEF) or self._SIDEBAR_DEF),
+            ),
         )
         self._sidebar_w_saved = self._sidebar_w
         self._sidebar_collapsed = False
@@ -361,7 +372,7 @@ class App:
         self._L = tk.Frame(self._body, bg=C["panel"])
         self.sidebar = HistorySidebar(self._L, self)
 
-        self._sash = tk.Frame(self._body, bg=C["sash"], cursor="sb_h_double_arrow", width=SASH_W)
+        self._sash = tk.Frame(self._body, bg=C["sash"], cursor="sb_h_double_arrow", width=self._SASH_W)
         self._sash.bind("<Enter>", self._sash_enter)
         self._sash.bind("<Leave>", self._sash_leave)
         self._sash.bind("<ButtonPress-1>", self._sash_start)
@@ -385,12 +396,12 @@ class App:
         # 窗口变窄时按当前允许的上限收缩显示宽度，但不改写 _sidebar_w：
         # 那是用户选择的偏好值，窗口恢复宽度后应当回到原来的宽度。
         limit = self._max_sidebar_w()
-        sw = max(SIDEBAR_MIN, min(limit, self._sidebar_w))
+        sw = max(self._SIDEBAR_MIN, min(limit, self._sidebar_w))
         if getattr(self, "_sidebar_collapsed", False):
             sw = self._sidebar_w  # 折叠态由 _toggle_sidebar 管理，不参与收缩
         self._L.place(x=0, y=0, width=sw, height=bh)
-        self._sash.place(x=sw, y=0, width=SASH_W, height=bh)
-        self._R.place(x=sw + SASH_W, y=0, width=bw - sw - SASH_W, height=bh)
+        self._sash.place(x=sw, y=0, width=self._SASH_W, height=bh)
+        self._R.place(x=sw + self._SASH_W, y=0, width=bw - sw - self._SASH_W, height=bh)
         # <Configure> 在首次布局稳定前就会触发，事件里的宽度不是最终值。
         # 布局完成后主动复检一次自适应提示的可见性。
         try:
@@ -432,8 +443,8 @@ class App:
             except Exception:
                 bw = 0
         if bw < 10:
-            return SIDEBAR_MAX
-        return max(SIDEBAR_MIN, min(SIDEBAR_MAX, bw - CONTENT_MIN - SASH_W))
+            return self._SIDEBAR_MAX
+        return max(self._SIDEBAR_MIN, min(self._SIDEBAR_MAX, bw - self._CONTENT_MIN - self._SASH_W))
 
     def _sash_start(self, e):
         self._sash_drag_x = e.x_root
@@ -454,8 +465,8 @@ class App:
             bh = 870
         sw = self._sidebar_w
         self._L.place(x=0, y=0, width=sw, height=bh)
-        self._sash.place(x=sw, y=0, width=SASH_W, height=bh)
-        self._R.place(x=sw + SASH_W, y=0, width=bw - sw - SASH_W, height=bh)
+        self._sash.place(x=sw, y=0, width=self._SASH_W, height=bh)
+        self._R.place(x=sw + self._SASH_W, y=0, width=bw - sw - self._SASH_W, height=bh)
 
     def _sash_end(self, e):
         self._sash_drag_x = None

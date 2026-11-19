@@ -22,7 +22,7 @@ import ui.app as app_mod
 def test_startup_single_refresh(app):
     """启动路径只调度一次刷新（重复块已清理）；宽度受 MAX 钳制。"""
     a, _ = app
-    assert a._sidebar_w == 600  # SIDEBAR_MAX：999 被钳制
+    assert a._sidebar_w == a._SIDEBAR_MAX  # 999 被上限钳制（上限随缩放系数实例化）
 
 
 def test_sash_persists_width(app):
@@ -36,7 +36,7 @@ def test_sash_reset_restores_default(app):
     a, saved = app
     a._sidebar_w = 250
     a._sash_reset(None)
-    assert a._sidebar_w == 360  # SIDEBAR_DEF
+    assert a._sidebar_w == a._SIDEBAR_DEF  # 默认宽（随缩放系数实例化）
     assert saved.get("sidebar_width") == 360
 
 
