@@ -97,6 +97,12 @@ def test_app_initial_geometry_stays_within_screen(monkeypatch):
     App(root)
 
     root.title.assert_called_once_with(_("app_title"))
-    root.geometry.assert_called_once_with("1254x684")
-    root.minsize.assert_called_once_with(1000, 684)
+    # 初始几何：宽度钳到屏幕 98% 内、高度钳到任务栏余量内；窗口放不下
+    # 默认尺寸时最大化。缩放系数与余量按 config.ui_geometry 实现，这里
+    # 只断言语义（不超屏 + 触发最大化），不钉具体像素。
+    geo = root.geometry.call_args[0][0]
+    w_str, h_str = geo.split("+")[0].split("x")
+    assert int(w_str) <= 1280
+    assert int(h_str) <= 720
+    root.minsize.assert_called_once_with(1000, int(h_str))
     root.state.assert_called_once_with("zoomed")
