@@ -311,10 +311,56 @@ def bind_wraplength(card: "tk.Frame", labels: list, padx_total: int = 32, floor:
     card.bind("<Configure>", _apply)
 
 
+def mapped_children_width(row: "tk.Widget", exclude: "tk.Widget | None" = None) -> int:
+    """行内已 pack 子项的请求宽度总和（含各自左右 padx）。
+
+    用于「宽度不足时收起次要提示」的自适应判断：按实际子项测量，
+    替代按某一语言文案实测出的魔法常数——双语（或字体变化）下
+    子项宽度不同，硬编码常数只对一种语言成立。仅统计 pack 管理
+    的子项（grid 子项 pack_info 会抛 TclError，跳过）。
+    """
+    total = 0
+    for child in row.winfo_children():
+        if child is exclude:
+            continue
+        try:
+            padx = child.pack_info().get("padx", 0)
+        except tk.TclError:
+            continue
+        pad = sum(padx) if isinstance(padx, tuple) else padx * 2
+        total += child.winfo_reqwidth() + pad
+    return total
+
+
+def bind_follower_wrap(parent: "tk.Widget", follower: "tk.Label", leaders: list, extra: int = 40, floor: int = 120):
+    """行尾跟随标签的换行宽度绑定到「父容器宽 − 前导控件请求宽」。
+
+    同行布局（徽标/标题 + 跟随说明文本）里，长文案（英文界面）
+    的标签请求宽超过前导控件占位后的剩余空间时，pack 会把它裁得
+    两头都不完整。把 follower 的 wraplength 动态绑定到剩余空间后，
+    跟随文本在行内自然折行，双语均不裁切；follower 需已 pack
+    （side 与 anchor 由调用方按视觉位置决定）。
+    """
+
+    def _apply(_event=None):
+        avail = parent.winfo_width()
+        for leader in leaders:
+            try:
+                avail -= leader.winfo_reqwidth()
+            except tk.TclError:
+                pass
+        follower.config(wraplength=max(floor, avail - extra))
+
+    parent.bind("<Configure>", _apply)
+    _apply()
+
+
 from ui.components.state_label import GenerationStateLabel
 
 __all__ = [
     "bind_wraplength",
+    "mapped_children_width",
+    "bind_follower_wrap",
     "PrimaryButton",
     "SecondaryButton",
     "DangerButton",

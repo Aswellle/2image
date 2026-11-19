@@ -7,8 +7,6 @@ All App-level methods and state accessed through self.app.
 
 import io
 import os
-import random
-import threading
 from concurrent.futures import ThreadPoolExecutor
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -16,20 +14,19 @@ from tkinter import ttk, messagebox, filedialog, scrolledtext
 from PIL import Image, ImageTk
 
 from config.fonts import F
-from config.theme import C, TAG_PALETTE, tag_color
+from config.theme import C
 from config.i18n import _
 from ui.button_states import set_enabled
 from ui.icons import glyph, icon_font
 from ui.canvas_image import draw_image
-from data.repository import get_all_entries, get_stats
+from data.repository import get_all_entries
 from services.providers import (
     FREE_PROVIDERS,
     IMG2IMG_PROVIDERS,
     PAID_PROVIDERS,
     display_name_for,
-    provider_id_for,
 )
-from services.image_service import generate_image, save_image_file
+from ui.components import mapped_children_width
 from ui.batch_panel import BatchPanel
 from ui.queue_panel import QueuePanel
 from ui.app_protocol import MainContentProtocol
@@ -1086,14 +1083,17 @@ class MainContent:
     def _on_tools_row_resize(self, event=None):
         """工具行变窄时收起 Ctrl+Enter 提示，保证按钮不被挤压。
 
-        提示是补充信息，按钮是操作入口。英文界面下提示占 137px，
-        不收起时「变体生成」会被压到不可读。
+        提示是补充信息，按钮是操作入口。收纳阈值按行内按钮组实测
+        宽度动态计算（mapped_children_width）——按钮组宽度随界面
+        语言变化，硬编码常数只对一种语言成立，另一语言下提示永不
+        收纳、行尾被窗口裁切。
         """
         lbl = getattr(self, "_shortcut_lbl", None)
         if lbl is None:
             return
-        width = event.width if event is not None else lbl.master.winfo_width()
-        need = lbl.winfo_reqwidth() + 12 + 660  # 提示 + 按钮组固定宽度
+        row = lbl.master
+        width = event.width if event is not None else row.winfo_width()
+        need = mapped_children_width(row, exclude=lbl) + lbl.winfo_reqwidth() + 12 + 8
         if width >= need:
             if not lbl.winfo_ismapped():
                 lbl.pack(side="left", padx=6)
@@ -1105,14 +1105,15 @@ class MainContent:
 
         提示文字需要约 150px 才能完整显示；工具栏不足时它会挤占按钮空间，
         自己也被压成几像素的残片——两头不讨好。按钮是可操作内容，优先保留。
+        收纳阈值按行内按钮组实测宽度动态计算（mapped_children_width），
+        英文按钮组更宽时同样能正确收纳提示。
         """
         hint = getattr(self, "_dblclick_hint", None)
         if hint is None:
             return
-        width = event.width if event is not None else hint.master.winfo_width()
-        # 工具栏里按钮占用的固定宽度（实测 579px），提示完整显示另需约 156px。
-        # 两者相加留出余量后，工具栏宽度不足就收起提示。
-        need = hint.winfo_reqwidth() + 10 + 590
+        row = hint.master
+        width = event.width if event is not None else row.winfo_width()
+        need = mapped_children_width(row, exclude=hint) + hint.winfo_reqwidth() + 20 + 8
         if width >= need:
             if not hint.winfo_ismapped():
                 hint.pack(side="right", padx=10)
