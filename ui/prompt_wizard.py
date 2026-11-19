@@ -807,7 +807,9 @@ class PromptWizard(tk.Toplevel):
         # 标签行：标题 + 实时词数/字符指示器
         pos_hdr = tk.Frame(parent, bg=C["panel"])
         pos_hdr.pack(fill="x", padx=14, pady=(10, 0))
-        tk.Label(pos_hdr, text="📋  正面提示词（可编辑）", font=F["btn"], bg=C["panel"], fg=C["ok"]).pack(side="left")
+        tk.Label(pos_hdr, text=_("wizard_label_positive_prompt"), font=F["btn"], bg=C["panel"], fg=C["ok"]).pack(
+            side="left"
+        )
         # 实时词数/字符指示器
         self._budget_lbl = tk.Label(pos_hdr, text="", font=F["mono_sm_b"], bg=C["panel"], fg=C["sub"], padx=8)
         self._budget_lbl.pack(side="right")
@@ -1049,7 +1051,7 @@ class PromptWizard(tk.Toplevel):
         self._status_lbl.config(text=f"❌ {err[:100]}", fg=C["hl"])
         self.app._log(f"✗ 提示词助手: {err}")
         # 缺少密钥时自动弹出配置向导
-        if "需要配置 API Key" in err or "API Key" in err:
+        if "API Key" in err:
             self.after(200, self._open_llm_wizard)
 
     def _set_result(self, pos: str):

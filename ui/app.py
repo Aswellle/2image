@@ -8,40 +8,24 @@ ui/app.py — 主应用窗口  v5.2
 """
 
 import html
-import io
 import os
-import random
 import shutil
 import threading
 import tkinter as tk
-import webbrowser
 from datetime import datetime
-from tkinter import filedialog, messagebox, scrolledtext, ttk
+from tkinter import filedialog, messagebox, ttk
 
 import requests
-from PIL import Image, ImageTk
+from PIL import Image
 
 from config.fonts import F
 from config.settings import load_config, save_config
 from data.repository import (
-    add_entry,
-    clear_all_entries,
-    count_entries,
-    delete_entry,
     get_all_entries,
-    get_all_tags,
-    get_available_years,
     get_entry,
-    get_stats,
-    get_year_heatmap,
-    get_year_stats,
-    rename_entry,
-    toggle_favorite,
-    update_tags,
 )
 from services.application import GenerationController, MenuController, SettingsController
 from services.generation.errors import ProviderError
-from services.image_service import generate_image, save_image_file
 from services.logger import log_to_file
 from services.providers import (
     FREE_PROVIDERS,
@@ -50,14 +34,13 @@ from services.providers import (
     PAID_PROVIDERS,
     PROVIDER_KEYS,
 )
-from services.translation import has_chinese, translate_zh_to_en
 
 MAX_NICK_LEN = 20  # 昵称/提示符显示截断长度
 
 
 from config.i18n import STRINGS, _, get_language, init_language
 from config.theme import DARK_THEME as C
-from config.theme import TAG_PALETTE, init_theme, tag_color
+from config.theme import init_theme, tag_color
 from ui.button_states import install_button_state_defaults
 from ui.components.toast import ToastManager
 from ui.main_content import MainContent
@@ -1067,7 +1050,7 @@ class App:
         if not d:
             return
         items = get_all_entries()
-        out = os.path.join(d, f"AI生图_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+        out = os.path.join(d, _("export_dir_prefix") + datetime.now().strftime("%Y%m%d_%H%M%S"))
         os.makedirs(out, exist_ok=True)
 
         def _copy_worker():
