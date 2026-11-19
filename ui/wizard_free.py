@@ -116,17 +116,19 @@ class ConfigWizard(tk.Toplevel):
             command=self._on_close,
         ).pack(side="right", pady=12)
 
-        # 标题栏：副标题换行宽度绑定到标题占位后的剩余空间（英文
-        # 文案更长，超宽会被 pack 裁得两头不完整）
+        # 标题栏：副标题独占标题下方整行并按行宽折行——高 DPI 缩放
+        # 下标题与副标题同行会超出固定窗宽被 pack 裁剪，堆叠后任意
+        # 缩放/语言都稳健
         hdr = tk.Frame(self, bg=C["acc"])
         hdr.pack(fill="x")
-        hdr_title = tk.Label(hdr, text=_("wz_hdr_title"), font=(F["_sans"], 16, "bold"), bg=C["acc"], fg="white")
-        hdr_title.pack(side="left", padx=20, pady=14)
-        hdr_sub = tk.Label(
-            hdr, text=_("wz_hdr_subtitle"), font=F["body"], bg=C["acc"], fg=C["sub"], anchor="e", justify="right"
+        tk.Label(hdr, text=_("wz_hdr_title"), font=(F["_sans"], 16, "bold"), bg=C["acc"], fg="white").pack(
+            anchor="w", padx=20, pady=(14, 2)
         )
-        hdr_sub.pack(side="right", padx=20)
-        bind_follower_wrap(hdr, hdr_sub, [hdr_title], extra=48)
+        hdr_sub = tk.Label(
+            hdr, text=_("wz_hdr_subtitle"), font=F["body"], bg=C["acc"], fg=C["sub"], anchor="w", justify="left"
+        )
+        hdr_sub.pack(fill="x", padx=20, pady=(0, 10))
+        bind_wraplength(hdr, [hdr_sub], padx_total=40, floor=200)
 
         # 可滚动内容区
         fo = tk.Frame(self, bg=C["bg"])

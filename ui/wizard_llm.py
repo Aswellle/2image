@@ -118,29 +118,28 @@ class LLMWizard(tk.Toplevel):
         self._status_lbl.pack(side="left", padx=16, pady=12)
 
         # ── 标题栏 ──────────────────────────────────────────────────
-        # 紫色，区别于生图向导的蓝色；副标题换行宽度绑定到标题占位
-        # 后的剩余空间（英文文案更长，超宽会被 pack 裁得两头不完整）
+        # 紫色，区别于生图向导的蓝色；副标题独占标题下方整行并按
+        # 行宽折行（高 DPI 缩放下同行布局会超出固定窗宽被裁）
         hdr = tk.Frame(self, bg=C["purple_deep"])
         hdr.pack(fill="x")
-        hdr_title = tk.Label(
+        tk.Label(
             hdr,
             text=_("wizard_llm_header_title"),
             font=(F["_sans"], 15, "bold"),
             bg=C["purple_deep"],
             fg="white",
-        )
-        hdr_title.pack(side="left", padx=20, pady=14)
+        ).pack(anchor="w", padx=20, pady=(14, 2))
         hdr_sub = tk.Label(
             hdr,
             text=_("wizard_llm_header_subtitle"),
             font=F["body"],
             bg=C["purple_deep"],
             fg=C["purple_soft"],
-            anchor="e",
-            justify="right",
+            anchor="w",
+            justify="left",
         )
-        hdr_sub.pack(side="right", padx=20)
-        bind_follower_wrap(hdr, hdr_sub, [hdr_title], extra=48)
+        hdr_sub.pack(fill="x", padx=20, pady=(0, 10))
+        bind_wraplength(hdr, [hdr_sub], padx_total=40, floor=200)
 
         # ── 可滚动内容区 ────────────────────────────────────────────
         fo = tk.Frame(self, bg=C["bg"])
@@ -228,6 +227,17 @@ class LLMWizard(tk.Toplevel):
             indicator = tk.Label(card, text="○", font=F["h2"], bg=C["panel"], fg=C["text_muted"], cursor="hand2")
             indicator.pack(side="left", padx=(12, 8), pady=9)
             text_f = tk.Frame(card, bg=C["panel"], cursor="hand2")
+            # badge 先于文本区 pack：空间不足时最后 pack 的子项被裁，
+            # 徽标是固定宽度必须先占位，文本区吃剩余宽度自行折行
+            badge = tk.Label(
+                card,
+                text=_("wizard_llm_click_select"),
+                font=F["small_b"],
+                bg=C["panel"],
+                fg=C["text_muted"],
+                cursor="hand2",
+            )
+            badge.pack(side="right", padx=12)
             text_f.pack(side="left", fill="x", expand=True, pady=7)
             title_lbl = tk.Label(
                 text_f, text=title, font=F["body_b"], bg=C["panel"], fg=accent, anchor="w", cursor="hand2"
@@ -253,15 +263,6 @@ class LLMWizard(tk.Toplevel):
                     d.config(wraplength=max(120, e.width - 4)),
                 ),
             )
-            badge = tk.Label(
-                card,
-                text=_("wizard_llm_click_select"),
-                font=F["small_b"],
-                bg=C["panel"],
-                fg=C["text_muted"],
-                cursor="hand2",
-            )
-            badge.pack(side="right", padx=12)
             self._preset_cards[key] = (card, indicator, text_f, title_lbl, desc_lbl, badge, accent)
             for widget in (card, indicator, text_f, title_lbl, desc_lbl, badge):
                 widget.bind("<Button-1>", lambda _e, k=key: _select_preset(k))
