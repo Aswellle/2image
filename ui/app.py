@@ -481,7 +481,7 @@ class App:
             pass
 
     def _toggle_sidebar(self):
-        """Ctrl+\ 折叠/展开历史侧栏（§42）：折叠后工作区获得完整宽度。"""
+        r"""Ctrl+\ 折叠/展开历史侧栏（§42）：折叠后工作区获得完整宽度。"""
         if self._sidebar_collapsed:
             self._sidebar_w = self._sidebar_w_saved
             self._sidebar_collapsed = False
