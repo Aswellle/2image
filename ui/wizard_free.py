@@ -15,7 +15,7 @@ from config.fonts import F
 from config.i18n import _
 from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_NAMES
 from config.theme import DARK_THEME as C
-from ui.components import bind_wraplength
+from ui.components import bind_follower_wrap, bind_wraplength
 from ui.icons import glyph, icon_font
 
 
@@ -116,13 +116,17 @@ class ConfigWizard(tk.Toplevel):
             command=self._on_close,
         ).pack(side="right", pady=12)
 
-        # 标题栏
+        # 标题栏：副标题换行宽度绑定到标题占位后的剩余空间（英文
+        # 文案更长，超宽会被 pack 裁得两头不完整）
         hdr = tk.Frame(self, bg=C["acc"])
         hdr.pack(fill="x")
-        tk.Label(hdr, text=_("wz_hdr_title"), font=(F["_sans"], 16, "bold"), bg=C["acc"], fg="white").pack(
-            side="left", padx=20, pady=14
+        hdr_title = tk.Label(hdr, text=_("wz_hdr_title"), font=(F["_sans"], 16, "bold"), bg=C["acc"], fg="white")
+        hdr_title.pack(side="left", padx=20, pady=14)
+        hdr_sub = tk.Label(
+            hdr, text=_("wz_hdr_subtitle"), font=F["body"], bg=C["acc"], fg=C["sub"], anchor="e", justify="right"
         )
-        tk.Label(hdr, text=_("wz_hdr_subtitle"), font=F["body"], bg=C["acc"], fg=C["sub"]).pack(side="right", padx=20)
+        hdr_sub.pack(side="right", padx=20)
+        bind_follower_wrap(hdr, hdr_sub, [hdr_title], extra=48)
 
         # 可滚动内容区
         fo = tk.Frame(self, bg=C["bg"])
@@ -920,9 +924,14 @@ class ConfigWizard(tk.Toplevel):
     def _section(self, parent, num, title, tag, tag_color, px=24):
         f = tk.Frame(parent, bg=C["bg"])
         f.pack(fill="x", padx=px, pady=(16, 4))
-        tk.Label(f, text=f" {num} ", font=F["btn"], bg=C["hl"], fg="white").pack(side="left")
-        tk.Label(f, text=f"  {title}", font=F["h1"], bg=C["bg"], fg=C["text"]).pack(side="left")
-        tk.Label(f, text=f"  {tag}", font=F["body"], bg=C["bg"], fg=tag_color).pack(side="left")
+        badge = tk.Label(f, text=f" {num} ", font=F["btn"], bg=C["hl"], fg="white")
+        badge.pack(side="left")
+        title_lbl = tk.Label(f, text=f"  {title}", font=F["h1"], bg=C["bg"], fg=C["text"])
+        title_lbl.pack(side="left")
+        tag_lbl = tk.Label(f, text=f"  {tag}", font=F["body"], bg=C["bg"], fg=tag_color, anchor="w", justify="left")
+        tag_lbl.pack(side="left")
+        # 分区标签换行绑定：英文标签更长，不绑定会溢出窗口右缘被裁
+        bind_follower_wrap(f, tag_lbl, [badge, title_lbl], extra=28)
 
     def _info_card(self, parent, lines, px=24):
         card = tk.Frame(parent, bg=C["card"], highlightbackground=C["sep"], highlightthickness=1)

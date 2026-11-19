@@ -23,7 +23,7 @@ from config.fonts import F
 from config.i18n import _
 from config.settings import save_config
 from config.theme import DARK_THEME as C
-from ui.components import bind_wraplength
+from ui.components import bind_follower_wrap, bind_wraplength
 from ui.icons import glyph, icon_font
 
 # ── 每个模型通道的展示信息 ────────────────────────────────────────
@@ -118,22 +118,29 @@ class LLMWizard(tk.Toplevel):
         self._status_lbl.pack(side="left", padx=16, pady=12)
 
         # ── 标题栏 ──────────────────────────────────────────────────
-        hdr = tk.Frame(self, bg=C["purple_deep"])  # 紫色，区别于生图向导的蓝色
+        # 紫色，区别于生图向导的蓝色；副标题换行宽度绑定到标题占位
+        # 后的剩余空间（英文文案更长，超宽会被 pack 裁得两头不完整）
+        hdr = tk.Frame(self, bg=C["purple_deep"])
         hdr.pack(fill="x")
-        tk.Label(
+        hdr_title = tk.Label(
             hdr,
             text=_("wizard_llm_header_title"),
             font=(F["_sans"], 15, "bold"),
             bg=C["purple_deep"],
             fg="white",
-        ).pack(side="left", padx=20, pady=14)
-        tk.Label(
+        )
+        hdr_title.pack(side="left", padx=20, pady=14)
+        hdr_sub = tk.Label(
             hdr,
             text=_("wizard_llm_header_subtitle"),
             font=F["body"],
             bg=C["purple_deep"],
             fg=C["purple_soft"],
-        ).pack(side="right", padx=20)
+            anchor="e",
+            justify="right",
+        )
+        hdr_sub.pack(side="right", padx=20)
+        bind_follower_wrap(hdr, hdr_sub, [hdr_title], extra=48)
 
         # ── 可滚动内容区 ────────────────────────────────────────────
         fo = tk.Frame(self, bg=C["bg"])
@@ -227,9 +234,25 @@ class LLMWizard(tk.Toplevel):
             )
             title_lbl.pack(fill="x")
             desc_lbl = tk.Label(
-                text_f, text=desc, font=F["small"], bg=C["panel"], fg=C["sub"], anchor="w", cursor="hand2"
+                text_f,
+                text=desc,
+                font=F["small"],
+                bg=C["panel"],
+                fg=C["sub"],
+                anchor="w",
+                justify="left",
+                cursor="hand2",
             )
             desc_lbl.pack(fill="x", pady=(2, 0))
+            # 描述换行绑定到文本区实际宽度：英文预设说明更长，不绑定
+            # 会把右侧「Click to Select」徽标顶出卡片边缘
+            text_f.bind(
+                "<Configure>",
+                lambda e, lbl=title_lbl, d=desc_lbl: (
+                    lbl.config(wraplength=max(120, e.width - 4)),
+                    d.config(wraplength=max(120, e.width - 4)),
+                ),
+            )
             badge = tk.Label(
                 card,
                 text=_("wizard_llm_click_select"),
@@ -414,7 +437,10 @@ class LLMWizard(tk.Toplevel):
 
         banner = tk.Frame(parent, bg=bg)
         banner.pack(fill="x", padx=px, pady=(14, 4))
-        tk.Label(banner, text=msg, font=F["body_b"], bg=bg, fg=fg, anchor="w", padx=12, pady=8).pack(fill="x")
+        banner_lbl = tk.Label(banner, text=msg, font=F["body_b"], bg=bg, fg=fg, anchor="w", padx=12, pady=8)
+        banner_lbl.pack(fill="x")
+        # 英文状态文案更长，绑定换行宽度防止右缘裁切
+        bind_wraplength(banner, [banner_lbl], padx_total=24, floor=280)
 
     # ──────────────────────────────────────────────────────────────
     #   辅助组件（与 wizard_free 同款样式）
@@ -422,9 +448,14 @@ class LLMWizard(tk.Toplevel):
     def _section(self, parent, num, title, tag, tag_color, px=24):
         f = tk.Frame(parent, bg=C["bg"])
         f.pack(fill="x", padx=px, pady=(16, 4))
-        tk.Label(f, text=f" {num} ", font=F["btn"], bg=C["hl"], fg="white").pack(side="left")
-        tk.Label(f, text=f"  {title}", font=F["h1"], bg=C["bg"], fg=C["text"]).pack(side="left")
-        tk.Label(f, text=f"  {tag}", font=F["body"], bg=C["bg"], fg=tag_color).pack(side="left")
+        badge = tk.Label(f, text=f" {num} ", font=F["btn"], bg=C["hl"], fg="white")
+        badge.pack(side="left")
+        title_lbl = tk.Label(f, text=f"  {title}", font=F["h1"], bg=C["bg"], fg=C["text"])
+        title_lbl.pack(side="left")
+        tag_lbl = tk.Label(f, text=f"  {tag}", font=F["body"], bg=C["bg"], fg=tag_color, anchor="w", justify="left")
+        tag_lbl.pack(side="left")
+        # 分区标签换行绑定：英文标签更长，不绑定会溢出窗口右缘被裁
+        bind_follower_wrap(f, tag_lbl, [badge, title_lbl], extra=28)
 
     def _refresh_preset_cards(self):
         """把当前 preset_var 的值投射为整行卡片的明确选中态。"""

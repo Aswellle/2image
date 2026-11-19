@@ -28,7 +28,7 @@ from config.model_catalog import (
 from config.theme import DARK_THEME as C
 from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
 from services.providers.replicate_flux import REPLICATE_IMAGE_NAMES
-from ui.components import bind_wraplength
+from ui.components import bind_follower_wrap, bind_wraplength
 from ui.icons import glyph, icon_font
 
 
@@ -90,14 +90,23 @@ class PaidWizard(tk.Toplevel):
     def _build(self):
         PX = 24
 
+        # 副标题换行宽度绑定到标题占位后的剩余空间（英文文案更长，
+        # 超宽会被 pack 裁得两头不完整）
         hdr = tk.Frame(self, bg=C["paid"])
         hdr.pack(fill="x")
-        tk.Label(hdr, text=_("wizard_paid_header_title"), font=F["title"], bg=C["paid"], fg="white").pack(
-            side="left", padx=20, pady=14
+        hdr_title = tk.Label(hdr, text=_("wizard_paid_header_title"), font=F["title"], bg=C["paid"], fg="white")
+        hdr_title.pack(side="left", padx=20, pady=14)
+        hdr_sub = tk.Label(
+            hdr,
+            text=_("wizard_paid_header_subtitle"),
+            font=F["body_b"],
+            bg=C["paid"],
+            fg=C["purple_soft"],
+            anchor="e",
+            justify="right",
         )
-        tk.Label(hdr, text=_("wizard_paid_header_subtitle"), font=F["body_b"], bg=C["paid"], fg=C["purple_soft"]).pack(
-            side="right", padx=20
-        )
+        hdr_sub.pack(side="right", padx=20)
+        bind_follower_wrap(hdr, hdr_sub, [hdr_title], extra=48)
 
         bot = tk.Frame(self, bg=C["panel"])
         bot.pack(fill="x", side="bottom")
