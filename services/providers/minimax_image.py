@@ -170,7 +170,9 @@ def _extract_image(data: dict) -> bytes:
     if not items:
         raise ProviderInvalidResponseError(f"MiniMax 响应中无 data 数组：{data}")
     first = items[0]
-    err = first.get("error") if isinstance(first, dict) else None
+    if not isinstance(first, dict):
+        raise ProviderInvalidResponseError(f"MiniMax 响应 data 项类型异常：{first!r}")
+    err = first.get("error")
     if err:
         raise ProviderInvalidResponseError(f"MiniMax 图片生成失败：{err.get('message', err)}")
     url = first.get("url", "")
