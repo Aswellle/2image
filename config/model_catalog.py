@@ -91,13 +91,17 @@ GEMINI_IMAGE_DEPRECATED = {GEMINI_NB_V1}
 
 # ── MiniMax 图像家族（provider: services/providers/minimax_image.py）─────────
 # 官方模型表当前仅 image-01；无 image-02。
-MINIMAX_IMAGE_01 = "image-01"
+# 2026-11-22 校准：H3-Image（2026-11-11 发布，文生图+编辑，最高
+# 20MP）已上架 MiniMax 官方 API 平台；image-01 退役。
+MINIMAX_H3_IMAGE = "MiniMax-H3-Image"
+MINIMAX_H3_HS = "MiniMax-H3-Image-Highspeed"
 
-MINIMAX_IMAGE_MODELS = [MINIMAX_IMAGE_01]
-MINIMAX_IMAGE_DEFAULT = MINIMAX_IMAGE_01
+MINIMAX_IMAGE_MODELS = [MINIMAX_H3_IMAGE, MINIMAX_H3_HS]
+MINIMAX_IMAGE_DEFAULT = MINIMAX_H3_IMAGE
 
 MINIMAX_IMAGE_NAMES: dict[str, str] = {
-    MINIMAX_IMAGE_01: "MiniMax Image 01",
+    MINIMAX_H3_IMAGE: "MiniMax H3 Image (推荐)",
+    MINIMAX_H3_HS: "MiniMax H3 Image Highspeed (更快)",
 }
 
 # ── 火山引擎豆包（provider: services/providers/volcengine_ark.py）─────────────
@@ -168,24 +172,23 @@ XAI_IMAGE_NAMES: dict[str, str] = {
 }
 
 # ── 阿里云百炼 通义万相（provider: services/providers/dashscope_qwen.py）──────
-# wan2.5 及以下走旧异步协议（与现有实现兼容）；wan2.6 仅新协议
+# 2026-11-22 校准：wan2.6-t2i 已上线（官方推荐纯文生图优先，支持
+# 同步/异步调用），为默认；wan2.5 走旧异步协议作次要档；wan2.1 系已
+# 列入阿里云「停止新购及服务下线」公告，退役——存量配置归一化到默认。
 # （maas 域名 + workspace 子域），接入需另行改造。
 # wanx2.1 系列已列入阿里云「停止新购及服务下线」公告，保留为 legacy。
-DASHSCOPE_WAN25 = "wan2.5-t2i"
-DASHSCOPE_WAN21_TURBO = "wanx2.1-t2i-turbo"
-DASHSCOPE_WAN21_PLUS = "wanx2.1-t2i-plus"
+DASHSCOPE_WAN26 = "wan2.6-t2i"  # 万相 2.6 文生图（同步协议，官方推荐）
+DASHSCOPE_WAN25 = "wan2.5-t2i"  # 万相 2.5（旧异步协议，紧邻次要）
 
 DASHSCOPE_MODELS = [
+    DASHSCOPE_WAN26,
     DASHSCOPE_WAN25,
-    DASHSCOPE_WAN21_TURBO,
-    DASHSCOPE_WAN21_PLUS,
 ]
-DASHSCOPE_DEFAULT = DASHSCOPE_WAN25
+DASHSCOPE_DEFAULT = DASHSCOPE_WAN26
 
 DASHSCOPE_NAMES: dict[str, str] = {
-    DASHSCOPE_WAN25: "通义万相 2.5 (推荐)",
-    DASHSCOPE_WAN21_TURBO: "万相 2.1 Turbo (旧版)",
-    DASHSCOPE_WAN21_PLUS: "万相 2.1 Plus (旧版)",
+    DASHSCOPE_WAN26: "通义万相 2.6 (推荐)",
+    DASHSCOPE_WAN25: "通义万相 2.5 (旧异步协议)",
 }
 
 # ── Recraft（provider: services/providers/recraft.py）────────────────────────
