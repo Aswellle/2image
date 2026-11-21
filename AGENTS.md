@@ -403,7 +403,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 ## Testing & QA
 
 - **Framework**: pytest（CI 矩阵 3.11/3.12 双版本 + coverage 上报）
-- **Test count**: 729 items across 52 test files（`pytest tests/` 全量约 4 分钟）
+- **Test count**: 733 items across 56 test files（`pytest tests/` 全量约 4 分钟）
 - **GUI**: 真实 Tk 会话级共享 root（`tk_session_root`），App 以 Toplevel 承载——规避 Windows 下反复创建/销毁解释器的 Tcl 崩溃
 
 ### Test Layout
