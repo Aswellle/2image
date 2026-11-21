@@ -238,8 +238,10 @@ class TestDashscope:
     CFG = {"dashscope_key": "sk-ali-test"}
 
     def test_success_flow(self):
+        """wan2.5（旧异步协议）：提交 + 轮询 + 下载"""
         import services.providers.dashscope_qwen as mod
 
+        cfg = {**self.CFG, "dashscope_model": "wan2.5-t2i"}
         submit = _resp(200, {"output": {"task_id": "task-1"}})
         poll = _resp(
             200, {"output": {"task_status": "SUCCEEDED", "results": [{"url": "https://cdn.example.com/a.png"}]}}
@@ -250,7 +252,7 @@ class TestDashscope:
             patch.object(mod.time, "sleep"),
             patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
         ):
-            data, used = mod.try_dashscope_qwen("cat", 1024, 1024, 1, self.CFG, lambda s: None)
+            data, used = mod.try_dashscope_qwen("cat", 1024, 1024, 1, cfg, lambda s: None)
         assert data == PNG_BYTES and "DashScope" in used
 
     def test_401(self):
@@ -263,19 +265,47 @@ class TestDashscope:
     def test_submit_500(self):
         import services.providers.dashscope_qwen as mod
 
+        cfg = {**self.CFG, "dashscope_model": "wan2.5-t2i"}
         with patch(f"{self.MOD}._get_session", return_value=_fake_session(post=_resp(500))):
             with pytest.raises(ValueError, match="提交失败"):
-                mod.try_dashscope_qwen("cat", 1024, 1024, 1, self.CFG, lambda s: None)
+                mod.try_dashscope_qwen("cat", 1024, 1024, 1, cfg, lambda s: None)
+
+    def test_sync_wan26_shape(self):
+        """wan2.6（同步协议）：multimodal 端点 + messages 结构 + 官方尺寸档"""
+        import services.providers.dashscope_qwen as mod
+
+        sync = _resp(
+            200,
+            {
+                "output": {
+                    "choices": [{"message": {"content": [{"type": "image", "image": "https://cdn.example.com/a.png"}]}}]
+                }
+            },
+        )
+        sess = _fake_session(post=sync)
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES) as img,
+        ):
+            data, used = mod.try_dashscope_qwen("cat", 1280, 1280, 1, self.CFG, lambda s: None)
+        assert data == PNG_BYTES and "DashScope" in used
+        body = sess.post.call_args.kwargs["json"]
+        assert body["model"] == "wan2.6-t2i"
+        assert body["input"]["messages"][0]["content"][0]["text"] == "cat"
+        assert body["parameters"]["size"] == "1280*1280"
+        assert body["parameters"]["prompt_extend"] is False
+        img.assert_called_once()
 
     def test_task_failed(self):
         import services.providers.dashscope_qwen as mod
 
+        cfg = {**self.CFG, "dashscope_model": "wan2.5-t2i"}
         submit = _resp(200, {"output": {"task_id": "task-1"}})
         poll = _resp(200, {"output": {"task_status": "FAILED", "message": "content policy"}})
         sess = _fake_session(post=submit, get=poll)
         with patch(f"{self.MOD}._get_session", return_value=sess), patch.object(mod.time, "sleep"):
             with pytest.raises(ValueError, match="任务失败"):
-                mod.try_dashscope_qwen("cat", 1024, 1024, 1, self.CFG, lambda s: None)
+                mod.try_dashscope_qwen("cat", 1024, 1024, 1, cfg, lambda s: None)
 
     def test_missing_key(self):
         import services.providers.dashscope_qwen as mod
@@ -291,10 +321,22 @@ class TestMiniMax:
     MOD = "services.providers.minimax_image"
     CFG = {"minimax_key": "mm-test"}
 
-    def test_success_b64(self):
+    def test_success_url(self):
+        """H3 契约：data[].url → safe_get_image 下载"""
         import services.providers.minimax_image as mod
 
-        resp = _resp(200, {"data": {"image_base64": [PNG_B64]}, "base_resp": {"status_code": 0}})
+        resp = _resp(200, {"data": [{"url": "https://cdn.example.com/a.jpg"}]})
+        with (
+            patch(f"{self.MOD}._get_session", return_value=_fake_session(post=resp)),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+        ):
+            data, used = mod.try_minimax_image("cat", 1024, 1024, 1, self.CFG, lambda s: None)
+        assert data == PNG_BYTES and "MiniMax" in used
+
+    def test_success_b64_json(self):
+        import services.providers.minimax_image as mod
+
+        resp = _resp(200, {"data": [{"b64_json": PNG_B64}]})
         with patch(f"{self.MOD}._get_session", return_value=_fake_session(post=resp)):
             data, used = mod.try_minimax_image("cat", 1024, 1024, 1, self.CFG, lambda s: None)
         assert data == PNG_BYTES and "MiniMax" in used
@@ -302,19 +344,24 @@ class TestMiniMax:
     def test_429_then_success(self):
         import services.providers.minimax_image as mod
 
-        ok = _resp(200, {"data": {"image_base64": [PNG_B64]}, "base_resp": {"status_code": 0}})
+        ok = _resp(200, {"data": [{"url": "https://cdn.example.com/a.jpg"}]})
         sess = MagicMock()
         sess.post.side_effect = [_resp(429), ok]
-        with patch(f"{self.MOD}._get_session", return_value=sess), patch.object(mod.time, "sleep"):
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch.object(mod.time, "sleep"),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+        ):
             data, _ = mod.try_minimax_image("cat", 1024, 1024, 1, self.CFG, lambda s: None)
         assert data == PNG_BYTES
 
-    def test_business_error_retries_then_runtime(self):
+    def test_item_error_raises_invalid_response(self):
+        """HTTP 200 但单项 error（内容安全拒绝）→ 类型化无效响应"""
         import services.providers.minimax_image as mod
 
-        resp = _resp(200, {"base_resp": {"status_code": 1004, "status_msg": "invalid"}})
-        with patch(f"{self.MOD}._get_session", return_value=_fake_session(post=resp)), patch.object(mod.time, "sleep"):
-            with pytest.raises(ProviderTransientError):
+        resp = _resp(200, {"data": [{"error": {"code": "1027", "message": "content safety"}}]})
+        with patch(f"{self.MOD}._get_session", return_value=_fake_session(post=resp)):
+            with pytest.raises(ProviderInvalidResponseError, match="content safety"):
                 mod.try_minimax_image("cat", 1024, 1024, 1, self.CFG, lambda s: None)
 
     def test_missing_key(self):

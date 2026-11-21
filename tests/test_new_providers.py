@@ -358,15 +358,38 @@ class TestDashscopeHonor:
 
     @patch("services.providers.dashscope_qwen._safe_get_image", return_value=b"\x89PNG" + b"\x00" * 50)
     @patch("services.providers.dashscope_qwen._get_session")
-    def test_unknown_model_honored(self, mock_session, _img):
+    def test_wan25_async_honored(self, mock_session, _img):
         from services.providers.dashscope_qwen import try_dashscope_qwen
 
         mock_session.return_value = self._mock_session()
-        cfg = {"dashscope_key": "test-key", "dashscope_model": "wan2.6-t2i"}
+        cfg = {"dashscope_key": "test-key", "dashscope_model": "wan2.5-t2i"}
         with patch("services.providers.dashscope_qwen.time.sleep"):
             try_dashscope_qwen("a cat", 1024, 1024, 42, cfg, lambda m: None)
         body = mock_session.return_value.post.call_args.kwargs["json"]
-        assert body["model"] == "wan2.6-t2i"  # 原样送出（旧端点会报错属预期）
+        assert body["model"] == "wan2.5-t2i"  # 旧异步协议按配置送出
+
+    @patch("services.providers.dashscope_qwen._safe_get_image", return_value=b"\x89PNG" + b"\x00" * 50)
+    @patch("services.providers.dashscope_qwen._get_session")
+    def test_retired_model_normalized(self, mock_session, _img):
+        """已下线的 wan2.1 系归一化到 wan2.6 默认并走同步端点"""
+        from config.model_catalog import DASHSCOPE_DEFAULT
+        from services.providers.dashscope_qwen import try_dashscope_qwen
+
+        sync_resp = MagicMock()
+        sync_resp.status_code = 200
+        sync_resp.json.return_value = {
+            "output": {
+                "choices": [{"message": {"content": [{"type": "image", "image": "https://cdn.example.com/a.png"}]}}]
+            }
+        }
+        sess = MagicMock()
+        sess.post.return_value = sync_resp
+        mock_session.return_value = sess
+        cfg = {"dashscope_key": "test-key", "dashscope_model": "wanx2.1-t2i-turbo"}
+        try_dashscope_qwen("a cat", 1280, 1280, 42, cfg, lambda m: None)
+        body = sess.post.call_args.kwargs["json"]
+        assert body["model"] == DASHSCOPE_DEFAULT  # 归一化
+        assert "messages" in body["input"]  # wan2.6 同步结构
 
     @patch("services.providers.dashscope_qwen._safe_get_image", return_value=b"\x89PNG" + b"\x00" * 50)
     @patch("services.providers.dashscope_qwen._get_session")
@@ -374,12 +397,20 @@ class TestDashscopeHonor:
         from config.model_catalog import DASHSCOPE_DEFAULT
         from services.providers.dashscope_qwen import try_dashscope_qwen
 
-        mock_session.return_value = self._mock_session()
+        sync_resp = MagicMock()
+        sync_resp.status_code = 200
+        sync_resp.json.return_value = {
+            "output": {
+                "choices": [{"message": {"content": [{"type": "image", "image": "https://cdn.example.com/a.png"}]}}]
+            }
+        }
+        sess = MagicMock()
+        sess.post.return_value = sync_resp
+        mock_session.return_value = sess
         cfg = {"dashscope_key": "test-key", "dashscope_model": ""}
-        with patch("services.providers.dashscope_qwen.time.sleep"):
-            try_dashscope_qwen("a cat", 1024, 1024, 42, cfg, lambda m: None)
-        body = mock_session.return_value.post.call_args.kwargs["json"]
-        assert body["model"] == DASHSCOPE_DEFAULT
+        try_dashscope_qwen("a cat", 1280, 1280, 42, cfg, lambda m: None)
+        body = sess.post.call_args.kwargs["json"]
+        assert body["model"] == DASHSCOPE_DEFAULT  # 默认 wan2.6，走同步端点
 
 
 # ── Provider 注册表测试 ─────────────────────────────────────────────────────
