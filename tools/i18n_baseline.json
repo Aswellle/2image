@@ -481,62 +481,62 @@
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 38,
+  "line": 40,
   "text": "✨ 画质增强"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 39,
+  "line": 41,
   "text": "💡 光影效果"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 40,
+  "line": 42,
   "text": "🎨 艺术风格"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 41,
+  "line": 43,
   "text": "📐 构图方式"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 42,
+  "line": 44,
   "text": "📷 镜头参数"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 43,
+  "line": 45,
   "text": "🌙 氛围情绪"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 44,
+  "line": 46,
   "text": "👤 人物细节"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 52,
+  "line": 54,
   "text": "词条中文说明悬浮窗。\n\n    使用方式：\n        tip = _PhraseTooltip(root, chi"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 229,
+  "line": 231,
   "text": "提示词片段库面板（非模态）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 212,
+  "line": 214,
   "text": "缓出曲线淡入（曲线与帧数见 ui/tooltip.py）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 629,
+  "line": 636,
   "text": "自定义词库导出为 JSON 文件（换机/备份）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 646,
+  "line": 653,
   "text": "从 JSON 文件合并导入自定义词条（已存在/内置的跳过）。"
  },
  {
@@ -561,47 +561,57 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 499,
+  "line": 513,
   "text": "左栏底部固定的模板应用条，不随模板列表滚动。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 628,
+  "line": 642,
   "text": "P1-25: 展开/收起高级维度（细节/构图/光影/镜头/画质）。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 975,
+  "line": 1017,
   "text": "用上一次生成时的完整参数快照重新生成。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 984,
+  "line": 1026,
   "text": "后台线程调用提示词助手；成功/失败经 after 回主线程。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1113,
+  "line": 1066,
+  "text": "多候选完成：记录列表并呈现第一个候选，切换条随候选数显示。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1078,
+  "text": "‹/› 在候选之间循环切换并刷新结果框。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1213,
   "text": "正面提示词文本框内容变更时触发词数指示器刷新。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1121,
+  "line": 1221,
   "text": "实时更新 Token 预算指示器：\n        · 右上角标签：词数/字符数\n        · 智能压缩按钮：仅在"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1157,
+  "line": 1257,
   "text": "智能压缩按钮处理器：将提示词截断到预算以内。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1243,
+  "line": 1343,
   "text": "打开 AI 提示词助手模型密钥配置向导。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1252,
+  "line": 1352,
   "text": "根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"
  },
  {
