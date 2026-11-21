@@ -635,6 +635,26 @@
   "text": "队列执行循环。\n\n        修复 #2/#7：改为 while 循环从 live 列表中取任务，而非一次性快照：\n"
  },
  {
+  "file": "ui/settings_windows.py",
+  "line": 1,
+  "text": "ui/settings_windows.py — 设置/快捷键弹窗\n──────────────────────────"
+ },
+ {
+  "file": "ui/settings_windows.py",
+  "line": 23,
+  "text": "键盘快捷键速查表。"
+ },
+ {
+  "file": "ui/settings_windows.py",
+  "line": 89,
+  "text": "应用偏好设置（语言 / 默认尺寸 / 启动行为）。"
+ },
+ {
+  "file": "ui/settings_windows.py",
+  "line": 226,
+  "text": "96dpi 基准几何 → 缩放并钳制工作区（对齐其他弹窗的做法）。"
+ },
+ {
   "file": "ui/sidebar.py",
   "line": 41,
   "text": "鼠标悬停气泡提示（类级 Toplevel 单例）。\n    · 延迟与淡入参数见 ui/tooltip.py（与词条库提"
@@ -836,7 +856,7 @@
  },
  {
   "file": "services/application/settings_controller.py",
-  "line": 27,
+  "line": 24,
   "text": "保存界面语言选择（重启应用后由 init_language 生效）。"
  }
 ]
