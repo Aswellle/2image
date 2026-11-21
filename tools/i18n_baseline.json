@@ -581,37 +581,42 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1066,
+  "line": 1064,
+  "text": "清空候选列表并隐藏切换条（新一轮生成 / 模板应用 / 清除内容时）。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1071,
   "text": "多候选完成：记录列表并呈现第一个候选，切换条随候选数显示。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1078,
+  "line": 1083,
   "text": "‹/› 在候选之间循环切换并刷新结果框。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1213,
+  "line": 1222,
   "text": "正面提示词文本框内容变更时触发词数指示器刷新。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1221,
+  "line": 1230,
   "text": "实时更新 Token 预算指示器：\n        · 右上角标签：词数/字符数\n        · 智能压缩按钮：仅在"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1257,
+  "line": 1266,
   "text": "智能压缩按钮处理器：将提示词截断到预算以内。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1343,
+  "line": 1352,
   "text": "打开 AI 提示词助手模型密钥配置向导。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1352,
+  "line": 1361,
   "text": "根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"
  },
  {
