@@ -281,10 +281,10 @@ class PromptWizard(tk.Toplevel):
         self._history = []  # [(label, positive)]
         self._generating = False
         self._anim_id = None
-        self._sel_tid = None
+        self._sel_tid = None  # 已选模板 ID
         self._last_gen_args = None  # 上次生成的完整参数快照（供一键重试）
-        self._variant_list: list[str] = []
-        self._variant_idx = 0  # 已选模板 ID
+        self._variant_list: list[str] = []  # 多候选提示词（‹/› 切换）
+        self._variant_idx = 0
         self._template_state = self._TEMPLATE_IDLE
 
         self.title(_("wizard_title") + " — " + _("wizard_pro_suffix"))
@@ -1027,9 +1027,7 @@ class PromptWizard(tk.Toplevel):
         self._set_generating(True)
         multi = bool(self._variants_var.get())
         # 新一轮生成重置候选：单候选/失败时切换条自动消失
-        self._variant_list = []
-        self._variant_idx = 0
-        self._variant_bar.pack_forget()
+        self._reset_variants()
 
         def _run():
             if not multi:
@@ -1056,11 +1054,18 @@ class PromptWizard(tk.Toplevel):
                 except Exception as ex:
                     self.app._log(f"⚠ 候选 {i + 1} 生成失败: {ex}")
             if not candidates:
-                self.after(0, lambda: self._on_error("all candidates failed"))
+                self.after(0, lambda: self._on_error(_("wizard_variants_failed")))
                 return
             self.after(0, lambda: self._on_done_multi(candidates, label))
 
         threading.Thread(target=_run, daemon=True).start()
+
+    def _reset_variants(self):
+        """清空候选列表并隐藏切换条（新一轮生成 / 模板应用 / 清除内容时）。"""
+        self._variant_list = []
+        self._variant_idx = 0
+        if getattr(self, "_variant_bar", None) is not None:
+            self._variant_bar.pack_forget()
 
     def _on_done_multi(self, candidates: list, label: str):
         """多候选完成：记录列表并呈现第一个候选，切换条随候选数显示。"""
@@ -1094,6 +1099,9 @@ class PromptWizard(tk.Toplevel):
         kw = self.tmpl_kw_var.get().strip() or "a subject"
         t = display_template(self._sel_tid)
         pos, _ignored = apply_template(self._sel_tid, kw, log_cb=self.app._log)
+        # 模板结果与 LLM 候选是两条来源：不清空切换条的话，
+        # 用户按 › 会把模板结果换成上一轮 LLM 候选
+        self._reset_variants()
         self._on_done(pos, _("wizard_label_template_prefix", text=t["name"]))
         self._tmpl_status.config(text=_("wizard_applied", name=t["name"]), fg=C["ok"])
 
@@ -1200,6 +1208,7 @@ class PromptWizard(tk.Toplevel):
         self._update_budget_display()
 
     def _clear_template_content(self):
+        self._reset_variants()
         self._pos_box.delete("1.0", "end")
         self._pos_box.insert("1.0", _("wizard_placeholder_prompt"))
         self._pos_box.config(fg=C["keep_bg"])

@@ -1047,7 +1047,7 @@ class App:
                 "not_configured": "dlg_err_title_config",
                 "auth_failed": "dlg_err_title_auth",
                 "quota_exhausted": "dlg_err_title_quota",
-            }[err.code]
+            }.get(err.code, "dlg_err_title_config")  # 码表扩容未跟标题时回落配置类
             self.root.after(
                 100,
                 lambda: messagebox.showwarning(_(title_key), _("dlg_err_body", err=body)),

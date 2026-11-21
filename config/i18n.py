@@ -926,6 +926,10 @@ STRINGS = {
         "zh-CN": "生成候选 {i} / {total}…",
         "en": "Generating candidate {i} / {total}…",
     },
+    "wizard_variants_failed": {
+        "zh-CN": "3 个候选全部生成失败",
+        "en": "All 3 candidates failed to generate",
+    },
     "wizard_generate_btn": {
         "zh-CN": "🤖 AI 生成",
         "en": "🤖 AI Generate",
