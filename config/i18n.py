@@ -918,6 +918,14 @@ STRINGS = {
         "zh-CN": "↻ 重新生成",
         "en": "↻ Regenerate",
     },
+    "wizard_variants_toggle": {
+        "zh-CN": "一次生成 3 个候选",
+        "en": "Generate 3 candidates",
+    },
+    "wizard_variant_progress": {
+        "zh-CN": "生成候选 {i} / {total}…",
+        "en": "Generating candidate {i} / {total}…",
+    },
     "wizard_generate_btn": {
         "zh-CN": "🤖 AI 生成",
         "en": "🤖 AI Generate",

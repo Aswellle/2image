@@ -135,6 +135,7 @@ DEFAULT_CONFIG: dict = {
     "default_provider": "自动（按优先级）",
     "default_size": "1024x1024",
     "show_wizard_on_start": True,
+    "prompt_llm_variants": False,  # 提示词助手一次生成 3 个候选（耗时约 3 倍）
     # 启动时后台检查 GitHub 最新发行版（仅提示，绝不自动下载）
     "update_check_on_start": True,
     "sidebar_width": 360,

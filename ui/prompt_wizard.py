@@ -282,7 +282,9 @@ class PromptWizard(tk.Toplevel):
         self._generating = False
         self._anim_id = None
         self._sel_tid = None
-        self._last_gen_args = None  # 上次生成的完整参数快照（供一键重试）  # 已选模板 ID
+        self._last_gen_args = None  # 上次生成的完整参数快照（供一键重试）
+        self._variant_list: list[str] = []
+        self._variant_idx = 0  # 已选模板 ID
         self._template_state = self._TEMPLATE_IDLE
 
         self.title(_("wizard_title") + " — " + _("wizard_pro_suffix"))
@@ -465,6 +467,18 @@ class PromptWizard(tk.Toplevel):
             command=self._retry_generate,
         )
         self._retry_btn.pack(side="left", pady=10)
+        self._variants_var = tk.BooleanVar(value=bool(self.app.cfg.get("prompt_llm_variants", False)))
+        tk.Checkbutton(
+            bar,
+            text=_("wizard_variants_toggle"),
+            variable=self._variants_var,
+            font=F["body"],
+            bg=C["entry"],
+            fg=C["sub"],
+            activebackground=C["entry"],
+            selectcolor=C["empty"],
+            command=self._persist_variants_pref,
+        ).pack(side="left", padx=(12, 0))
         set_enabled(self._retry_btn, False, bg=C["panel"], fg=C["text_muted"])
 
         tk.Button(
@@ -847,6 +861,34 @@ class PromptWizard(tk.Toplevel):
         )
         self._clear_btn.pack(side="right", padx=(0, 8))
 
+        self._variant_bar = tk.Frame(parent, bg=C["empty"])
+        self._variant_prev_btn = tk.Button(
+            self._variant_bar,
+            text="‹",
+            font=F["body_b"],
+            bg=C["empty"],
+            fg=C["text"],
+            bd=0,
+            padx=10,
+            cursor="hand2",
+            command=lambda: self._variant_shift(-1),
+        )
+        self._variant_lbl = tk.Label(self._variant_bar, text="", font=F["small_b"], bg=C["empty"], fg=C["sub"])
+        self._variant_lbl.pack(side="left")
+        self._variant_prev_btn.pack(side="left", padx=(6, 0))
+        self._variant_next_btn = tk.Button(
+            self._variant_bar,
+            text="›",
+            font=F["body_b"],
+            bg=C["empty"],
+            fg=C["text"],
+            bd=0,
+            padx=10,
+            cursor="hand2",
+            command=lambda: self._variant_shift(1),
+        )
+        self._variant_next_btn.pack(side="left")
+
         pos_f = tk.Frame(parent, bg=C["entry"])
         pos_f.pack(fill="both", expand=True, padx=14, pady=(4, 0))
         self._pos_box = tk.Text(
@@ -983,15 +1025,68 @@ class PromptWizard(tk.Toplevel):
     def _start_generation(self, args: dict, label: str):
         """后台线程调用提示词助手；成功/失败经 after 回主线程。"""
         self._set_generating(True)
+        multi = bool(self._variants_var.get())
+        # 新一轮生成重置候选：单候选/失败时切换条自动消失
+        self._variant_list = []
+        self._variant_idx = 0
+        self._variant_bar.pack_forget()
 
         def _run():
-            try:
-                pos, _ = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
-                self.after(0, lambda: self._on_done(pos, label))
-            except Exception as ex:
-                self.after(0, lambda e=str(ex): self._on_error(e))
+            if not multi:
+                try:
+                    pos, _ = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
+                    self.after(0, lambda: self._on_done(pos, label))
+                except Exception as ex:
+                    self.after(0, lambda e=str(ex): self._on_error(e))
+                return
+            # 多候选：串行生成 3 次（独立随机性），单次失败不中断
+            total = 3
+            candidates: list[str] = []
+            for i in range(total):
+                self.after(
+                    0,
+                    lambda i=i: self._param_status.config(
+                        text=_("wizard_variant_progress", i=i + 1, total=total), fg=C["sub"]
+                    ),
+                )
+                try:
+                    pos, _ = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
+                    if pos and pos not in candidates:
+                        candidates.append(pos)
+                except Exception as ex:
+                    self.app._log(f"⚠ 候选 {i + 1} 生成失败: {ex}")
+            if not candidates:
+                self.after(0, lambda: self._on_error("all candidates failed"))
+                return
+            self.after(0, lambda: self._on_done_multi(candidates, label))
 
         threading.Thread(target=_run, daemon=True).start()
+
+    def _on_done_multi(self, candidates: list, label: str):
+        """多候选完成：记录列表并呈现第一个候选，切换条随候选数显示。"""
+        self._variant_list = candidates
+        self._variant_idx = 0
+        self._on_done(candidates[0], label)
+        if len(candidates) > 1:
+            self._variant_bar.pack(fill="x", padx=14, pady=(2, 0))
+            self._variant_sync()
+
+    def _variant_sync(self):
+        self._variant_lbl.config(text=f"{self._variant_idx + 1} / {len(self._variant_list)}")
+
+    def _variant_shift(self, step: int):
+        """‹/› 在候选之间循环切换并刷新结果框。"""
+        if not self._variant_list:
+            return
+        self._variant_idx = (self._variant_idx + step) % len(self._variant_list)
+        self._set_result(self._variant_list[self._variant_idx])
+        self._variant_sync()
+
+    def _persist_variants_pref(self):
+        self.app.cfg["prompt_llm_variants"] = bool(self._variants_var.get())
+        from config.settings import save_config
+
+        save_config(self.app.cfg)
 
     def _apply_template(self):
         if self._template_state != self._TEMPLATE_PREVIEWING or not self._sel_tid:
@@ -1051,6 +1146,11 @@ class PromptWizard(tk.Toplevel):
         else:
             set_enabled(self._gen_btn, True, text=_("wizard_generate_btn"), bg=C["purple"])
             self._stop_anim()
+        # 多候选开关与按钮同排，生成中一并禁用
+        if getattr(self, "_variants_var", None) is not None and getattr(self, "_gen_btn", None) is not None:
+            for w in self._gen_btn.master.winfo_children():
+                if isinstance(w, tk.Checkbutton):
+                    w.config(state="disabled" if on else "normal")
         # 重试按钮：生成中禁用；从未生成过（无快照）也保持禁用
         if getattr(self, "_retry_btn", None) is not None:
             if on or self._last_gen_args is None:
