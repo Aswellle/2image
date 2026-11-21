@@ -100,13 +100,36 @@ class _StrengthSlider:
         self.marks = marks
         self.var = variable
         self.cv = tk.Canvas(
-            parent, width=self.W, height=self.H, bg=C["inset"], bd=0, highlightthickness=0, cursor="hand2"
+            parent,
+            width=self.W,
+            height=self.H,
+            bg=C["inset"],
+            bd=0,
+            cursor="hand2",
+            # 键盘可达：可聚焦 + 焦点环（非聚焦时描边融入背景，
+            # 聚焦时以强调色高亮），←/→ 步进、Home/End 端点
+            takefocus=1,
+            highlightthickness=1,
+            highlightbackground=C["sep"],
+            highlightcolor=C["ok"],
         )
         self._gradient = self._build_gradient(60)
         self._draw()
         self.cv.bind("<ButtonPress-1>", self._on_press)
         self.cv.bind("<B1-Motion>", self._on_drag)
+        self.cv.bind("<Left>", lambda _e: self._nudge(-0.05))
+        self.cv.bind("<Right>", lambda _e: self._nudge(0.05))
+        self.cv.bind("<Home>", lambda _e: self._nudge_to(0.1))
+        self.cv.bind("<End>", lambda _e: self._nudge_to(0.9))
         self.var.trace("w", lambda *_: self._draw())
+
+    def _nudge(self, delta):
+        """键盘步进：←/→ ±0.05。"""
+        self.var.set(max(0.1, min(0.9, round(self.var.get() + delta, 2))))
+
+    def _nudge_to(self, value):
+        """Home/End：直接跳到最小/最大强度。"""
+        self.var.set(round(value, 2))
 
     def pack(self, **kw):
         self.cv.pack(**kw)
