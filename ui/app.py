@@ -1036,15 +1036,21 @@ class App:
         self.content._prev_cv.coords(self.content._prev_ph, cw // 2, ch // 2)
 
         # 弹窗按错误码触发（_DIALOG_CODES）：需离开应用处理的类型才
-        # 打断；指引文案按语言解析（err_next_<code> 键表），缺失时
-        # 回落 errors 层的 zh-CN 单语值。
+        # 打断；标题按错误类别分族（配置/鉴权/额度），避免额度耗尽的
+        # 用户看到「需要配置 API Key」的矛盾标题；指引文案按语言解析
+        # （err_next_<code> 键表），缺失时回落 errors 层的 zh-CN 单语值。
         if isinstance(err, ProviderError) and err.code in _DIALOG_CODES:
             next_key = f"err_next_{err.code}"
             next_text = _(next_key) if next_key in STRINGS else err.next_step
             body = f"{err_text[:200]}\n\n{next_text}".strip()
+            title_key = {
+                "not_configured": "dlg_err_title_config",
+                "auth_failed": "dlg_err_title_auth",
+                "quota_exhausted": "dlg_err_title_quota",
+            }[err.code]
             self.root.after(
                 100,
-                lambda: messagebox.showwarning(_("dlg_err_title"), _("dlg_err_body", err=body)),
+                lambda: messagebox.showwarning(_(title_key), _("dlg_err_body", err=body)),
             )
 
     def _cancelled(self) -> None:

@@ -132,8 +132,8 @@ STRINGS = {
         "en": "Confirm",
     },
     "btn_skip": {
-        "zh-CN": "跳过（稍后在「⚙ 设置」中配置）",
-        "en": "Skip (configure later in Settings)",
+        "zh-CN": "跳过（稍后在「🆓 免费配置 / 💎 付费配置」中配置）",
+        "en": "Skip (configure later in Free / Paid API Keys)",
     },
     "btn_save_and_start": {
         "zh-CN": "✅  保存并开始使用",
@@ -356,7 +356,7 @@ STRINGS = {
         "en": "Select export directory",
     },
     "dlg_api_key_required": {
-        "zh-CN": "需要配置 API Key！\n请在「🆓 免费接口配置」或「💎 付费接口配置」中填写。",
+        "zh-CN": "需要配置 API Key！\n请在「🆓 免费配置」或「💎 付费配置」中填写。",
         "en": "API Key required!\nPlease configure in Free API Keys or Paid API Keys.",
     },
     "dlg_tip": {
@@ -439,9 +439,17 @@ STRINGS = {
         "zh-CN": "接口返回的图片超出本机大小上限，已自动跳过该结果",
         "en": "The returned image exceeds the local size cap and was skipped",
     },
-    "dlg_err_title": {
+    "dlg_err_title_config": {
         "zh-CN": "需要配置 API Key",
         "en": "API key configuration needed",
+    },
+    "dlg_err_title_auth": {
+        "zh-CN": "API Key 鉴权失败",
+        "en": "API key authentication failed",
+    },
+    "dlg_err_title_quota": {
+        "zh-CN": "付费额度不足",
+        "en": "Paid quota exhausted",
     },
     "dlg_err_body": {
         "zh-CN": "{err}",
@@ -714,8 +722,8 @@ STRINGS = {
         "en": "Too many requests. Please wait 30 seconds.",
     },
     "err_api_key": {
-        "zh-CN": "API Key 无效或已过期，请在设置中检查",
-        "en": "Invalid or expired API Key. Check settings.",
+        "zh-CN": "API Key 无效或已过期，请在「🆓 免费配置」或「💎 付费配置」中检查",
+        "en": "Invalid or expired API Key. Check it in Free / Paid API Keys.",
     },
     "err_balance": {
         "zh-CN": "API 账户余额不足，请充值",
