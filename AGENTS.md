@@ -59,7 +59,9 @@ main.py  (entry: DPI → fonts → legacy-data migration → DB init → tk.Tk �
 
 **Data flow**: Config loaded once at startup (`App.cfg` dict), passed through every call chain. Services never read config from disk — they receive `cfg` as a parameter. UI panels access `parent_app.cfg` directly. All disk writes go through `save_config()` or `repository.py`.
 
-**Four-layer separation**: Config (settings.py, fonts.py, theme.py, i18n.py) → Data (repository.py) → Services (image_service, providers, assistants) → UI (app.py, panels). Each layer depends only on the layer below it.
+**Four-layer separation**: Config (settings.py, fonts.py, theme.py, i18n.py, ui_geometry.py) → Data (repository.py) → Services (image_service, providers, assistants) → UI (app.py, panels). Each layer depends only on the layer below it.
+
+**Layer exceptions (explicit)**: `services/application/` is the App controller layer — it may use tkinter **interaction primitives** (`messagebox`, `Menu`) but must not build windows; full Toplevel windows live in `ui/` (e.g. `ui/settings_windows.py`), with the controller keeping only a delegating method. Menu building lives in `MenuController` by design.
 
 **v5.2 Architecture**: App class has been split into modular panels:
 - `SidebarProtocol` / `MainContentProtocol` (`ui/app_protocol.py`) define the interfaces panels depend on — decoupling `ui/sidebar.py` and `ui/main_content.py` from `App`'s full surface
