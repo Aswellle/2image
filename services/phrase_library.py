@@ -13,6 +13,7 @@ import os
 from config.settings import APP_DIR
 
 _CUSTOM_FILE = os.path.join(APP_DIR, "phrase_library.json")
+_USAGE_FILE = os.path.join(APP_DIR, "phrase_usage.json")
 
 # ── 内置 45 条预设（7 大分类）─────────────────────────────────
 BUILTIN_PHRASES: dict[str, list[str]] = {
@@ -370,6 +371,52 @@ def get_all_phrases() -> dict[str, list[str]]:
         else:
             merged[cat] = list(phrases)
     return merged
+
+
+def _load_usage() -> dict[str, int]:
+    """读取词条使用计数；文件损坏时返回空（计数是体验优化，宁可归零）。"""
+    try:
+        if os.path.exists(_USAGE_FILE):
+            with open(_USAGE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return {k: int(v) for k, v in data.items() if isinstance(v, (int, float)) and v > 0}
+    except Exception:
+        pass
+    return {}
+
+
+def _save_usage(data: dict[str, int]) -> None:
+    """原子写入使用计数（与词库同款 temp + os.replace）。"""
+    import tempfile
+
+    os.makedirs(os.path.dirname(_USAGE_FILE), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(_USAGE_FILE), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+        os.replace(tmp, _USAGE_FILE)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+def record_phrase_use(phrase: str) -> None:
+    """词条被追加到输入框时计数 +1（低频操作，直接落盘）。"""
+    clean = phrase.strip()
+    if not clean:
+        return
+    usage = _load_usage()
+    usage[clean] = usage.get(clean, 0) + 1
+    _save_usage(usage)
+
+
+def get_phrase_usage() -> dict[str, int]:
+    """词条 → 使用次数（面板按频次降序稳定排序用）。"""
+    return _load_usage()
 
 
 # ══════════════════════════════════════════════════════════════

@@ -16,7 +16,9 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from services.phrase_library import (
+    get_phrase_usage,
     phrase_category_display,
+    record_phrase_use,
     get_all_phrases,
     add_custom_phrase,
     delete_custom_phrase,
@@ -405,6 +407,10 @@ class PhrasePanel(tk.Toplevel):
     # ── 数据 & 分类刷新 ─────────────────────────────────────
     def _reload(self):
         self._phrases = get_all_phrases()
+        # 按使用频次降序稳定排序（同频保持原序）：高频词条置顶少翻找
+        usage = get_phrase_usage()
+        for cat, items in self._phrases.items():
+            items.sort(key=lambda phrase: -usage.get(phrase, 0))
         self._rebuild_cats()
         cats = list(self._phrases.keys())
         if cats:
@@ -595,6 +601,7 @@ class PhrasePanel(tk.Toplevel):
 
     # ── 追加词条 ─────────────────────────────────────────────
     def _append_to_input(self, phrase: str):
+        record_phrase_use(phrase)
         try:
             cur = self.app.pt.get("1.0", "end-1c").strip()
             sep = ", " if cur and not cur.endswith(",") else ""

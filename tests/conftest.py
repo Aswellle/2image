@@ -180,6 +180,7 @@ def isolate_real_config(tmp_path, monkeypatch):
     import services.phrase_library as _phrases
 
     monkeypatch.setattr(_phrases, "_CUSTOM_FILE", str(tmp_path / "phrase_library.json"))
+    monkeypatch.setattr(_phrases, "_USAGE_FILE", str(tmp_path / "phrase_usage.json"))
 
     import services.generation.budget as _budget
 

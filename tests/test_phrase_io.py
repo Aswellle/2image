@@ -62,3 +62,39 @@ def test_import_rejects_invalid_structure(tmp_path):
         raise AssertionError("expected ValueError for invalid structure")
     except ValueError:
         pass
+
+
+def test_record_phrase_use_counts_and_persists():
+    from services import phrase_library as pl
+
+    pl.record_phrase_use("masterpiece")
+    pl.record_phrase_use("masterpiece")
+    pl.record_phrase_use("golden hour lighting")
+    usage = pl.get_phrase_usage()
+    assert usage["masterpiece"] == 2
+    assert usage["golden hour lighting"] == 1
+
+    # 文件真实落盘（重载后仍在）
+    pl2_usage = pl._load_usage()
+    assert pl2_usage == usage
+
+
+def test_record_phrase_use_ignores_blank():
+    from services import phrase_library as pl
+
+    pl.record_phrase_use("   ")
+    assert pl.get_phrase_usage() == {}
+
+
+def test_usage_sort_order_in_panel_reload():
+    """高频词条应排在分类列表前面（稳定排序，同频保持原序）。"""
+    from services import phrase_library as pl
+
+    for _ in range(3):
+        pl.record_phrase_use("best quality")
+    pl.record_phrase_use("HDR")
+    all_phrases = pl.get_all_phrases()
+    items = all_phrases["✨ 画质增强"]
+    usage = pl.get_phrase_usage()
+    ranked = sorted(items, key=lambda phrase: -usage.get(phrase, 0))
+    assert ranked[:2] == ["best quality", "HDR"]
