@@ -295,6 +295,16 @@
   "text": "行尾跟随标签的换行宽度绑定到「父容器宽 − 前导控件请求宽」。\n\n    同行布局（徽标/标题 + 跟随说明文本）里，长"
  },
  {
+  "file": "ui/components/dropdown.py",
+  "line": 1,
+  "text": "ui/components/dropdown.py — 全局下拉框视觉\n────────────────────────"
+ },
+ {
+  "file": "ui/components/dropdown.py",
+  "line": 28,
+  "text": "配置全局 TCombobox 的字段/箭头/弹出列表视觉（幂等，可重复调用）。"
+ },
+ {
   "file": "ui/components/toast.py",
   "line": 1,
   "text": "ui/components/toast.py — Transient toast notifications (UIUX"
@@ -376,102 +386,102 @@
  },
  {
   "file": "ui/main_content.py",
-  "line": 67,
+  "line": 68,
   "text": "Canvas 绘制的强度滑块。\n    范围 0.1~0.9；轨道颜色渐变：蓝（微调） → 紫（融合） → 红（重构）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 127,
+  "line": 128,
   "text": "键盘步进：←/→ ±0.05。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 131,
+  "line": 132,
   "text": "Home/End：直接跳到最小/最大强度。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1109,
+  "line": 1054,
   "text": "工具行变窄时收起 Ctrl+Enter 提示，保证按钮不被挤压。\n\n        提示是补充信息，按钮是操作入口。收纳"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1129,
+  "line": 1074,
   "text": "工具栏变窄时收起次要提示，把宽度让给按钮。\n\n        提示文字需要约 150px 才能完整显示；工具栏不足时它会"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1154,
+  "line": 1099,
   "text": "参考图缩略图 Canvas 尺寸随图生图侧栏动画过渡实时变化，\n        用与 _on_prev_resize 相"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1199,
+  "line": 1144,
   "text": "提示词占位符显隐：有内容即隐藏。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1210,
+  "line": 1155,
   "text": "更新输入框字符计数标签（公开，供 PhrasePanel 等外部调用）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1221,
+  "line": 1166,
   "text": "将提示词文本框内容复制到系统剪贴板，并在字数标签短暂显示反馈。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1240,
+  "line": 1185,
   "text": "构建图生图参考图侧栏——预览 Tab 内 _prev_host 的第 0 列。\n\n        对标 Automati"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1367,
+  "line": 1312,
   "text": "按当前接口选择显隐强度滑杆行；「自动」按任一可选接口支持判定。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1387,
+  "line": 1332,
   "text": "支持图生图、且能在现有向导里配置 Key 的接口。\n\n        真实条件是「向导里有没有该接口的 Key 配置卡片"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1403,
+  "line": 1348,
   "text": "把图生图可用接口名称以竖向分行方式填入侧栏提示区。\n        每次调用先销毁旧行再重建，保证列表长度变化时不会残留"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1426,
+  "line": 1371,
   "text": "postcommand：把弹出 Listbox 撑到最长条目的实际像素宽。\n\n        ttk.Combobox "
  },
  {
   "file": "ui/main_content.py",
-  "line": 1447,
+  "line": 1392,
   "text": "切换文生图/图生图。\n\n        图生图的参考图侧栏固定在预览 Tab 内部（_prev_host 第 0 列），"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1507,
+  "line": 1452,
   "text": "批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个\n        入口并给出提示，避免用户以为批量结果也套"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1527,
+  "line": 1472,
   "text": "在参考图预览 Canvas 上绘制占位符（尺寸取实际渲染宽高，\n        侧栏展开动画期间会随每一帧的宽度实时重绘"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1542,
+  "line": 1487,
   "text": "将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1559,
+  "line": 1504,
   "text": "弹出文件选择器，读取参考图字节并更新预览和 UI 状态。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1580,
+  "line": 1525,
   "text": "清除参考图，恢复占位符。"
  },
  {
@@ -561,62 +571,62 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 513,
+  "line": 517,
   "text": "左栏底部固定的模板应用条，不随模板列表滚动。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 642,
+  "line": 646,
   "text": "P1-25: 展开/收起高级维度（细节/构图/光影/镜头/画质）。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1017,
+  "line": 1021,
   "text": "用上一次生成时的完整参数快照重新生成。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1026,
+  "line": 1030,
   "text": "后台线程调用提示词助手；成功/失败经 after 回主线程。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1064,
+  "line": 1068,
   "text": "清空候选列表并隐藏切换条（新一轮生成 / 模板应用 / 清除内容时）。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1071,
+  "line": 1075,
   "text": "多候选完成：记录列表并呈现第一个候选，切换条随候选数显示。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1083,
+  "line": 1087,
   "text": "‹/› 在候选之间循环切换并刷新结果框。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1222,
+  "line": 1226,
   "text": "正面提示词文本框内容变更时触发词数指示器刷新。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1230,
+  "line": 1234,
   "text": "实时更新 Token 预算指示器：\n        · 右上角标签：词数/字符数\n        · 智能压缩按钮：仅在"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1266,
+  "line": 1270,
   "text": "智能压缩按钮处理器：将提示词截断到预算以内。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1352,
+  "line": 1356,
   "text": "打开 AI 提示词助手模型密钥配置向导。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1361,
+  "line": 1365,
   "text": "根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"
  },
  {
