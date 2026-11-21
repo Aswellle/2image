@@ -165,9 +165,9 @@ def try_<name>(
 
 ```python
 from services.providers._net import (
-    SESSION as _session,                          # shared requests.Session with connection pooling
-    validate_image_url as _validate_image_url,   # SSRF guard — call before downloading any URL from API
-    safe_error_text as _safe_error_text,          # extract safe error text from API responses
+    get_session,        # per-thread Session with connection pooling — never build your own
+    validate_image_url, # SSRF guard — call before downloading any URL from the API response
+    safe_get_image,     # bounded image download (25 MB cap, content-type allowlist, per-hop SSRF check)
 )
 ```
 
