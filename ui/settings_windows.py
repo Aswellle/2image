@@ -201,7 +201,7 @@ class AppSettingsWindow(tk.Toplevel):
             text=_("btn_save"),
             font=F["btn"],
             bg=C["ok"],
-            fg="#0a1a0a",
+            fg=C["ok_fg"],  # ok 绿底上的深色文字（原裸色值改令牌）
             bd=0,
             padx=24,
             pady=8,
