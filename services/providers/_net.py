@@ -127,7 +127,10 @@ def safe_error_text(resp) -> str:
             return err[:150]
         return body.get("message", "") or str(body)[:150]
     except Exception:
-        return f"HTTP {resp.status_code}"
+        # 非 JSON 响应（text/plain 等）也保留供应商给出的具体原因，
+        # 否则结构化日志里只剩 "HTTP 429" 这类空壳
+        text = (getattr(resp, "text", "") or "").strip()
+        return text[:150] if text else f"HTTP {getattr(resp, 'status_code', '?')}"
 
 
 def raise_provider_error(
