@@ -281,7 +281,8 @@ class PromptWizard(tk.Toplevel):
         self._history = []  # [(label, positive)]
         self._generating = False
         self._anim_id = None
-        self._sel_tid = None  # 已选模板 ID
+        self._sel_tid = None
+        self._last_gen_args = None  # 上次生成的完整参数快照（供一键重试）  # 已选模板 ID
         self._template_state = self._TEMPLATE_IDLE
 
         self.title(_("wizard_title") + " — " + _("wizard_pro_suffix"))
@@ -450,6 +451,21 @@ class PromptWizard(tk.Toplevel):
             command=self._generate_param,
         )
         self._gen_btn.pack(side="left", padx=(18, 10), pady=10)
+
+        self._retry_btn = tk.Button(
+            bar,
+            text=_("wizard_retry_btn"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["text_muted"],
+            bd=0,
+            padx=14,
+            pady=8,
+            cursor="hand2",
+            command=self._retry_generate,
+        )
+        self._retry_btn.pack(side="left", pady=10)
+        set_enabled(self._retry_btn, False, bg=C["panel"], fg=C["text_muted"])
 
         tk.Button(
             bar,
@@ -941,24 +957,36 @@ class PromptWizard(tk.Toplevel):
         quality = self._dim_qual.get_value()
         extra = self.extra_var.get().strip()
 
+        args = {
+            "keywords": kw,
+            "style": style,
+            "mood": mood,
+            "detail": detail,
+            "composition": comp,
+            "lighting": light,
+            "camera": camera,
+            "quality": quality,
+            "extra": extra,
+        }
+        self._last_gen_args = args  # 快照供一键重试（与当前输入框无关）
+        self._start_generation(args, _("wizard_label_param_prefix", text=kw[:20]))
+
+    def _retry_generate(self):
+        """用上一次生成时的完整参数快照重新生成。"""
+        if self._generating or not self._last_gen_args:
+            return
+        self._start_generation(
+            dict(self._last_gen_args),
+            _("wizard_label_param_prefix", text=self._last_gen_args["keywords"][:20]),
+        )
+
+    def _start_generation(self, args: dict, label: str):
+        """后台线程调用提示词助手；成功/失败经 after 回主线程。"""
         self._set_generating(True)
-        label = _("wizard_label_param_prefix", text=kw[:20])
 
         def _run():
             try:
-                pos, _ = generate_prompt(
-                    keywords=kw,
-                    cfg=self.app.cfg,
-                    style=style,
-                    mood=mood,
-                    detail=detail,
-                    composition=comp,
-                    lighting=light,
-                    camera=camera,
-                    quality=quality,
-                    extra=extra,
-                    log_cb=self.app._log,
-                )
+                pos, _ = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
                 self.after(0, lambda: self._on_done(pos, label))
             except Exception as ex:
                 self.after(0, lambda e=str(ex): self._on_error(e))
@@ -1023,6 +1051,12 @@ class PromptWizard(tk.Toplevel):
         else:
             set_enabled(self._gen_btn, True, text=_("wizard_generate_btn"), bg=C["purple"])
             self._stop_anim()
+        # 重试按钮：生成中禁用；从未生成过（无快照）也保持禁用
+        if getattr(self, "_retry_btn", None) is not None:
+            if on or self._last_gen_args is None:
+                set_enabled(self._retry_btn, False, bg=C["panel"], fg=C["text_muted"])
+            else:
+                set_enabled(self._retry_btn, True, bg=C["acc"], fg="white")
 
     def _on_done(self, positive: str, label: str):
         self._stop_anim()

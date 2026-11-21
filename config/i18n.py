@@ -914,6 +914,10 @@ STRINGS = {
         "zh-CN": "📋 模板",
         "en": "📋 Templates",
     },
+    "wizard_retry_btn": {
+        "zh-CN": "↻ 重新生成",
+        "en": "↻ Regenerate",
+    },
     "wizard_generate_btn": {
         "zh-CN": "🤖 AI 生成",
         "en": "🤖 AI Generate",
