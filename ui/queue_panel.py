@@ -12,7 +12,6 @@ ui/queue_panel.py — 顺序生成队列面板  v1
 """
 
 import io
-import os
 import random
 import threading
 import time
@@ -25,6 +24,7 @@ from config.fonts import F
 from config.theme import DARK_THEME as C
 from ui.icons import glyph, icon_font
 from config.i18n import _
+from ui.tooltip import attach_tooltip
 from ui.button_states import set_enabled
 from services.providers import provider_id_for
 
@@ -95,7 +95,7 @@ class _ItemWidget(tk.Frame):
         self._time_lbl = tk.Label(row1, text="", font=F["mono_tiny"], bg=C["panel"], fg=C["text_muted"])
         self._time_lbl.pack(side="left")
 
-        tk.Button(
+        remove_btn = tk.Button(
             row1,
             text=glyph("close"),
             font=icon_font(9),
@@ -105,7 +105,9 @@ class _ItemWidget(tk.Frame):
             padx=4,
             cursor="hand2",
             command=lambda: on_remove(self),
-        ).pack(side="right")
+        )
+        remove_btn.pack(side="right")
+        attach_tooltip(remove_btn, "tip_remove_job")
 
         # 第二行：提示词
         self._prompt_lbl = tk.Label(

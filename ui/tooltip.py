@@ -17,6 +17,12 @@ ui/tooltip.py — 悬浮提示共用的时间常量
 
 from __future__ import annotations
 
+import tkinter as tk
+
+from config.fonts import F
+from config.theme import DARK_THEME as C
+from config.i18n import _
+
 # 悬停多久后开始显示
 DELAY_MS = 400
 
@@ -34,3 +40,69 @@ def fade_alpha(step: int) -> float:
         return MAX_ALPHA
     progress = min(1.0, step / (FADE_FRAMES - 1))
     return MAX_ALPHA * progress**0.55
+
+
+# ══════════════════════════════════════════════════════════════
+#   通用单行悬浮说明（icon-only 按钮等无文本控件的可读名称补充）
+# ══════════════════════════════════════════════════════════════
+_BUBBLE = None  # 进程级单例气泡：同一时刻只显示一条
+
+
+def attach_tooltip(widget: tk.Widget, text_key: str) -> None:
+    """给控件挂单行悬浮说明。
+
+    icon-only 按钮（Segoe 图标字形）的 text 是 PUA 码点，无法向屏幕
+    阅读器传达语义，悬浮说明是 Tkinter 平台上可行的最低成本补充。
+    时间常量与侧栏/词条库气泡共用一套（DELAY_MS）。
+    """
+    state = {"after": None}
+
+    def _show(_event=None):
+        global _BUBBLE
+        if _BUBBLE is not None and _BUBBLE.winfo_exists():
+            return
+        bubble = tk.Toplevel(widget)
+        bubble.wm_overrideredirect(True)
+        tk.Label(
+            bubble,
+            text=_(text_key),
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["text"],
+            padx=8,
+            pady=4,
+            bd=1,
+            relief="solid",
+        ).pack()
+        x = widget.winfo_rootx() + widget.winfo_width() // 2 - 60
+        y = widget.winfo_rooty() + widget.winfo_height() + 6
+        bubble.wm_geometry("+%d+%d" % (max(0, x), max(0, y)))
+        try:
+            bubble.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        _BUBBLE = bubble
+
+    def _hide(_event=None):
+        global _BUBBLE
+        if state["after"] is not None:
+            try:
+                widget.after_cancel(state["after"])
+            except Exception:
+                pass
+            state["after"] = None
+        if _BUBBLE is not None:
+            try:
+                if _BUBBLE.winfo_exists():
+                    _BUBBLE.destroy()
+            except tk.TclError:
+                pass
+            _BUBBLE = None
+
+    def _schedule(event=None):
+        state["after"] = widget.after(DELAY_MS, _show)
+
+    widget.bind("<Enter>", _schedule)
+    widget.bind("<Leave>", _hide)
+    widget.bind("<ButtonPress>", _hide)
+    widget.bind("<Destroy>", _hide)

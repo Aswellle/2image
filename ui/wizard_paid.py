@@ -30,6 +30,7 @@ from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORD
 from services.providers.replicate_flux import REPLICATE_IMAGE_NAMES
 from config.ui_geometry import scaled
 from ui.components import bind_wraplength
+from ui.tooltip import attach_tooltip
 from ui.icons import glyph, icon_font
 
 
@@ -511,6 +512,7 @@ class PaidWizard(tk.Toplevel):
             command=_toggle,
         )
         eye.pack(side="right", padx=4)
+        attach_tooltip(eye, "tip_toggle_key")
         self._gb(parent, entry)
 
     def _save(self):

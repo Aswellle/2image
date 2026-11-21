@@ -28,6 +28,7 @@ from data.repository import (
 from ui.app_protocol import SidebarProtocol
 from ui.history.thumbnail import ThumbnailLoader
 from ui.tooltip import DELAY_MS as TIP_DELAY_MS
+from ui.tooltip import attach_tooltip
 from ui.tooltip import FADE_FRAME_MS, FADE_FRAMES, fade_alpha
 
 THUMB_SIZE = 90
@@ -225,6 +226,7 @@ class HistorySidebar:
             command=self._clear_search,
         )
         _clr_btn.pack(side="right", padx=(0, 4))
+        attach_tooltip(_clr_btn, "tip_clear_search")
         _sre = tk.Entry(
             _srf,
             textvariable=self.sv,
@@ -1139,7 +1141,7 @@ class HistorySidebar:
                 fr = tk.Frame(cur_f, bg=tc)
                 fr.pack(side="left", padx=(0, 4))
                 tk.Label(fr, text=tag, font=F["small_b"], bg=tc, fg="white", padx=5, pady=2).pack(side="left")
-                tk.Button(
+                rm_tag_btn = tk.Button(
                     fr,
                     text=glyph("close"),
                     font=icon_font(8),
@@ -1150,7 +1152,9 @@ class HistorySidebar:
                     pady=1,
                     cursor="hand2",
                     command=lambda t=tag: _remove(t),
-                ).pack(side="left")
+                )
+                rm_tag_btn.pack(side="left")
+                attach_tooltip(rm_tag_btn, "tip_remove_tag")
 
         def _remove(tag):
             if tag in live_tags:

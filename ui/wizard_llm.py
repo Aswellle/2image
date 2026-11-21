@@ -25,6 +25,7 @@ from config.settings import save_config
 from config.theme import DARK_THEME as C
 from config.ui_geometry import fit_to_workarea, scaled
 from ui.components import bind_follower_wrap, bind_wraplength
+from ui.tooltip import attach_tooltip
 from ui.icons import glyph, icon_font
 
 # ── 每个模型通道的展示信息 ────────────────────────────────────────
@@ -517,6 +518,7 @@ class LLMWizard(tk.Toplevel):
             command=toggle,
         )
         btn.pack(side="right", padx=4)
+        attach_tooltip(btn, "tip_toggle_key")
         # 绿边：idle 显示，获焦后隐藏
         parent.config(highlightbackground=C["ok"], highlightthickness=1)
         entry.bind("<FocusIn>", lambda _: parent.config(highlightbackground=C["entry"]), add="+")

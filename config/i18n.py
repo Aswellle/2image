@@ -451,6 +451,30 @@ STRINGS = {
         "zh-CN": "付费额度不足",
         "en": "Paid quota exhausted",
     },
+    "tip_clear_search": {
+        "zh-CN": "清除搜索",
+        "en": "Clear search",
+    },
+    "tip_remove_tag": {
+        "zh-CN": "移除该标签",
+        "en": "Remove this tag",
+    },
+    "tip_remove_job": {
+        "zh-CN": "从队列移除",
+        "en": "Remove from queue",
+    },
+    "tip_append_phrase": {
+        "zh-CN": "追加到输入框",
+        "en": "Append to prompt input",
+    },
+    "tip_delete_phrase": {
+        "zh-CN": "删除自定义词条",
+        "en": "Delete custom phrase",
+    },
+    "tip_toggle_key": {
+        "zh-CN": "显示 / 隐藏 API Key",
+        "en": "Show / hide API key",
+    },
     "dlg_err_body": {
         "zh-CN": "{err}",
         "en": "{err}",

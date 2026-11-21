@@ -17,6 +17,7 @@ from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_NAMES
 from config.theme import DARK_THEME as C
 from config.ui_geometry import scaled
 from ui.components import bind_follower_wrap, bind_wraplength
+from ui.tooltip import attach_tooltip
 from ui.icons import glyph, icon_font
 
 
@@ -985,6 +986,7 @@ class ConfigWizard(tk.Toplevel):
             command=toggle,
         )
         btn.pack(side="right", padx=4)
+        attach_tooltip(btn, "tip_toggle_key")
         self._gb(parent, entry)  # 绿边：idle 显示，获焦后隐藏
 
     def _save(self):

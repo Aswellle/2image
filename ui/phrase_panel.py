@@ -28,6 +28,7 @@ from config.theme import DARK_THEME as C
 from ui.icons import glyph, icon_font
 from config.i18n import _
 from ui.tooltip import DELAY_MS as TIP_DELAY_MS
+from ui.tooltip import attach_tooltip
 from ui.tooltip import FADE_FRAME_MS, FADE_FRAMES, MAX_ALPHA as TIP_MAX_ALPHA
 from config.ui_geometry import fit_to_workarea, scaled
 from ui.tooltip import fade_alpha
@@ -497,6 +498,7 @@ class PhrasePanel(tk.Toplevel):
                 command=lambda p=phrase: self._append_to_input(p),
             )
             append_btn.pack(side="right", padx=4, pady=4)
+            attach_tooltip(append_btn, "tip_append_phrase")
 
             # ── 删除按钮（仅自定义词条）───────────────────
             if not is_builtin(cat, phrase):
@@ -508,7 +510,7 @@ class PhrasePanel(tk.Toplevel):
                         delete_custom_phrase(c, p)
                         self._reload()
 
-                tk.Button(
+                del_phrase_btn = tk.Button(
                     chip,
                     text=glyph("trash"),
                     font=icon_font(9),
@@ -518,7 +520,9 @@ class PhrasePanel(tk.Toplevel):
                     padx=4,
                     cursor="hand2",
                     command=_del,
-                ).pack(side="right", padx=2, pady=4)
+                )
+                del_phrase_btn.pack(side="right", padx=2, pady=4)
+                attach_tooltip(del_phrase_btn, "tip_delete_phrase")
 
             # ── 点击整行也追加 ────────────────────────────
             for w in (chip, lbl):
