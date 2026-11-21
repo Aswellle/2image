@@ -179,12 +179,12 @@ PAID_MANIFESTS: dict[str, ProviderManifest] = {
 COMMERCIAL_MANIFESTS: dict[str, ProviderManifest] = {
     "minimax_image": ProviderManifest(
         id="minimax_image",
-        name="MiniMax Image 01 (免费试用)",
+        name="MiniMax Image (付费)",
         category="commercial",
         config_key="minimax_key",
-        description="MiniMax image-01",
-        supports_img2img=True,
-        capabilities={"text2image", "img2img"},
+        description="MiniMax H3-Image 文生图（最高 20MP）",
+        supports_img2img=False,
+        capabilities={"text2image"},
     ),
     "ideogram": ProviderManifest(
         id="ideogram",
@@ -245,7 +245,7 @@ LEGACY_NAME_TO_ID: dict[str, str] = {
     "💎 Black Forest Labs FLUX": "bfl_flux",
     "💎 Nano Banana Pro (Gemini 3 Pro Image)": "gemini_nano_banana_pro",
     "💎 Nano Banana Pro": "gemini_nano_banana_pro",
-    "💎 MiniMax image-01": "minimax_image",
+    "💎 MiniMax Image": "minimax_image",
     "💎 OpenAI GPT-Image": "openai_image",
     "💎 Replicate FLUX": "replicate_flux",
     "💎 Stability AI": "stability_ai",

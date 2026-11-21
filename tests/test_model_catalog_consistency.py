@@ -202,9 +202,10 @@ def test_replicate_dropdown_order_matches_provider_registry():
     assert DEFAULT_CONFIG["replicate_model"] == mod.MODEL_ORDER[0]
 
 
-def test_minimax_family_single_model():
-    """MiniMax 官方在册仅 image-01（2026-11 核实），防止臆测性新增。"""
-    assert MINIMAX_IMAGE_MODELS == ["image-01"]
+def test_minimax_family_h3_pair():
+    """MiniMax 官方 API 在册 H3-Image + Highspeed（2026-11-22 核实）。"""
+    assert MINIMAX_IMAGE_MODELS == ["MiniMax-H3-Image", "MiniMax-H3-Image-Highspeed"]
+    assert MINIMAX_IMAGE_DEFAULT == "MiniMax-H3-Image"
 
 
 def test_llm_chain_display_pinned():

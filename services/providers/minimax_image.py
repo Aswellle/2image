@@ -1,14 +1,18 @@
 """
-services/providers/minimax_image.py — MiniMax 图像生成（文生图 + 图生图）
+services/providers/minimax_image.py — MiniMax 图像生成（文生图）
 
-支持模型：
-  · image-01 — MiniMax 图像生成模型（当前唯一可用）
+支持模型（2026-11-22 换代）：
+  · MiniMax-H3-Image           — H3 旗舰（默认；文生图+编辑，最高 20MP）
+  · MiniMax-H3-Image-Highspeed — 同参数更快变体
 
-端点: POST https://api.minimax.io/v1/image_generation
+端点: POST https://api.minimax.io/v1/images/generations（OpenAI 风格：
+model/prompt/aspect_ratio+area/n/response_format）
 认证: Header Authorization: Bearer <key>
-响应: data.image_base64[]  (base64 数组)
+响应: data[].url（或 b64_json），usage.generated_images 计成功数
 
-图生图使用 subject_reference（主体参考图）模式。
+图生图：H3 的编辑走 /v1/images/edits 端点（最多 16 张参考图），
+其请求契约尚未核验接入——supports_img2img 暂关，旧 image-01 的
+subject_reference 通道随 image-01 退役；edits 接入为后续待办。
 """
 
 import base64
@@ -18,23 +22,31 @@ from typing import Callable, Tuple
 
 import requests
 
-from config.model_catalog import MINIMAX_IMAGE_DEFAULT, MINIMAX_IMAGE_NAMES
+from config.model_catalog import (
+    MINIMAX_IMAGE_DEFAULT,
+    MINIMAX_IMAGE_MODELS,
+    MINIMAX_IMAGE_NAMES,
+)
 from services.generation.errors import (
     ProviderConfigError,
     ProviderError,
     ProviderInvalidResponseError,
     ProviderTransientError,
 )
-from services.providers._net import get_session as _get_session, raise_for_response, safe_error_text as _safe_error_text
+from services.providers._net import (
+    get_session as _get_session,
+    raise_for_response,
+    safe_get_image as _safe_get_image,
+)
 
 
 PROVIDER_INFO = {
     "id": "minimax_image",
-    "name": "MiniMax Image 01 (免费试用)",
+    "name": "MiniMax Image (付费)",
     "category": "commercial",
     "config_key": "minimax_key",
-    "description": "MiniMax image-01 文生图/图生图",
-    "supports_img2img": True,
+    "description": "MiniMax H3-Image 文生图（最高 20MP）",
+    "supports_img2img": False,  # H3 编辑端点契约核验后恢复
 }
 
 
@@ -42,8 +54,7 @@ _LOCK = threading.Lock()
 _LAST_DONE = [0.0]
 _MIN_INTV = 2.0
 
-_MODEL = MINIMAX_IMAGE_DEFAULT
-_ENDPOINT = "https://api.minimax.io/v1/image_generation"
+_ENDPOINT = "https://api.minimax.io/v1/images/generations"
 _TIMEOUT = 120
 _MAX_RETRIES = 3
 
@@ -66,14 +77,14 @@ def _best_aspect(w: int, h: int) -> str:
     return min(_ASPECTS, key=lambda x: abs(x[0] - r))[1]
 
 
-def _guess_mime(image_bytes: bytes) -> str:
-    if image_bytes[:8] == b"\x89PNG\r\n\x1a\n":
-        return "image/png"
-    if image_bytes[:3] == b"\xff\xd8\xff":
-        return "image/jpeg"
-    if image_bytes[:4] == b"RIFF" and image_bytes[8:12] == b"WEBP":
-        return "image/webp"
-    return "image/png"
+def _best_area(w: int, h: int) -> str:
+    """按请求像素量选 area 档（H3 面积允许 [655360, 20000000] px）。"""
+    pixels = max(w, 1) * max(h, 1)
+    if pixels <= 1_100_000:
+        return "1K"
+    if pixels <= 4_500_000:
+        return "2K"
+    return "4K"
 
 
 def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
@@ -86,22 +97,22 @@ def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
         "Content-Type": "application/json",
     }
 
+    model = cfg.get("minimax_model", "").strip()
+    if model not in MINIMAX_IMAGE_MODELS:
+        if model:
+            log(f"[MiniMax] 模型 {model!r} 不在目录，已归一化到默认 {MINIMAX_IMAGE_DEFAULT}")
+        model = MINIMAX_IMAGE_DEFAULT
+
     aspect = _best_aspect(w, h)
     payload = {
-        "model": _MODEL,
+        "model": model,
         "prompt": prompt,
         "aspect_ratio": aspect,
-        "response_format": "base64",
+        "area": _best_area(w, h),
+        "n": 1,
+        "response_format": "url",
     }
-
-    ref_image = cfg.get("_ref_image")  # bytes or None（图生图参考图）
-    if ref_image is not None:
-        mime = _guess_mime(ref_image)
-        data_uri = f"data:{mime};base64,{base64.b64encode(ref_image).decode('ascii')}"
-        payload["subject_reference"] = [{"type": "character", "image_file": data_uri}]
-        log(f"► MiniMax image-01  图生图（主体参考图）  宽高比={aspect}")
-    else:
-        log(f"► MiniMax image-01  文生图  宽高比={aspect}")
+    log(f"► MiniMax {MINIMAX_IMAGE_NAMES.get(model, model)}  文生图  宽高比={aspect}  档={payload['area']}")
 
     # ── 持锁范围仅限限速等待：预占时间槽后立即放锁 ──────────────────
     # 修复：原版锁覆盖整个重试循环，429 退避与 HTTP 超时都持锁，
@@ -127,12 +138,12 @@ def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
                 time.sleep(20)
                 continue
             if resp.status_code != 200:
-                raise_for_response(resp, "MiniMax Image 01 (免费试用)")
+                raise_for_response(resp, "MiniMax Image")
 
             data = resp.json()
             image_bytes = _extract_image(data)
             log("[MiniMax] 生成成功 ✓")
-            return (image_bytes, f"MiniMax/{MINIMAX_IMAGE_NAMES.get(_MODEL, _MODEL)}")
+            return (image_bytes, f"MiniMax/{MINIMAX_IMAGE_NAMES.get(model, model)}")
 
         except ProviderError:
             raise  # 类型化错误直通：重试/回退由 orchestrator 按 code 决策
@@ -151,12 +162,21 @@ def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
 
 
 def _extract_image(data: dict) -> bytes:
-    """响应体：{"data": {"image_base64": ["<b64>", ...]}, "base_resp": {...}}。"""
-    base_resp = data.get("base_resp", {})
-    if base_resp.get("status_code", 0) not in (0, None):
-        raise ProviderTransientError(f"MiniMax 错误：{base_resp.get('status_msg', data)}")
+    """响应体：{"data": [{"url": ...} | {"error": {...}}], "usage": {...}}。
 
-    images = data.get("data", {}).get("image_base64", [])
-    if not images:
-        raise ProviderInvalidResponseError(f"MiniMax 响应中无 image_base64：{data}")
-    return base64.b64decode(images[0])
+    HTTP 200 仅代表至少一张成功；单项失败在 error 对象里。
+    """
+    items = data.get("data", [])
+    if not items:
+        raise ProviderInvalidResponseError(f"MiniMax 响应中无 data 数组：{data}")
+    first = items[0]
+    err = first.get("error") if isinstance(first, dict) else None
+    if err:
+        raise ProviderInvalidResponseError(f"MiniMax 图片生成失败：{err.get('message', err)}")
+    url = first.get("url", "")
+    b64 = first.get("b64_json", "")
+    if b64:
+        return base64.b64decode(b64)
+    if not url:
+        raise ProviderInvalidResponseError(f"MiniMax 响应中既无 url 也无 b64_json：{first}")
+    return _safe_get_image(url)
