@@ -39,7 +39,7 @@ class OrchestratorResult:
     provider_id: str | None = None
     provider_display: str | None = None
     attempts: int = 0
-    errors: list[str] = None
+    errors: list[str] | None = None
     duration_ms: float = 0.0
     cancelled: bool = False
     deadline_exceeded: bool = False

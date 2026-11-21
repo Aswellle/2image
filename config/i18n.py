@@ -356,7 +356,7 @@ STRINGS = {
         "en": "Select export directory",
     },
     "dlg_api_key_required": {
-        "zh-CN": "需要配置 API Key！\n请在「🆓 免费配置」或「💎 付费配置」中填写。",
+        "zh-CN": "需要配置 API Key。\n请在「🆓 免费配置」或「💎 付费配置」中填写。",
         "en": "API Key required!\nPlease configure in Free API Keys or Paid API Keys.",
     },
     "dlg_tip": {
@@ -364,7 +364,7 @@ STRINGS = {
         "en": "Notice",
     },
     "dlg_empty_prompt": {
-        "zh-CN": "请先输入描述文字！",
+        "zh-CN": "请先输入描述文字",
         "en": "Please enter a description first!",
     },
     "dlg_pick_specific_provider": {
@@ -2206,7 +2206,7 @@ STRINGS = {
         "en": "📖  Session History",
     },
     "wizard_warn_no_keyword": {
-        "zh-CN": "请先填写主题关键词！",
+        "zh-CN": "请先填写主题关键词",
         "en": "Please enter topic keywords first!",
     },
     "wizard_label_param_prefix": {
