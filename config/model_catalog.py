@@ -24,7 +24,7 @@ settings.DEFAULT_CONFIG 的默认值、provider 的兜底默认（cfg.get 的 fa
   · 火山方舟模型表（Seedream 正式 ID 带日期快照，"-t2i" 后缀仅 3.0 时代有效）
   · docs.bfl.ml 索引（FLUX.2 [pro] 为官方推荐默认，单端点生成+编辑）
   · docs.x.ai 模型页（grok-imagine-image-quality 已不在册）
-  · 阿里云百炼文生图 V2 API（wan2.5 及以下走旧异步协议）
+  · 阿里云百炼文生图 API（wan2.6 走同步协议，wan2.5 及以下旧异步）
 
 注意：这是 config 层的纯常量模块，不得 import services/ui，防止依赖环。
 """

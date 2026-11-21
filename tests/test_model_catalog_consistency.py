@@ -166,6 +166,8 @@ def test_retired_model_ids_absent_from_wizards():
         "doubao-seedream-4-5-251128",
         "doubao-seedream-4-0-250828",
         "doubao-seededit-3-0-i2i",
+        "wanx2.1-t2i-turbo",
+        "wanx2.1-t2i-plus",
         "grok-imagine-image-quality",
         "gemini-2.5-flash-image-preview",
     }
