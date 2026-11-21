@@ -25,20 +25,21 @@ log = logging.getLogger(__name__)
 
 SPEND_FILE = os.path.join(APP_DIR, "spend.json")
 
-# 估算单价（USD / 张）。取各供应商主流模型 1024x1024 档的公开定价近似值，
-# 偏高取整 —— 预算守卫宁可早停。新付费供应商接入时在此补一行。
+# 估算单价（USD / 张）。取各供应商现役默认模型 1024x1024 档的公开定价
+# 近似值，偏高取整 —— 预算守卫宁可早停。新付费供应商接入时在此补一行；
+# 模型换代时同步校准锚点名与单价（v2.10 校准：FLUX.2 单价高于 1.1 代）。
 PRICING_USD_PER_IMAGE: dict[str, float] = {
-    "openai_image": 0.05,  # gpt-image-1 medium
+    "openai_image": 0.05,  # gpt-image-2
     "stability_ai": 0.04,  # core
-    "replicate_flux": 0.04,  # flux-1.1-pro
-    "xai_grok": 0.03,
+    "replicate_flux": 0.06,  # flux-2-pro
+    "xai_grok": 0.03,  # grok-imagine-image-2.0
     "ideogram": 0.08,
-    "fal_flux": 0.06,  # FLUX pro ultra
-    "recraft": 0.04,
-    "bfl_flux": 0.05,  # flux-pro
-    "minimax_image": 0.05,
+    "fal_flux": 0.06,  # fal-ai/flux-2-pro
+    "recraft": 0.04,  # recraftv4_1
+    "bfl_flux": 0.06,  # flux-2-pro
+    "minimax_image": 0.05,  # image-01
     "gemini_nano_banana_pro": 0.15,  # Gemini 3 Pro Image
-    "volcengine_ark": 0.05,  # Seedream
+    "volcengine_ark": 0.05,  # Seedream 4.5
 }
 
 # 不在定价表中的付费接口按此兜底估算
