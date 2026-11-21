@@ -36,7 +36,7 @@ from services.prompt_assistant import (
     get_templates_by_category,
     prompt_budget_info,
 )
-from config.ui_geometry import scaled
+from config.ui_geometry import fit_to_workarea, scaled
 from ui.button_states import set_enabled
 from ui.wizard_llm import LLMWizard
 
@@ -291,9 +291,13 @@ class PromptWizard(tk.Toplevel):
         screen_w = self.winfo_screenwidth()
         screen_h = self.winfo_screenheight()
         # 窗口几何按缩放系数放大（高 DPI 下字体放大，固定逻辑窗宽
-        # 会让内容溢出窗口右缘）
-        window_w = min(scaled(self, 1040), max(scaled(self, 780), screen_w - 80))
-        window_h = min(scaled(self, 860), max(scaled(self, 680), screen_h - 48))
+        # 会让内容溢出窗口右缘）；再钳制屏幕工作区——缩放后的最小宽
+        # 在物理窄屏上可能超过屏幕，与其余弹窗的做法对齐
+        window_w, window_h = fit_to_workarea(
+            self,
+            min(scaled(self, 1040), max(scaled(self, 780), screen_w - 80)),
+            min(scaled(self, 860), max(scaled(self, 680), screen_h - 48)),
+        )
         self.geometry(f"{window_w}x{window_h}")
         self.configure(bg=C["bg"])
         self.minsize(scaled(self, 780), scaled(self, 680))
