@@ -163,6 +163,9 @@ def test_retired_model_ids_absent_from_wizards():
         "gpt-image-1-mini",
         "gpt-image-1.5",
         "doubao-seedream-4-0-t2i",
+        "doubao-seedream-4-5-251128",
+        "doubao-seedream-4-0-250828",
+        "doubao-seededit-3-0-i2i",
         "grok-imagine-image-quality",
         "gemini-2.5-flash-image-preview",
     }

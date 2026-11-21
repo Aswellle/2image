@@ -15,8 +15,9 @@ from config.model_catalog import (
     ARK_IMAGE_DEFAULT,
     ARK_IMAGE_NAMES,
     ARK_IMAGE_MODELS,
-    ARK_SEEDREAM_40_T2I,
-    ARK_SEEDREAM_45_T2I,
+    ARK_SEEDREAM_50_FLASH,
+    ARK_SEEDREAM_50_PRO,
+    ARK_SEEDREAM_55_T2I,
     GPT_IMAGE_2,
     GPT_IMAGE_DEFAULT,
     GPT_IMAGE_NAMES,
@@ -92,18 +93,33 @@ class TestModelCatalog:
         assert GEMINI_NB_V2 not in GEMINI_IMAGE_DEPRECATED
 
     def test_ark_models_complete(self):
-        """豆包系列应包含 4 个型号，4.0 用正式快照 ID"""
-        from config.model_catalog import ARK_SEEDREAM_30_T2I, ARK_SEEDIT_30_I2I
+        """豆包系列应为 5.x 三型号（2026-11-22 换代：5.5 默认 + 5.0 Pro/Flash）"""
+        assert ARK_SEEDREAM_55_T2I == "doubao-seedream-5-5-261028"
+        assert ARK_SEEDREAM_50_PRO == "doubao-seedream-5-0-pro-260628"
+        assert ARK_SEEDREAM_50_FLASH == "doubao-seedream-5-0-flash-260915"
+        assert ARK_IMAGE_MODELS == [ARK_SEEDREAM_55_T2I, ARK_SEEDREAM_50_PRO, ARK_SEEDREAM_50_FLASH]
 
-        assert ARK_SEEDREAM_45_T2I in ARK_IMAGE_MODELS
-        assert ARK_SEEDREAM_40_T2I == "doubao-seedream-4-0-250828"
-        assert ARK_SEEDREAM_30_T2I in ARK_IMAGE_MODELS
-        assert ARK_SEEDIT_30_I2I in ARK_IMAGE_MODELS
-        assert len(ARK_IMAGE_MODELS) == 4
+    def test_ark_default_is_seedream_55(self):
+        """默认豆包模型应为最新发布的 Seedream 5.5"""
+        assert ARK_IMAGE_DEFAULT == ARK_SEEDREAM_55_T2I
 
-    def test_ark_default_is_seedream_45(self):
-        """默认豆包模型应为 Seedream 4.5"""
-        assert ARK_IMAGE_DEFAULT == ARK_SEEDREAM_45_T2I
+    def test_ark_retired_ids_absent(self):
+        """退役的 4.x/3.0/SeedEdit ID 不得留在目录"""
+        from config.model_catalog import ARK_IMAGE_MODELS
+
+        for retired in (
+            "doubao-seedream-4-5-251128",
+            "doubao-seedream-4-0-250828",
+            "doubao-seedream-3-0-t2i",
+            "doubao-seededit-3-0-i2i",
+        ):
+            assert retired not in ARK_IMAGE_MODELS
+
+    def test_ark_all_models_native_i2i(self):
+        """5.x 全系原生支持参考图编辑，无需旧 SeedEdit 通道"""
+        from config.model_catalog import ARK_NATIVE_I2I_MODELS
+
+        assert ARK_NATIVE_I2I_MODELS == set(ARK_IMAGE_MODELS)
 
     def test_ark_names_readable(self):
         """所有豆包型号都应有可读名称"""
@@ -149,12 +165,12 @@ class TestVolcengineArkProvider:
         # 图片下载走 safe_get_image 安全通道（SSRF 校验），直接 mock 其返回
         mock_safe_get.return_value = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
-        cfg = {"volcengine_key": "test-key", "ark_model": ARK_SEEDREAM_40_T2I}
+        cfg = {"volcengine_key": "test-key", "ark_model": ARK_SEEDREAM_55_T2I}
         data, name = try_volcengine_ark("a cat", 64, 64, 42, cfg, print)
 
         assert data == b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
         assert "豆包" in name
-        assert "Seedream 4.0" in name
+        assert "Seedream 5.5" in name
 
     @patch("services.providers.volcengine_ark._get_session")
     @patch("services.providers.volcengine_ark._safe_get_image")
@@ -170,7 +186,7 @@ class TestVolcengineArkProvider:
 
         cfg = {"volcengine_key": "test-key", "ark_model": "doubao-seedream-4-0-t2i"}
         _, name = try_volcengine_ark("a cat", 64, 64, 42, cfg, print)
-        assert "Seedream 4.5" in name  # 归一化到 4.5 默认
+        assert "Seedream 5.5" in name  # 归一化到当前 5.5 默认
 
         sent_model = mock_session.return_value.post.call_args[1]["json"]["model"]
         assert sent_model == ARK_IMAGE_DEFAULT

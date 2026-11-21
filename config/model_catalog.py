@@ -103,30 +103,29 @@ MINIMAX_IMAGE_NAMES: dict[str, str] = {
 # ── 火山引擎豆包（provider: services/providers/volcengine_ark.py）─────────────
 # 正式模型 ID 为带日期快照（方舟文档示例同款）；"-t2i" 后缀仅 3.0 时代有效，
 # 4.0 起若再使用会报「模型不存在」。
-# Seedream 4.x 原生支持 image 参考图编辑（1–14 张），SeedEdit 3.0 仅作旧版兜底。
-ARK_SEEDREAM_30_T2I = "doubao-seedream-3-0-t2i"  # 豆包文生图 3.0（legacy）
-ARK_SEEDREAM_40_T2I = "doubao-seedream-4-0-250828"  # 豆包文生图 4.0（正式快照 ID）
-ARK_SEEDREAM_45_T2I = "doubao-seedream-4-5-251128"  # 豆包 Seedream 4.5（综合最佳）
-ARK_SEEDIT_30_I2I = "doubao-seededit-3-0-i2i"  # 豆包图生图 3.0（Seedream 4.x 原生编辑前的旧通道）
+# Seedream 5.x 原生支持 image 参考图编辑（5.5 官方支持最多 10 张参考图与
+# 多轮精准编辑）；旧 SeedEdit 3.0 通道随 4.x 一起退役。
+# 2026-11-22 校准：5.5（2026-11-09 发布）为默认；4.5/4.0/3.0 已落后 1-3 代，
+# 从目录移除——存量配置中的旧 ID 由 provider 自动归一化到新默认。
+ARK_SEEDREAM_55_T2I = "doubao-seedream-5-5-261028"  # 豆包 Seedream 5.5（最新，多轮精准编辑/原生 RGBA）
+ARK_SEEDREAM_50_PRO = "doubao-seedream-5-0-pro-260628"  # 豆包 Seedream 5.0 Pro（上一代旗舰）
+ARK_SEEDREAM_50_FLASH = "doubao-seedream-5-0-flash-260915"  # 豆包 Seedream 5.0 Flash（同能力更快更省）
 
 ARK_IMAGE_MODELS = [
-    ARK_SEEDREAM_45_T2I,
-    ARK_SEEDREAM_40_T2I,
-    ARK_SEEDREAM_30_T2I,
-    ARK_SEEDIT_30_I2I,
+    ARK_SEEDREAM_55_T2I,
+    ARK_SEEDREAM_50_PRO,
+    ARK_SEEDREAM_50_FLASH,
 ]
-ARK_IMAGE_DEFAULT = ARK_SEEDREAM_45_T2I  # 默认最新综合最佳
+ARK_IMAGE_DEFAULT = ARK_SEEDREAM_55_T2I  # 默认最新发布
 
 ARK_IMAGE_NAMES: dict[str, str] = {
-    ARK_SEEDREAM_45_T2I: "豆包 Seedream 4.5 (推荐)",
-    ARK_SEEDREAM_40_T2I: "豆包 Seedream 4.0",
-    ARK_SEEDREAM_30_T2I: "豆包 Seedream 3.0 (旧版)",
-    ARK_SEEDIT_30_I2I: "豆包 SeedEdit 3.0 (图生图)",
+    ARK_SEEDREAM_55_T2I: "豆包 Seedream 5.5 (推荐)",
+    ARK_SEEDREAM_50_PRO: "豆包 Seedream 5.0 Pro",
+    ARK_SEEDREAM_50_FLASH: "豆包 Seedream 5.0 Flash (更快更省)",
 }
 
-# 原生支持参考图编辑（image 参数）的模型；不在表内的文生图模型
-# 走图生图时回退 SeedEdit 3.0。
-ARK_NATIVE_I2I_MODELS = {ARK_SEEDREAM_45_T2I, ARK_SEEDREAM_40_T2I}
+# 原生支持参考图编辑（image 参数）的模型——5.x 全系支持
+ARK_NATIVE_I2I_MODELS = {ARK_SEEDREAM_55_T2I, ARK_SEEDREAM_50_PRO, ARK_SEEDREAM_50_FLASH}
 
 # ── Black Forest Labs 文生图模型（provider: services/providers/bfl_flux.py）───
 # FLUX.2 [pro] 为官方推荐默认（/v1/flux-2-pro 单端点生成+编辑，

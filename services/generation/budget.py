@@ -39,7 +39,7 @@ PRICING_USD_PER_IMAGE: dict[str, float] = {
     "bfl_flux": 0.06,  # flux-2-pro
     "minimax_image": 0.05,  # image-01
     "gemini_nano_banana_pro": 0.15,  # Gemini 3 Pro Image
-    "volcengine_ark": 0.05,  # Seedream 4.5
+    "volcengine_ark": 0.05,  # Seedream 5.5
 }
 
 # 不在定价表中的付费接口按此兜底估算
