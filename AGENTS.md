@@ -480,7 +480,7 @@ manifest 一致性由 `tests/test_registry_consistency.py` 护栏锁定。
 |Commercial|Ideogram|`ideogram_key`|`ideogram.py`|
 |Commercial|fal.ai FLUX Ultra|`fal_key`|`fal_flux.py`|
 |Commercial|Recraft|`recraft_key` + `recraft_style` + `recraft_model`|`recraft.py`|
-|Commercial|MiniMax Image|`minimax_key`|`minimax_image.py`|
+|Commercial|MiniMax Image|`minimax_key`（模型可手改 `minimax_model`）|`minimax_image.py`|
 |Commercial|火山引擎 豆包 Seedream|`volcengine_key` + `ark_model`|`volcengine_ark.py`|
 
 ---
