@@ -28,6 +28,7 @@ from services.providers import (
 )
 from config.ui_geometry import fit_to_workarea, scaled
 from ui.components import mapped_children_width
+from ui.components.dropdown import install_dropdown_style
 from ui.batch_panel import BatchPanel
 from ui.queue_panel import QueuePanel
 from ui.app_protocol import MainContentProtocol
@@ -283,65 +284,9 @@ class MainContent:
             darkcolor=[("selected", C["acc"])],
         )
 
-        # ── Combobox 字段及箭头区完整状态映射 ────────────────────────
-        # 覆盖 clam 主题默认状态，防止 focus/hover 时字段变回系统色
-        style.configure(
-            "TCombobox",
-            fieldbackground=C["entry"],
-            background=C["acc"],
-            foreground=C["text"],
-            arrowcolor=C["text"],
-            selectbackground=C["acc"],
-            selectforeground="white",
-            insertcolor=C["text"],
-            bordercolor=C["sep"],
-            lightcolor=C["entry"],
-            darkcolor=C["entry"],
-        )
-        style.map(
-            "TCombobox",
-            fieldbackground=[
-                ("readonly", "focus", C["entry"]),
-                ("readonly", "!focus", C["entry"]),
-                ("focus", C["entry"]),
-                ("!focus", C["entry"]),
-                ("disabled", C["panel"]),
-            ],
-            foreground=[
-                ("readonly", C["text"]),
-                ("focus", C["text"]),
-                ("disabled", C["sub"]),
-            ],
-            selectbackground=[
-                ("focus", C["acc"]),
-                ("!focus", C["acc"]),
-            ],
-            selectforeground=[
-                ("focus", "white"),
-                ("!focus", "white"),
-            ],
-            background=[
-                ("active", C["hl"]),  # 箭头按钮 hover
-                ("!active", C["acc"]),  # 箭头按钮常态
-            ],
-            arrowcolor=[
-                ("disabled", C["sub"]),
-                ("active", "white"),
-                ("!active", C["text"]),
-            ],
-        )
+        # ── 下拉框视觉（字段/箭头/弹出列表，全局一次配置）────────
+        install_dropdown_style(self.app.root)
 
-        # ── 弹出下拉列表（Listbox）颜色 ───────────────────────────
-        # ttk.Combobox 的弹出框是 tk.Listbox，须用 option_add 设置
-        self.app.root.option_add("*TCombobox*Listbox.background", C["entry"])
-        self.app.root.option_add("*TCombobox*Listbox.foreground", C["text"])
-        self.app.root.option_add("*TCombobox*Listbox.selectBackground", C["acc"])
-        self.app.root.option_add("*TCombobox*Listbox.selectForeground", "white")
-        self.app.root.option_add("*TCombobox*Listbox.relief", "flat")
-        self.app.root.option_add("*TCombobox*Listbox.borderWidth", "0")
-        # 增大弹出 Listbox 的行高和字体，让长名称清晰可读
-        self.app.root.option_add("*TCombobox*Listbox.font", F["body"])
-        self.app.root.option_add("*TCombobox*Listbox.selectBorderWidth", "0")
         tk.Label(R, text=_("app_input_label"), font=F["btn"], bg=C["bg"], fg=C["text"]).pack(
             anchor="w", pady=(12, 4), padx=14
         )
