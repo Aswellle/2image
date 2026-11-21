@@ -475,6 +475,26 @@ STRINGS = {
         "zh-CN": "显示 / 隐藏 API Key",
         "en": "Show / hide API key",
     },
+    "phrase_import_btn": {
+        "zh-CN": "导入词库",
+        "en": "Import Library",
+    },
+    "phrase_export_btn": {
+        "zh-CN": "导出词库",
+        "en": "Export Library",
+    },
+    "phrase_import_done": {
+        "zh-CN": "已导入 {added} 条自定义词条（跳过 {skipped} 条已存在或内置词条）",
+        "en": "Imported {added} custom phrases ({skipped} skipped: existing or built-in)",
+    },
+    "phrase_import_invalid": {
+        "zh-CN": "文件格式不正确：需要「分类 → 词条列表」结构的 JSON 文件",
+        "en": "Invalid file: expected a JSON file of category → phrase list",
+    },
+    "phrase_export_done": {
+        "zh-CN": "已导出 {total} 条自定义词条到：\n{path}",
+        "en": "Exported {total} custom phrases to:\n{path}",
+    },
     "dlg_err_body": {
         "zh-CN": "{err}",
         "en": "{err}",

@@ -13,7 +13,7 @@ ui/phrase_panel.py  v2
 """
 
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 
 from services.phrase_library import (
     phrase_category_display,
@@ -375,6 +375,30 @@ class PhrasePanel(tk.Toplevel):
             cursor="hand2",
             command=self._add_phrase,
         ).pack(side="left")
+        tk.Button(
+            add_row,
+            text=_("phrase_export_btn"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=self._export_phrases,
+        ).pack(side="right")
+        tk.Button(
+            add_row,
+            text=_("phrase_import_btn"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=self._import_phrases,
+        ).pack(side="right", padx=(0, 8))
 
         self._reload()
 
@@ -600,6 +624,43 @@ class PhrasePanel(tk.Toplevel):
         self._new_phrase_var.set("")
         self._reload()
         self.app._log(f"📚 新建词条: [{self._cur_cat}] {phrase}")
+
+    def _export_phrases(self):
+        """自定义词库导出为 JSON 文件（换机/备份）。"""
+        from services.phrase_library import export_custom
+
+        path = filedialog.asksaveasfilename(
+            title=_("phrase_export_btn"),
+            defaultextension=".json",
+            initialfile="phrase_library.json",
+            filetypes=[("JSON", "*.json")],
+            parent=self,
+        )
+        if not path:
+            return
+        total = export_custom(path)
+        messagebox.showinfo(_("dlg_tip"), _("phrase_export_done", total=total, path=path), parent=self)
+        self.app._log(f"📚 词库导出: {total} 条 → {path}")
+
+    def _import_phrases(self):
+        """从 JSON 文件合并导入自定义词条（已存在/内置的跳过）。"""
+        from services.phrase_library import import_custom
+
+        path = filedialog.askopenfilename(
+            title=_("phrase_import_btn"),
+            filetypes=[("JSON", "*.json")],
+            parent=self,
+        )
+        if not path:
+            return
+        try:
+            added, skipped = import_custom(path)
+        except Exception:
+            messagebox.showerror(_("dlg_tip"), _("phrase_import_invalid"), parent=self)
+            return
+        self._reload()
+        messagebox.showinfo(_("dlg_tip"), _("phrase_import_done", added=added, skipped=skipped), parent=self)
+        self.app._log(f"📚 词库导入: +{added} 条（跳过 {skipped}）")
 
     def _on_close(self):
         # 关闭所有悬浮窗

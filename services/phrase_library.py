@@ -606,3 +606,49 @@ def delete_custom_phrase(category: str, phrase: str) -> None:
 
 def is_builtin(category: str, phrase: str) -> bool:
     return phrase in BUILTIN_PHRASES.get(category, [])
+
+
+def export_custom(path: str) -> int:
+    """导出自定义词库为 JSON（分类 → 词条列表），返回导出的词条总数。
+
+    只含自定义层；内置 45 条词条随应用分发，无需导出。
+    """
+    data = _load_custom()
+    total = sum(len(v) for v in data.values())
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return total
+
+
+def import_custom(path: str) -> tuple[int, int]:
+    """从 JSON 合并导入自定义词条，返回 (新增数, 跳过数)。
+
+    合并语义：分类并入现有自定义层（可新建分类），已存在的词条跳过；
+    内置词条不写库（避免把内置层固化进自定义文件）。结构非法的文件
+    抛 ValueError。
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        incoming = json.load(f)
+    if not isinstance(incoming, dict) or any(
+        not isinstance(k, str) or not isinstance(v, list) or any(not isinstance(x, str) for x in v)
+        for k, v in incoming.items()
+    ):
+        raise ValueError("invalid phrase library format")
+
+    data = _load_custom()
+    added = skipped = 0
+    for category, phrases in incoming.items():
+        bucket = data.setdefault(category, [])
+        for phrase in phrases:
+            clean = phrase.strip()
+            if not clean:
+                skipped += 1
+                continue
+            if clean in bucket or is_builtin(category, clean):
+                skipped += 1
+                continue
+            bucket.append(clean)
+            added += 1
+    if added:
+        _save_custom(data)
+    return added, skipped
