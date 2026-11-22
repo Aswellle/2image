@@ -440,8 +440,13 @@ class PromptWizard(tk.Toplevel):
         self._build_template_floating_action(parent)
 
     def _build_param_floating_action(self, parent):
+        # 状态行：独立于按钮行——按钮组总宽随语言变化，挤在按钮行右侧
+        # 的状态文字会被窗口右缘裁成残片（「生成中…」只见「生成」）
+        status_row = tk.Frame(parent, bg=C["bg"])
+        status_row.grid(row=1, column=0, sticky="ew")
+
         bar = tk.Frame(parent, bg=C["entry"], height=58)
-        bar.grid(row=1, column=0, sticky="ew")
+        bar.grid(row=2, column=0, sticky="ew")
         bar.grid_propagate(False)
 
         self._gen_btn = tk.Button(
@@ -511,8 +516,8 @@ class PromptWizard(tk.Toplevel):
             command=self._reset_params,
         ).pack(side="left", padx=(8, 0), pady=10)
 
-        self._param_status = tk.Label(bar, text="", font=F["body"], bg=C["entry"], fg=C["warn"])
-        self._param_status.pack(side="left", padx=12)
+        self._param_status = tk.Label(status_row, text="", font=F["body"], bg=C["bg"], fg=C["warn"], anchor="w")
+        self._param_status.pack(fill="x", padx=18, pady=(4, 2))
 
     def _build_template_floating_action(self, parent):
         """左栏底部固定的模板应用条，不随模板列表滚动。"""
