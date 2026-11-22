@@ -1798,6 +1798,54 @@ STRINGS = {
         "zh-CN": "还没有生成记录——完成首次生成后，这里会展示你的创作数据",
         "en": "No generations yet — your creation stats will appear here after your first image",
     },
+    "stats_fav_rate": {
+        "zh-CN": "收藏率",
+        "en": "Favorites Rate",
+    },
+    "stats_daily_title": {
+        "zh-CN": "近 7 天趋势",
+        "en": "7-Day Trend",
+    },
+    "stats_streak": {
+        "zh-CN": "连续生成 {n} 天",
+        "en": "{n}-day streak",
+    },
+    "stats_cost_title": {
+        "zh-CN": "成本估算",
+        "en": "Cost Estimate",
+    },
+    "stats_cost_note": {
+        "zh-CN": "估算值仅供参考，非账单依据",
+        "en": "Estimates for reference only — not a bill",
+    },
+    "stats_cost_total_num": {
+        "zh-CN": "累计估算花费",
+        "en": "Total (est.)",
+    },
+    "stats_cost_paid_num": {
+        "zh-CN": "付费生成张数",
+        "en": "Paid images",
+    },
+    "stats_cost_avg_num": {
+        "zh-CN": "单图均价",
+        "en": "Avg per image",
+    },
+    "stats_cost_today_lbl": {
+        "zh-CN": "今日消耗（台账）",
+        "en": "Today (ledger)",
+    },
+    "stats_cost_today": {
+        "zh-CN": "今日 {spent}",
+        "en": "Today {spent}",
+    },
+    "stats_cost_today_budget": {
+        "zh-CN": "今日 {spent} / 预算 {limit}",
+        "en": "Today {spent} / budget {limit}",
+    },
+    "stats_cost_no_paid": {
+        "zh-CN": "还没有付费接口消耗记录",
+        "en": "No paid provider usage yet",
+    },
     "phrase_usage_line": {
         "zh-CN": "📊 已用于 {count} 张图片的提示词 · 最近使用 {last}",
         "en": "📊 Used in {count} prompts · last used {last}",

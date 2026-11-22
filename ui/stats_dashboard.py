@@ -11,7 +11,14 @@ from config.ui_geometry import fit_to_workarea, scaled
 from config.theme import C, tag_color
 from ui.icons import glyph, icon_font
 from config.i18n import _, get_language
-from data.repository import get_stats, get_year_heatmap, get_available_years, get_year_stats
+from data.repository import (
+    get_generation_streak,
+    get_stats,
+    get_year_heatmap,
+    get_available_years,
+    get_year_stats,
+)
+from services.generation.budget import daily_budget, estimate_history_cost, spent_today
 
 
 class StatsDashboard:
@@ -193,15 +200,17 @@ class StatsDashboard:
         # ════════════════════════════════════════════════════════
         cards_f = tk.Frame(inner, bg=BG)
         cards_f.pack(fill="x", padx=PX, pady=(20, 0))
-        for i in range(5):
+        for i in range(6):
             cards_f.columnconfigure(i, weight=1)
 
         def _render_summary(stats: dict):
             for w in cards_f.winfo_children():
                 w.destroy()
+            fav_rate = f"{round(stats['favorites'] / max(stats['total'], 1) * 100)}%"
             card_data = [
                 ("image", _("stats_total_images"), stats["total"], "#0c2f5c", "#93c5fd"),
                 ("star_fill", _("stats_favorites"), stats["favorites"], "#3b0764", "#c4b5fd"),
+                ("star_outline", _("stats_fav_rate"), fav_rate, C["purple_deep"], C["purple_soft"]),
                 ("sun", _("stats_today"), stats["today"], "#052e16", "#6ee7b7"),
                 ("calendar", _("stats_last_7d"), stats["week"], "#451a03", "#fcd34d"),
                 ("clock", _("stats_last_30d"), stats.get("month", 0), "#1e1b4b", "#a5b4fc"),
@@ -469,6 +478,52 @@ class StatsDashboard:
         hmap_cv_host.after(80, lambda: _draw_heatmap(_sel_year[0]))
 
         # ════════════════════════════════════════════════════════
+        #   ②½ 近 7 天趋势柱状图 + 连续生成天数
+        # ════════════════════════════════════════════════════════
+        streak = get_generation_streak()
+        _sec_title("📊", _("stats_daily_title"), _("stats_streak", n=streak) if streak >= 2 else "")
+        daily_host = tk.Frame(inner, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
+        daily_host.pack(fill="x", padx=PX, pady=(8, 0))
+        DAILY_W, DAILY_H = 342, 122
+        daily_cv = tk.Canvas(daily_host, bg=PANEL, bd=0, highlightthickness=0, width=DAILY_W, height=DAILY_H)
+        daily_cv.pack(anchor="center", pady=(4, 6))
+
+        def _render_daily(stats: dict):
+            """7 根柱子：高度按当日张数比例，末柱（今天）紫色描边呼应热力图。"""
+            daily_cv.delete("all")
+            daily = stats["daily"]
+            if not daily:
+                return
+            max_c = max((c for _, c in daily), default=0) or 1
+            baseline = DAILY_H - 26
+            area = baseline - 26  # 柱区可用高度
+            for i, (day, cnt) in enumerate(daily):
+                x = 10 + i * 46
+                bw = 34
+                is_today = i == len(daily) - 1
+                if cnt:
+                    bar_h = max(4, int(area * cnt / max_c))
+                    daily_cv.create_rectangle(
+                        x,
+                        baseline - bar_h,
+                        x + bw,
+                        baseline,
+                        fill=C["ok"],
+                        outline=C["purple"] if is_today else "",
+                        width=1.5 if is_today else 0,
+                    )
+                    daily_cv.create_text(
+                        x + bw // 2,
+                        baseline - bar_h - 7,
+                        text=str(cnt),
+                        fill=TXT,
+                        font=F["tiny_b"],
+                    )
+                else:
+                    daily_cv.create_rectangle(x, baseline - 2, x + bw, baseline, fill=C["sep"], outline="")
+                daily_cv.create_text(x + bw // 2, DAILY_H - 10, text=day, fill=SUB, font=F["tiny"])
+
+        # ════════════════════════════════════════════════════════
         #   ③ 接口使用分布（容器 + 可重绘函数）
         # ════════════════════════════════════════════════════════
         # 年份选择器只作用于热力图：这里显式标注全时段口径，避免切年后误读
@@ -549,6 +604,84 @@ class StatsDashboard:
                 )
 
         # ════════════════════════════════════════════════════════
+        #   ③½ 成本估算（历史估算 + 今日台账实值与预算进度）
+        # ════════════════════════════════════════════════════════
+        _sec_title("💰", _("stats_cost_title"), _("stats_cost_note"))
+        cost_f = tk.Frame(inner, bg=BG)
+        cost_f.pack(fill="x", padx=PX, pady=(8, 0))
+
+        def _fmt_usd(v: float) -> str:
+            return f"${v:.2f}"
+
+        def _render_cost():
+            for w in cost_f.winfo_children():
+                w.destroy()
+            est = estimate_history_cost()
+            spent = spent_today(self.app.cfg)
+            limit = daily_budget(self.app.cfg)
+
+            # 顶部指标条：累计估算 / 付费张数 / 单图均价 / 今日（+预算）
+            strip = tk.Frame(cost_f, bg=C["panel"], highlightbackground=BORDER, highlightthickness=1)
+            strip.pack(fill="x", pady=(0, 4))
+            today_text = (
+                _("stats_cost_today_budget", spent=_fmt_usd(spent), limit=_fmt_usd(limit))
+                if limit > 0
+                else _("stats_cost_today", spent=_fmt_usd(spent))
+            )
+            cells = [
+                (_fmt_usd(est["total"]), _("stats_cost_total_num")),
+                (str(est["paid_count"]), _("stats_cost_paid_num")),
+                (_fmt_usd(est["avg"]), _("stats_cost_avg_num")),
+                (today_text, _("stats_cost_today_lbl")),
+            ]
+            for i, (val, lbl) in enumerate(cells):
+                cost_f.columnconfigure(i, weight=1)
+                cell = tk.Frame(strip, bg=C["panel"])
+                cell.grid(row=0, column=i, padx=6, pady=10, sticky="nsew")
+                tk.Label(cell, text=val, font=F["mono_lg"], bg=C["panel"], fg=C["ok"]).pack()
+                tk.Label(cell, text=lbl, font=F["small"], bg=C["panel"], fg=SUB).pack()
+
+            if not est["by_provider"]:
+                tk.Label(cost_f, text=_("stats_cost_no_paid"), font=F["body_i"], bg=BG, fg=SUB).pack(anchor="w", pady=8)
+                return
+
+            # 按花费降序的供应商条目（与接口分布同款四列结构）
+            rows = sorted(est["by_provider"].items(), key=lambda kv: -kv[1]["usd"])
+            from services.generation.provider_manifest import ALL_MANIFESTS
+
+            for pid, info in rows:
+                manifest = ALL_MANIFESTS.get(pid)
+                name = manifest.name if manifest else pid
+                ratio = info["usd"] / max(r["usd"] for _, r in rows) or 0
+                row = tk.Frame(cost_f, bg=BG, height=40)
+                row.pack(fill="x", pady=2)
+                row.pack_propagate(False)
+                row.grid_columnconfigure(0, minsize=260)
+                row.grid_columnconfigure(1, weight=1)
+                row.grid_columnconfigure(2, minsize=90)
+                row.grid_columnconfigure(3, minsize=58)
+                row.grid_rowconfigure(0, weight=1)
+                tk.Label(
+                    row, text=name, font=F["body_b"], bg=C["panel"], fg=TXT, anchor="e", padx=8, wraplength=244
+                ).grid(row=0, column=0, sticky="nsew")
+                bar_host = tk.Frame(row, bg=C["card"], height=20)
+                bar_host.grid(row=0, column=1, sticky="ew", padx=(8, 8), pady=10)
+                bar_host.grid_propagate(False)
+                tk.Frame(bar_host, bg=C["warn"], height=20).place(relx=0, rely=0, relwidth=ratio, relheight=1.0)
+                tk.Label(
+                    row,
+                    text=_fmt_usd(info["usd"]),
+                    font=F["badge"],
+                    bg=C["warn"],
+                    fg=C["ok_fg"],
+                    anchor="center",
+                    padx=6,
+                ).grid(row=0, column=2, sticky="ew", padx=(0, 6), pady=8)
+                tk.Label(
+                    row, text=_("stats_count_suffix", count=info["count"]), font=F["small"], bg=BG, fg=SUB, anchor="w"
+                ).grid(row=0, column=3, sticky="w")
+
+        # ════════════════════════════════════════════════════════
         #   ④ 标签热度 Top-10（容器 + 可重绘函数）
         # ════════════════════════════════════════════════════════
         _sec_title("🏷", _("stats_top_tags"), _("stats_top_tags_scope"))
@@ -610,14 +743,18 @@ class StatsDashboard:
             fresh = get_stats()
             self._upd_lbl.config(text=_("stats_updated_at", time=datetime.now().strftime("%H:%M:%S")))
             _render_summary(fresh)
+            _render_daily(fresh)
             _render_providers(fresh)
+            _render_cost()
             _render_tags(fresh)
             _build_year_buttons()
             _draw_heatmap(_sel_year[0])
 
         stats = get_stats()
         _render_summary(stats)
+        _render_daily(stats)
         _render_providers(stats)
+        _render_cost()
         _render_tags(stats)
 
     # ── 单例代理：App._show_stats 以窗口语义管理本实例 ─────────
