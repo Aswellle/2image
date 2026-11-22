@@ -247,7 +247,8 @@ class StatsDashboard:
         HMAP_H = TOP_M + 7 * STEP_S + GAP_S + BOT_M
 
         hmap_cv = tk.Canvas(hmap_cv_host, bg=PANEL, bd=0, highlightthickness=0, width=HMAP_W, height=HMAP_H)
-        hmap_cv.pack(anchor="w", pady=(2, 6))
+        # 宽面板内居中：画布背景与面板同色，右侧留白不再显得失衡
+        hmap_cv.pack(anchor="center", pady=(2, 6))
 
         # 悬浮提示框（单例，复用）
         tip_win = [None]
