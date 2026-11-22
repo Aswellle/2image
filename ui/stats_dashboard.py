@@ -678,12 +678,13 @@ class StatsDashboard:
 
             # 按花费降序的供应商条目（与接口分布同款四列结构）
             rows = sorted(est["by_provider"].items(), key=lambda kv: -kv[1]["usd"])
+            max_usd = max((r["usd"] for _, r in rows), default=0) or 1
             from services.generation.provider_manifest import ALL_MANIFESTS
 
             for pid, info in rows:
                 manifest = ALL_MANIFESTS.get(pid)
                 name = manifest.name if manifest else pid
-                ratio = info["usd"] / max(r["usd"] for _, r in rows) or 0
+                ratio = info["usd"] / max_usd
                 row = tk.Frame(cost_f, bg=BG, height=40)
                 row.pack(fill="x", pady=2)
                 row.pack_propagate(False)
