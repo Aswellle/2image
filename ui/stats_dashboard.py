@@ -263,7 +263,14 @@ class StatsDashboard:
             fr.pack(fill="both", expand=True)
             tk.Label(fr, text=text, font=F["small"], bg=C["empty"], fg=TXT, padx=10, pady=5).pack()
             tw.update_idletasks()
-            tw.geometry(f"+{x_root + 14}+{y_root + 14}")
+            # 贴近鼠标右下，越界时翻到另一侧并钳回屏内（与词库悬浮说明同规则）
+            px, py = x_root + 14, y_root + 14
+            tw_w, tw_h = tw.winfo_reqwidth(), tw.winfo_reqheight()
+            if px + tw_w > tw.winfo_screenwidth() - 6:
+                px = x_root - tw_w - 14
+            if py + tw_h > tw.winfo_screenheight() - 6:
+                py = y_root - tw_h - 14
+            tw.geometry(f"+{max(2, px)}+{max(2, py)}")
             tip_win[0] = tw
 
         def _hide_tip(_=None):
