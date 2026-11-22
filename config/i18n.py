@@ -1706,6 +1706,10 @@ STRINGS = {
         "zh-CN": "找到 {n} 条匹配结果  ·  添加新词条请先清除搜索",
         "en": "{n} matches  ·  Clear search to add new phrases",
     },
+    "phrase_dup_exists": {
+        "zh-CN": "该词条已存在于此分类",
+        "en": "This phrase already exists in this category",
+    },
     "dlg_enter_phrase": {
         "zh-CN": "请输入词条内容",
         "en": "Please enter phrase content",

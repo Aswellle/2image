@@ -658,7 +658,10 @@ class PhrasePanel(tk.Toplevel):
         if not self._cur_cat:
             messagebox.showwarning(_("dlg_tip"), _("dlg_select_category"), parent=self)
             return
-        add_custom_phrase(self._cur_cat, phrase)
+        if not add_custom_phrase(self._cur_cat, phrase):
+            # 重复（自定义或内置同分类）：明确告知而不是静默清空输入框
+            messagebox.showinfo(_("dlg_tip"), _("phrase_dup_exists"), parent=self)
+            return
         self._new_phrase_var.set("")
         self._reload()
         self.app._log(f"📚 新建词条: [{self._cur_cat}] {phrase}")

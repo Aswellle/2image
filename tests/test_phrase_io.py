@@ -98,3 +98,17 @@ def test_usage_sort_order_in_panel_reload():
     usage = pl.get_phrase_usage()
     ranked = sorted(items, key=lambda phrase: -usage.get(phrase, 0))
     assert ranked[:2] == ["best quality", "HDR"]
+
+
+def test_add_custom_phrase_duplicate_reports_false():
+    """重复词条（自定义或内置）不写入并返回 False，供 UI 给出去重反馈。"""
+    from services import phrase_library as pl
+
+    assert pl.add_custom_phrase("✨ 画质增强", "my test phrase") is True
+    assert pl.add_custom_phrase("✨ 画质增强", "my test phrase") is False
+    # 与内置词条同分类重复 → 不写入自定义层
+    assert pl.add_custom_phrase("✨ 画质增强", "masterpiece") is False
+    data = pl._load_custom()
+    assert data["✨ 画质增强"] == ["my test phrase"]
+    # 空白词条直接拒绝
+    assert pl.add_custom_phrase("✨ 画质增强", "   ") is False

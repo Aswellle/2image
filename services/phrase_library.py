@@ -632,14 +632,23 @@ def get_phrase_desc(phrase: str) -> str:
     return PHRASE_DESCRIPTIONS.get(phrase, "")
 
 
-def add_custom_phrase(category: str, phrase: str) -> None:
+def add_custom_phrase(category: str, phrase: str) -> bool:
+    """向自定义词库添加词条；返回是否真正写入。
+
+    与本分类已有自定义词条或内置词条重复时不写入（返回 False），
+    让调用方能够区分「已添加」与「重复」并给出相应反馈。
+    """
+    phrase = phrase.strip()
+    if not phrase:
+        return False
     data = _load_custom()
     if category not in data:
         data[category] = []
-    phrase = phrase.strip()
-    if phrase and phrase not in data[category]:
-        data[category].append(phrase)
+    if phrase in data[category] or is_builtin(category, phrase):
+        return False
+    data[category].append(phrase)
     _save_custom(data)
+    return True
 
 
 def delete_custom_phrase(category: str, phrase: str) -> None:
