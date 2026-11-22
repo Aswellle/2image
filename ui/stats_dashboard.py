@@ -27,7 +27,6 @@ class StatsDashboard:
         TXT = C["text"]
         SUB = C["text_muted"]
         OK = C["ok"]
-        WARN = C["warn"]
         HL = C["hl"]
         ACC = C["cmp_a"]
 
@@ -141,28 +140,37 @@ class StatsDashboard:
 
         def _scroll(ev):
             try:
+                path = str(ev.widget)
+                if path == str(main_cv):
+                    return  # 画布类绑定已滚动，避免双倍速度
+                if not path.startswith(str(win)):
+                    return  # 仅响应本窗口内的滚轮，不劫持其他窗口
                 main_cv.yview_scroll(int(-1 * (ev.delta / 120)), "units")
             except tk.TclError:
                 pass
 
         def _scroll_lin(ev):
             try:
+                path = str(ev.widget)
+                if path == str(main_cv):
+                    return
+                if not path.startswith(str(win)):
+                    return
                 main_cv.yview_scroll(-1 if ev.num == 4 else 1, "units")
             except tk.TclError:
                 pass
 
+        def _close_win():
+            # bind_all 是进程级注册，任何关闭路径都必须先解绑再销毁
+            for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+                win.unbind_all(seq)
+            win.destroy()
+
         win.bind_all("<MouseWheel>", _scroll)
         win.bind_all("<Button-4>", _scroll_lin)
         win.bind_all("<Button-5>", _scroll_lin)
-        win.protocol(
-            "WM_DELETE_WINDOW",
-            lambda: (
-                win.unbind_all("<MouseWheel>"),
-                win.unbind_all("<Button-4>"),
-                win.unbind_all("<Button-5>"),
-                win.destroy(),
-            ),
-        )
+        win.protocol("WM_DELETE_WINDOW", _close_win)
+        win.bind("<Escape>", lambda _e: _close_win())
 
         PX = 24  # 水平内边距
 
@@ -237,7 +245,6 @@ class StatsDashboard:
 
         # 悬浮提示框（单例，复用）
         tip_win = [None]
-        tip_lbl = [None]
         tip_after = [None]
 
         def _show_tip(x_root, y_root, text):
