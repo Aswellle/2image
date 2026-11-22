@@ -18,6 +18,7 @@ from tkinter import filedialog, messagebox, ttk
 from services.phrase_library import (
     get_phrase_usage,
     phrase_category_display,
+    phrase_matches,
     record_phrase_use,
     get_all_phrases,
     add_custom_phrase,
@@ -471,8 +472,9 @@ class PhrasePanel(tk.Toplevel):
             if self._cur_cat:
                 self._render_chips(self._phrases.get(self._cur_cat, []))
             return
-        # 搜索结果携带 (分类, 词条) 对：删除操作需要真实归属分类
-        results = [(cat, p) for cat, phrases in self._phrases.items() for p in phrases if kw in p.lower()]
+        # 搜索结果携带 (分类, 词条) 对：删除操作需要真实归属分类；
+        # 词条说明（中英双语）也参与匹配
+        results = [(cat, p) for cat, phrases in self._phrases.items() for p in phrases if phrase_matches(p, kw)]
         self._rebuild_cats(searching=True)
         self._render_chips(results, search_mode=True)
 

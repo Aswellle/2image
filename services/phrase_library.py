@@ -664,6 +664,21 @@ def is_builtin(category: str, phrase: str) -> bool:
     return phrase in BUILTIN_PHRASES.get(category, [])
 
 
+def phrase_matches(phrase: str, kw: str) -> bool:
+    """词条或其效果说明（中英双语说明都参与匹配）包含关键词。
+
+    搜「虚化」能命中 bokeh 词条、搜 "soft light" 能命中中文说明
+    里的「柔和」，让说明文本也成为检索入口。
+    """
+    kw = kw.strip().lower()
+    if not kw:
+        return False
+    if kw in phrase.lower():
+        return True
+    haystack = (PHRASE_DESCRIPTIONS.get(phrase, "") + PHRASE_DESCRIPTIONS_EN.get(phrase, "")).lower()
+    return kw in haystack
+
+
 def export_custom(path: str) -> int:
     """导出自定义词库为 JSON（分类 → 词条列表），返回导出的词条总数。
 

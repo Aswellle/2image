@@ -112,3 +112,19 @@ def test_add_custom_phrase_duplicate_reports_false():
     assert data["✨ 画质增强"] == ["my test phrase"]
     # 空白词条直接拒绝
     assert pl.add_custom_phrase("✨ 画质增强", "   ") is False
+
+
+def test_phrase_matches_covers_descriptions():
+    """搜索不只匹配词条本身：中英说明文本都参与命中。"""
+    from services import phrase_library as pl
+
+    # 词条本身命中
+    assert pl.phrase_matches("sharp focus", "sharp") is True
+    # 中文说明命中英文词条（85mm 的中文说明含「背景虚化超美」）
+    assert pl.phrase_matches("85mm portrait lens, f/1.4 bokeh", "虚化") is True
+    # 英文说明命中（中文词条场景不存在，但英文说明可被英文关键词命中）
+    assert pl.phrase_matches("masterpiece", "museum-grade") is True
+    # 不相关关键词不命中
+    assert pl.phrase_matches("HDR", "bokeh") is False
+    # 空关键词不命中
+    assert pl.phrase_matches("HDR", "  ") is False
