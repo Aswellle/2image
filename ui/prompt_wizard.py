@@ -870,16 +870,20 @@ class PromptWizard(tk.Toplevel):
     #   右面板：结果区（不随内容滚动，固定布局）
     # ══════════════════════════════════════════════════════════
     def _build_right_panel(self, parent):
-        # ── 正面提示词 ─────────────────────────────────────────
-        # 标签行：标题 + 实时词数/字符指示器
+        parent.columnconfigure(0, weight=1)
+        # 行 2（结果框）weight=1 弹性吸收剩余高度；其余行固定内容高
+        parent.rowconfigure(2, weight=1)
+
+        # ── 行 0：标题行（词数徽章独占右侧）────────────────────
         pos_hdr = tk.Frame(parent, bg=C["panel"])
-        pos_hdr.pack(fill="x", padx=14, pady=(10, 0))
+        pos_hdr.grid(row=0, column=0, sticky="ew", padx=14, pady=(10, 0))
         tk.Label(pos_hdr, text=_("wizard_label_positive_prompt"), font=F["btn"], bg=C["panel"], fg=C["ok"]).pack(
             side="left"
         )
-        # 实时词数/字符指示器
         self._budget_lbl = tk.Label(pos_hdr, text="", font=F["mono_sm_b"], bg=C["panel"], fg=C["sub"], padx=8)
         self._budget_lbl.pack(side="right")
+
+        # ── 行 1：多候选切换条（候选就绪时由 _on_done_multi 显示）──
         self._variant_bar = tk.Frame(parent, bg=C["empty"])
         self._variant_prev_btn = tk.Button(
             self._variant_bar,
@@ -908,7 +912,7 @@ class PromptWizard(tk.Toplevel):
         )
         self._variant_next_btn.pack(side="left")
 
-        # ←/→ 快捷键：候选可见时切换；焦点在输入框/文本域时让位光标移动
+        # ←/→ 快捷键：候选可见时切换；焦点在输入类控件时让位光标移动
         def _variant_key(step):
             if not self._variant_list:
                 return
@@ -920,8 +924,9 @@ class PromptWizard(tk.Toplevel):
         self.bind("<Left>", lambda _e: _variant_key(-1))
         self.bind("<Right>", lambda _e: _variant_key(1))
 
+        # ── 行 2：结果框（弹性行）──────────────────────────────
         pos_f = tk.Frame(parent, bg=C["entry"])
-        pos_f.pack(fill="both", expand=True, padx=14, pady=(4, 0))
+        pos_f.grid(row=2, column=0, sticky="nsew", padx=14, pady=(4, 0))
         self._pos_box = tk.Text(
             pos_f,
             font=F["input"],
@@ -937,15 +942,11 @@ class PromptWizard(tk.Toplevel):
         self._pos_box.pack(fill="both", expand=True)
         self._pos_box.insert("1.0", _("wizard_placeholder_prompt"))
         self._pos_box.config(fg=C["keep_bg"])
-
-        # 绑定实时词数更新
         self._pos_box.bind("<<Modified>>", self._on_pos_modified)
 
-        # ── Token 预算控制条（正面提示词下方）─────────────────
+        # ── 行 3：Token 预算控制条 ─────────────────────────────
         budget_bar = tk.Frame(parent, bg=C["empty"])
-        budget_bar.pack(fill="x", padx=14, pady=(2, 0))
-
-        # 右：智能压缩按钮
+        budget_bar.grid(row=3, column=0, sticky="ew", padx=14, pady=(2, 0))
         self._trim_btn = tk.Button(
             budget_bar,
             text=_("wizard_smart_trim"),
@@ -961,9 +962,9 @@ class PromptWizard(tk.Toplevel):
         )
         self._trim_btn.pack(side="right", padx=4, pady=2)
 
-        # ── 操作按钮 ───────────────────────────────────────────
+        # ── 行 4：操作按钮行 ───────────────────────────────────
         act = tk.Frame(parent, bg=C["panel"])
-        act.pack(fill="x", padx=14)
+        act.grid(row=4, column=0, sticky="ew", padx=14)
         self._use_btn = tk.Button(
             act,
             text=_("wizard_use_btn"),
@@ -1008,26 +1009,24 @@ class PromptWizard(tk.Toplevel):
         )
         self._clear_btn.pack(side="left", padx=(8, 0))
 
-        # 状态标签：before= 插到结果框容器之前（同候选切换条的根因，
-        # 直接 pack 会被 expand 的容器挤到零高度）；换行宽度绑定容器
+        # ── 行 5：状态详情（换行宽度绑定容器）──────────────────
         self._status_lbl = tk.Label(parent, text="", font=F["body"], bg=C["panel"], fg=C["warn"], justify="left")
-        self._status_lbl.pack(anchor="w", padx=14, pady=(8, 0), before=self._pos_box.master)
+        self._status_lbl.grid(row=5, column=0, sticky="ew", padx=14, pady=(8, 0))
         bind_wraplength(parent, [self._status_lbl], padx_total=28, floor=200)
 
-        tk.Frame(parent, bg=C["sep"], height=1).pack(fill="x", padx=14, pady=(10, 6))
-
-        # ── 历史记录 ───────────────────────────────────────────
-        tk.Label(parent, text=_("wizard_label_session_history"), font=F["body_b"], bg=C["panel"], fg=C["sub"]).pack(
-            anchor="w", padx=14
+        # ── 行 6/7/8：历史记录 ─────────────────────────────────
+        tk.Frame(parent, bg=C["sep"], height=1).grid(row=6, column=0, sticky="ew", padx=14, pady=(10, 6))
+        tk.Label(parent, text=_("wizard_label_session_history"), font=F["body_b"], bg=C["panel"], fg=C["sub"]).grid(
+            row=7, column=0, sticky="ew", padx=14
         )
         self._hist_var = tk.StringVar()
         self._hist_cb = ttk.Combobox(parent, textvariable=self._hist_var, state="readonly", font=F["small"])
-        self._hist_cb.pack(fill="x", padx=14, pady=(4, 14))
+        self._hist_cb.grid(row=8, column=0, sticky="ew", padx=14, pady=(4, 14))
         self._hist_cb.bind("<<ComboboxSelected>>", self._load_history)
         self._pos_placeholder = True  # 结果框初始为占位文案
 
-    # ══════════════════════════════════════════════════════════
-    #   生成逻辑
+        self._set_template_state(self._TEMPLATE_IDLE)
+
     # ══════════════════════════════════════════════════════════
     def _confirm_overwrite_if_edited(self) -> bool:
         """结果框内容被手动编辑过且尚未使用时，重新生成会覆盖——确认。"""
@@ -1127,7 +1126,7 @@ class PromptWizard(tk.Toplevel):
         self._variant_list = []
         self._variant_idx = 0
         if getattr(self, "_variant_bar", None) is not None:
-            self._variant_bar.pack_forget()
+            self._variant_bar.grid_remove()
 
     def _on_done_multi(self, candidates: list, label: str):
         """多候选完成：记录列表并呈现第一个候选，切换条随候选数显示。"""
@@ -1135,9 +1134,7 @@ class PromptWizard(tk.Toplevel):
         self._variant_idx = 0
         self._on_done(candidates[0], label)
         if len(candidates) > 1:
-            # before= 插到结果框容器之前：pos_f 先 pack 且 expand=True
-            # 吃满剩余空间，直接 pack 会被挤到零高度（切换条从未显示）
-            self._variant_bar.pack(fill="x", padx=14, pady=(2, 0), before=self._pos_box.master)
+            self._variant_bar.grid(row=1, column=0, sticky="ew", padx=14, pady=(2, 0))
             self._variant_sync()
 
     def _variant_sync(self):

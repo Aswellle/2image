@@ -556,77 +556,87 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 51,
+  "line": 54,
   "text": "键名列表 → 当前语言文案列表。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 159,
+  "line": 162,
   "text": "一行维度参数。布局使用 grid：\n      列 0  图标+标签（固定宽，右对齐）\n      列 1  ttk.C"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 225,
+  "line": 228,
   "text": "把滚动事件从子控件传递到 canvas_ref，使悬停任意控件均可滚动。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 517,
+  "line": 527,
   "text": "左栏底部固定的模板应用条，不随模板列表滚动。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 646,
+  "line": 675,
   "text": "P1-25: 展开/收起高级维度（细节/构图/光影/镜头/画质）。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1021,
+  "line": 820,
+  "text": "←/→ 把焦点移到相邻模板卡片（跨分类按构造序）。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1032,
+  "text": "结果框内容被手动编辑过且尚未使用时，重新生成会覆盖——确认。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1076,
   "text": "用上一次生成时的完整参数快照重新生成。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1030,
+  "line": 1087,
   "text": "后台线程调用提示词助手；成功/失败经 after 回主线程。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1068,
+  "line": 1125,
   "text": "清空候选列表并隐藏切换条（新一轮生成 / 模板应用 / 清除内容时）。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1075,
+  "line": 1132,
   "text": "多候选完成：记录列表并呈现第一个候选，切换条随候选数显示。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1087,
+  "line": 1144,
   "text": "‹/› 在候选之间循环切换并刷新结果框。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1226,
+  "line": 1285,
   "text": "正面提示词文本框内容变更时触发词数指示器刷新。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1234,
+  "line": 1293,
   "text": "实时更新 Token 预算指示器：\n        · 右上角标签：词数/字符数\n        · 智能压缩按钮：仅在"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1270,
+  "line": 1329,
   "text": "智能压缩按钮处理器：将提示词截断到预算以内。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1356,
+  "line": 1422,
   "text": "打开 AI 提示词助手模型密钥配置向导。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1365,
+  "line": 1431,
   "text": "根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"
  },
  {
