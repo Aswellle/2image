@@ -824,30 +824,6 @@ class PromptWizard(tk.Toplevel):
     #   右面板：结果区（不随内容滚动，固定布局）
     # ══════════════════════════════════════════════════════════
     def _build_right_panel(self, parent):
-        # ── 顶部固定工具栏（填充按钮始终可见）────────────────────
-        top_bar = tk.Frame(parent, bg=C["entry"], height=48)
-        top_bar.pack(fill="x")
-        top_bar.pack_propagate(False)
-        self._fill_btn = tk.Button(
-            top_bar,
-            text=_("wizard_use_btn"),
-            font=F["btn"],
-            bg=C["surface_disabled"],
-            fg=C["text_disabled"],
-            bd=0,
-            padx=18,
-            pady=7,
-            cursor="hand2",
-            state="disabled",
-            command=self._use_prompt,
-        )
-        self._fill_btn.pack(side="left", padx=14, pady=8)
-        self._template_badge = tk.Label(
-            top_bar, text="", font=F["small_b"], bg=C["entry"], fg=C["text_disabled"], padx=8
-        )
-        self._template_badge.pack(side="right", padx=14)
-        self._set_template_state(self._TEMPLATE_IDLE)
-
         # ── 正面提示词 ─────────────────────────────────────────
         # 标签行：标题 + 实时词数/字符指示器
         pos_hdr = tk.Frame(parent, bg=C["panel"])
@@ -960,6 +936,8 @@ class PromptWizard(tk.Toplevel):
             command=self._use_prompt,
         )
         self._use_btn.pack(side="left")
+        self._template_badge = tk.Label(act, text="", font=F["small_b"], bg=C["panel"], fg=C["text_disabled"], padx=8)
+        self._template_badge.pack(side="right", padx=8)
         tk.Button(
             act,
             text=_("wizard_copy_positive"),
@@ -1158,7 +1136,7 @@ class PromptWizard(tk.Toplevel):
             else:
                 set_enabled(apply_btn, False, bg=C["surface_disabled"])
 
-        for widget_name in ("_fill_btn", "_use_btn"):
+        for widget_name in ("_use_btn",):
             widget = getattr(self, widget_name, None)
             if widget is not None:
                 if is_pending_fill:
