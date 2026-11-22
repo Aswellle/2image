@@ -627,7 +627,11 @@ def phrase_category_display(cat_zh: str) -> str:
 
 
 def get_phrase_desc(phrase: str) -> str:
-    """返回词条效果说明：优先用户自定义说明，其次按当前语言取内置版本。"""
+    """返回词条效果说明：优先用户自定义说明，其次按当前语言取内置版本。
+
+    查表键统一 strip，与 set/get_custom_desc 的存储键保持对称。
+    """
+    phrase = phrase.strip()
     custom = _load_descs().get(phrase)
     if custom:
         return custom

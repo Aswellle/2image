@@ -234,3 +234,11 @@ def test_add_category_creates_and_rejects_duplicates():
     assert pl.add_category("🧪 全新分类") is False  # 重名
     assert pl.add_category("✨ 画质增强") is False  # 内置重名
     assert pl.add_category("   ") is False  # 空名
+
+
+def test_get_phrase_desc_strips_key():
+    """说明查表键与存储键对称：带首尾空白的词条文本同样命中自定义说明。"""
+    from services import phrase_library as pl
+
+    pl.set_custom_desc("my phrase", "自定义说明")
+    assert pl.get_phrase_desc("  my phrase  ") == "自定义说明"
