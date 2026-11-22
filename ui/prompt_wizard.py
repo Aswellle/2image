@@ -38,6 +38,7 @@ from services.prompt_assistant import (
 )
 from config.ui_geometry import fit_to_workarea, scaled
 from ui.button_states import set_enabled
+from ui.components import bind_wraplength
 from ui.wizard_llm import LLMWizard
 
 # ══════════════════════════════════════════════════════════════
@@ -965,11 +966,11 @@ class PromptWizard(tk.Toplevel):
             command=lambda: self._copy_box(self._pos_box),
         ).pack(side="left", padx=(8, 0))
 
-        # 状态标签
-        self._status_lbl = tk.Label(
-            parent, text="", font=F["body"], bg=C["panel"], fg=C["warn"], wraplength=320, justify="left"
-        )
-        self._status_lbl.pack(anchor="w", padx=14, pady=(8, 0))
+        # 状态标签：before= 插到结果框容器之前（同候选切换条的根因，
+        # 直接 pack 会被 expand 的容器挤到零高度）；换行宽度绑定容器
+        self._status_lbl = tk.Label(parent, text="", font=F["body"], bg=C["panel"], fg=C["warn"], justify="left")
+        self._status_lbl.pack(anchor="w", padx=14, pady=(8, 0), before=self._pos_box.master)
+        bind_wraplength(parent, [self._status_lbl], padx_total=28, floor=200)
 
         tk.Frame(parent, bg=C["sep"], height=1).pack(fill="x", padx=14, pady=(10, 6))
 
