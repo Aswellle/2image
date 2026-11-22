@@ -57,6 +57,17 @@ def test_stats():
     assert "providers" in stats
 
 
+def test_stats_empty_db_yields_zeroes_not_none():
+    stats = repository.get_stats()
+    assert stats["total"] == 0
+    assert stats["favorites"] == 0
+    assert stats["today"] == 0
+    assert stats["week"] == 0
+    assert stats["month"] == 0
+    assert stats["providers"] == []
+    assert stats["top_tags"] == []
+
+
 def test_favorite_toggle():
     repository.add_entry("test", "", "/tmp/t.png", "T")
     repository.toggle_favorite(1, True)

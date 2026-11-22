@@ -379,11 +379,13 @@ def get_stats() -> dict:
             (week_ago, month_ago, f"{today_str}%"),
         ).fetchone()
 
-        total = row["total"]
-        favorites = row["favorites"]
-        today = row["today"]
-        week = row["week"]
-        month = row["month"]
+        # 空库时 COUNT 为 0、SUM 为 NULL——统一归一化为 0，
+        # 避免调用方把 None 渲染进界面（统计卡片曾显示 "None"）
+        total = row["total"] or 0
+        favorites = row["favorites"] or 0
+        today = row["today"] or 0
+        week = row["week"] or 0
+        month = row["month"] or 0
 
         # Provider 分布
         prov_rows = c.execute(
