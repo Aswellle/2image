@@ -29,7 +29,6 @@ def make_wizard():
     wizard = PromptWizard.__new__(PromptWizard)
     wizard._template_badge = DummyWidget()
     wizard._tmpl_apply_btn = DummyWidget()
-    wizard._fill_btn = DummyWidget()
     wizard._use_btn = DummyWidget()
     wizard._clear_btn = DummyWidget()
     return wizard
@@ -41,21 +40,18 @@ def test_template_state_gates_actions_until_application():
     wizard._set_template_state(PromptWizard._TEMPLATE_IDLE)
     assert wizard._template_badge.options["text"] == "● 空闲"
     assert wizard._tmpl_apply_btn.options["state"] == "disabled"
-    assert wizard._fill_btn.options["state"] == "disabled"
     assert wizard._use_btn.options["state"] == "disabled"
     assert wizard._clear_btn.options["state"] == "disabled"
 
     wizard._set_template_state(PromptWizard._TEMPLATE_PREVIEWING)
     assert wizard._template_badge.options["text"] == "◐ 预览中"
     assert wizard._tmpl_apply_btn.options["state"] == "normal"
-    assert wizard._fill_btn.options["state"] == "disabled"
     assert wizard._use_btn.options["state"] == "disabled"
     assert wizard._clear_btn.options["state"] == "disabled"
 
     wizard._set_template_state(PromptWizard._TEMPLATE_PENDING_FILL)
     assert wizard._template_badge.options["text"] == "● 待填充"
     assert wizard._tmpl_apply_btn.options["state"] == "disabled"
-    assert wizard._fill_btn.options["state"] == "normal"
     assert wizard._use_btn.options["state"] == "normal"
     assert wizard._clear_btn.options["state"] == "normal"
 
@@ -148,7 +144,6 @@ def test_param_generation_result_enables_use_and_fill():
 
     assert wizard._template_state == PromptWizard._TEMPLATE_PENDING_FILL
     assert wizard._use_btn.options["state"] == "normal"
-    assert wizard._fill_btn.options["state"] == "normal"
     assert wizard._pos_box.inserted == [("1.0", "a beautiful castle")]
 
 
