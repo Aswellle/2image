@@ -651,6 +651,25 @@ class PromptWizard(tk.Toplevel):
             fill="x", padx=PX, pady=(5, 0)
         )
 
+        # ── 空态引导：左栏表单结束后的大片空白里给出模板直达入口 ──
+        guide = tk.Frame(parent, bg=C["bg"])
+        guide.pack(fill="x", padx=PX, pady=(22, 0))
+        tk.Label(guide, text=_("wizard_empty_hint"), font=F["body_i"], bg=C["bg"], fg=C["sub"], justify="left").pack(
+            anchor="w"
+        )
+        tk.Button(
+            guide,
+            text=_("wizard_browse_templates_btn"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["guide"],
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=self._show_tmpl_tab,
+        ).pack(anchor="w", pady=(8, 0))
+
     # ── 节标题 ─────────────────────────────────────────────────
     def _toggle_advanced_dims(self):
         """P1-25: 展开/收起高级维度（细节/构图/光影/镜头/画质）。"""

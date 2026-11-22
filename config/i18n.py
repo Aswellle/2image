@@ -930,6 +930,14 @@ STRINGS = {
         "zh-CN": "3 个候选全部生成失败",
         "en": "All 3 candidates failed to generate",
     },
+    "wizard_empty_hint": {
+        "zh-CN": "没有思路？模板页有按场景分好的现成模板，选一个填关键词即可。",
+        "en": "Need inspiration? The Templates tab has scene-ready presets — pick one and fill in your topic.",
+    },
+    "wizard_browse_templates_btn": {
+        "zh-CN": "浏览场景模板 →",
+        "en": "Browse scene templates →",
+    },
     "wizard_overwrite_confirm": {
         "zh-CN": "结果框中的提示词已被手动编辑且尚未使用，\n重新生成将覆盖当前内容。确定继续吗？",
         "en": "The prompt in the result box was edited manually and not used yet.\nRegenerating will overwrite it. Continue?",
