@@ -801,8 +801,13 @@
  },
  {
   "file": "ui/stats_dashboard.py",
-  "line": 18,
+  "line": 25,
   "text": "统计仪表板 Toplevel 窗口。"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 492,
+  "text": "7 根柱子：高度按当日张数比例，末柱（今天）紫色描边呼应热力图。"
  },
  {
   "file": "ui/tooltip.py",
