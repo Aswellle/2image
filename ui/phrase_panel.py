@@ -266,6 +266,7 @@ class PhrasePanel(tk.Toplevel):
         self._cur_cat = None
         self._chip_btns = []
         self._tips: list[_PhraseTooltip] = []  # 持有引用防 GC
+        self._usage_cache: dict[str, str] = {}  # 悬停使用概况缓存：同词条只扫一次历史表
 
         self.title(_("phrase_title"))
         self.configure(bg=C["bg"])
@@ -743,14 +744,19 @@ class PhrasePanel(tk.Toplevel):
 
     # ── 追加词条 ─────────────────────────────────────────────
     def _phrase_usage_line(self, phrase: str) -> str:
-        """词条在生成记录中的使用概况（悬浮说明追加行）；无记录返回空串。"""
+        """词条在生成记录中的使用概况（悬浮说明追加行）；无记录返回空串。
+
+        结果按词条缓存（命中与未命中都记）：面板会话内同一词条只扫描一次。
+        """
+        if phrase in self._usage_cache:
+            return self._usage_cache[phrase]
         try:
             stats = get_phrase_stats(phrase)
         except Exception:
             return ""
-        if not stats:
-            return ""
-        return _("phrase_usage_line", count=stats["count"], last=stats["last"][:10])
+        line = _("phrase_usage_line", count=stats["count"], last=stats["last"][:10]) if stats else ""
+        self._usage_cache[phrase] = line
+        return line
 
     def _append_to_input(self, phrase: str):
         # 模板词条（含 {{变量}} 占位符）先弹填充对话框，填好再追加
