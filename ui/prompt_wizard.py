@@ -739,6 +739,7 @@ class PromptWizard(tk.Toplevel):
             "brand": "#0e7490",
         }
         self._tmpl_cards = {}
+        self._tmpl_order: list[str] = []
 
         for cat, items in cats.items():
             cat_color = cat_colors.get(category_id(cat), C["acc"])
@@ -753,10 +754,16 @@ class PromptWizard(tk.Toplevel):
             for tid, _raw in items:
                 t = display_template(tid)
                 card = tk.Frame(
-                    parent, bg=C["card"], highlightbackground=C["sep"], highlightthickness=1, cursor="hand2"
+                    parent,
+                    bg=C["card"],
+                    highlightbackground=C["sep"],
+                    highlightthickness=1,
+                    cursor="hand2",
+                    takefocus=1,
                 )
                 card.pack(fill="x", padx=PX, pady=(3, 0))
                 self._tmpl_cards[tid] = (card, cat_color)
+                self._tmpl_order.append(tid)
 
                 top = tk.Frame(card, bg=C["card"])
                 top.pack(fill="x", padx=10, pady=(8, 2))
@@ -779,6 +786,24 @@ class PromptWizard(tk.Toplevel):
                     w.bind("<MouseWheel>", self._template_scroll, add="+")
                     w.bind("<Button-4>", self._template_scroll, add="+")
                     w.bind("<Button-5>", self._template_scroll, add="+")
+                # 键盘路径：Tab 聚焦即选中（与点击行为一致），Return/Space
+                # 确认，←/→ 在卡片间移动焦点
+                card.bind("<Return>", lambda _e, i=tid: self._select_tmpl(i))
+                card.bind("<KP_Enter>", lambda _e, i=tid: self._select_tmpl(i))
+                card.bind("<space>", lambda _e, i=tid: self._select_tmpl(i))
+                card.bind("<FocusIn>", lambda _e, i=tid: self._select_tmpl(i))
+                card.bind("<Left>", lambda _e, i=tid: self._focus_neighbor(i, -1))
+                card.bind("<Right>", lambda _e, i=tid: self._focus_neighbor(i, 1))
+
+    def _focus_neighbor(self, tid: str, step: int):
+        """←/→ 把焦点移到相邻模板卡片（跨分类按构造序）。"""
+        if tid not in self._tmpl_order:
+            return
+        idx = self._tmpl_order.index(tid)
+        nxt = idx + step
+        if 0 <= nxt < len(self._tmpl_order):
+            card, _ = self._tmpl_cards[self._tmpl_order[nxt]]
+            card.focus_set()
 
     def _select_tmpl(self, tid: str):
         if self._sel_tid and self._sel_tid in self._tmpl_cards:
