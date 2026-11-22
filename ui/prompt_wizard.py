@@ -887,6 +887,18 @@ class PromptWizard(tk.Toplevel):
         )
         self._variant_next_btn.pack(side="left")
 
+        # ←/→ 快捷键：候选可见时切换；焦点在输入框/文本域时让位光标移动
+        def _variant_key(step):
+            if not self._variant_list:
+                return
+            focused = self.focus_get()
+            if isinstance(focused, (tk.Entry, tk.Text, ttk.Combobox)):
+                return
+            self._variant_shift(step)
+
+        self.bind("<Left>", lambda _e: _variant_key(-1))
+        self.bind("<Right>", lambda _e: _variant_key(1))
+
         pos_f = tk.Frame(parent, bg=C["entry"])
         pos_f.pack(fill="both", expand=True, padx=14, pady=(4, 0))
         self._pos_box = tk.Text(
