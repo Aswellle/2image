@@ -834,21 +834,6 @@ class PromptWizard(tk.Toplevel):
         # 实时词数/字符指示器
         self._budget_lbl = tk.Label(pos_hdr, text="", font=F["mono_sm_b"], bg=C["panel"], fg=C["sub"], padx=8)
         self._budget_lbl.pack(side="right")
-        self._clear_btn = tk.Button(
-            pos_hdr,
-            text=_("wizard_clear_content"),
-            font=F["small_b"],
-            bg=C["surface_disabled"],
-            fg=C["text_disabled"],
-            bd=0,
-            padx=8,
-            pady=2,
-            cursor="hand2",
-            state="disabled",
-            command=self._clear_template_content,
-        )
-        self._clear_btn.pack(side="right", padx=(0, 8))
-
         self._variant_bar = tk.Frame(parent, bg=C["empty"])
         self._variant_prev_btn = tk.Button(
             self._variant_bar,
@@ -950,6 +935,20 @@ class PromptWizard(tk.Toplevel):
             cursor="hand2",
             command=lambda: self._copy_box(self._pos_box),
         ).pack(side="left", padx=(8, 0))
+        self._clear_btn = tk.Button(
+            act,
+            text=_("wizard_clear_content"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=10,
+            pady=6,
+            cursor="hand2",
+            state="disabled",
+            command=self._clear_template_content,
+        )
+        self._clear_btn.pack(side="left", padx=(8, 0))
 
         # 状态标签：before= 插到结果框容器之前（同候选切换条的根因，
         # 直接 pack 会被 expand 的容器挤到零高度）；换行宽度绑定容器
