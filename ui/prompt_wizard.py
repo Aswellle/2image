@@ -316,6 +316,7 @@ class PromptWizard(tk.Toplevel):
 
         self._build()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.bind("<Escape>", lambda _e: self._on_close())
         self.lift()
         self.focus_force()
 
@@ -1353,6 +1354,13 @@ class PromptWizard(tk.Toplevel):
             self._set_template_state(self._TEMPLATE_PENDING_FILL)
 
     def _on_close(self):
+        # 生成中关窗守卫：后台线程会继续跑完但结果无处呈现——
+        # 与主窗口关闭守卫同款确认，避免用户误触白白消耗一次调用
+        if self._generating:
+            from tkinter import messagebox
+
+            if not messagebox.askyesno(_("dlg_tip"), _("wizard_close_generating"), parent=self):
+                return
         self._stop_anim()
         self.app._prompt_wizard = None
         self.destroy()

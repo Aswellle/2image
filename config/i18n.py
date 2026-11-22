@@ -930,6 +930,10 @@ STRINGS = {
         "zh-CN": "3 个候选全部生成失败",
         "en": "All 3 candidates failed to generate",
     },
+    "wizard_close_generating": {
+        "zh-CN": "提示词正在生成中，确定要关闭吗？\n（后台任务会继续消耗本次调用，结果将不可见）",
+        "en": "A prompt is still generating. Close anyway?\n(The background call will finish but its result will be discarded)",
+    },
     "wizard_generate_btn": {
         "zh-CN": "🤖 AI 生成",
         "en": "🤖 AI Generate",
