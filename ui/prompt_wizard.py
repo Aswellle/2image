@@ -828,7 +828,8 @@ class PromptWizard(tk.Toplevel):
 
     def _select_tmpl(self, tid: str):
         if self._sel_tid and self._sel_tid in self._tmpl_cards:
-            old_card, _ = self._tmpl_cards[self._sel_tid]
+            # 本函数任何 _ 赋值都会遮蔽全局 i18n 函数 _，解包一律用具名变量
+            old_card, _old_color = self._tmpl_cards[self._sel_tid]
             old_card.config(bg=C["card"], highlightbackground=C["sep"])
             for w in old_card.winfo_children():
                 try:
@@ -845,7 +846,9 @@ class PromptWizard(tk.Toplevel):
                 pass
         t = display_template(tid)
         kw = self.tmpl_kw_var.get().strip() or "a subject"
-        pos, _ = apply_template(tid, kw, log_cb=self.app._log)
+        # 解包名不得占用 _：i18n 函数在本模块全局即 _，
+        # 曾因 pos, _ = ... 遮蔽导致下方 _("wizard_previewing") 崩溃
+        pos, _negative = apply_template(tid, kw, log_cb=self.app._log)
         self._set_result(pos)
         self._set_template_state(self._TEMPLATE_PREVIEWING)
         self._tmpl_status.config(text=_("wizard_previewing", name=t["name"]), fg=C["ok"])
@@ -1023,6 +1026,10 @@ class PromptWizard(tk.Toplevel):
         self._hist_cb = ttk.Combobox(parent, textvariable=self._hist_var, state="readonly", font=F["small"])
         self._hist_cb.grid(row=8, column=0, sticky="ew", padx=14, pady=(4, 14))
         self._hist_cb.bind("<<ComboboxSelected>>", self._load_history)
+        # 跨会话持久化的历史在打开时即填充下拉（此前只在新增后填充，
+        # 打开助手看到的历史下拉恒为空——E2E 旅程发现）
+        if self._history:
+            self._hist_cb.config(values=[h[0] for h in self._history])
         self._pos_placeholder = True  # 结果框初始为占位文案
 
         self._set_template_state(self._TEMPLATE_IDLE)
