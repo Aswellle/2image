@@ -1622,6 +1622,26 @@ STRINGS = {
         "zh-CN": "编辑词条说明",
         "en": "Edit description",
     },
+    "phrase_new_category": {
+        "zh-CN": "＋ 新建分类",
+        "en": "＋ New Category",
+    },
+    "phrase_new_category_hint": {
+        "zh-CN": "输入新分类名称，创建后即可向其中添加词条",
+        "en": "Enter a name — the new category will appear in the list",
+    },
+    "phrase_category_create": {
+        "zh-CN": "创建",
+        "en": "Create",
+    },
+    "phrase_category_exists": {
+        "zh-CN": "同名分类已存在",
+        "en": "A category with this name already exists",
+    },
+    "phrase_category_empty": {
+        "zh-CN": "请输入分类名称",
+        "en": "Please enter a category name",
+    },
     "status_copied_prompt": {
         "zh-CN": "📋 提示词已复制",
         "en": "📋 Prompt copied",

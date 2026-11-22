@@ -23,6 +23,7 @@ from services.phrase_library import (
     phrase_matches,
     record_phrase_use,
     get_all_phrases,
+    add_category,
     add_custom_phrase,
     delete_custom_phrase,
     is_builtin,
@@ -345,6 +346,23 @@ class PhrasePanel(tk.Toplevel):
             anchor="w", padx=10, pady=(8, 4)
         )
         tk.Frame(left, bg=C["sep"], height=1).pack(fill="x")
+        # 底部固定：新建分类入口（先于弹性列表 pack，占住底边不被挤出）
+        add_cat_f = tk.Frame(left, bg=C["panel"])
+        add_cat_f.pack(side="bottom", fill="x")
+        tk.Frame(add_cat_f, bg=C["sep"], height=1).pack(fill="x")
+        tk.Button(
+            add_cat_f,
+            text=_("phrase_new_category"),
+            font=F["small_b"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=10,
+            pady=7,
+            cursor="hand2",
+            anchor="w",
+            command=self._new_category,
+        ).pack(fill="x", padx=4, pady=(2, 4))
         self._cat_frame = tk.Frame(left, bg=C["panel"])
         self._cat_frame.pack(fill="both", expand=True)
 
@@ -851,6 +869,82 @@ class PhrasePanel(tk.Toplevel):
         px = self.winfo_x() + max(0, (self.winfo_width() - dw) // 2)
         py = self.winfo_y() + max(0, (self.winfo_height() - dh) // 2)
         dlg.geometry(f"{dw}x{dh}+{px}+{py}")
+
+    def _new_category(self):
+        """新建自定义分类：命名后立即可在下方添加词条。"""
+        dlg = tk.Toplevel(self)
+        dlg.title(_("phrase_new_category"))
+        dlg.configure(bg=C["panel"])
+        dlg.transient(self)
+        dlg.grab_set()
+        dlg.resizable(False, False)
+
+        tk.Label(
+            dlg,
+            text=_("phrase_new_category_hint"),
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["sub"],
+            wraplength=280,
+            justify="left",
+        ).pack(padx=14, pady=(12, 8), anchor="w")
+        wrap = tk.Frame(dlg, bg=C["entry"], highlightbackground=C["ok"], highlightthickness=1)
+        wrap.pack(fill="x", padx=14)
+        ent = tk.Entry(
+            wrap, bg=C["entry"], fg=C["text"], insertbackground="white", font=F["input"], bd=0, relief="flat"
+        )
+        ent.pack(fill="x", padx=6, ipady=4)
+
+        def _confirm(_=None):
+            name = ent.get().strip()
+            if not name:
+                messagebox.showwarning(_("dlg_tip"), _("phrase_category_empty"), parent=dlg)
+                return
+            if not add_category(name):
+                messagebox.showwarning(_("dlg_tip"), _("phrase_category_exists"), parent=dlg)
+                return
+            dlg.destroy()
+            self._reload()
+            self._select_cat(name)
+            self.app._log(f"📚 新建分类: {name}")
+
+        def _cancel(_=None):
+            dlg.destroy()
+
+        btns = tk.Frame(dlg, bg=C["panel"])
+        btns.pack(fill="x", padx=14, pady=12)
+        tk.Button(
+            btns,
+            text=_("phrase_category_create"),
+            font=F["body_b"],
+            bg=C["ok"],
+            fg=C["ok_fg"],
+            bd=0,
+            padx=14,
+            pady=5,
+            cursor="hand2",
+            command=_confirm,
+        ).pack(side="right")
+        tk.Button(
+            btns,
+            text=_("btn_cancel"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=_cancel,
+        ).pack(side="right", padx=(0, 8))
+        dlg.bind("<Return>", _confirm)
+        dlg.bind("<Escape>", _cancel)
+        dlg.protocol("WM_DELETE_WINDOW", _cancel)
+        ent.focus_set()
+        dlg.update_idletasks()
+        px = self.winfo_x() + max(0, (self.winfo_width() - dlg.winfo_width()) // 2)
+        py = self.winfo_y() + max(0, (self.winfo_height() - dlg.winfo_height()) // 2)
+        dlg.geometry(f"+{px}+{py}")
 
     def _edit_phrase_desc(self, phrase: str):
         """编辑自定义词条的说明文本（显示在悬浮提示里；随导出文件迁移）。"""

@@ -690,6 +690,17 @@ def _save_descs(data: dict[str, str]) -> None:
         raise
 
 
+def add_category(name: str) -> bool:
+    """新建空的自定义分类；与内置/已有分类重名或空名返回 False。"""
+    name = name.strip()
+    if not name or name in BUILTIN_PHRASES or name in _load_custom():
+        return False
+    data = _load_custom()
+    data[name] = []
+    _save_custom(data)
+    return True
+
+
 def add_custom_phrase(category: str, phrase: str) -> bool:
     """向自定义词库添加词条；返回是否真正写入。
 

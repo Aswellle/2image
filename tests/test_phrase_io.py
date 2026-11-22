@@ -223,3 +223,14 @@ def test_import_does_not_override_builtin_desc(tmp_path):
     pl.import_custom(str(p))
     assert pl.get_custom_desc("custom x") == "自定义说明"
     assert pl.get_custom_desc("masterpiece") == ""  # 内置词条说明未被写入
+
+
+def test_add_category_creates_and_rejects_duplicates():
+    """新建分类：可创建空分类；与内置/已有分类重名或空名拒绝。"""
+    from services import phrase_library as pl
+
+    assert pl.add_category("🧪 全新分类") is True
+    assert "🧪 全新分类" in pl.get_all_phrases()
+    assert pl.add_category("🧪 全新分类") is False  # 重名
+    assert pl.add_category("✨ 画质增强") is False  # 内置重名
+    assert pl.add_category("   ") is False  # 空名
