@@ -335,7 +335,20 @@ class PhrasePanel(tk.Toplevel):
         self._chip_inner = tk.Frame(self._chip_cv, bg=C["bg"])
         _cw = self._chip_cv.create_window((0, 0), window=self._chip_inner, anchor="nw")
         self._chip_inner.bind("<Configure>", lambda e: self._chip_cv.configure(scrollregion=self._chip_cv.bbox("all")))
-        self._chip_cv.bind("<Configure>", lambda e: self._chip_cv.itemconfig(_cw, width=e.width))
+        # 词条文本换行宽度随窗口宽度自适应（三列布局），宽窗口不再提前折行
+        self._chip_lbls: list[tk.Label] = []
+        self._chip_wl = 200
+        self._wrap_pad = 70  # 预扣右侧按钮区 + 内边距；搜索模式另有分类标注会更宽
+
+        def _on_chip_resize(e):
+            self._chip_cv.itemconfig(_cw, width=e.width)
+            wl = max(130, (e.width - 40) // 3 - self._wrap_pad)
+            if wl != self._chip_wl:
+                self._chip_wl = wl
+                for lbl in self._chip_lbls:
+                    lbl.config(wraplength=wl)
+
+        self._chip_cv.bind("<Configure>", _on_chip_resize)
         # 鼠标滚轮
         for seq, delta in (("<MouseWheel>", None), ("<Button-4>", -1), ("<Button-5>", 1)):
             if delta is None:
@@ -476,11 +489,14 @@ class PhrasePanel(tk.Toplevel):
         for w in self._chip_inner.winfo_children():
             w.destroy()
         self._chip_btns.clear()
+        self._chip_lbls.clear()
         self._chip_cv.yview_moveto(0)
 
         # 搜索模式下无「当前分类」上下文：禁用新增按钮，防止写入用户看不到的分类
         if getattr(self, "_add_btn", None) is not None:
             self._add_btn.config(state="disabled" if search_mode else "normal")
+        # 搜索模式卡片内有分类标注，换行宽度需多预留其宽度
+        self._wrap_pad = 150 if search_mode else 70
 
         if not phrases:
             tk.Label(
@@ -528,11 +544,12 @@ class PhrasePanel(tk.Toplevel):
                 font=F["body"],
                 bg=C["card"],
                 fg=C["text"],
-                wraplength=200,
+                wraplength=self._chip_wl,
                 justify="left",
                 anchor="w",
             )
             lbl.pack(side="left", fill="x", expand=True, padx=8, pady=6)
+            self._chip_lbls.append(lbl)
 
             # ── 追加按钮 ───────────────────────────────────
             append_btn = tk.Button(
