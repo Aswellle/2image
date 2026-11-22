@@ -308,8 +308,9 @@ class PhrasePanel(tk.Toplevel):
         body = tk.Frame(self, bg=C["bg"])
         body.pack(fill="both", expand=True)
 
-        # 左：分类列表
-        left = tk.Frame(body, bg=C["panel"], width=170)
+        # 左：分类列表（宽度走缩放体系：高 DPI 下相对宽度不缩水；
+        # 英文分类名最长约 175px，200px 基准宽可完整显示）
+        left = tk.Frame(body, bg=C["panel"], width=scaled(self, 200))
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
         tk.Label(left, text=_("lbl_category"), font=F["body_b"], bg=C["panel"], fg=C["sub"]).pack(
