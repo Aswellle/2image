@@ -34,9 +34,13 @@ v4 核心优化：Token 预算控制 + 写实人像专项优化
   ─ 兜底：Qwen3-8B
 """
 
+import json
+import os
 import re
 
 import requests
+
+from config.settings import APP_DIR
 
 # ══════════════════════════════════════════════════════════════
 #   Token 预算常量
@@ -1191,6 +1195,44 @@ def generate_prompt(
 # ══════════════════════════════════════════════════════════════
 #   模板模式：直接填充，无需调用 LLM
 # ══════════════════════════════════════════════════════════════
+_HISTORY_FILE = os.path.join(APP_DIR, "prompt_history.json")
+_HISTORY_MAX = 8
+
+
+def load_prompt_history() -> list[tuple[str, str]]:
+    """读取会话间持久化的提示词历史 [(label, positive)]；损坏归零。"""
+    try:
+        if os.path.exists(_HISTORY_FILE):
+            with open(_HISTORY_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                return [
+                    (str(item[0]), str(item[1])) for item in data if isinstance(item, (list, tuple)) and len(item) == 2
+                ][:_HISTORY_MAX]
+    except Exception:
+        pass
+    return []
+
+
+def save_prompt_history(history: list[tuple[str, str]]) -> None:
+    """原子写入提示词历史（与词库/用量同款 temp + os.replace）。"""
+    import tempfile
+
+    payload = [[label, pos] for label, pos in history[:_HISTORY_MAX]]
+    os.makedirs(os.path.dirname(_HISTORY_FILE), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(_HISTORY_FILE), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, _HISTORY_FILE)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
 def apply_template(
     template_id: str,
     keywords: str,

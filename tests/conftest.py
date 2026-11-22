@@ -182,6 +182,10 @@ def isolate_real_config(tmp_path, monkeypatch):
     monkeypatch.setattr(_phrases, "_CUSTOM_FILE", str(tmp_path / "phrase_library.json"))
     monkeypatch.setattr(_phrases, "_USAGE_FILE", str(tmp_path / "phrase_usage.json"))
 
+    import services.prompt_assistant as _pa
+
+    monkeypatch.setattr(_pa, "_HISTORY_FILE", str(tmp_path / "prompt_history.json"))
+
     import services.generation.budget as _budget
 
     monkeypatch.setattr(_budget, "SPEND_FILE", str(tmp_path / "spend.json"))

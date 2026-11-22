@@ -34,7 +34,9 @@ from services.prompt_assistant import (
     display_template,
     generate_prompt,
     get_templates_by_category,
+    load_prompt_history,
     prompt_budget_info,
+    save_prompt_history,
 )
 from config.ui_geometry import fit_to_workarea, scaled
 from ui.button_states import set_enabled
@@ -279,7 +281,7 @@ class PromptWizard(tk.Toplevel):
     def __init__(self, parent_app):
         super().__init__(parent_app.root)
         self.app = parent_app
-        self._history = []  # [(label, positive)]
+        self._history = load_prompt_history()  # [(label, positive)]，会话间持久化
         self._generating = False
         self._anim_id = None
         self._sel_tid = None  # 已选模板 ID
@@ -1226,6 +1228,7 @@ class PromptWizard(tk.Toplevel):
         self._history.insert(0, (label, positive))
         self._history = self._history[:8]
         self._hist_cb.config(values=[h[0] for h in self._history])
+        save_prompt_history(self._history)
         self.app._log(f"✨ 提示词助手: {positive[:60]}…")
 
     def _on_error(self, err: str):
