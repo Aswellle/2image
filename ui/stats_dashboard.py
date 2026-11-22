@@ -666,7 +666,7 @@ class StatsDashboard:
                 (today_text, _("stats_cost_today_lbl")),
             ]
             for i, (val, lbl) in enumerate(cells):
-                cost_f.columnconfigure(i, weight=1)
+                strip.grid_columnconfigure(i, weight=1)
                 cell = tk.Frame(strip, bg=C["panel"])
                 cell.grid(row=0, column=i, padx=6, pady=10, sticky="nsew")
                 tk.Label(cell, text=val, font=F["mono_lg"], bg=C["panel"], fg=C["ok"]).pack()
