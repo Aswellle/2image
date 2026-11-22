@@ -14,6 +14,7 @@ from config.theme import DARK_THEME as C, tag_color
 from ui.icons import glyph, icon_font
 from config.i18n import _
 from services.providers import provider_id_for
+from services.phrase_library import MY_PHRASES_CATEGORY, add_custom_phrase
 from data.repository import (
     get_all_entries,
     get_all_tags,
@@ -836,6 +837,22 @@ class HistorySidebar:
         cmp_btn.pack(side="left", padx=(0, 2))
         _Tooltip(cmp_btn, _("tip_set_as_right_compare"))
 
+        # 📚 保存为词条：一键把提示词收进词库「我的词条」分类
+        phrase_btn = tk.Button(
+            btn_row,
+            text=glyph("save"),
+            font=icon_font(11),
+            bg=cbg,
+            fg=C["sub"],
+            bd=0,
+            padx=4,
+            cursor="hand2",
+            activebackground=C["acc"],
+            command=lambda en=e: self._save_prompt_as_phrase(en),
+        )
+        phrase_btn.pack(side="left", padx=(0, 2))
+        _Tooltip(phrase_btn, _("btn_save_as_phrase"))
+
         # 🗑 删除
         del_btn = tk.Button(
             btn_row,
@@ -1388,6 +1405,26 @@ class HistorySidebar:
         else:
             # 仅收藏模式下需重建（卡片可能需要从列表消失）
             self.app._refresh_hist()
+
+    def _save_prompt_as_phrase(self, entry: dict):
+        """把该记录的提示词一键保存为词库词条（存入「我的词条」分类）。"""
+        text = (entry.get("prompt") or "").strip()
+        if not text:
+            self.app._toast(_("phrase_save_empty"), "warning")
+            return
+        added = add_custom_phrase(MY_PHRASES_CATEGORY, text)
+        if added:
+            self.app._toast(_("phrase_save_done"), "success")
+        else:
+            self.app._toast(_("phrase_save_dup"), "info")
+        # 词库面板开着的话同步刷新，让新词条立即可见
+        panel = getattr(self.app, "_phrase_panel", None)
+        if panel is not None:
+            try:
+                if panel.winfo_exists():
+                    panel._reload()
+            except Exception:
+                pass
 
     def _del_entry(self, eid):
         if not messagebox.askyesno(_("dlg_tip"), _("dlg_confirm_delete"), parent=self.app.root):

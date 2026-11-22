@@ -1566,6 +1566,26 @@ STRINGS = {
         "zh-CN": "设为右侧对比图",
         "en": "Set as right compare image",
     },
+    "btn_save_as_phrase": {
+        "zh-CN": "保存为词库词条",
+        "en": "Save as phrase",
+    },
+    "phrase_save_done": {
+        "zh-CN": "已保存到词库「⭐ 我的词条」",
+        "en": "Saved to My Phrases",
+    },
+    "phrase_save_dup": {
+        "zh-CN": "该提示词已在词库「⭐ 我的词条」中",
+        "en": "Already in My Phrases",
+    },
+    "phrase_save_empty": {
+        "zh-CN": "提示词为空，未保存",
+        "en": "Empty prompt, nothing saved",
+    },
+    "phrase_cat_my_phrases": {
+        "zh-CN": "⭐ 我的词条",
+        "en": "⭐ My Phrases",
+    },
     "status_copied_prompt": {
         "zh-CN": "📋 提示词已复制",
         "en": "📋 Prompt copied",

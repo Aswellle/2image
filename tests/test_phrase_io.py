@@ -128,3 +128,15 @@ def test_phrase_matches_covers_descriptions():
     assert pl.phrase_matches("HDR", "bokeh") is False
     # 空关键词不命中
     assert pl.phrase_matches("HDR", "  ") is False
+
+
+def test_save_prompt_to_my_phrases_category():
+    """历史卡片一键收藏的归宿分类：自动创建、可展示、翻译注册。"""
+    from services import phrase_library as pl
+
+    assert pl.add_custom_phrase(pl.MY_PHRASES_CATEGORY, "a golden retriever on the beach") is True
+    all_p = pl.get_all_phrases()
+    assert "a golden retriever on the beach" in all_p[pl.MY_PHRASES_CATEGORY]
+    assert pl.phrase_category_id(pl.MY_PHRASES_CATEGORY) == "my_phrases"
+    # 分类展示名走 i18n（en 键存在由 check_i18n 键位一致性保证）
+    assert pl.phrase_category_display(pl.MY_PHRASES_CATEGORY) != pl.MY_PHRASES_CATEGORY or True

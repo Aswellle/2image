@@ -80,6 +80,9 @@ BUILTIN_PHRASES: dict[str, list[str]] = {
 
 ALL_CATEGORIES: list[str] = list(BUILTIN_PHRASES.keys())
 
+# 历史卡片「保存为词条」的默认归宿分类（一键收藏，无需选分类）
+MY_PHRASES_CATEGORY = "⭐ 我的词条"
+
 # ──────────────────────────────────────────────────────────────
 #   词条中文说明字典（用于 phrase_panel 悬浮提示）
 #   每条 60～100 字，突出「可见的画面效果」而非学术定义
@@ -432,6 +435,7 @@ PHRASE_CATEGORY_IDS: dict[str, str] = {
     "📷 镜头参数": "camera",
     "🌙 氛围情绪": "mood",
     "👤 人物细节": "people",
+    MY_PHRASES_CATEGORY: "my_phrases",
 }
 
 PHRASE_DESCRIPTIONS_EN: dict[str, str] = {
