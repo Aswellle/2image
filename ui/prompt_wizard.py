@@ -286,6 +286,7 @@ class PromptWizard(tk.Toplevel):
         self._last_gen_args = None  # 上次生成的完整参数快照（供一键重试）
         self._variant_list: list[str] = []  # 多候选提示词（‹/› 切换）
         self._variant_idx = 0
+        self._result_baseline = ""  # 最近一次呈现的结果原文（供编辑覆盖判定）
         self._template_state = self._TEMPLATE_IDLE
 
         self.title(_("wizard_title") + " — " + _("wizard_pro_suffix"))
@@ -993,8 +994,21 @@ class PromptWizard(tk.Toplevel):
     # ══════════════════════════════════════════════════════════
     #   生成逻辑
     # ══════════════════════════════════════════════════════════
+    def _confirm_overwrite_if_edited(self) -> bool:
+        """结果框内容被手动编辑过且尚未使用时，重新生成会覆盖——确认。"""
+        pos = self._pos_box.get("1.0", "end-1c").strip()
+        if not pos or getattr(self, "_pos_placeholder", False):
+            return True
+        if pos == self._result_baseline:
+            return True
+        from tkinter import messagebox
+
+        return messagebox.askyesno(_("dlg_tip"), _("wizard_overwrite_confirm"), parent=self)
+
     def _generate_param(self):
         if self._generating:
+            return
+        if not self._confirm_overwrite_if_edited():
             return
         kw = self.kw_var.get().strip()
         if not kw:
@@ -1027,6 +1041,8 @@ class PromptWizard(tk.Toplevel):
     def _retry_generate(self):
         """用上一次生成时的完整参数快照重新生成。"""
         if self._generating or not self._last_gen_args:
+            return
+        if not self._confirm_overwrite_if_edited():
             return
         self._start_generation(
             dict(self._last_gen_args),
@@ -1216,6 +1232,7 @@ class PromptWizard(tk.Toplevel):
         self._pos_box.delete("1.0", "end")
         self._pos_box.insert("1.0", pos)
         self._pos_box.config(fg=C["ok"])
+        self._result_baseline = pos
         self._pos_placeholder = False
         # 触发词数指示器更新
         self._update_budget_display()

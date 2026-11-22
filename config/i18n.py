@@ -930,6 +930,10 @@ STRINGS = {
         "zh-CN": "3 个候选全部生成失败",
         "en": "All 3 candidates failed to generate",
     },
+    "wizard_overwrite_confirm": {
+        "zh-CN": "结果框中的提示词已被手动编辑且尚未使用，\n重新生成将覆盖当前内容。确定继续吗？",
+        "en": "The prompt in the result box was edited manually and not used yet.\nRegenerating will overwrite it. Continue?",
+    },
     "wizard_close_generating": {
         "zh-CN": "提示词正在生成中，确定要关闭吗？\n（后台任务会继续消耗本次调用，结果将不可见）",
         "en": "A prompt is still generating. Close anyway?\n(The background call will finish but its result will be discarded)",
