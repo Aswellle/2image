@@ -500,6 +500,9 @@ class PhrasePanel(tk.Toplevel):
                 padx=10,
                 pady=7,
                 anchor="w",
+                justify="left",
+                # 超长自定义/导入分类名自动换行，不再被固定宽左栏裁切
+                wraplength=scaled(self, 168),
                 cursor="hand2",
                 relief="flat",
                 command=lambda c=cat: self._select_cat(c),
