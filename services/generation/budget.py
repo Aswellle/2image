@@ -92,6 +92,7 @@ def resolve_display_to_id(display: str) -> str | None:
                 best = (len(prefix), pid)
     return best[1] if best else None
 
+
 _LOCK = threading.Lock()
 
 
