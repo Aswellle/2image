@@ -1656,7 +1656,7 @@ STRINGS = {
     },
     "phrase_hint": {
         "zh-CN": "点击词条追加到输入框  ·  🖱 悬停词条查看中文说明",
-        "en": "Click phrase to append to input  ·  🖱 Hover to view Chinese description",
+        "en": "Click phrase to append to input  ·  🖱 Hover phrase for details",
     },
     "btn_clear_search": {
         "zh-CN": "✕ 清空搜索",
@@ -1700,7 +1700,7 @@ STRINGS = {
     },
     "phrase_footer": {
         "zh-CN": "共 {n} 条词条  ·  点击词条追加到输入框  ·  🖱 悬停查看中文说明",
-        "en": "{n} phrases total  ·  Click phrase to append to input  ·  🖱 Hover to view Chinese description",
+        "en": "{n} phrases total  ·  Click phrase to append to input  ·  🖱 Hover for details",
     },
     "dlg_enter_phrase": {
         "zh-CN": "请输入词条内容",
