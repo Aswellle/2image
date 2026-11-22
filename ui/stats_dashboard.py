@@ -10,7 +10,7 @@ from config.fonts import F
 from config.ui_geometry import fit_to_workarea, scaled
 from config.theme import C, tag_color
 from ui.icons import glyph, icon_font
-from config.i18n import _
+from config.i18n import _, get_language
 from data.repository import get_stats, get_year_heatmap, get_available_years, get_year_stats
 
 
@@ -233,7 +233,8 @@ class StatsDashboard:
         CELL_S = 12  # 格子尺寸
         GAP_S = 3  # 间距
         STEP_S = CELL_S + GAP_S  # 15px per cell
-        WLABEL_W = 32  # 左侧星期标签宽度
+        # 中文星期为单字（32px 足够）；英文三字符标签更宽，左缘才不会被画布裁切
+        WLABEL_W = 44 if get_language() == "en" else 32
         TOP_M = 24  # 顶部月份标签高度
         BOT_M = 28  # 底部图例高度
         # 53 周 × 15 + 32 + 20 右边距
