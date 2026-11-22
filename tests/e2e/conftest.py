@@ -1,0 +1,164 @@
+"""
+tests/e2e/conftest.py — 端到端驾驶舱
+────────────────────────────────────
+真实 App（全控件、全业务层）+ 隔离磁盘（继承 tests/conftest.py 的
+isolate_real_config）+ 内存库 + 可编程假 provider（网络边界桩）。
+
+假 provider 打在 services.providers.ALL_PROVIDERS 注册表条目上——
+image_service 以同一 dict 对象解析 provider 调用方，patch 即生效；
+编排器/重试/回退/落盘/历史/UI 刷新全部走真实代码路径。
+"""
+
+from __future__ import annotations
+
+import io
+import tkinter as tk
+
+import pytest
+from PIL import Image
+
+
+def make_png_bytes(width: int = 64, height: int = 64, color=(70, 204, 163)) -> bytes:
+    """生成最小真实 PNG（走真实 save_image_file 解码链路）。"""
+    buf = io.BytesIO()
+    Image.new("RGB", (width, height), color).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+class FakeProvider:
+    """可编程假 provider：成功返回 PNG / 指定失败 / 延迟。"""
+
+    def __init__(self):
+        self.calls: list[dict] = []
+        self.fail = False
+        self.png = make_png_bytes()
+        self.display = "FakeProvider/fake-model"
+
+    def __call__(self, prompt: str, w: int, h: int, seed, cfg: dict, log) -> tuple[bytes, str]:
+        self.calls.append({"prompt": prompt, "w": w, "h": h, "seed": seed})
+        if self.fail:
+            raise RuntimeError("fake provider forced failure")
+        return self.png, self.display
+
+
+@pytest.fixture
+def e2e(tk_root, monkeypatch, tmp_path):
+    """端到端驾驶舱：yield (app, root, monkeypatch)，并挂假 provider 工厂。
+
+    用文件库而非 :memory:——内存 SQLite 每线程独立连接，队列等真实
+    worker 线程写入的记录主线程不可见；文件库跨线程共享，也更贴近实机。
+    """
+    import data.repository as repo
+    from config.fonts import init_fonts
+    from config.settings import DEFAULT_CONFIG
+    import ui.app as app_mod
+
+    repo._set_test_db(str(tmp_path / "e2e_history.db"))
+    repo.init_db()
+    init_fonts()
+    cfg = dict(DEFAULT_CONFIG)
+    cfg["show_wizard_on_start"] = False
+    cfg["pollinations_enabled"] = True
+    saved = {}
+    monkeypatch.setattr(app_mod, "load_config", lambda: dict(cfg))
+    monkeypatch.setattr(app_mod, "save_config", lambda c: saved.update(dict(c)))
+    top = tk.Toplevel(tk_root)
+    top.withdraw()
+    a = app_mod.App(top)
+    tk_root.update()
+
+    harness = E2EHarness(a, tk_root, monkeypatch, saved)
+    # 单图生成默认内联化：Tcl 单线程约束下，后台线程的 after 派发只在
+    # 解释器处于事件循环时合法——测试里生成点击与等待之间存在竞争窗口。
+    # 内联后业务链路（翻译→编排→provider→落盘→UI 回调）全部真实，
+    # 仅线程调度同步化；after(0,...) 回调仍需泵事件才执行。
+    harness.inline_generation()
+    yield harness
+    try:
+        top.destroy()
+    except tk.TclError:
+        pass
+
+
+class E2EHarness:
+    """App + 驱动工具 + provider 桩的聚合入口。"""
+
+    def __init__(self, app, root, monkeypatch, saved):
+        self.app = app
+        self.root = root
+        self.mp = monkeypatch
+        self.saved = saved
+
+    # ── provider 桩 ──────────────────────────────────────────
+    def install_fake_provider(self, name: str = "pollinations") -> FakeProvider:
+        """把注册表里的指定 provider 换成可编程假实现。"""
+        from services.providers import ALL_PROVIDERS
+
+        fake = FakeProvider()
+        self.mp.setitem(ALL_PROVIDERS, name, fake)
+        return fake
+
+    def inline_generation(self):
+        """单图生成线程内联化（仅线程调度，业务链路保持真实）。"""
+        import services.application.generation_controller as gc
+
+        class _InlineThread:
+            def __init__(self, target=None, daemon=False, args=(), kwargs=None, **kw):
+                self._target = target
+                self._args = args or ()
+
+            def start(self):
+                self._target(*self._args)
+
+        self.mp.setattr(gc, "threading", type("_M", (), {"Thread": _InlineThread}))
+
+    def provider_display(self, name: str = "pollinations") -> str:
+        """stable id → UI 下拉框里的展示名。"""
+        from services.providers import display_name_for
+
+        return display_name_for(name)
+
+    # ── 常用断言前泵 ─────────────────────────────────────────
+    def pump(self, times: int = 5):
+        from tests.e2e.driver import pump
+
+        pump(self.root, times)
+
+    def wait_until(self, predicate, timeout_ms: int = 8000) -> bool:
+        from tests.e2e.driver import wait_until
+
+        return wait_until(self.root, predicate, timeout_ms)
+
+    def history_count(self) -> int:
+        from data.repository import count_entries
+
+        return count_entries()
+
+    # ── 常用操作 ─────────────────────────────────────────────
+    def set_prompt(self, text: str):
+        from tests.e2e.driver import clear_text, type_into_text
+
+        clear_text(self.app.content.pt)
+        type_into_text(self.app.content.pt, text)
+
+    def select_provider(self, name: str = "pollinations"):
+        from tests.e2e.driver import set_combobox
+
+        set_combobox(self.app.content._provider_cb, self.provider_display(name))
+
+    def click_generate(self):
+        from tests.e2e.driver import invoke_btn
+
+        invoke_btn(self.app.content.gb)
+
+    def askyesno_yes(self):
+        """删除/清空等确认对话框一律自动确认。"""
+        import ui.sidebar as sidebar_mod
+
+        self.mp.setattr(sidebar_mod.messagebox, "askyesno", lambda *a, **k: True)
+
+    def patch_filedialog(self, chooser: str, return_value: str, module):
+        """把指定模块引用的 filedialog 选择器打桩到固定返回值。"""
+        import tkinter.filedialog as fd
+
+        self.mp.setattr(fd, chooser, lambda *a, **k: return_value)
