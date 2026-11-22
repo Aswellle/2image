@@ -491,87 +491,92 @@
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 46,
+  "line": 47,
   "text": "✨ 画质增强"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 47,
+  "line": 48,
   "text": "💡 光影效果"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 48,
+  "line": 49,
   "text": "🎨 艺术风格"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 49,
+  "line": 50,
   "text": "📐 构图方式"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 50,
+  "line": 51,
   "text": "📷 镜头参数"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 51,
+  "line": 52,
   "text": "🌙 氛围情绪"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 52,
+  "line": 53,
   "text": "👤 人物细节"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 57,
+  "line": 58,
   "text": "提取词条中的 {{变量}} 占位符名（去重保序）。\n\n    变量名支持任意非花括号内容（含中文），追加时弹对话框逐项填"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 73,
+  "line": 74,
   "text": "词条中文说明悬浮窗。\n\n    使用方式：\n        tip = _PhraseTooltip(root, chi"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 259,
+  "line": 260,
   "text": "提示词片段库面板（非模态）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 242,
+  "line": 243,
   "text": "缓出曲线淡入（曲线与帧数见 ui/tooltip.py）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 721,
+  "line": 739,
   "text": "词条在生成记录中的使用概况（悬浮说明追加行）；无记录返回空串。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 741,
+  "line": 759,
   "text": "把（可能已填充变量的）词条文本追加进主输入框，带闪烁反馈。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 759,
+  "line": 777,
   "text": "模板变量填充对话框：逐项填写 {{变量}} 后追加到主输入框。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 856,
+  "line": 874,
+  "text": "新建自定义分类：命名后立即可在下方添加词条。"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 950,
   "text": "编辑自定义词条的说明文本（显示在悬浮提示里；随导出文件迁移）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 956,
+  "line": 1050,
   "text": "自定义词库导出为 JSON 文件（换机/备份）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 973,
+  "line": 1067,
   "text": "从 JSON 文件合并导入自定义词条（已存在/内置的跳过）。"
  },
  {
