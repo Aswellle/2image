@@ -497,6 +497,10 @@ class PhrasePanel(tk.Toplevel):
             self._add_btn.config(state="disabled" if search_mode else "normal")
         # 搜索模式卡片内有分类标注，换行宽度需多预留其宽度
         self._wrap_pad = 150 if search_mode else 70
+        # 按当前画布实际宽度即时重算，不依赖下次 Configure 事件
+        cv_w = self._chip_cv.winfo_width()
+        if cv_w > 1:
+            self._chip_wl = max(130, (cv_w - 40) // 3 - self._wrap_pad)
 
         if not phrases:
             if search_mode:
