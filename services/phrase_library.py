@@ -14,6 +14,7 @@ from config.settings import APP_DIR
 
 _CUSTOM_FILE = os.path.join(APP_DIR, "phrase_library.json")
 _USAGE_FILE = os.path.join(APP_DIR, "phrase_usage.json")
+_DESC_FILE = os.path.join(APP_DIR, "phrase_desc.json")
 
 # ── 内置 45 条预设（7 大分类）─────────────────────────────────
 BUILTIN_PHRASES: dict[str, list[str]] = {
@@ -626,7 +627,10 @@ def phrase_category_display(cat_zh: str) -> str:
 
 
 def get_phrase_desc(phrase: str) -> str:
-    """返回词条效果说明：按当前语言取中/英文版本，无内置说明返回空串。"""
+    """返回词条效果说明：优先用户自定义说明，其次按当前语言取内置版本。"""
+    custom = _load_descs().get(phrase)
+    if custom:
+        return custom
     from config.i18n import get_language
 
     if get_language() == "en":
@@ -634,6 +638,56 @@ def get_phrase_desc(phrase: str) -> str:
         if en:
             return en
     return PHRASE_DESCRIPTIONS.get(phrase, "")
+
+
+def get_custom_desc(phrase: str) -> str:
+    """用户为词条写的自定义说明（不含内置说明）；无则空串。"""
+    return _load_descs().get(phrase.strip(), "")
+
+
+def set_custom_desc(phrase: str, desc: str) -> None:
+    """设置用户自定义词条说明；传空串即清除（悬浮说明回落到内置版本）。"""
+    name = phrase.strip()
+    if not name:
+        return
+    data = _load_descs()
+    clean = desc.strip()
+    if clean:
+        data[name] = clean
+    else:
+        data.pop(name, None)
+    _save_descs(data)
+
+
+def _load_descs() -> dict[str, str]:
+    """读取自定义词条说明（词条 → 说明文本）；文件损坏归零。"""
+    try:
+        if os.path.exists(_DESC_FILE):
+            with open(_DESC_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return {str(k): str(v) for k, v in data.items() if str(v).strip()}
+    except Exception:
+        pass
+    return {}
+
+
+def _save_descs(data: dict[str, str]) -> None:
+    """原子写入自定义说明（与词库同款 temp + os.replace）。"""
+    import tempfile
+
+    os.makedirs(os.path.dirname(_DESC_FILE), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(_DESC_FILE), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, _DESC_FILE)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def add_custom_phrase(category: str, phrase: str) -> bool:
@@ -684,21 +738,23 @@ def phrase_matches(phrase: str, kw: str) -> bool:
 
 
 def export_custom(path: str) -> int:
-    """导出自定义词库为 JSON（分类 → 词条列表），返回导出的词条总数。
+    """导出自定义词库为 JSON，返回导出的词条总数。
 
-    只含自定义层；内置 45 条词条随应用分发，无需导出。
+    v2 格式：{"version": 2, "phrases": {分类: [词条]}, "descriptions": {词条: 说明}}；
+    只含自定义层（内置 45 条随应用分发）。旧版格式仍可被导入。
     与词库保存同款临时文件 + 原子替换，中断不留半截导出文件。
     """
     import tempfile
 
     data = _load_custom()
     total = sum(len(v) for v in data.values())
+    payload = {"version": 2, "phrases": data, "descriptions": _load_descs()}
     target_dir = os.path.dirname(os.path.abspath(path)) or "."
     os.makedirs(target_dir, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=target_dir, suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+            json.dump(payload, f, ensure_ascii=False, indent=2)
         os.replace(tmp, path)
     except Exception:
         try:
@@ -712,12 +768,22 @@ def export_custom(path: str) -> int:
 def import_custom(path: str) -> tuple[int, int]:
     """从 JSON 合并导入自定义词条，返回 (新增数, 跳过数)。
 
+    支持两种格式：
+    - v2：{"version": 2, "phrases": {...}, "descriptions": {...}}
+    - 旧版：{分类: [词条]}
     合并语义：分类并入现有自定义层（可新建分类），已存在的词条跳过；
-    内置词条不写库（避免把内置层固化进自定义文件）。结构非法的文件
-    抛 ValueError。
+    内置词条不写库（避免把内置层固化进自定义文件）。说明只并入自定义
+    层的词条，不覆盖内置词条的官方说明。结构非法的文件抛 ValueError。
     """
     with open(path, "r", encoding="utf-8") as f:
         incoming = json.load(f)
+
+    desc_map: dict = {}
+    if isinstance(incoming, dict) and incoming.get("version") == 2 and isinstance(incoming.get("phrases"), dict):
+        raw_desc = incoming.get("descriptions")
+        if isinstance(raw_desc, dict):
+            desc_map = raw_desc
+        incoming = incoming["phrases"]
     if not isinstance(incoming, dict) or any(
         not isinstance(k, str) or not isinstance(v, list) or any(not isinstance(x, str) for x in v)
         for k, v in incoming.items()
@@ -740,4 +806,21 @@ def import_custom(path: str) -> tuple[int, int]:
             added += 1
     if added:
         _save_custom(data)
+
+    # 说明合并：只落到自定义层的词条上，内置词条说明保持官方版本
+    if desc_map:
+        merged = _load_descs()
+        custom_phrases = {p for phrases in data.values() for p in phrases}
+        changed = False
+        for phrase, desc in desc_map.items():
+            if not isinstance(phrase, str) or not isinstance(desc, str):
+                continue
+            if not desc.strip() or phrase.strip() not in custom_phrases:
+                continue
+            if merged.get(phrase) != desc.strip():
+                merged[phrase] = desc.strip()
+                changed = True
+        if changed:
+            _save_descs(merged)
+
     return added, skipped

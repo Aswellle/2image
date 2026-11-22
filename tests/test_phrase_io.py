@@ -12,7 +12,10 @@ def test_export_empty_library(tmp_path):
 
     out = tmp_path / "export.json"
     assert pl.export_custom(str(out)) == 0
-    assert json.loads(out.read_text(encoding="utf-8")) == {}
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["version"] == 2
+    assert data["phrases"] == {}
+    assert data["descriptions"] == {}
 
 
 def test_export_import_roundtrip(tmp_path):
@@ -23,7 +26,7 @@ def test_export_import_roundtrip(tmp_path):
     total = pl.export_custom(str(out))
     assert total == 1
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data == {"🧪 自定义分类": ["my phrase"]}
+    assert data["phrases"] == {"🧪 自定义分类": ["my phrase"]}
 
     # 导入同一文件：全部已存在 → 跳过
     added, skipped = pl.import_custom(str(out))
@@ -154,3 +157,69 @@ def test_template_var_names_extracts_unique_ordered():
     assert _template_var_names("{{主体}} wearing {{颜色}} hat") == ["主体", "颜色"]
     assert _template_var_names("no placeholders here") == []
     assert _template_var_names("nested {{a{{b}}}} is weird") == ["a{{b"] or True  # 嵌套花括号不做保证
+
+
+def test_custom_desc_roundtrip_and_resolution():
+    """自定义说明优先于内置说明；清空后回落到内置版本。"""
+    from services import phrase_library as pl
+
+    pl.set_custom_desc("my phrase", "自定义说明文本")
+    assert pl.get_custom_desc("my phrase") == "自定义说明文本"
+    pl.set_custom_desc("masterpiece", "用户自定义的内置覆盖")
+    assert pl.get_phrase_desc("masterpiece") == "用户自定义的内置覆盖"
+    pl.set_custom_desc("masterpiece", "")  # 清空 → 恢复内置
+    assert pl.get_custom_desc("masterpiece") == ""
+    assert pl.get_phrase_desc("masterpiece") != ""
+
+
+def test_export_import_v2_with_descriptions(tmp_path):
+    """v2 导出携带说明；清空后导入能同时恢复词条与说明。"""
+    import json
+
+    from services import phrase_library as pl
+
+    pl.add_custom_phrase("🧪 分类A", "phrase one")
+    pl.set_custom_desc("phrase one", "说明一")
+    out = tmp_path / "exp.json"
+    pl.export_custom(str(out))
+    raw = json.loads(out.read_text(encoding="utf-8"))
+    assert raw["version"] == 2
+    assert raw["phrases"]["🧪 分类A"] == ["phrase one"]
+    assert raw["descriptions"]["phrase one"] == "说明一"
+
+    pl.set_custom_desc("phrase one", "")
+    pl.delete_custom_phrase("🧪 分类A", "phrase one")
+    added, skipped = pl.import_custom(str(out))
+    assert added == 1
+    assert pl.get_custom_desc("phrase one") == "说明一"
+
+
+def test_import_accepts_legacy_format(tmp_path):
+    """旧版（分类 → 词条列表）文件仍可导入。"""
+    import json
+
+    from services import phrase_library as pl
+
+    p = tmp_path / "legacy.json"
+    p.write_text(json.dumps({"🧪 旧分类": ["old phrase"]}, ensure_ascii=False), encoding="utf-8")
+    added, skipped = pl.import_custom(str(p))
+    assert (added, skipped) == (1, 0)
+    assert "old phrase" in pl.get_all_phrases()["🧪 旧分类"]
+
+
+def test_import_does_not_override_builtin_desc(tmp_path):
+    """v2 导入的说明只落到自定义层词条，不覆盖内置词条的官方说明。"""
+    import json
+
+    from services import phrase_library as pl
+
+    p = tmp_path / "v2.json"
+    payload = {
+        "version": 2,
+        "phrases": {"🧪 分类B": ["custom x"]},
+        "descriptions": {"custom x": "自定义说明", "masterpiece": "试图覆盖内置"},
+    }
+    p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    pl.import_custom(str(p))
+    assert pl.get_custom_desc("custom x") == "自定义说明"
+    assert pl.get_custom_desc("masterpiece") == ""  # 内置词条说明未被写入

@@ -181,6 +181,7 @@ def isolate_real_config(tmp_path, monkeypatch):
 
     monkeypatch.setattr(_phrases, "_CUSTOM_FILE", str(tmp_path / "phrase_library.json"))
     monkeypatch.setattr(_phrases, "_USAGE_FILE", str(tmp_path / "phrase_usage.json"))
+    monkeypatch.setattr(_phrases, "_DESC_FILE", str(tmp_path / "phrase_desc.json"))
 
     import services.prompt_assistant as _pa
 

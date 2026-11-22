@@ -26,7 +26,9 @@ from services.phrase_library import (
     add_custom_phrase,
     delete_custom_phrase,
     is_builtin,
+    get_custom_desc,
     get_phrase_desc,
+    set_custom_desc,
 )
 from data.repository import get_phrase_stats
 from config.fonts import F
@@ -642,6 +644,21 @@ class PhrasePanel(tk.Toplevel):
                 del_phrase_btn.pack(side="right", padx=2, pady=4)
                 attach_tooltip(del_phrase_btn, "tip_delete_phrase")
 
+                # ── 说明编辑按钮（仅自定义词条；内置说明随应用分发不可改）──
+                edit_desc_btn = tk.Button(
+                    chip,
+                    text=glyph("edit"),
+                    font=icon_font(9),
+                    bg=C["card"],
+                    fg=C["sub"],
+                    bd=0,
+                    padx=4,
+                    cursor="hand2",
+                    command=lambda p=phrase: self._edit_phrase_desc(p),
+                )
+                edit_desc_btn.pack(side="right", padx=(0, 2), pady=4)
+                attach_tooltip(edit_desc_btn, "tip_edit_phrase_desc")
+
             # ── 点击整行也追加 ────────────────────────────
             hit_widgets = (chip, lbl, cat_lbl) if cat_lbl is not None else (chip, lbl)
             for w in hit_widgets:
@@ -834,6 +851,90 @@ class PhrasePanel(tk.Toplevel):
         px = self.winfo_x() + max(0, (self.winfo_width() - dw) // 2)
         py = self.winfo_y() + max(0, (self.winfo_height() - dh) // 2)
         dlg.geometry(f"{dw}x{dh}+{px}+{py}")
+
+    def _edit_phrase_desc(self, phrase: str):
+        """编辑自定义词条的说明文本（显示在悬浮提示里；随导出文件迁移）。"""
+        dlg = tk.Toplevel(self)
+        dlg.title(_("phrase_desc_title"))
+        dlg.configure(bg=C["panel"])
+        dlg.transient(self)
+        dlg.grab_set()
+        dlg.resizable(True, True)
+        dlg.minsize(scaled(self, 420), scaled(self, 280))
+
+        tk.Label(dlg, text=phrase, font=F["body_b"], bg=C["panel"], fg=C["ok"], wraplength=390, justify="left").pack(
+            padx=14, pady=(12, 6), anchor="w"
+        )
+        tk.Label(
+            dlg,
+            text=_("phrase_desc_hint"),
+            font=F["small_i"],
+            bg=C["panel"],
+            fg=C["sub"],
+            wraplength=390,
+            justify="left",
+        ).pack(padx=14, pady=(0, 6), anchor="w")
+        body = tk.Frame(dlg, bg=C["entry"], highlightbackground=C["ok"], highlightthickness=1)
+        body.pack(fill="both", expand=True, padx=14)
+        txt = tk.Text(
+            body,
+            wrap="word",
+            font=F["body"],
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            bd=0,
+            padx=8,
+            pady=6,
+            relief="flat",
+            height=6,
+        )
+        txt.pack(fill="both", expand=True)
+        txt.insert("1.0", get_custom_desc(phrase))
+
+        def _save(_=None):
+            set_custom_desc(phrase, txt.get("1.0", "end-1c"))
+            dlg.destroy()
+            self.app._toast(_("phrase_desc_saved"), "success")
+
+        def _cancel(_=None):
+            dlg.destroy()
+
+        btns = tk.Frame(dlg, bg=C["panel"])
+        btns.pack(fill="x", padx=14, pady=12)
+        tk.Button(
+            btns,
+            text=_("phrase_desc_save"),
+            font=F["body_b"],
+            bg=C["ok"],
+            fg=C["ok_fg"],
+            bd=0,
+            padx=14,
+            pady=5,
+            cursor="hand2",
+            command=_save,
+        ).pack(side="right")
+        tk.Button(
+            btns,
+            text=_("btn_cancel"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=_cancel,
+        ).pack(side="right", padx=(0, 8))
+        dlg.bind("<Escape>", _cancel)
+        dlg.protocol("WM_DELETE_WINDOW", _cancel)
+        dlg.bind("<Control-s>", _save)
+        txt.focus_set()
+        # 居中于词库面板
+        dlg.update_idletasks()
+        px = self.winfo_x() + max(0, (self.winfo_width() - dlg.winfo_width()) // 2)
+        py = self.winfo_y() + max(0, (self.winfo_height() - dlg.winfo_height()) // 2)
+        dlg.geometry(f"+{px}+{py}")
 
     def _add_phrase(self):
         phrase = self._new_phrase_var.get().strip()

@@ -1602,6 +1602,26 @@ STRINGS = {
         "zh-CN": "追加",
         "en": "Append",
     },
+    "phrase_desc_title": {
+        "zh-CN": "编辑词条说明",
+        "en": "Edit phrase description",
+    },
+    "phrase_desc_hint": {
+        "zh-CN": "说明显示在词条悬浮提示里，随导出文件迁移；清空并保存即恢复默认",
+        "en": "The description shows in the phrase tooltip and travels with exports; save empty to restore default",
+    },
+    "phrase_desc_save": {
+        "zh-CN": "保存说明",
+        "en": "Save description",
+    },
+    "phrase_desc_saved": {
+        "zh-CN": "词条说明已更新",
+        "en": "Description updated",
+    },
+    "tip_edit_phrase_desc": {
+        "zh-CN": "编辑词条说明",
+        "en": "Edit description",
+    },
     "status_copied_prompt": {
         "zh-CN": "📋 提示词已复制",
         "en": "📋 Prompt copied",
