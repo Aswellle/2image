@@ -1422,7 +1422,7 @@ class HistorySidebar:
         if panel is not None:
             try:
                 if panel.winfo_exists():
-                    panel._reload()
+                    panel.refresh()
             except Exception:
                 pass
 

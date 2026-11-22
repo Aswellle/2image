@@ -466,6 +466,10 @@ class PhrasePanel(tk.Toplevel):
         self._reload()
 
     # ── 数据 & 分类刷新 ─────────────────────────────────────
+    def refresh(self):
+        """公共刷新入口：供词库面板外的模块（侧栏一键收藏等）触发重载。"""
+        self._reload()
+
     def _reload(self):
         self._phrases = get_all_phrases()
         # 按使用频次降序稳定排序（同频保持原序）：高频词条置顶少翻找
