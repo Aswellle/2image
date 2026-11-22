@@ -1846,6 +1846,78 @@ STRINGS = {
         "zh-CN": "还没有付费接口消耗记录",
         "en": "No paid provider usage yet",
     },
+    "stats_export_csv": {
+        "zh-CN": "导出 CSV",
+        "en": "Export CSV",
+    },
+    "stats_export_image": {
+        "zh-CN": "分享图",
+        "en": "Share Image",
+    },
+    "stats_export_done": {
+        "zh-CN": "已导出 {name}",
+        "en": "Exported: {name}",
+    },
+    "stats_export_failed": {
+        "zh-CN": "导出失败：{err}",
+        "en": "Export failed: {err}",
+    },
+    "stats_export_brand_line": {
+        "zh-CN": "2image 统计导出 · {date}",
+        "en": "2image stats export · {date}",
+    },
+    "stats_export_sec_summary": {
+        "zh-CN": "汇总",
+        "en": "Summary",
+    },
+    "stats_export_metric": {
+        "zh-CN": "指标",
+        "en": "Metric",
+    },
+    "stats_export_value": {
+        "zh-CN": "数值",
+        "en": "Value",
+    },
+    "stats_export_streak": {
+        "zh-CN": "连续生成天数",
+        "en": "Current streak (days)",
+    },
+    "stats_export_day": {
+        "zh-CN": "日期",
+        "en": "Date",
+    },
+    "stats_export_images": {
+        "zh-CN": "张数",
+        "en": "Images",
+    },
+    "stats_export_provider": {
+        "zh-CN": "接口",
+        "en": "Provider",
+    },
+    "stats_export_count": {
+        "zh-CN": "次数",
+        "en": "Count",
+    },
+    "stats_export_usd": {
+        "zh-CN": "估算花费 (USD)",
+        "en": "Est. cost (USD)",
+    },
+    "stats_export_tag": {
+        "zh-CN": "标签",
+        "en": "Tag",
+    },
+    "stats_export_share_title": {
+        "zh-CN": "生成统计报告",
+        "en": "Generation Stats Report",
+    },
+    "stats_export_foot_cost": {
+        "zh-CN": "累计估算花费 {usd}",
+        "en": "Total est. cost {usd}",
+    },
+    "stats_export_foot_credit": {
+        "zh-CN": "由 2image 生成",
+        "en": "Made with 2image",
+    },
     "phrase_usage_line": {
         "zh-CN": "📊 已用于 {count} 张图片的提示词 · 最近使用 {last}",
         "en": "📊 Used in {count} prompts · last used {last}",

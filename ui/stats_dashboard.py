@@ -2,6 +2,8 @@
 ui/stats_dashboard.py — 统计仪表板
 """
 
+import os
+
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, date as _date, timedelta as _td
@@ -112,6 +114,35 @@ class StatsDashboard:
             command=lambda: _refresh_all(),
         )
         refresh_btn.pack(side="right", padx=16, pady=10)
+        # 导出按钮组（分享图 / CSV），位于刷新按钮左侧
+        export_img_btn = tk.Button(
+            hdr,
+            text=_("stats_export_image"),
+            font=F["body"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            relief="flat",
+            command=self._export_share_image,
+        )
+        export_img_btn.pack(side="right", pady=10)
+        export_csv_btn = tk.Button(
+            hdr,
+            text=_("stats_export_csv"),
+            font=F["body"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            relief="flat",
+            command=self._export_csv,
+        )
+        export_csv_btn.pack(side="right", padx=(0, 8), pady=10)
         # 刷新时间：就地刷新时同步更新，窗口不再销毁重建
         self._upd_lbl = tk.Label(
             hdr,
@@ -769,3 +800,44 @@ class StatsDashboard:
 
     def focus_force(self):
         self.win.focus_force()
+
+    # ── 导出 ────────────────────────────────────────────────
+    def _export_common(self, ext: str, filetypes: list):
+        """保存对话框公共路径解析；用户取消返回 None。"""
+        from tkinter import filedialog
+
+        return filedialog.asksaveasfilename(
+            title=_("stats_export_csv" if ext == "csv" else "stats_export_image"),
+            defaultextension=ext,
+            initialfile=f"2image-stats-{datetime.now().strftime('%Y-%m-%d')}{ext}",
+            filetypes=filetypes,
+            parent=self.win,
+        )
+
+    def _export_csv(self):
+        from services.stats_export import build_stats_csv
+
+        path = self._export_common(".csv", [("CSV", "*.csv")])
+        if not path:
+            return
+        try:
+            n = build_stats_csv(path)
+        except Exception as exc:
+            self.app._toast(_("stats_export_failed", err=str(exc)), "error")
+            return
+        self.app._toast(_("stats_export_done", name=os.path.basename(path)), "success")
+        self.app._log(f"📊 统计导出 CSV: {n} 行 → {path}")
+
+    def _export_share_image(self):
+        from services.stats_export import render_share_image
+
+        path = self._export_common(".png", [("PNG", "*.png")])
+        if not path:
+            return
+        try:
+            render_share_image(path)
+        except Exception as exc:
+            self.app._toast(_("stats_export_failed", err=str(exc)), "error")
+            return
+        self.app._toast(_("stats_export_done", name=os.path.basename(path)), "success")
+        self.app._log(f"📊 统计分享图: {path}")

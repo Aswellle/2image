@@ -801,12 +801,17 @@
  },
  {
   "file": "ui/stats_dashboard.py",
-  "line": 25,
+  "line": 27,
   "text": "统计仪表板 Toplevel 窗口。"
  },
  {
   "file": "ui/stats_dashboard.py",
-  "line": 492,
+  "line": 806,
+  "text": "保存对话框公共路径解析；用户取消返回 None。"
+ },
+ {
+  "file": "ui/stats_dashboard.py",
+  "line": 523,
   "text": "7 根柱子：高度按当日张数比例，末柱（今天）紫色描边呼应热力图。"
  },
  {
