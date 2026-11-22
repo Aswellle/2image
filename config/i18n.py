@@ -1586,6 +1586,22 @@ STRINGS = {
         "zh-CN": "⭐ 我的词条",
         "en": "⭐ My Phrases",
     },
+    "phrase_vars_title": {
+        "zh-CN": "填充模板变量",
+        "en": "Fill template variables",
+    },
+    "phrase_vars_hint": {
+        "zh-CN": "该词条包含 {{变量}} 占位符，填写后追加到输入框",
+        "en": "This phrase contains {{variables}} — fill them in to append",
+    },
+    "phrase_vars_missing": {
+        "zh-CN": "还有未填写的变量，请填写后再追加",
+        "en": "Please fill in all variables before appending",
+    },
+    "phrase_vars_append": {
+        "zh-CN": "追加",
+        "en": "Append",
+    },
     "status_copied_prompt": {
         "zh-CN": "📋 提示词已复制",
         "en": "📋 Prompt copied",

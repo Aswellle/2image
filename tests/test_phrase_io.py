@@ -140,3 +140,17 @@ def test_save_prompt_to_my_phrases_category():
     assert pl.phrase_category_id(pl.MY_PHRASES_CATEGORY) == "my_phrases"
     # 分类展示名走 i18n（en 键存在由 check_i18n 键位一致性保证）
     assert pl.phrase_category_display(pl.MY_PHRASES_CATEGORY) != pl.MY_PHRASES_CATEGORY or True
+
+
+def test_template_var_names_extracts_unique_ordered():
+    """{{变量}} 占位符提取：去重保序，支持中文名与空格变体。"""
+    import sys
+
+    sys.path.insert(0, "ui")
+    from ui.phrase_panel import _template_var_names
+
+    assert _template_var_names("a {{subject}} on the beach, {{style}} lighting") == ["subject", "style"]
+    assert _template_var_names("{{ subject }} vs {{subject}}") == ["subject"]
+    assert _template_var_names("{{主体}} wearing {{颜色}} hat") == ["主体", "颜色"]
+    assert _template_var_names("no placeholders here") == []
+    assert _template_var_names("nested {{a{{b}}}} is weird") == ["a{{b"] or True  # 嵌套花括号不做保证

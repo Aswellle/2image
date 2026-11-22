@@ -12,6 +12,8 @@ ui/phrase_panel.py  v2
     · 位置自动贴近鼠标右下 14px，并防止超出屏幕边界
 """
 
+import re
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -47,6 +49,19 @@ _CAT_COLORS = {
     "🌙 氛围情绪": C["cmp_b"],
     "👤 人物细节": "#0369a1",
 }
+
+
+def _template_var_names(phrase: str) -> list[str]:
+    """提取词条中的 {{变量}} 占位符名（去重保序）。
+
+    变量名支持任意非花括号内容（含中文），追加时弹对话框逐项填写。
+    """
+    names: list[str] = []
+    for m in re.finditer(r"\{\{([^{}]+)\}\}", phrase):
+        n = m.group(1).strip()
+        if n and n not in names:
+            names.append(n)
+    return names
 
 
 # ══════════════════════════════════════════════════════════════
@@ -696,16 +711,25 @@ class PhrasePanel(tk.Toplevel):
         return _("phrase_usage_line", count=stats["count"], last=stats["last"][:10])
 
     def _append_to_input(self, phrase: str):
+        # 模板词条（含 {{变量}} 占位符）先弹填充对话框，填好再追加
+        var_names = _template_var_names(phrase)
+        if var_names:
+            self._open_vars_dialog(phrase, var_names)
+            return
+        self._insert_phrase_text(phrase)
         record_phrase_use(phrase)
+        self.app._log(f"📚 追加词条: {phrase}")
+
+    def _insert_phrase_text(self, text: str):
+        """把（可能已填充变量的）词条文本追加进主输入框，带闪烁反馈。"""
         try:
             cur = self.app.pt.get("1.0", "end-1c").strip()
             sep = ", " if cur and not cur.endswith(",") else ""
-            self.app.pt.insert("end", f"{sep}{phrase}")
+            self.app.pt.insert("end", f"{sep}{text}")
             # 闪烁反馈
             orig = self.app.pt.cget("bg")
             self.app.pt.config(bg=C["card_fav"])
             self.app.root.after(250, lambda: self.app.pt.config(bg=orig))
-            self.app._log(f"📚 追加词条: {phrase}")
             # 同步更新字符计数器
             try:
                 self.app._update_char_count()
@@ -713,6 +737,103 @@ class PhrasePanel(tk.Toplevel):
                 pass
         except Exception:
             pass
+
+    def _open_vars_dialog(self, phrase: str, var_names: list[str]):
+        """模板变量填充对话框：逐项填写 {{变量}} 后追加到主输入框。"""
+        dlg = tk.Toplevel(self)
+        dlg.title(_("phrase_vars_title"))
+        dlg.configure(bg=C["panel"])
+        dlg.resizable(False, False)
+        dlg.transient(self)
+        dlg.grab_set()
+
+        tk.Label(
+            dlg, text=_("phrase_vars_hint"), font=F["small"], bg=C["panel"], fg=C["sub"], wraplength=340, justify="left"
+        ).pack(padx=14, pady=(12, 6), anchor="w")
+        # 词条原文预览（等宽小字，占位符一目了然）
+        tk.Label(
+            dlg,
+            text=phrase,
+            font=F["small"],
+            bg=C["inset"],
+            fg=C["text"],
+            wraplength=340,
+            justify="left",
+            padx=8,
+            pady=6,
+        ).pack(fill="x", padx=14)
+
+        entries: dict[str, tk.Entry] = {}
+        for name in var_names:
+            row = tk.Frame(dlg, bg=C["panel"])
+            row.pack(fill="x", padx=14, pady=(8, 0))
+            tk.Label(row, text=name, font=F["body_b"], bg=C["panel"], fg=C["ok"], width=14, anchor="w").pack(
+                side="left"
+            )
+            wrap = tk.Frame(row, bg=C["entry"], highlightbackground=C["ok"], highlightthickness=1)
+            wrap.pack(side="left", fill="x", expand=True)
+            ent = tk.Entry(
+                wrap, bg=C["entry"], fg=C["text"], insertbackground="white", font=F["input"], bd=0, relief="flat"
+            )
+            ent.pack(fill="x", padx=6, ipady=4)
+            entries[name] = ent
+
+        def _confirm(_=None):
+            values: dict[str, str] = {}
+            for name, ent in entries.items():
+                v = ent.get().strip()
+                if not v:
+                    messagebox.showwarning(_("dlg_tip"), _("phrase_vars_missing"), parent=dlg)
+                    ent.focus_set()
+                    return
+                values[name] = v
+            filled = re.sub(r"\{\{([^{}]+)\}\}", lambda m: values.get(m.group(1).strip(), m.group(0)), phrase)
+            dlg.destroy()
+            self._insert_phrase_text(filled)
+            record_phrase_use(phrase)
+            self.app._log(f"📚 追加词条: {filled}")
+
+        def _cancel(_=None):
+            dlg.destroy()
+
+        btns = tk.Frame(dlg, bg=C["panel"])
+        btns.pack(fill="x", padx=14, pady=12)
+        tk.Button(
+            btns,
+            text=_("phrase_vars_append"),
+            font=F["body_b"],
+            bg=C["ok"],
+            fg=C["ok_fg"],
+            bd=0,
+            padx=14,
+            pady=5,
+            cursor="hand2",
+            command=_confirm,
+        ).pack(side="right")
+        tk.Button(
+            btns,
+            text=_("btn_cancel"),
+            font=F["body"],
+            bg=C["panel"],
+            fg=C["sub"],
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=_cancel,
+        ).pack(side="right", padx=(0, 8))
+
+        dlg.bind("<Return>", _confirm)
+        dlg.bind("<Escape>", _cancel)
+        dlg.protocol("WM_DELETE_WINDOW", _cancel)
+        if entries:
+            entries[var_names[0]].focus_set()
+        # 居中于词库面板
+        dlg.update_idletasks()
+        dw, dh = dlg.winfo_reqwidth(), dlg.winfo_reqheight()
+        px = self.winfo_x() + max(0, (self.winfo_width() - dw) // 2)
+        py = self.winfo_y() + max(0, (self.winfo_height() - dh) // 2)
+        dlg.geometry(f"{dw}x{dh}+{px}+{py}")
 
     def _add_phrase(self):
         phrase = self._new_phrase_var.get().strip()
