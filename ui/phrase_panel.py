@@ -366,7 +366,7 @@ class PhrasePanel(tk.Toplevel):
         _ne.pack(fill="x", padx=8, ipady=5)
         _ne.bind("<FocusIn>", lambda _: nef.config(highlightbackground=C["entry"]), add="+")
         _ne.bind("<FocusOut>", lambda _: nef.config(highlightbackground=C["ok"]), add="+")
-        tk.Button(
+        self._add_btn = tk.Button(
             add_row,
             text=_("btn_add_to_category"),
             font=F["body"],
@@ -377,7 +377,8 @@ class PhrasePanel(tk.Toplevel):
             pady=4,
             cursor="hand2",
             command=self._add_phrase,
-        ).pack(side="left")
+        )
+        self._add_btn.pack(side="left")
         tk.Button(
             add_row,
             text=_("phrase_export_btn"),
@@ -417,13 +418,15 @@ class PhrasePanel(tk.Toplevel):
         if cats:
             self._select_cat(cats[0])
 
-    def _rebuild_cats(self):
+    def _rebuild_cats(self, searching: bool = False):
         for w in self._cat_frame.winfo_children():
             w.destroy()
         for cat in self._phrases.keys():
             color = _CAT_COLORS.get(cat, C["acc"])
             cat_label = phrase_category_display(cat)
-            is_sel = cat == self._cur_cat
+            # 跨分类搜索期间不显示任何选中分类：结果横跨所有分类，
+            # 残留高亮会让用户误以为结果来自该分类
+            is_sel = cat == self._cur_cat and not searching
             tk.Button(
                 self._cat_frame,
                 text=cat_label,
@@ -457,6 +460,7 @@ class PhrasePanel(tk.Toplevel):
             return
         # 搜索结果携带 (分类, 词条) 对：删除操作需要真实归属分类
         results = [(cat, p) for cat, phrases in self._phrases.items() for p in phrases if kw in p.lower()]
+        self._rebuild_cats(searching=True)
         self._render_chips(results, search_mode=True)
 
     # ── 词条渲染（含悬浮说明绑定）───────────────────────────
@@ -474,6 +478,10 @@ class PhrasePanel(tk.Toplevel):
         self._chip_btns.clear()
         self._chip_cv.yview_moveto(0)
 
+        # 搜索模式下无「当前分类」上下文：禁用新增按钮，防止写入用户看不到的分类
+        if getattr(self, "_add_btn", None) is not None:
+            self._add_btn.config(state="disabled" if search_mode else "normal")
+
         if not phrases:
             tk.Label(
                 self._chip_inner,
@@ -484,7 +492,7 @@ class PhrasePanel(tk.Toplevel):
             ).pack(pady=24, anchor="w", padx=16)
             return
 
-        color = _CAT_COLORS.get(self._cur_cat, C["acc"]) if not search_mode else C["acc"]
+        base_color = _CAT_COLORS.get(self._cur_cat, C["acc"]) if not search_mode else C["acc"]
         HL_BG = C["card_hl"]  # 悬停背景色
 
         # 常规模式为词条列表（归属当前分类）；搜索模式为 (分类, 词条) 对
@@ -498,9 +506,20 @@ class PhrasePanel(tk.Toplevel):
             row_idx, col_idx = divmod(i, 3)
             self._chip_inner.columnconfigure(col_idx, weight=1)
 
+            # 搜索模式：边框与追加按钮按词条真实归属分类着色，颜色即来源提示
+            color = _CAT_COLORS.get(cat, C["acc"]) if search_mode else base_color
+
             # ── 卡片主框 ──────────────────────────────────
             chip = tk.Frame(self._chip_inner, bg=C["card"], highlightbackground=color, highlightthickness=1)
             chip.grid(row=row_idx, column=col_idx, padx=5, pady=5, sticky="ew")
+
+            # ── 分类归属标注（仅搜索模式）──────────────────
+            cat_lbl = None
+            if search_mode:
+                cat_lbl = tk.Label(
+                    chip, text=phrase_category_display(cat), font=F["tiny"], bg=C["card"], fg=C["sub"], anchor="w"
+                )
+                cat_lbl.pack(side="left", padx=(8, 2))
 
             # ── 词条文字 label ─────────────────────────────
             lbl = tk.Label(
@@ -556,7 +575,8 @@ class PhrasePanel(tk.Toplevel):
                 attach_tooltip(del_phrase_btn, "tip_delete_phrase")
 
             # ── 点击整行也追加 ────────────────────────────
-            for w in (chip, lbl):
+            hit_widgets = (chip, lbl, cat_lbl) if cat_lbl is not None else (chip, lbl)
+            for w in hit_widgets:
                 w.bind("<Button-1>", lambda e, p=phrase: self._append_to_input(p))
 
             # ── 悬停高亮（chip + 内部所有 Label）─────────
@@ -572,7 +592,7 @@ class PhrasePanel(tk.Toplevel):
                     if isinstance(ch, tk.Label):
                         ch.config(bg=C["card"])
 
-            for w in (chip, lbl):
+            for w in hit_widgets:
                 w.bind("<Enter>", _enter, add="+")
                 w.bind("<Leave>", _leave, add="+")
 
@@ -590,6 +610,8 @@ class PhrasePanel(tk.Toplevel):
             )
             # 同时挂到 lbl，覆盖 lbl 内部的 Enter/Leave
             tip.attach(lbl)
+            if cat_lbl is not None:
+                tip.attach(cat_lbl)
             self._tips.append(tip)  # 防 GC
 
             self._chip_btns.append(chip)
@@ -598,6 +620,14 @@ class PhrasePanel(tk.Toplevel):
         if not search_mode:
             tk.Label(
                 self._chip_inner, text=_("phrase_footer", n=len(phrases)), font=F["small_i"], bg=C["bg"], fg=C["sub"]
+            ).grid(row=(len(phrases) - 1) // 3 + 1, column=0, columnspan=3, sticky="w", padx=8, pady=(8, 4))
+        else:
+            tk.Label(
+                self._chip_inner,
+                text=_("phrase_search_count", n=len(phrases)),
+                font=F["small_i"],
+                bg=C["bg"],
+                fg=C["sub"],
             ).grid(row=(len(phrases) - 1) // 3 + 1, column=0, columnspan=3, sticky="w", padx=8, pady=(8, 4))
 
     # ── 追加词条 ─────────────────────────────────────────────

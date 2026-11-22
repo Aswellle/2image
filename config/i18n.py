@@ -1702,6 +1702,10 @@ STRINGS = {
         "zh-CN": "共 {n} 条词条  ·  点击词条追加到输入框  ·  🖱 悬停查看中文说明",
         "en": "{n} phrases total  ·  Click phrase to append to input  ·  🖱 Hover for details",
     },
+    "phrase_search_count": {
+        "zh-CN": "找到 {n} 条匹配结果  ·  添加新词条请先清除搜索",
+        "en": "{n} matches  ·  Clear search to add new phrases",
+    },
     "dlg_enter_phrase": {
         "zh-CN": "请输入词条内容",
         "en": "Please enter phrase content",
