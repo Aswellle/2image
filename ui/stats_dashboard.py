@@ -255,7 +255,7 @@ class StatsDashboard:
             # 空库 onboarding：解释看板为何是零值并指明数据来源
             if not stats["total"]:
                 tk.Label(cards_f, text=_("stats_empty_hint"), font=F["body_i"], bg=BG, fg=SUB).grid(
-                    row=1, column=0, columnspan=5, sticky="w", pady=(6, 0)
+                    row=1, column=0, columnspan=6, sticky="w", pady=(6, 0)
                 )
 
         # ════════════════════════════════════════════════════════
