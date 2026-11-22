@@ -609,6 +609,31 @@ def get_phrase_stats(phrase: str) -> dict | None:
     return {"count": row["cnt"], "last": row["last"]}
 
 
+def get_provider_counts() -> dict[str, int]:
+    """全部供应商展示串 → 生成张数（不限条数；成本估算用）。"""
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT provider, COUNT(*) as cnt FROM history WHERE provider != '' GROUP BY provider"
+        ).fetchall()
+    return {r[0]: int(r[1]) for r in rows}
+
+
+def get_generation_streak() -> int:
+    """连续生成天数：从今天（今天没有则从昨天）往回数，每天至少 1 张。"""
+    with _conn() as c:
+        days = {r[0] for r in c.execute("SELECT DISTINCT substr(timestamp,1,10) as d FROM history").fetchall()}
+    if not days:
+        return 0
+    cur = datetime.now()
+    if cur.strftime("%Y-%m-%d") not in days:
+        cur = cur - timedelta(days=1)
+    streak = 0
+    while cur.strftime("%Y-%m-%d") in days:
+        streak += 1
+        cur = cur - timedelta(days=1)
+    return streak
+
+
 def get_year_heatmap(year: int) -> dict:
     """
     返回指定年全年每天的生成数量。

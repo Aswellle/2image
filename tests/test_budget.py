@@ -79,3 +79,44 @@ def test_router_excludes_paid_when_over_budget(tmp_spend):
     order = get_provider_order("banner 标题", cfg)
     assert "openai_image" not in order
     assert "siliconflow" in order  # 免费兜底仍在
+
+
+def test_estimate_history_cost_maps_display_names(in_memory_db):
+    """历史花费估算：展示串（manifest 名 + "/模型" 后缀）映射回 stable id 查单价。"""
+    from data import repository
+    from services.generation import budget
+
+    repository.add_entry("a", "", "/tmp/a.png", "Pollinations/flux")
+    repository.add_entry("b", "", "/tmp/b.png", "OpenAI/gpt-image-2.6-flare-standard")
+    repository.add_entry("c", "", "/tmp/c.png", "OpenAI/gpt-image-2.6-flare-hd")
+    repository.add_entry("d", "", "/tmp/d.png", "未知供应商字符串")
+    est = budget.estimate_history_cost()
+    assert est["count"] == 4
+    assert est["paid_count"] == 2
+    assert est["total"] == pytest.approx(0.10)
+    assert est["avg"] == pytest.approx(0.05)
+    assert est["by_provider"]["openai_image"]["count"] == 2
+    # 免费接口不进花费分布
+    assert "pollinations" not in est["by_provider"]
+
+
+def test_resolve_display_prefix_longest_match():
+    """最长前缀匹配：Nano-Banana-Pro 不被通用 Gemini 前缀吞掉。"""
+    from services.generation import budget
+
+    assert budget.resolve_display_to_id("Gemini/Nano-Banana-Pro") == "gemini_nano_banana_pro"
+    assert budget.resolve_display_to_id("Gemini/2.5-flash-image") == "gemini"
+    assert budget.resolve_display_to_id("豆包/doubao-seedream-5-5-261028") == "volcengine_ark"
+    assert budget.resolve_display_to_id("Pollinations.AI (免费·无需Key)") == "pollinations"  # 旧版遗留名
+    assert budget.resolve_display_to_id("完全未知的串") is None
+    assert budget.resolve_display_to_id("") is None
+
+
+def test_estimate_history_cost_empty(in_memory_db):
+    from services.generation import budget
+
+    est = budget.estimate_history_cost()
+    assert est["total"] == 0.0
+    assert est["paid_count"] == 0
+    assert est["avg"] == 0.0
+    assert est["by_provider"] == {}

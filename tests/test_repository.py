@@ -102,3 +102,14 @@ def test_get_phrase_stats_escapes_like_wildcards():
     assert repository.get_phrase_stats("%")["count"] == 1
     assert repository.get_phrase_stats("_")["count"] == 1
     assert repository.get_phrase_stats("50% off")["count"] == 1
+
+
+def test_provider_counts_and_streak(in_memory_db):
+    repository.add_entry("a", "", "/tmp/a.png", "Pollinations.AI")
+    repository.add_entry("b", "", "/tmp/b.png", "Pollinations.AI")
+    repository.add_entry("c", "", "/tmp/c.png", "OpenAI")
+    counts = repository.get_provider_counts()
+    assert counts["Pollinations.AI"] == 2
+    assert counts["OpenAI"] == 1
+    # 今天有记录 → 连续天数至少 1（跨天部分取决于系统日期连续性）
+    assert repository.get_generation_streak() >= 1

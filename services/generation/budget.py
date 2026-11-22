@@ -45,12 +45,103 @@ PRICING_USD_PER_IMAGE: dict[str, float] = {
 # 不在定价表中的付费接口按此兜底估算
 FALLBACK_ESTIMATE = 0.05
 
+# history.provider 展示串前缀（provider 返回，可带 "/模型名" 后缀）→ stable id。
+# 与 PRICING_USD_PER_IMAGE 并列维护：新供应商接入/返回格式变更时在此补一行。
+# 取最长前缀匹配，避免 "Gemini/" 误吞 "Gemini/Nano-Banana-Pro"。
+_DISPLAY_PREFIX_TO_ID: dict[str, str] = {
+    "Pollinations/": "pollinations",
+    "硅基流动/": "siliconflow",
+    "Gemini/Nano-Banana-Pro": "gemini_nano_banana_pro",
+    "Gemini/": "gemini",
+    "Cloudflare/": "cloudflare_ai",
+    "TogetherAI/": "together_ai",
+    "OpenRouter/": "openrouter",
+    "HuggingFace/": "huggingface",
+    "StableHorde/": "stablehorde",
+    "Segmind/": "segmind",
+    "ModelsLab/": "modelslab",
+    "BriaAI/": "bria_ai",
+    "DashScope/": "dashscope_qwen",
+    "OpenAI/": "openai_image",
+    "StabilityAI/": "stability_ai",
+    "Replicate/": "replicate_flux",
+    "xAI/": "xai_grok",
+    "BFL/": "bfl_flux",
+    "fal.ai/": "fal_flux",
+    "Ideogram/": "ideogram",
+    "Recraft/": "recraft",
+    "MiniMax/": "minimax_image",
+    "豆包/": "volcengine_ark",
+}
+
+
+def resolve_display_to_id(display: str) -> str | None:
+    """历史记录的展示串 → stable id（最长前缀匹配；未识别返回 None）。"""
+    clean = display.strip()
+    if not clean:
+        return None
+    from services.generation.provider_manifest import LEGACY_NAME_TO_ID
+
+    # 旧版历史可能存完整遗留展示名（不含 "/模型" 后缀）
+    if clean in LEGACY_NAME_TO_ID:
+        return LEGACY_NAME_TO_ID[clean]
+    best: tuple[int, str] | None = None
+    for prefix, pid in _DISPLAY_PREFIX_TO_ID.items():
+        if clean == prefix.rstrip("/") or clean.startswith(prefix):
+            if best is None or len(prefix) > best[0]:
+                best = (len(prefix), pid)
+    return best[1] if best else None
+
 _LOCK = threading.Lock()
 
 
 def estimate_cost(provider_id: str) -> float:
     """单张图估算成本（USD）；免费接口返回 0。"""
     return PRICING_USD_PER_IMAGE.get(provider_id, FALLBACK_ESTIMATE)
+
+
+def estimate_history_cost() -> dict:
+    """基于全部生成记录的累计估算花费（USD）。
+
+    history.provider 存展示串（provider 自定义格式，可带 "/模型" 后缀），
+    经 _DISPLAY_PREFIX_TO_ID 最长前缀映射回 stable id 再查单价表；
+    免费接口计 0。台账（spend.json）只保留当天，历史花费只能这样
+    估算——返回值是参考值，不是账单依据。
+
+    Returns
+    -------
+    {"total": 总估算, "paid_count": 付费张数, "avg": 单图均价,
+     "count": 总张数, "by_provider": {stable_id: {"count": n, "usd": 估算}}}
+    """
+    from data.repository import get_provider_counts
+
+    by_id: dict[str, int] = {}
+    total_count = 0
+    for display, cnt in get_provider_counts().items():
+        total_count += cnt
+        pid = resolve_display_to_id(display)
+        if pid:
+            by_id[pid] = by_id.get(pid, 0) + cnt
+
+    by_provider: dict[str, dict] = {}
+    total_usd = 0.0
+    paid_count = 0
+    for pid, cnt in by_id.items():
+        if not is_paid(pid):
+            continue
+        usd = estimate_cost(pid) * cnt
+        paid_count += cnt
+        total_usd += usd
+        by_provider[pid] = {"count": cnt, "usd": round(usd, 2)}
+
+    avg = total_usd / paid_count if paid_count else 0.0
+    return {
+        "total": round(total_usd, 2),
+        "paid_count": paid_count,
+        "avg": round(avg, 3),
+        "count": total_count,
+        "by_provider": by_provider,
+    }
 
 
 def is_paid(provider_id: str) -> bool:
