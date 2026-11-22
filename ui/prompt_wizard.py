@@ -1077,7 +1077,9 @@ class PromptWizard(tk.Toplevel):
         self._variant_idx = 0
         self._on_done(candidates[0], label)
         if len(candidates) > 1:
-            self._variant_bar.pack(fill="x", padx=14, pady=(2, 0))
+            # before= 插到结果框容器之前：pos_f 先 pack 且 expand=True
+            # 吃满剩余空间，直接 pack 会被挤到零高度（切换条从未显示）
+            self._variant_bar.pack(fill="x", padx=14, pady=(2, 0), before=self._pos_box.master)
             self._variant_sync()
 
     def _variant_sync(self):
