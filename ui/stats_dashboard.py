@@ -212,6 +212,11 @@ class StatsDashboard:
                 tk.Label(cell, text=glyph(icon), font=icon_font(18), bg=bg_c, fg=txt_c).pack(pady=(12, 2))
                 tk.Label(cell, text=str(value), font=F["display_b"], bg=bg_c, fg="white").pack(pady=0)
                 tk.Label(cell, text=label, font=F["body"], bg=bg_c, fg=txt_c).pack(pady=(2, 12))
+            # 空库 onboarding：解释看板为何是零值并指明数据来源
+            if not stats["total"]:
+                tk.Label(cards_f, text=_("stats_empty_hint"), font=F["body_i"], bg=BG, fg=SUB).grid(
+                    row=1, column=0, columnspan=5, sticky="w", pady=(6, 0)
+                )
 
         # ════════════════════════════════════════════════════════
         #   ② GitHub 风格全年热力图

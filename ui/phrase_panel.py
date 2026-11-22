@@ -499,13 +499,33 @@ class PhrasePanel(tk.Toplevel):
         self._wrap_pad = 150 if search_mode else 70
 
         if not phrases:
-            tk.Label(
-                self._chip_inner,
-                text=_("empty_no_phrases") if not search_mode else _("empty_no_match_results"),
-                font=(F["_sans"], 11, "italic"),
-                bg=C["bg"],
-                fg=C["sub"],
-            ).pack(pady=24, anchor="w", padx=16)
+            if search_mode:
+                # 搜索空态就近给出恢复动作：一键清除搜索
+                box = tk.Frame(self._chip_inner, bg=C["bg"])
+                box.pack(pady=24, anchor="w", padx=16)
+                tk.Label(
+                    box, text=_("empty_no_match_results"), font=(F["_sans"], 11, "italic"), bg=C["bg"], fg=C["sub"]
+                ).pack(anchor="w")
+                tk.Button(
+                    box,
+                    text=_("btn_clear_search"),
+                    font=F["body"],
+                    bg=C["panel"],
+                    fg=C["sub"],
+                    bd=0,
+                    padx=10,
+                    pady=5,
+                    cursor="hand2",
+                    command=lambda: self._sv.set(""),
+                ).pack(anchor="w", pady=(10, 0))
+            else:
+                tk.Label(
+                    self._chip_inner,
+                    text=_("empty_no_phrases"),
+                    font=(F["_sans"], 11, "italic"),
+                    bg=C["bg"],
+                    fg=C["sub"],
+                ).pack(pady=24, anchor="w", padx=16)
             return
 
         base_color = _CAT_COLORS.get(self._cur_cat, C["acc"]) if not search_mode else C["acc"]

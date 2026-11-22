@@ -1718,6 +1718,10 @@ STRINGS = {
         "zh-CN": "全部时间 · 百分比为前十名内部占比",
         "en": "All time · percentages are shares within the top 10",
     },
+    "stats_empty_hint": {
+        "zh-CN": "还没有生成记录——完成首次生成后，这里会展示你的创作数据",
+        "en": "No generations yet — your creation stats will appear here after your first image",
+    },
     "dlg_enter_phrase": {
         "zh-CN": "请输入词条内容",
         "en": "Please enter phrase content",
