@@ -1710,6 +1710,14 @@ STRINGS = {
         "zh-CN": "该词条已存在于此分类",
         "en": "This phrase already exists in this category",
     },
+    "stats_scope_all_time": {
+        "zh-CN": "全部时间",
+        "en": "All time",
+    },
+    "stats_top_tags_scope": {
+        "zh-CN": "全部时间 · 百分比为前十名内部占比",
+        "en": "All time · percentages are shares within the top 10",
+    },
     "dlg_enter_phrase": {
         "zh-CN": "请输入词条内容",
         "en": "Please enter phrase content",

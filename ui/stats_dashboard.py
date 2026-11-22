@@ -458,7 +458,8 @@ class StatsDashboard:
         # ════════════════════════════════════════════════════════
         #   ③ 接口使用分布（容器 + 可重绘函数）
         # ════════════════════════════════════════════════════════
-        _sec_title("📡", _("stats_provider_dist"))
+        # 年份选择器只作用于热力图：这里显式标注全时段口径，避免切年后误读
+        _sec_title("📡", _("stats_provider_dist"), _("stats_scope_all_time"))
         pf = tk.Frame(inner, bg=BG)
         pf.pack(fill="x", padx=PX, pady=(8, 0))
 
@@ -537,7 +538,7 @@ class StatsDashboard:
         # ════════════════════════════════════════════════════════
         #   ④ 标签热度 Top-10（容器 + 可重绘函数）
         # ════════════════════════════════════════════════════════
-        _sec_title("🏷", _("stats_top_tags"))
+        _sec_title("🏷", _("stats_top_tags"), _("stats_top_tags_scope"))
         tf = tk.Frame(inner, bg=BG)
         tf.pack(fill="x", padx=PX, pady=(8, 36))
 
