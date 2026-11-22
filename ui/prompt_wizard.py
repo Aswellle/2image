@@ -1090,23 +1090,29 @@ class PromptWizard(tk.Toplevel):
         # 新一轮生成重置候选：单候选/失败时切换条自动消失
         self._reset_variants()
 
+        def _emit(fn):
+            """向主线程派发结果；面板已确认关闭时 after 抛 TclError，静默退出即可。"""
+            try:
+                self.after(0, fn)
+            except tk.TclError:
+                pass
+
         def _run():
             if not multi:
                 try:
                     pos, _ = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
-                    self.after(0, lambda: self._on_done(pos, label))
+                    _emit(lambda: self._on_done(pos, label))
                 except Exception as ex:
-                    self.after(0, lambda e=str(ex): self._on_error(e))
+                    _emit(lambda e=str(ex): self._on_error(e))
                 return
             # 多候选：串行生成 3 次（独立随机性），单次失败不中断
             total = 3
             candidates: list[str] = []
             for i in range(total):
-                self.after(
-                    0,
+                _emit(
                     lambda i=i: self._param_status.config(
                         text=_("wizard_variant_progress", i=i + 1, total=total), fg=C["sub"]
-                    ),
+                    )
                 )
                 try:
                     pos, _ = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
@@ -1115,9 +1121,9 @@ class PromptWizard(tk.Toplevel):
                 except Exception as ex:
                     self.app._log(f"⚠ 候选 {i + 1} 生成失败: {ex}")
             if not candidates:
-                self.after(0, lambda: self._on_error(_("wizard_variants_failed")))
+                _emit(lambda: self._on_error(_("wizard_variants_failed")))
                 return
-            self.after(0, lambda: self._on_done_multi(candidates, label))
+            _emit(lambda: self._on_done_multi(candidates, label))
 
         threading.Thread(target=_run, daemon=True).start()
 
