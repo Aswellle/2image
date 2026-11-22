@@ -668,11 +668,25 @@ def export_custom(path: str) -> int:
     """导出自定义词库为 JSON（分类 → 词条列表），返回导出的词条总数。
 
     只含自定义层；内置 45 条词条随应用分发，无需导出。
+    与词库保存同款临时文件 + 原子替换，中断不留半截导出文件。
     """
+    import tempfile
+
     data = _load_custom()
     total = sum(len(v) for v in data.values())
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    target_dir = os.path.dirname(os.path.abspath(path)) or "."
+    os.makedirs(target_dir, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=target_dir, suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
     return total
 
 
