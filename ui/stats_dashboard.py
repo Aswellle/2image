@@ -102,14 +102,18 @@ class StatsDashboard:
             pady=4,
             cursor="hand2",
             relief="flat",
-            command=lambda: (win.destroy(), self.app._show_stats()),
+            command=lambda: _refresh_all(),
         )
         refresh_btn.pack(side="right", padx=16, pady=10)
-        # 刷新时间
-        now_str = datetime.now().strftime("%H:%M:%S")
-        tk.Label(hdr, text=_("stats_updated_at", time=now_str), font=F["small"], bg=C["empty"], fg=SUB).pack(
-            side="right", padx=4, pady=10
+        # 刷新时间：就地刷新时同步更新，窗口不再销毁重建
+        self._upd_lbl = tk.Label(
+            hdr,
+            text=_("stats_updated_at", time=datetime.now().strftime("%H:%M:%S")),
+            font=F["small"],
+            bg=C["empty"],
+            fg=SUB,
         )
+        self._upd_lbl.pack(side="right", padx=4, pady=10)
 
         tk.Frame(win, bg=BORDER, height=1).pack(fill="x")
 
@@ -185,28 +189,29 @@ class StatsDashboard:
                 tk.Label(row, text=sub, font=F["small_i"], bg=C["panel"], fg=SUB).pack(side="left", padx=10)
 
         # ════════════════════════════════════════════════════════
-        #   ① 汇总数字卡片
+        #   ① 汇总数字卡片（容器 + 可重绘函数，供就地刷新复用）
         # ════════════════════════════════════════════════════════
-        stats = get_stats()
-
         cards_f = tk.Frame(inner, bg=BG)
         cards_f.pack(fill="x", padx=PX, pady=(20, 0))
         for i in range(5):
             cards_f.columnconfigure(i, weight=1)
 
-        card_data = [
-            ("image", _("stats_total_images"), stats["total"], "#0c2f5c", "#93c5fd"),
-            ("star_fill", _("stats_favorites"), stats["favorites"], "#3b0764", "#c4b5fd"),
-            ("sun", _("stats_today"), stats["today"], "#052e16", "#6ee7b7"),
-            ("calendar", _("stats_last_7d"), stats["week"], "#451a03", "#fcd34d"),
-            ("clock", _("stats_last_30d"), stats.get("month", 0), "#1e1b4b", "#a5b4fc"),
-        ]
-        for col, (icon, label, value, bg_c, txt_c) in enumerate(card_data):
-            cell = tk.Frame(cards_f, bg=bg_c, highlightbackground=BORDER, highlightthickness=1)
-            cell.grid(row=0, column=col, padx=5, pady=4, sticky="nsew")
-            tk.Label(cell, text=glyph(icon), font=icon_font(18), bg=bg_c, fg=txt_c).pack(pady=(12, 2))
-            tk.Label(cell, text=str(value), font=F["display_b"], bg=bg_c, fg="white").pack(pady=0)
-            tk.Label(cell, text=label, font=F["body"], bg=bg_c, fg=txt_c).pack(pady=(2, 12))
+        def _render_summary(stats: dict):
+            for w in cards_f.winfo_children():
+                w.destroy()
+            card_data = [
+                ("image", _("stats_total_images"), stats["total"], "#0c2f5c", "#93c5fd"),
+                ("star_fill", _("stats_favorites"), stats["favorites"], "#3b0764", "#c4b5fd"),
+                ("sun", _("stats_today"), stats["today"], "#052e16", "#6ee7b7"),
+                ("calendar", _("stats_last_7d"), stats["week"], "#451a03", "#fcd34d"),
+                ("clock", _("stats_last_30d"), stats.get("month", 0), "#1e1b4b", "#a5b4fc"),
+            ]
+            for col, (icon, label, value, bg_c, txt_c) in enumerate(card_data):
+                cell = tk.Frame(cards_f, bg=bg_c, highlightbackground=BORDER, highlightthickness=1)
+                cell.grid(row=0, column=col, padx=5, pady=4, sticky="nsew")
+                tk.Label(cell, text=glyph(icon), font=icon_font(18), bg=bg_c, fg=txt_c).pack(pady=(12, 2))
+                tk.Label(cell, text=str(value), font=F["display_b"], bg=bg_c, fg="white").pack(pady=0)
+                tk.Label(cell, text=label, font=F["body"], bg=bg_c, fg=txt_c).pack(pady=(2, 12))
 
         # ════════════════════════════════════════════════════════
         #   ② GitHub 风格全年热力图
@@ -417,8 +422,7 @@ class StatsDashboard:
                 end_x, legend_y + CELL_S // 2, text=_("stats_more"), fill=SUB, font=F["tiny"], anchor="w"
             )
 
-        # 年份按钮组（右侧面板）
-        available_years = get_available_years()
+        # 年份按钮组（右侧面板；每次重建重查可用年份，就地刷新后新年份即时可见）
         _sel_year = [datetime.now().year]
 
         def _build_year_buttons():
@@ -426,7 +430,7 @@ class StatsDashboard:
                 w.destroy()
             tk.Label(right_rail, text=_("stats_year"), font=F["small_b"], bg=C["empty"], fg=SUB, pady=10).pack(fill="x")
             tk.Frame(right_rail, bg=BORDER, height=1).pack(fill="x")
-            for yr in available_years:
+            for yr in get_available_years():
                 is_sel = yr == _sel_year[0]
                 btn = tk.Button(
                     right_rail,
@@ -452,7 +456,7 @@ class StatsDashboard:
         hmap_cv_host.after(80, lambda: _draw_heatmap(_sel_year[0]))
 
         # ════════════════════════════════════════════════════════
-        #   ③ 接口使用分布（优化版）
+        #   ③ 接口使用分布（容器 + 可重绘函数）
         # ════════════════════════════════════════════════════════
         _sec_title("📡", _("stats_provider_dist"))
         pf = tk.Frame(inner, bg=BG)
@@ -460,7 +464,12 @@ class StatsDashboard:
 
         BAR_COLORS = [OK, "#60a5fa", "#a78bfa", "#fb923c", "#f472b6", "#34d399", "#fbbf24", "#f87171"]
 
-        if stats["providers"]:
+        def _render_providers(stats: dict):
+            for w in pf.winfo_children():
+                w.destroy()
+            if not stats["providers"]:
+                tk.Label(pf, text=_("status_no_records"), font=F["body"], bg=BG, fg=SUB).pack(anchor="w", pady=12)
+                return
             max_c = max(p["cnt"] for p in stats["providers"]) or 1
             for i, p in enumerate(stats["providers"]):
                 # 固定四列：名称 → 比例条 → 调用次数徽章 → 百分比。
@@ -524,17 +533,20 @@ class StatsDashboard:
                 tk.Label(row, text=f"{pct:.0f}%", font=F["small"], bg=BG, fg=SUB, anchor="w").grid(
                     row=0, column=3, sticky="w"
                 )
-        else:
-            tk.Label(pf, text=_("status_no_records"), font=F["body"], bg=BG, fg=SUB).pack(anchor="w", pady=12)
 
         # ════════════════════════════════════════════════════════
-        #   ④ 标签热度 Top-10（精修版）
+        #   ④ 标签热度 Top-10（容器 + 可重绘函数）
         # ════════════════════════════════════════════════════════
         _sec_title("🏷", _("stats_top_tags"))
         tf = tk.Frame(inner, bg=BG)
         tf.pack(fill="x", padx=PX, pady=(8, 36))
 
-        if stats["top_tags"]:
+        def _render_tags(stats: dict):
+            for w in tf.winfo_children():
+                w.destroy()
+            if not stats["top_tags"]:
+                tk.Label(tf, text=_("stats_no_tags"), font=F["body_i"], bg=BG, fg=SUB).pack(anchor="w", pady=16)
+                return
             max_tc = stats["top_tags"][0][1] or 1
             RANK_COLORS = ["#f59e0b", "#94a3b8", "#b45309"] + ["#475569"] * 10
             for rank, (tag, cnt) in enumerate(stats["top_tags"], 1):
@@ -578,8 +590,21 @@ class StatsDashboard:
                     width=11,
                     anchor="w",
                 ).pack(side="left", padx=8)
-        else:
-            tk.Label(tf, text=_("stats_no_tags"), font=F["body_i"], bg=BG, fg=SUB).pack(anchor="w", pady=16)
+
+        # ── 就地刷新：重读数据重绘全部动态区，窗口/滚动位置/年份选择保留 ──
+        def _refresh_all():
+            fresh = get_stats()
+            self._upd_lbl.config(text=_("stats_updated_at", time=datetime.now().strftime("%H:%M:%S")))
+            _render_summary(fresh)
+            _render_providers(fresh)
+            _render_tags(fresh)
+            _build_year_buttons()
+            _draw_heatmap(_sel_year[0])
+
+        stats = get_stats()
+        _render_summary(stats)
+        _render_providers(stats)
+        _render_tags(stats)
 
     # ── 单例代理：App._show_stats 以窗口语义管理本实例 ─────────
     def winfo_exists(self) -> bool:
