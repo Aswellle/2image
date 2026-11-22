@@ -546,37 +546,42 @@
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 739,
-  "text": "词条在生成记录中的使用概况（悬浮说明追加行）；无记录返回空串。"
+  "line": 471,
+  "text": "公共刷新入口：供词库面板外的模块（侧栏一键收藏等）触发重载。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 759,
+  "line": 747,
+  "text": "词条在生成记录中的使用概况（悬浮说明追加行）；无记录返回空串。\n\n        结果按词条缓存（命中与未命中都记）：面"
+ },
+ {
+  "file": "ui/phrase_panel.py",
+  "line": 772,
   "text": "把（可能已填充变量的）词条文本追加进主输入框，带闪烁反馈。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 777,
+  "line": 790,
   "text": "模板变量填充对话框：逐项填写 {{变量}} 后追加到主输入框。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 874,
+  "line": 887,
   "text": "新建自定义分类：命名后立即可在下方添加词条。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 950,
+  "line": 963,
   "text": "编辑自定义词条的说明文本（显示在悬浮提示里；随导出文件迁移）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 1050,
+  "line": 1063,
   "text": "自定义词库导出为 JSON 文件（换机/备份）。"
  },
  {
   "file": "ui/phrase_panel.py",
-  "line": 1067,
+  "line": 1080,
   "text": "从 JSON 文件合并导入自定义词条（已存在/内置的跳过）。"
  },
  {
@@ -631,43 +636,48 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1125,
+  "line": 1131,
   "text": "清空候选列表并隐藏切换条（新一轮生成 / 模板应用 / 清除内容时）。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1132,
+  "line": 1138,
   "text": "多候选完成：记录列表并呈现第一个候选，切换条随候选数显示。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1144,
+  "line": 1150,
   "text": "‹/› 在候选之间循环切换并刷新结果框。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1285,
+  "line": 1291,
   "text": "正面提示词文本框内容变更时触发词数指示器刷新。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1293,
+  "line": 1299,
   "text": "实时更新 Token 预算指示器：\n        · 右上角标签：词数/字符数\n        · 智能压缩按钮：仅在"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1329,
+  "line": 1335,
   "text": "智能压缩按钮处理器：将提示词截断到预算以内。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1422,
+  "line": 1428,
   "text": "打开 AI 提示词助手模型密钥配置向导。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1431,
+  "line": 1437,
   "text": "根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"
+ },
+ {
+  "file": "ui/prompt_wizard.py",
+  "line": 1094,
+  "text": "向主线程派发结果；面板已确认关闭时 after 抛 TclError，静默退出即可。"
  },
  {
   "file": "ui/queue_panel.py",
@@ -806,7 +816,7 @@
  },
  {
   "file": "ui/stats_dashboard.py",
-  "line": 806,
+  "line": 807,
   "text": "保存对话框公共路径解析；用户取消返回 None。"
  },
  {
