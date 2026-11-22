@@ -26,6 +26,7 @@ from services.phrase_library import (
     is_builtin,
     get_phrase_desc,
 )
+from data.repository import get_phrase_stats
 from config.fonts import F
 from config.theme import DARK_THEME as C
 from ui.icons import glyph, icon_font
@@ -68,11 +69,12 @@ class _PhraseTooltip:
     _FRAME_MS = FADE_FRAME_MS
     _MAX_ALPHA = TIP_MAX_ALPHA
 
-    def __init__(self, root: tk.Misc, widget: tk.Widget, phrase: str, desc: str):
+    def __init__(self, root: tk.Misc, widget: tk.Widget, phrase: str, desc: str, stats_fn=None):
         self._root = root
         self._widget = widget
         self._phrase = phrase
         self._desc = desc
+        self._stats_fn = stats_fn  # 懒查询生成记录使用概况：悬停时才调用
 
         self._win = None  # Toplevel
         self._show_id = None  # after ID：延迟显示计时器
@@ -175,10 +177,18 @@ class _PhraseTooltip:
         # 分隔线
         tk.Frame(border, bg=C["purple_deep"], height=1).pack(fill="x")
 
-        # 中文说明正文
+        # 中文说明正文（可追加生成记录使用概况）
+        desc_text = self._desc
+        if self._stats_fn:
+            try:
+                extra = self._stats_fn(self._phrase)
+            except Exception:
+                extra = ""
+            if extra:
+                desc_text = f"{desc_text}\n\n{extra}"
         tk.Label(
             border,
-            text=self._desc,
+            text=desc_text,
             font=F["body"],
             bg=C["inset"],
             fg=C["text"],
@@ -650,6 +660,7 @@ class PhrasePanel(tk.Toplevel):
                 widget=chip,
                 phrase=phrase,
                 desc=desc,
+                stats_fn=self._phrase_usage_line,
             )
             # 同时挂到 lbl，覆盖 lbl 内部的 Enter/Leave
             tip.attach(lbl)
@@ -674,6 +685,16 @@ class PhrasePanel(tk.Toplevel):
             ).grid(row=(len(phrases) - 1) // 3 + 1, column=0, columnspan=3, sticky="w", padx=8, pady=(8, 4))
 
     # ── 追加词条 ─────────────────────────────────────────────
+    def _phrase_usage_line(self, phrase: str) -> str:
+        """词条在生成记录中的使用概况（悬浮说明追加行）；无记录返回空串。"""
+        try:
+            stats = get_phrase_stats(phrase)
+        except Exception:
+            return ""
+        if not stats:
+            return ""
+        return _("phrase_usage_line", count=stats["count"], last=stats["last"][:10])
+
     def _append_to_input(self, phrase: str):
         record_phrase_use(phrase)
         try:

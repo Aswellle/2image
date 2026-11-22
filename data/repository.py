@@ -588,6 +588,27 @@ def migrate_from_json(json_path: str) -> dict:
     return result
 
 
+def get_phrase_stats(phrase: str) -> dict | None:
+    """词条在生成记录中的使用概况（prompt/translated 模糊匹配）。
+
+    返回 {"count": 出现次数, "last": 最近时间}；无记录返回 None。
+    LIKE 通配符已转义，词条含 %/_ 时按字面匹配。
+    """
+    clean = phrase.strip()
+    if not clean:
+        return None
+    pat = "%" + clean.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+    with _conn() as c:
+        row = c.execute(
+            "SELECT COUNT(*) AS cnt, MAX(timestamp) AS last FROM history "
+            "WHERE prompt LIKE ? ESCAPE '\\' OR translated LIKE ? ESCAPE '\\'",
+            (pat, pat),
+        ).fetchone()
+    if not row or not row["cnt"]:
+        return None
+    return {"count": row["cnt"], "last": row["last"]}
+
+
 def get_year_heatmap(year: int) -> dict:
     """
     返回指定年全年每天的生成数量。

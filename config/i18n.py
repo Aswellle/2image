@@ -1722,6 +1722,10 @@ STRINGS = {
         "zh-CN": "还没有生成记录——完成首次生成后，这里会展示你的创作数据",
         "en": "No generations yet — your creation stats will appear here after your first image",
     },
+    "phrase_usage_line": {
+        "zh-CN": "📊 已用于 {count} 张图片的提示词 · 最近使用 {last}",
+        "en": "📊 Used in {count} prompts · last used {last}",
+    },
     "dlg_enter_phrase": {
         "zh-CN": "请输入词条内容",
         "en": "Please enter phrase content",

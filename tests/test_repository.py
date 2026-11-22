@@ -83,3 +83,22 @@ def test_delete_entry():
     assert repository.count_entries() == 1
     repository.delete_entry(1, remove_file=False)
     assert repository.count_entries() == 0
+
+
+def test_get_phrase_stats_matches_prompt_and_translated():
+    repository.add_entry("一只猫", "a cat with golden hour lighting", "/tmp/a.png", "X")
+    repository.add_entry("cat at night", "", "/tmp/b.png", "X")
+    stats = repository.get_phrase_stats("golden hour")
+    assert stats is not None and stats["count"] == 1
+    assert stats["last"].startswith("20")
+    assert repository.get_phrase_stats("cat")["count"] == 2
+    assert repository.get_phrase_stats("nonexistent-phrase-xyz") is None
+
+
+def test_get_phrase_stats_escapes_like_wildcards():
+    """词条含 %/_ 时按字面匹配，不作为 LIKE 通配符扩散。"""
+    repository.add_entry("50% off sale poster", "", "/tmp/a.png", "X")
+    repository.add_entry("a_b test", "", "/tmp/b.png", "X")
+    assert repository.get_phrase_stats("%")["count"] == 1
+    assert repository.get_phrase_stats("_")["count"] == 1
+    assert repository.get_phrase_stats("50% off")["count"] == 1
