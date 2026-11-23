@@ -348,8 +348,17 @@ STRINGS = {
         "en": "Delete this record? The image file will also be deleted.",
     },
     "dlg_confirm_clear": {
-        "zh-CN": "确定清空全部历史记录？此操作不可撤销。",
-        "en": "Clear all history? This cannot be undone.",
+        "zh-CN": "🗑 清空历史记录",
+        "en": "🗑 Clear history",
+    },
+    "dlg_reset_view_title": {
+        "zh-CN": "🔄 恢复初始视图？",
+        "en": "🔄 Reset view?",
+    },
+    "dlg_reset_view_body": {
+        "zh-CN": "将清除搜索与筛选条件、清空提示词草稿，并取消当前预览选择。\n历史记录与磁盘图片不受影响。",
+        "en": "Search and filters will be cleared, the prompt draft emptied, "
+        "and the current preview deselected.\nHistory records and disk images are not affected.",
     },
     "dlg_select_export_dir": {
         "zh-CN": "选择导出目录",
@@ -528,8 +537,8 @@ STRINGS = {
         "en": 'Add to favorites?\n\n"{name}"',
     },
     "dlg_confirm_clear_n_body": {
-        "zh-CN": "清空全部 {n} 条记录？\n（不删除磁盘图片文件）",
-        "en": "Clear all {n} records?\n(Disk image files are kept)",
+        "zh-CN": "将永久删除全部 {n} 条历史记录，此操作不可撤销。\n磁盘上的图片文件会保留。",
+        "en": "Permanently delete all {n} history records? This cannot be undone.\nImage files on disk are kept.",
     },
     "dlg_queue_empty_prompt": {
         "zh-CN": "请先在主输入框填写提示词",

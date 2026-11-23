@@ -625,6 +625,11 @@ class App:
             pass
 
     def _reset_view(self):
+        # 二次确认：重置会清空提示词草稿与筛选条件，不可用撤销恢复
+        if not messagebox.askyesno(
+            _("dlg_reset_view_title"), _("dlg_reset_view_body"), parent=self.root, icon="warning"
+        ):
+            return
         # 重置全部过滤状态，确保"重置视图"能恢复完整列表
         self.sidebar._tag_filter = ""
         self.sidebar._fav_only = False

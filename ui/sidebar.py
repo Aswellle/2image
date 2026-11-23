@@ -1123,6 +1123,7 @@ class HistorySidebar:
         win.title(_("dlg_edit_tag_title", name=title_str[:30]))
         win.configure(bg=C["bg"])
         win.resizable(False, False)
+        win.transient(self.app.root)  # 归属主窗：模态期间点击外部不会关闭/推后
         win.grab_set()
         win.update_idletasks()
         # 窗口几何按缩放系数放大（高 DPI 下字体放大）
@@ -1457,7 +1458,9 @@ class HistorySidebar:
         n = count_entries()
         if not n:
             return
-        if messagebox.askyesno(_("dlg_confirm_clear"), _("dlg_confirm_clear_n_body", n=n)):
+        if messagebox.askyesno(
+            _("dlg_confirm_clear"), _("dlg_confirm_clear_n_body", n=n), parent=self.app.root, icon="warning"
+        ):
             clear_all_entries()
             # 全部记录已清除，选中项与预览不得再指向已不存在的图
             self.app.sel_id = None
