@@ -32,6 +32,7 @@ def test_reset_asks_confirmation_then_clears_view_state(e2e):
     e2e.app._refresh_hist()
     e2e.pump()
     e2e.app.sidebar._fav_only = True
+    e2e.app.sidebar.sv.set("keep me")
     e2e.set_prompt("draft prompt to clear")
 
     e2e.app._reset_view()
@@ -39,6 +40,7 @@ def test_reset_asks_confirmation_then_clears_view_state(e2e):
 
     assert "askyesno" in e2e.dialog_kinds(), "重置必须弹二次确认"
     assert e2e.app.sidebar._fav_only is False
+    assert e2e.app.sidebar.sv.get() == "", "重置必须清除搜索关键字（与确认文案一致）"
     assert e2e.app.content.pt.get("1.0", "end-1c").strip() == ""
     assert count_entries() == 1, "重置视图不得删除历史记录"
 

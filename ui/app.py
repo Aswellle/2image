@@ -633,6 +633,16 @@ class App:
         # 重置全部过滤状态，确保"重置视图"能恢复完整列表
         self.sidebar._tag_filter = ""
         self.sidebar._fav_only = False
+        # 确认文案承诺清除搜索：不清关键字会让重置后列表仍被旧搜索过滤
+        if self.sidebar.sv.get():
+            self.sidebar.sv.set("")  # trace 会调度一次防抖刷新
+            timer = self.sidebar._search_timer
+            if timer is not None:
+                try:
+                    self.root.after_cancel(timer)
+                except tk.TclError:
+                    pass
+                self.sidebar._search_timer = None
         try:
             self.sidebar._btn_all.config(bg=C["acc"], fg="white")
             self.sidebar._btn_fav.config(bg=C["panel"], fg=C["text_secondary"])
