@@ -798,10 +798,8 @@ class PhrasePanel(tk.Toplevel):
             cur = self.app.pt.get("1.0", "end-1c").strip()
             sep = ", " if cur and not cur.endswith(",") else ""
             self.app.pt.insert("end", f"{sep}{text}")
-            # 闪烁反馈
-            orig = self.app.pt.cget("bg")
-            self.app.pt.config(bg=C["card_fav"])
-            self.app.root.after(250, lambda: self.app.pt.config(bg=orig))
+            # 闪烁反馈（集中管理恢复定时器，连续追加不会把高亮色当底色写回）
+            self.app.content.flash_prompt(250)
             # 同步更新字符计数器
             try:
                 self.app._update_char_count()

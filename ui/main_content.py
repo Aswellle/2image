@@ -250,6 +250,7 @@ class MainContent:
         self._prev_resize_timer = None
         self._cmp_resize_timer = None
         self._ref_resize_timer = None
+        self._pt_flash_id = None  # 输入框插入回执高亮的恢复定时器
 
         self._build(parent)
 
@@ -1151,6 +1152,28 @@ class MainContent:
             self._pt_ph.place(x=10, y=8)
         else:
             self._pt_ph.place_forget()
+
+    def flash_prompt(self, delay_ms: int = 250) -> None:
+        """输入框插入回执：短暂高亮后恢复。
+
+        连续触发只保留最后一次恢复定时器；恢复目标固定为 entry 令牌——
+        若在闪烁期间再次取 cget("bg") 作为「原底色」，会把高亮色写回并
+        永久卡在闪烁态。
+        """
+        try:
+            if self._pt_flash_id is not None:
+                self.app.root.after_cancel(self._pt_flash_id)
+            self.pt.config(bg=C["card_fav"])
+            self._pt_flash_id = self.app.root.after(delay_ms, self._reset_prompt_bg)
+        except tk.TclError:
+            self._pt_flash_id = None
+
+    def _reset_prompt_bg(self) -> None:
+        self._pt_flash_id = None
+        try:
+            self.pt.config(bg=C["entry"])
+        except tk.TclError:
+            pass
 
     def _update_char_count(self):
         """更新输入框字符计数标签（公开，供 PhrasePanel 等外部调用）。"""

@@ -1395,11 +1395,9 @@ class PromptWizard(tk.Toplevel):
         self._set_template_state(self._TEMPLATE_IDLE)
         self._status_lbl.config(text=_("wizard_filled_main"), fg=C["ok"])
         self.after(3000, lambda: self._status_lbl.config(text=""))
-        # 主输入框背景短暂闪绿
+        # 主输入框背景短暂闪绿（集中管理恢复定时器，避免连点叠加卡色）
         try:
-            orig = self.app.pt.cget("bg")
-            self.app.pt.config(bg=C["card_fav"])
-            self.app.root.after(300, lambda: self.app.pt.config(bg=orig))
+            self.app.content.flash_prompt(300)
         except Exception:
             pass
 

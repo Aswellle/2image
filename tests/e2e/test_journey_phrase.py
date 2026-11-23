@@ -3,6 +3,7 @@
 import json
 import tkinter as tk
 
+from config.theme import C
 from data.repository import add_entry
 from services import phrase_library as pl
 
@@ -87,6 +88,21 @@ def test_add_custom_phrase_end_to_end(e2e):
     e2e.pump()
     all_phrases = pl.get_all_phrases()
     assert "my custom e2e phrase" in all_phrases[cat]
+
+
+def test_prompt_flash_restores_entry_background(e2e):
+    """连续追加两次：只保留最后一个恢复定时器，最终回到 entry 底色。
+
+    回归：每次闪烁都以当前 bg 作为「原底色」，第二次会把高亮色写回，
+    输入框永久卡在闪烁态。
+    """
+    pp = _open(e2e)
+    pp._insert_phrase_text("first phrase")
+    pp._insert_phrase_text("second phrase")
+    assert e2e.app.content.pt.cget("bg") == C["card_fav"]
+    assert e2e.wait_until(lambda: e2e.app.content.pt.cget("bg") == C["entry"], timeout_ms=3000), (
+        "闪烁结束后应恢复输入框底色"
+    )
 
 
 def test_add_phrase_keeps_current_category(e2e):
