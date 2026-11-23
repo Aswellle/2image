@@ -651,7 +651,10 @@ class PhrasePanel(tk.Toplevel):
 
                 def _del(c=cat, p=phrase):
                     if messagebox.askyesno(
-                        _("dlg_delete_phrase_title"), _("dlg_delete_phrase_body", name=p), parent=self
+                        _("dlg_delete_phrase_title"),
+                        _("dlg_delete_phrase_body", name=p),
+                        parent=self,
+                        default=messagebox.NO,
                     ):
                         delete_custom_phrase(c, p)
                         self._reload()

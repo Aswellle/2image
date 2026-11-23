@@ -306,7 +306,11 @@ class App:
     def _on_close_request(self) -> None:
         """主窗口关闭守卫：任务进行中先确认，防守护线程随窗口静默消失。"""
         if self._has_active_tasks() and not messagebox.askyesno(
-            _("dlg_exit_busy_title"), _("dlg_exit_busy_body"), parent=self.root, icon="warning"
+            _("dlg_exit_busy_title"),
+            _("dlg_exit_busy_body"),
+            parent=self.root,
+            icon="warning",
+            default=messagebox.NO,
         ):
             return
         try:
@@ -627,7 +631,11 @@ class App:
     def _reset_view(self):
         # 二次确认：重置会清空提示词草稿与筛选条件，不可用撤销恢复
         if not messagebox.askyesno(
-            _("dlg_reset_view_title"), _("dlg_reset_view_body"), parent=self.root, icon="warning"
+            _("dlg_reset_view_title"),
+            _("dlg_reset_view_body"),
+            parent=self.root,
+            icon="warning",
+            default=messagebox.NO,
         ):
             return
         # 重置全部过滤状态，确保"重置视图"能恢复完整列表

@@ -39,6 +39,9 @@ def test_reset_asks_confirmation_then_clears_view_state(e2e):
     e2e.pump()
 
     assert "askyesno" in e2e.dialog_kinds(), "重置必须弹二次确认"
+    reset_call = [d for d in e2e.dialogs if d[0] == "askyesno"][-1]
+    assert reset_call[3].get("default") == "no", "草稿丢失类确认默认按钮必须是取消"
+    assert reset_call[3].get("parent") is e2e.app.root, "确认框必须归属主窗"
     assert e2e.app.sidebar._fav_only is False
     assert e2e.app.sidebar.sv.get() == "", "重置必须清除搜索关键字（与确认文案一致）"
     assert e2e.app.content.pt.get("1.0", "end-1c").strip() == ""
@@ -71,6 +74,9 @@ def test_clear_history_asks_confirmation_then_clears(e2e):
     e2e.pump()
 
     assert "askyesno" in e2e.dialog_kinds(), "清空历史必须弹二次确认"
+    clear_call = [d for d in e2e.dialogs if d[0] == "askyesno"][-1]
+    assert clear_call[3].get("default") == "no", "不可撤销的清空默认按钮必须是取消"
+    assert clear_call[3].get("icon") == "warning", "清空历史应带警告图标"
     assert count_entries() == 0
 
 

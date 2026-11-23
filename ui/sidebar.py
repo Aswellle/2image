@@ -1428,7 +1428,7 @@ class HistorySidebar:
                 pass
 
     def _del_entry(self, eid):
-        if not messagebox.askyesno(_("dlg_tip"), _("dlg_confirm_delete"), parent=self.app.root):
+        if not messagebox.askyesno(_("dlg_tip"), _("dlg_confirm_delete"), parent=self.app.root, default=messagebox.NO):
             return
         delete_entry(eid, remove_file=True)
 
@@ -1459,7 +1459,11 @@ class HistorySidebar:
         if not n:
             return
         if messagebox.askyesno(
-            _("dlg_confirm_clear"), _("dlg_confirm_clear_n_body", n=n), parent=self.app.root, icon="warning"
+            _("dlg_confirm_clear"),
+            _("dlg_confirm_clear_n_body", n=n),
+            parent=self.app.root,
+            icon="warning",
+            default=messagebox.NO,
         ):
             clear_all_entries()
             # 全部记录已清除，选中项与预览不得再指向已不存在的图

@@ -93,7 +93,7 @@ class E2EHarness:
         self.root = root
         self.mp = monkeypatch
         self.saved = saved
-        self.dialogs: list[tuple] = []  # (kind, title, message)
+        self.dialogs: list[tuple] = []  # (kind, title, message, kwargs)
 
     # ── 模态对话框打桩 ───────────────────────────────────────
     def patch_modals(self):
@@ -102,7 +102,9 @@ class E2EHarness:
 
         def _recorder(kind: str, ret):
             def _fn(*args, **kwargs):
-                self.dialogs.append((kind, args[0] if args else "", args[1] if len(args) > 1 else ""))
+                title = args[0] if args else kwargs.get("title", "")
+                message = args[1] if len(args) > 1 else kwargs.get("message", "")
+                self.dialogs.append((kind, title, message, dict(kwargs)))
                 return ret
 
             return _fn
@@ -120,7 +122,7 @@ class E2EHarness:
             self.mp.setattr(fd, kind, lambda *a, **k: "")
 
     def dialog_kinds(self) -> list:
-        return [k for k, _t, _m in self.dialogs]
+        return [k for k, *_rest in self.dialogs]
 
     # ── provider 桩 ──────────────────────────────────────────
     def install_fake_provider(self, name: str = "pollinations") -> FakeProvider:

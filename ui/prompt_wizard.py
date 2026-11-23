@@ -1045,7 +1045,7 @@ class PromptWizard(tk.Toplevel):
             return True
         from tkinter import messagebox
 
-        return messagebox.askyesno(_("dlg_tip"), _("wizard_overwrite_confirm"), parent=self)
+        return messagebox.askyesno(_("dlg_tip"), _("wizard_overwrite_confirm"), parent=self, default=messagebox.NO)
 
     def _generate_param(self):
         if self._generating:
@@ -1425,7 +1425,7 @@ class PromptWizard(tk.Toplevel):
         if self._generating:
             from tkinter import messagebox
 
-            if not messagebox.askyesno(_("dlg_tip"), _("wizard_close_generating"), parent=self):
+            if not messagebox.askyesno(_("dlg_tip"), _("wizard_close_generating"), parent=self, default=messagebox.NO):
                 return
         self._stop_anim()
         self.app._prompt_wizard = None
