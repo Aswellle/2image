@@ -3,14 +3,15 @@
 import os
 
 
-def test_empty_prompt_is_blocked_with_status_hint(e2e):
-    """空提示词点击生成：不派发请求，状态栏给提示。"""
+def test_empty_prompt_is_blocked_with_dialog(e2e):
+    """空提示词点击生成：弹警告（已打桩记录）、不派发请求、不产生记录。"""
+    fake = e2e.install_fake_provider("pollinations")
     e2e.set_prompt("   ")
     e2e.click_generate()
     e2e.pump()
+    assert "showwarning" in e2e.dialog_kinds()  # 有警告提示
+    assert fake.calls == []  # provider 未被调用
     assert e2e.history_count() == 0
-    st = str(e2e.app.content._st_label.cget("text")) if hasattr(e2e.app.content, "_st_label") else ""
-    assert st == "" or "生成" in st or "提示" in st or True  # 不崩溃即通过；细节由下一条覆盖
 
 
 def test_generate_success_end_to_end(e2e):

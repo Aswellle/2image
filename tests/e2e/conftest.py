@@ -68,6 +68,11 @@ def e2e(tk_root, monkeypatch, tmp_path):
     tk_root.update()
 
     harness = E2EHarness(a, tk_root, monkeypatch, saved)
+    # 全局打桩所有模态对话框：CI/无人值守环境下 messagebox 会永久阻塞
+    # 等待点击（CI 曾因此挂起数小时被取消）。所有模块都 `from tkinter
+    # import messagebox` 引用同一模块对象，改属性即全局生效；对话框调用
+    # 被记录到 harness.dialogs 供断言。
+    harness.patch_modals()
     # 单图生成默认内联化：Tcl 单线程约束下，后台线程的 after 派发只在
     # 解释器处于事件循环时合法——测试里生成点击与等待之间存在竞争窗口。
     # 内联后业务链路（翻译→编排→provider→落盘→UI 回调）全部真实，
@@ -88,6 +93,34 @@ class E2EHarness:
         self.root = root
         self.mp = monkeypatch
         self.saved = saved
+        self.dialogs: list[tuple] = []  # (kind, title, message)
+
+    # ── 模态对话框打桩 ───────────────────────────────────────
+    def patch_modals(self):
+        """把 messagebox 的模态函数替换为记录器（永不阻塞、永不弹窗）。"""
+        import tkinter.messagebox as mb
+
+        def _recorder(kind: str, ret):
+            def _fn(*args, **kwargs):
+                self.dialogs.append((kind, args[0] if args else "", args[1] if len(args) > 1 else ""))
+                return ret
+
+            return _fn
+
+        for kind in ("showwarning", "showinfo", "showerror"):
+            self.mp.setattr(mb, kind, _recorder(kind, None))
+        for kind in ("askyesno", "askokcancel", "askretrycancel"):
+            self.mp.setattr(mb, kind, _recorder(kind, True))
+
+        # 文件对话框同样会阻塞：默认一律「取消」（返回空串），
+        # 需要真实选择的测试在用例内再次打桩覆盖（monkeypatch 后设者生效）
+        import tkinter.filedialog as fd
+
+        for kind in ("askopenfilename", "asksaveasfilename", "askdirectory"):
+            self.mp.setattr(fd, kind, lambda *a, **k: "")
+
+    def dialog_kinds(self) -> list:
+        return [k for k, _t, _m in self.dialogs]
 
     # ── provider 桩 ──────────────────────────────────────────
     def install_fake_provider(self, name: str = "pollinations") -> FakeProvider:
