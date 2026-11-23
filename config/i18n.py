@@ -2230,24 +2230,24 @@ STRINGS = {
         "en": "Volcengine Doubao Seedream",
     },
     "wizard_paid_ark_section_sub": {
-        "zh-CN": "Seedream 4.5 文生图 (官方最佳)  |  原生图生图  |  按量计费",
-        "en": "Seedream 4.5 text-to-image (best)  |  native image-to-image  |  Pay-as-you-go",
+        "zh-CN": "Seedream 5.5 文生图 (官方最新)  |  原生图生图  |  按量计费",
+        "en": "Seedream 5.5 text-to-image (latest)  |  native image-to-image  |  Pay-as-you-go",
     },
     "wizard_paid_ark_info_1": {
-        "zh-CN": "• Seedream 4.5（默认）：官方综合最佳，支持 1K ~ 4K 分辨率",
-        "en": "• Seedream 4.5 (default): official best overall, 1K ~ 4K resolutions",
+        "zh-CN": "• Seedream 5.5（默认）：最新发布，多轮精准编辑 / 原生 RGBA，支持 1K ~ 4K 分辨率",
+        "en": "• Seedream 5.5 (default): latest release, precise multi-turn editing / native RGBA, 1K ~ 4K",
     },
     "wizard_paid_ark_info_2": {
-        "zh-CN": "• Seedream 4.0 / 3.0：旧版可选，速度更快、成本更低",
-        "en": "• Seedream 4.0 / 3.0: legacy options, faster & cheaper",
+        "zh-CN": "• Seedream 5.0 Pro / 5.0 Flash：上一代旗舰与高速档，可在高级设置中改 ark_model 选用",
+        "en": "• Seedream 5.0 Pro / 5.0 Flash: previous flagship and fast tier — override ark_model to use",
     },
     "wizard_paid_ark_info_3": {
-        "zh-CN": "• 图生图：4.x 原生参考图编辑（图生图模式自动启用），3.0 走 SeedEdit",
-        "en": "• I2I: Seedream 4.x native reference editing (auto in I2I mode); 3.0 uses SeedEdit",
+        "zh-CN": "• 图生图：5.x 原生参考图编辑（图生图模式自动启用）",
+        "en": "• I2I: Seedream 5.x native reference editing (auto in I2I mode)",
     },
     "wizard_paid_ark_info_4": {
-        "zh-CN": "• guidance_scale 建议 2.0~3.0，支持 watermark 开关",
-        "en": "• guidance_scale recommended 2.0~3.0, watermark toggle supported",
+        "zh-CN": "• 支持 watermark 开关；模型目录见 config/model_catalog.py",
+        "en": "• watermark toggle supported; model catalog lives in config/model_catalog.py",
     },
     "wizard_paid_ark_info_5": {
         "zh-CN": "• 新用户赠送试用额度，按生成张数计费",
