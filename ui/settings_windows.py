@@ -72,7 +72,7 @@ class ShortcutsWindow(tk.Toplevel):
                 side="left", padx=12, pady=6
             )
 
-        tk.Button(
+        close_btn = tk.Button(
             win,
             text=_("btn_close"),
             font=F["input"],
@@ -83,7 +83,10 @@ class ShortcutsWindow(tk.Toplevel):
             pady=6,
             cursor="hand2",
             command=win.destroy,
-        ).pack(pady=(8, 16))
+        )
+        # 底部操作优先分配空间：pack 顺序决定裁切优先级，窗口被压小时
+        # 最后 pack 的控件先被裁掉——关闭按钮不能成为那个控件
+        close_btn.pack(side="bottom", pady=(8, 16), before=body)
 
 
 class AppSettingsWindow(tk.Toplevel):
@@ -197,7 +200,9 @@ class AppSettingsWindow(tk.Toplevel):
             win.after(1200, win.destroy)
 
         bot = tk.Frame(win, bg=C["panel"])
-        bot.pack(fill="x", side="bottom")
+        # 保存/取消优先分配空间：先于可扩展 body 入 pack 队列，
+        # 小屏或高缩放下不会被 body 挤到窗口之外
+        bot.pack(fill="x", side="bottom", before=body)
         tk.Button(
             bot,
             text=_("btn_save"),
