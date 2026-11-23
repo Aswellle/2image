@@ -43,18 +43,25 @@ def test_summary_cards_render_six_tiles(stats):
 
 
 def test_heatmap_grid_drawn(stats, e2e):
-    """热力图画布有格子（今天紫框 + 网格）。"""
-    e2e.pump(8)  # 等 after(80ms) 的首次绘制
-    found = {}
+    """热力图画布有格子（今天紫框 + 网格）。
 
-    def _walk(w):
-        for ch in w.winfo_children():
-            if isinstance(ch, tk.Canvas) and not found.get("cv"):
-                found["cv"] = ch if len(ch.find_withtag("cell")) > 0 else None
-            _walk(ch)
+    首绘由 after(80ms) 调度：必须用事件泵等待定时器触发，
+    纯 update() 在快机器上来不及等到定时器（CI 曾因此误报）。
+    """
 
-    _walk(stats.win)
-    assert found.get("cv") is not None, "热力图 cell 未绘制"
+    def _has_cells() -> bool:
+        found = []
+
+        def _walk(w):
+            for ch in w.winfo_children():
+                if isinstance(ch, tk.Canvas) and len(ch.find_withtag("cell")) > 0:
+                    found.append(ch)
+                _walk(ch)
+
+        _walk(stats.win)
+        return bool(found)
+
+    assert e2e.wait_until(_has_cells, timeout_ms=5000), "热力图 cell 未绘制"
 
 
 def test_year_switch_redraws(stats, e2e):
