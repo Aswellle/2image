@@ -1098,7 +1098,10 @@ class App:
                 p = e.get("image_path", "")
                 if p and os.path.exists(p):
                     shutil.copy2(p, os.path.join(out, f"{i:03d}_{os.path.basename(p)}"))
-            self.root.after(0, lambda: self._finish_export(out, items))
+            try:
+                self.root.after(0, lambda: self._finish_export(out, items))
+            except (tk.TclError, RuntimeError):
+                pass  # 应用已关闭：导出结果无处呈现，静默结束
 
         threading.Thread(target=_copy_worker, daemon=True).start()
         self._st(_("status_exporting"), "warn")
@@ -1106,7 +1109,8 @@ class App:
     def _finish_export(self, out: str, items: list):
         rows = ""
         for i, e in enumerate(items, 1):
-            ib = os.path.basename(e.get("image_path", ""))
+            # 文件名可能来自旧版导入/手工整理，插入 HTML 属性前必须转义
+            ib = html.escape(os.path.basename(e.get("image_path", "")), quote=True)
             it = f'<img src="{i:03d}_{ib}" style="max-width:260px;border-radius:6px">' if ib else _("export_no_image")
             title = html.escape(App._display_title(e), quote=True)
             tags = e.get("tags", "") or ""
