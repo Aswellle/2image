@@ -102,10 +102,9 @@ def test_queue_submit_runs_job(e2e):
     assert start_btn, "队列面板应有启动按钮"
     start_btn[0].invoke()
     assert e2e.wait_until(lambda: len(fake.calls) >= 2, timeout_ms=20000)
-    e2e.pump(10)
-    from data.repository import count_entries
-
-    assert count_entries() == 2
     # 等队列循环收尾：worker 线程派发 _finish 后即退出；不等它会在
     # teardown 之后继续调用 root.after，抛 "main thread is not in main loop"
     assert e2e.wait_until(lambda: qp._running is False, timeout_ms=20000), "队列循环未收尾"
+    from data.repository import count_entries
+
+    assert count_entries() == 2

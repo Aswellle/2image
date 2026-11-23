@@ -106,7 +106,18 @@ class E2EHarness:
         self.callback_errors: list[str] = []  # Tk 回调异常（teardown 判失败）
 
     def _record_callback_exception(self, exc, val, tb) -> None:
-        self.callback_errors.append("".join(traceback.format_exception(exc, val, tb)))
+        text = "".join(traceback.format_exception(exc, val, tb))
+        # 参数绑定类 TypeError 不会为 lambda 建帧，补记回调函数出处便于定位
+        try:
+            frame = tb.tb_frame
+            func = frame.f_locals.get("self").func
+            text += (
+                f"\n[callback] {func.__qualname__} @ {func.__code__.co_filename}:{func.__code__.co_firstlineno}"
+                f" args={frame.f_locals.get('args')!r}"
+            )
+        except Exception:
+            pass
+        self.callback_errors.append(text)
 
     # ── 模态对话框打桩 ───────────────────────────────────────
     def patch_modals(self):
