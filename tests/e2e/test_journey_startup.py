@@ -55,10 +55,10 @@ def test_shortcut_ctrl_b_opens_phrase_panel_and_escape_closes(e2e):
 
 
 def test_status_bar_reports_ready(e2e):
-    """状态栏初始为就绪/可用文案，非错误态。"""
-    app = e2e.app
-    st = str(app.content.status_label.cget("text")) if hasattr(app.content, "status_label") else ""
-    assert st == "" or ("失败" not in st and "错误" not in st)
+    """状态栏初始为就绪文案，不是空串（空串说明状态栏未初始化）。"""
+    from config.i18n import _
+
+    assert e2e.app.content.stv.get() == _("status_ready")
 
 
 def test_queue_panel_visible_in_notebook(e2e):

@@ -125,14 +125,14 @@ def test_delete_entry_with_confirmation(e2e):
 
 
 def test_clear_all_entries_with_confirmation(e2e):
-    """清空全部（确认对话框自动确认）→ 记录归零。"""
-    e2e.askyesno_yes()
+    """清空全部：走侧栏入口 → 确认对话框 → 记录归零。"""
     _seed(3)
     assert count_entries() == 3
-    from data.repository import clear_all_entries
 
-    clear_all_entries(remove_files=False)
+    e2e.app.sidebar._clear_hist()
     e2e.pump()
+
+    assert "askyesno" in e2e.dialog_kinds(), "清空入口必须经过二次确认"
     assert count_entries() == 0
 
 
