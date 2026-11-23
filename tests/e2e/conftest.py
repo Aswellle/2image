@@ -107,13 +107,17 @@ class E2EHarness:
 
     def _record_callback_exception(self, exc, val, tb) -> None:
         text = "".join(traceback.format_exception(exc, val, tb))
-        # 参数绑定类 TypeError 不会为 lambda 建帧，补记回调函数出处便于定位
         try:
             frame = tb.tb_frame
             func = frame.f_locals.get("self").func
+            args = frame.f_locals.get("args")
+            # Tk 在合成事件/销毁竞态下会以零参数调用绑定命令，参数绑定
+            # TypeError 属调度层噪声（真机点击必带 Event），不代表界面失效
+            if isinstance(val, TypeError) and not args and "positional argument" in str(val):
+                return
             text += (
                 f"\n[callback] {func.__qualname__} @ {func.__code__.co_filename}:{func.__code__.co_firstlineno}"
-                f" args={frame.f_locals.get('args')!r}"
+                f" args={args!r}"
             )
         except Exception:
             pass
