@@ -204,6 +204,7 @@ class StatsDashboard:
 
         def _close_win():
             # bind_all 是进程级注册，任何关闭路径都必须先解绑再销毁
+            _hide_tip()  # 悬停提示定时器/单例窗一并收掉
             for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
                 win.unbind_all(seq)
             win.destroy()
