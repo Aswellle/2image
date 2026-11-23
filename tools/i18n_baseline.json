@@ -666,27 +666,27 @@
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1301,
+  "line": 1305,
   "text": "正面提示词文本框内容变更时触发词数指示器刷新。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1309,
+  "line": 1313,
   "text": "实时更新 Token 预算指示器：\n        · 右上角标签：词数/字符数\n        · 智能压缩按钮：仅在"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1345,
+  "line": 1349,
   "text": "智能压缩按钮处理器：将提示词截断到预算以内。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1436,
+  "line": 1440,
   "text": "打开 AI 提示词助手模型密钥配置向导。"
  },
  {
   "file": "ui/prompt_wizard.py",
-  "line": 1445,
+  "line": 1449,
   "text": "根据当前密钥配置状态更新标签栏右侧按钮的文字和颜色。"
  },
  {
@@ -736,12 +736,12 @@
  },
  {
   "file": "ui/settings_windows.py",
-  "line": 90,
+  "line": 93,
   "text": "应用偏好设置（语言 / 默认尺寸 / 启动行为）。"
  },
  {
   "file": "ui/settings_windows.py",
-  "line": 228,
+  "line": 233,
   "text": "96dpi 基准几何 → 缩放并钳制工作区（对齐其他弹窗的做法）。"
  },
  {
@@ -831,12 +831,12 @@
  },
  {
   "file": "ui/stats_dashboard.py",
-  "line": 812,
+  "line": 813,
   "text": "保存对话框公共路径解析；用户取消返回 None。"
  },
  {
   "file": "ui/stats_dashboard.py",
-  "line": 524,
+  "line": 525,
   "text": "7 根柱子：高度按当日张数比例，末柱（今天）紫色描边呼应热力图。"
  },
  {
@@ -852,7 +852,7 @@
  {
   "file": "ui/tooltip.py",
   "line": 52,
-  "text": "给控件挂单行悬浮说明。\n\n    icon-only 按钮（Segoe 图标字形）的 text 是 PUA 码点，无法向"
+  "text": "给控件挂单行悬浮说明（鼠标悬停与键盘焦点均可触发）。\n\n    icon-only 按钮（Segoe 图标字形）的 te"
  },
  {
   "file": "ui/viewer.py",
