@@ -2238,16 +2238,16 @@ STRINGS = {
         "en": "• Seedream 5.5 (default): latest release, precise multi-turn editing / native RGBA, 1K ~ 4K",
     },
     "wizard_paid_ark_info_2": {
-        "zh-CN": "• Seedream 5.0 Pro / 5.0 Flash：上一代旗舰与高速档，可在高级设置中改 ark_model 选用",
-        "en": "• Seedream 5.0 Pro / 5.0 Flash: previous flagship and fast tier — override ark_model to use",
+        "zh-CN": "• Seedream 5.0 Pro / 5.0 Flash：上一代旗舰与高速档，可在下方「模型」下拉中切换",
+        "en": "• Seedream 5.0 Pro / 5.0 Flash: previous flagship and fast tier — switch in the model dropdown below",
     },
     "wizard_paid_ark_info_3": {
         "zh-CN": "• 图生图：5.x 原生参考图编辑（图生图模式自动启用）",
         "en": "• I2I: Seedream 5.x native reference editing (auto in I2I mode)",
     },
     "wizard_paid_ark_info_4": {
-        "zh-CN": "• 支持 watermark 开关；模型目录见 config/model_catalog.py",
-        "en": "• watermark toggle supported; model catalog lives in config/model_catalog.py",
+        "zh-CN": "• 支持 watermark 开关；具体版本可在下方「模型」下拉中切换",
+        "en": "• watermark toggle supported; switch versions in the model dropdown below",
     },
     "wizard_paid_ark_info_5": {
         "zh-CN": "• 新用户赠送试用额度，按生成张数计费",
