@@ -7,7 +7,7 @@ Desktop text-to-image generation tool (文字生图工具, app name: **2image**)
 - **Language**: Python 3.11+
 - **GUI**: tkinter + ttk (stdlib, no external GUI framework)
 - **Packaging**: PyInstaller → Inno Setup → Windows `.exe` installer
-- **Version**: 2.10.0 (managed via `version.json`)
+- **Version**: 2.11.0 (managed via `version.json`)
 - **Platform**: Windows-only (uses `ctypes.windll` for DPI awareness)
 - **Dependencies**: `requirements.txt` — runtime: `Pillow>=10,<11`, `requests>=2.31,<3`; dev: `pytest`, `pytest-cov`, `ruff`. Everything else is stdlib (`tkinter`, `sqlite3`, `threading`, `json`, `ctypes`, `pathlib`, `concurrent.futures`, …)
 - **Package management**: `requirements.txt` (pip) + `pyproject.toml` (ruff: target py311, line-length 120, isort/pyflakes rules; pytest `--tb=short`; coverage `fail_under = 68`). No poetry/uv/setup.py
@@ -117,7 +117,7 @@ python auto_build.py
 
 # Or build installer with custom parameters
 python tools/build_inno_installer.py \
-  --app-name "2image" --version 2.10.0 \
+  --app-name "2image" --version 2.11.0 \
   --src-dir . --out-dir dist --iscc-path ISCC
 ```
 
@@ -318,7 +318,7 @@ Extended semantic keys (added as the single source of truth for recurring UI pat
 
 ### i18n System
 
-`config/i18n.py` provides a `_(key, **kwargs)` function with 658 translation keys across 2 locales (`zh-CN`, `en`). Initialize at startup with `init_language(cfg)`. Key parity is guarded by `tools/check_i18n.py` + `tools/i18n_baseline.json`. Usage:
+`config/i18n.py` provides a `_(key, **kwargs)` function with 889 translation keys across 2 locales (`zh-CN`, `en`). Initialize at startup with `init_language(cfg)`. Key parity is guarded by `tools/check_i18n.py` + `tools/i18n_baseline.json`. Usage:
 
 ```python
 from config.i18n import _
@@ -357,7 +357,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`config/settings.py`|Path constants (`APP_DIR`, `IMAGES_DIR`, `DB_FILE`), `DEFAULT_CONFIG` dict (all API keys + defaults), `load_config()`/`save_config()`, config v1→v2 migration|
 |`config/fonts.py`|Font loading/caching, `F` dict, `init_fonts()`|
 |`config/theme.py`|`DARK_THEME` (single dark theme), `tag_color()`, global `C`|
-|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (226 keys, 2 locales), `init_language()`|
+|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (889 keys, 2 locales), `init_language()`|
 |`config/model_catalog.py`|每族图像模型「可选值+默认值+可读名称」唯一来源（OpenAI/Gemini/MiniMax/Ark/BFL/xAI/DashScope），被 settings 默认值、provider 兜底与向导下拉共同引用；一致性由 `tests/test_model_catalog_consistency.py` 锁定|
 |`data/repository.py`|SQLite schema (`history` table: id, timestamp, prompt, translated, image_path, provider, nickname, favorited), tags via junction table (`entry_tags`), full CRUD API, stats, heatmap, JSON→SQLite migration, `_set_test_db()` for in-memory testing|
 |`services/image_service.py`|`generate_image()` — iterates providers in order, catches `ValueError`, falls back; `save_image_file()` — saves bytes to disk|
@@ -380,7 +380,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`ui/about_dialog.py`|About 窗口 — 状态机驱动的检查更新/下载/安装流程，任务运行守卫与便携版分支（懒单例）|
 |`main.spec`|PyInstaller spec (console=False, icon + fonts in `datas`, provider modules auto-populated as `hiddenimports`)|
 |`auto_build.py`|Build orchestrator: version read → PyInstaller → Inno Setup → .exe installer|
-|`version.json`|`{"version": "2.10.0"}`|
+|`version.json`|`{"version": "2.11.0"}`|
 |`tests/conftest.py`|pytest fixtures: `tk_root` (real Tk), `in_memory_db` (SQLite :memory:), `mock_app` (hand-rolled AppProtocol mock)|
 
 ---
@@ -403,7 +403,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 ## Testing & QA
 
 - **Framework**: pytest（CI 矩阵 3.11/3.12 双版本 + coverage 上报）
-- **Test count**: 736 items across 53 test files（`pytest tests/` 全量约 4 分钟）
+- **Test count**: 852 items across 64 test files（`pytest tests/` 全量约 6 分钟）
 - **GUI**: 真实 Tk 会话级共享 root（`tk_session_root`），App 以 Toplevel 承载——规避 Windows 下反复创建/销毁解释器的 Tcl 崩溃
 
 ### Test Layout
@@ -514,7 +514,7 @@ python auto_build.py
 
 # Custom build
 python tools/build_inno_installer.py \
-  --app-name "2image" --version 2.10.0 \
+  --app-name "2image" --version 2.11.0 \
   --src-dir . --out-dir dist --iscc-path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 ```
 
