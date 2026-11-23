@@ -76,6 +76,20 @@ def test_render_share_image_writes_png(tmp_path):
         assert im.size == (1280, 900)
 
 
+def test_render_share_image_handles_long_tag_footer(tmp_path):
+    """超长标签不得让脚注行溢出画布（按剩余宽度截断后仍能出图）。"""
+    from PIL import Image
+
+    from services.stats_export import render_share_image
+
+    repository.add_entry("x", "", "/tmp/x.png", "Pollinations/flux")
+    repository.update_tags(1, "一个非常长的标签名称" * 8)
+    out = tmp_path / "longtag.png"
+    render_share_image(str(out))
+    with Image.open(out) as im:
+        assert im.size == (1280, 900)
+
+
 def test_render_share_image_empty_db(tmp_path):
     """空库也能出图：零值卡片 + 无付费条目，不抛异常。"""
     from services.stats_export import render_share_image

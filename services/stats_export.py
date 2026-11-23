@@ -252,10 +252,20 @@ def render_share_image(path: str) -> str:
 
     # ── 脚注：成本估算 + 标签 ──
     foot_y = 838
+    cost_right = _MARGIN
     if est["by_provider"]:
         cost_line = _("stats_export_foot_cost", usd=_fmt_usd(est["total"]))
         d.text((_MARGIN, foot_y), cost_line, font=f_small, fill=warn)
-    tags_txt = "  ".join(f"#{t}" for t, _ in stats["top_tags"][:5])
+        cost_right = _MARGIN + _text_w(d, cost_line, f_small) + 24
+    # 标签脚注右对齐：按成本行之外的剩余宽度逐枚收纳，超长标签
+    # 不再把整行推到画布左缘之外（负 x 会被直接裁掉）
+    tags_txt = ""
+    max_tag_w = (_IMG_W - _MARGIN) - cost_right
+    for tag, _cnt in stats["top_tags"][:5]:
+        candidate = f"{tags_txt}  #{tag}" if tags_txt else f"#{tag}"
+        if _text_w(d, candidate, f_small) > max_tag_w:
+            break
+        tags_txt = candidate
     if tags_txt:
         d.text((_IMG_W - _MARGIN - _text_w(d, tags_txt, f_small), foot_y), tags_txt, font=f_small, fill=purple_soft)
     credit = _("stats_export_foot_credit")
