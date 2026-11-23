@@ -26,6 +26,18 @@ def _today_str() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
 
+# 表格公式注入防护：Excel/Sheets 会把以这些字符开头的单元格当公式执行。
+# 供应商展示串来自远端响应、标签来自用户输入，均属外部可控数据。
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _safe_cell(value):
+    """字符串单元格前置单引号，避免 CSV 被表格软件当作公式执行。"""
+    if isinstance(value, str) and value.startswith(_FORMULA_PREFIXES):
+        return "'" + value
+    return value
+
+
 # ── CSV ──────────────────────────────────────────────────────────
 def build_stats_csv(path: str) -> int:
     """导出统计看板数据为多分区 CSV，返回写入的数据行数（不含表头标题行）。
@@ -72,7 +84,7 @@ def build_stats_csv(path: str) -> int:
         w.writerow([_("stats_provider_dist")])
         w.writerow([_("stats_export_provider"), _("stats_export_count")])
         for p in stats["providers"]:
-            w.writerow([p["provider"], p["cnt"]])
+            w.writerow([_safe_cell(p["provider"]), p["cnt"]])
             rows += 1
 
         # ── 成本估算 ──
@@ -81,7 +93,7 @@ def build_stats_csv(path: str) -> int:
         w.writerow([_("stats_export_provider"), _("stats_export_images"), _("stats_export_usd")])
         for pid, info in sorted(est["by_provider"].items(), key=lambda kv: -kv[1]["usd"]):
             m = ALL_MANIFESTS.get(pid)
-            w.writerow([m.name if m else pid, info["count"], info["usd"]])
+            w.writerow([_safe_cell(m.name if m else pid), info["count"], info["usd"]])
             rows += 1
         w.writerow([_("stats_cost_total_num"), est["paid_count"], est["total"]])
 
@@ -90,7 +102,7 @@ def build_stats_csv(path: str) -> int:
         w.writerow([_("stats_top_tags")])
         w.writerow([_("stats_export_tag"), _("stats_export_count")])
         for tag, cnt in stats["top_tags"]:
-            w.writerow([tag, cnt])
+            w.writerow([_safe_cell(tag), cnt])
             rows += 1
     return rows
 

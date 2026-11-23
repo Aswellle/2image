@@ -45,6 +45,23 @@ def test_build_stats_csv_sections_and_values(tmp_path):
     assert any("夜景" in r for r in flat)  # 标签
 
 
+def test_csv_escapes_formula_injection(tmp_path):
+    """供应商串/标签以 = + - @ 开头时前置单引号，防表格公式执行。"""
+    repository.add_entry("x", "", "/tmp/x.png", '=HYPERLINK("http://evil","x")')
+    repository.update_tags(1, "=1+1, +cmd, 正常标签")
+    from services.stats_export import build_stats_csv
+
+    out = tmp_path / "inj.csv"
+    build_stats_csv(str(out))
+    with open(out, "r", encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.reader(f))
+    cells = [r[0] for r in rows if r]
+    assert any(c.startswith("'=HYPERLINK") for c in cells)
+    assert "'=1+1" in cells
+    assert "'+cmd" in cells
+    assert "正常标签" in cells
+
+
 def test_render_share_image_writes_png(tmp_path):
     _seed()
     from PIL import Image
