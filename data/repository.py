@@ -363,7 +363,9 @@ def get_stats() -> dict:
     """
     with _conn() as c:
         today_str = datetime.now().strftime("%Y-%m-%d")
-        week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        # 与下方「近 7 天」趋势图同口径：今天 + 前 6 天（共 7 个自然日）。
+        # 用 days=7 会把第 8 天也算进卡片，与柱状图数字对不上。
+        week_ago = (datetime.now() - timedelta(days=6)).strftime("%Y-%m-%d")
         month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
 
         row = c.execute(

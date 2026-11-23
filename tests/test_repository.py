@@ -68,6 +68,25 @@ def test_stats_empty_db_yields_zeroes_not_none():
     assert stats["top_tags"] == []
 
 
+def test_stats_week_window_matches_7_day_trend():
+    """近 7 天卡与趋势图同口径：今天 + 前 6 天，不含第 8 天。"""
+    from datetime import datetime, timedelta
+
+    old = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d 12:00:00")
+    with repository._conn() as c:
+        c.execute(
+            "INSERT INTO history(timestamp,prompt,translated,image_path,provider,nickname,favorited,tags)"
+            " VALUES (?,?,?,?,?,NULL,0,'')",
+            (old, "old", "", "/tmp/old.png", "X"),
+        )
+        c.commit()
+    repository.add_entry("today", "", "/tmp/t.png", "X")
+    stats = repository.get_stats()
+    assert stats["week"] == 1, "7 天窗口不应包含第 8 天的记录"
+    assert stats["month"] == 2
+    assert len(stats["daily"]) == 7 and stats["daily"][-1][1] == 1
+
+
 def test_favorite_toggle():
     repository.add_entry("test", "", "/tmp/t.png", "T")
     repository.toggle_favorite(1, True)
