@@ -260,7 +260,7 @@ def test_export_import_roundtrip_via_dialogs(e2e, monkeypatch, tmp_path):
     pl.add_custom_phrase("🧪 E2E", "roundtrip phrase")
     pl.set_custom_desc("roundtrip phrase", "往返说明")
     out = tmp_path / "exp.json"
-    e2e.patch_filedialog("asksaveasfilename", str(out), None)
+    e2e.patch_filedialog("asksaveasfilename", str(out))
     pp._export_phrases()
     e2e.pump()
     assert out.exists()
@@ -269,7 +269,7 @@ def test_export_import_roundtrip_via_dialogs(e2e, monkeypatch, tmp_path):
 
     # 清空后导入
     pl.delete_custom_phrase("🧪 E2E", "roundtrip phrase")
-    e2e.patch_filedialog("askopenfilename", str(out), None)
+    e2e.patch_filedialog("askopenfilename", str(out))
     import ui.phrase_panel as pp_mod
 
     monkeypatch.setattr(pp_mod.messagebox, "showinfo", lambda *a, **k: None)

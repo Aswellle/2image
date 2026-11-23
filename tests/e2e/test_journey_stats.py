@@ -146,7 +146,7 @@ def test_provider_bars_rendered(stats):
 def test_export_csv_writes_file(stats, e2e, tmp_path):
     """导出 CSV：文件对话框打桩 → 文件落盘且为合法 CSV。"""
     out = tmp_path / "stats.csv"
-    e2e.patch_filedialog("asksaveasfilename", str(out), None)
+    e2e.patch_filedialog("asksaveasfilename", str(out))
     btns = driver.find_buttons(stats.win, "CSV")
     assert btns
     btns[0].invoke()
@@ -161,7 +161,7 @@ def test_export_share_image_writes_png(stats, e2e, tmp_path):
     from PIL import Image
 
     out = tmp_path / "share.png"
-    e2e.patch_filedialog("asksaveasfilename", str(out), None)
+    e2e.patch_filedialog("asksaveasfilename", str(out))
     btns = driver.find_buttons(stats.win, "分享图")
     assert btns
     btns[0].invoke()

@@ -116,11 +116,11 @@ def test_tag_update_via_editor_service(e2e):
 
 
 def test_delete_entry_with_confirmation(e2e):
-    """删除（确认对话框自动确认）→ 记录减少。"""
-    e2e.askyesno_yes()
+    """删除：先弹确认（自动确认）→ 记录减少。"""
     entry = add_entry("to delete", "", "d.png", "FakeProvider/m")
     e2e.app.sidebar._del_entry(entry["id"])
     e2e.pump()
+    assert "askyesno" in e2e.dialog_kinds(), "删除必须经过二次确认"
     assert count_entries() == 0
 
 

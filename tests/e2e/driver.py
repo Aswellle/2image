@@ -62,7 +62,10 @@ def wait_until(
         root.update()
     except tk.TclError:
         return False
-    return bool(predicate())
+    try:
+        return bool(predicate())
+    except tk.TclError:
+        return False
 
 
 def focus(widget: tk.Widget) -> None:

@@ -199,14 +199,8 @@ class E2EHarness:
 
         invoke_btn(self.app.content.gb)
 
-    def askyesno_yes(self):
-        """删除/清空等确认对话框一律自动确认。"""
-        import ui.sidebar as sidebar_mod
-
-        self.mp.setattr(sidebar_mod.messagebox, "askyesno", lambda *a, **k: True)
-
-    def patch_filedialog(self, chooser: str, return_value: str, module):
-        """把指定模块引用的 filedialog 选择器打桩到固定返回值。"""
+    def patch_filedialog(self, chooser: str, return_value: str):
+        """把指定文件对话框选择器打桩到固定返回值（全局模块级）。"""
         import tkinter.filedialog as fd
 
         self.mp.setattr(fd, chooser, lambda *a, **k: return_value)
