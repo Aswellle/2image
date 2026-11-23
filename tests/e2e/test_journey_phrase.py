@@ -44,21 +44,37 @@ def test_search_shows_attribution_and_count(e2e):
     """跨分类搜索：添加按钮禁用（守卫生效）、分类上下文保留。"""
     pp = _open(e2e)
     pp._sv.set("light")
-    e2e.pump()
+    assert e2e.wait_until(lambda: pp._search_after is None, timeout_ms=3000), "搜索防抖未触发"
     assert pp._add_btn.cget("state") == "disabled"
     assert pp._cur_cat  # 左栏状态保留
+
+
+def test_search_is_debounced(e2e):
+    """连续键入只过滤一次：每个字符都重建全部卡片会明显卡顿。"""
+    pp = _open(e2e)
+    calls = []
+    orig = pp._render_chips
+
+    def _counting(*args, **kwargs):
+        calls.append(1)
+        return orig(*args, **kwargs)
+
+    pp._render_chips = _counting
+    for text in ("l", "li", "lig"):
+        pp._sv.set(text)
+    assert e2e.wait_until(lambda: pp._search_after is None, timeout_ms=3000)
+    assert len(calls) == 1, f"防抖应只触发一次过滤，实际 {len(calls)} 次"
 
 
 def test_search_empty_state_has_clear_button(e2e):
     """搜索空态 → 清除按钮可一键恢复。"""
     pp = _open(e2e)
     pp._sv.set("zzzz-no-match")
-    e2e.pump()
+    assert e2e.wait_until(lambda: pp._search_after is None, timeout_ms=3000)
     clear_btns = [b for b in pp._chip_inner.winfo_children() if isinstance(b, tk.Frame)]
     assert clear_btns  # 空态容器存在
     pp._sv.set("")
-    e2e.pump()
-    assert pp._add_btn.cget("state") == "normal"
+    assert e2e.wait_until(lambda: pp._add_btn.cget("state") == "normal", timeout_ms=3000)
 
 
 def test_add_custom_phrase_end_to_end(e2e):

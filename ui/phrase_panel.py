@@ -305,7 +305,8 @@ class PhrasePanel(tk.Toplevel):
             side="left", padx=(10, 4), pady=8
         )
         self._sv = tk.StringVar()
-        self._sv.trace("w", lambda *_: self._apply_search())
+        self._search_after = None  # 搜索防抖定时器（每字符重建全部卡片太重）
+        self._sv.trace("w", lambda *_: self._schedule_search())
         _sef = tk.Frame(sf, bg=C["entry"], highlightbackground=C["ok"], highlightthickness=1)
         _sef.pack(side="left", pady=6, padx=(0, 8))
         _se = tk.Entry(
@@ -518,11 +519,28 @@ class PhrasePanel(tk.Toplevel):
 
     def _select_cat(self, cat: str):
         self._cur_cat = cat
-        self._sv.set("")
+        self._cancel_search()
+        if self._sv.get():
+            self._sv.set("")  # trace 会再调度一次，上面已先取消旧定时器
+            self._cancel_search()
         self._rebuild_cats()
         self._render_chips(self._phrases.get(cat, []))
 
+    def _schedule_search(self):
+        """输入防抖：连续键入只过滤一次，避免每个字符重建全部卡片。"""
+        self._cancel_search()
+        self._search_after = self.after(200, self._apply_search)
+
+    def _cancel_search(self):
+        if self._search_after is not None:
+            try:
+                self.after_cancel(self._search_after)
+            except Exception:
+                pass
+            self._search_after = None
+
     def _apply_search(self):
+        self._search_after = None
         kw = self._sv.get().strip().lower()
         if not kw:
             if self._cur_cat:
@@ -1103,6 +1121,8 @@ class PhrasePanel(tk.Toplevel):
         self.app._log(f"📚 词库导入: +{added} 条（跳过 {skipped}）")
 
     def _on_close(self):
+        # 关闭待执行的搜索/悬浮任务，避免销毁后定时器仍在跑
+        self._cancel_search()
         # 关闭所有悬浮窗
         for tip in self._tips:
             try:
