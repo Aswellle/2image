@@ -686,7 +686,7 @@ class App:
     # ══════════════════════════════════════════════════════════
     def _open_viewer(self):
         if self._cur_bytes is None and self.cur_path is None:
-            messagebox.showinfo(_("dlg_tip"), _("dlg_need_generate_first"))
+            messagebox.showinfo(_("dlg_tip"), _("dlg_need_generate_first"), parent=self.root)
             return
         if self._viewer_win is not None:
             try:
@@ -1073,7 +1073,7 @@ class App:
             }.get(err.code, "dlg_err_title_config")  # 码表扩容未跟标题时回落配置类
             self.root.after(
                 100,
-                lambda: messagebox.showwarning(_(title_key), _("dlg_err_body", err=body)),
+                lambda: messagebox.showwarning(_(title_key), _("dlg_err_body", err=body), parent=self.root),
             )
 
     def _cancelled(self) -> None:
@@ -1140,11 +1140,11 @@ class App:
             f"<th>{_('export_html_col_favorite')}</th><th>{_('export_html_col_image')}</th></tr>{rows}</table></body></html>"
         )
         open(os.path.join(out, _("export_html_filename")), "w", encoding="utf-8").write(html_str)
-        messagebox.showinfo(_("dlg_export_done"), _("dlg_export_done_body", n=len(items), out=out))
+        messagebox.showinfo(_("dlg_export_done"), _("dlg_export_done_body", n=len(items), out=out), parent=self.root)
 
     def _save(self):
         if not self.cur_path or not os.path.exists(self.cur_path):
-            messagebox.showwarning(_("dlg_tip"), _("dlg_no_image_body"))
+            messagebox.showwarning(_("dlg_tip"), _("dlg_no_image_body"), parent=self.root)
             return
         d = filedialog.asksaveasfilename(
             defaultextension=".png",
@@ -1153,7 +1153,7 @@ class App:
         )
         if d:
             Image.open(self.cur_path).save(d)
-            messagebox.showinfo(_("dlg_export_done"), f"{_('dlg_saved_body')}{d}")
+            messagebox.showinfo(_("dlg_export_done"), f"{_('dlg_saved_body')}{d}", parent=self.root)
 
     def _copy_path(self):
         if self.cur_path:

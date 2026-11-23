@@ -54,12 +54,12 @@ class GenerationController:
             self.app._st(_("status_prompt_too_long", cur=len(prompt), max=MAX_PROMPT_CHARS), "hl")
             return
         if not prompt:
-            messagebox.showwarning(_("dlg_tip"), _("dlg_empty_prompt"))
+            messagebox.showwarning(_("dlg_tip"), _("dlg_empty_prompt"), parent=self.app.root)
             return
 
         psel = content.pv.get()
         if psel.startswith("───"):
-            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"))
+            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"), parent=self.app.root)
             return
         # 下拉框展示 display name，路由/派发需要 stable id
         psel_id = provider_id_for(psel)
@@ -148,6 +148,7 @@ class GenerationController:
                     limit=f"${limit:.2f}",
                     provider=psel,
                 ),
+                parent=self.app.root,
             )
             return False
         return True
@@ -277,17 +278,17 @@ class GenerationController:
         content = self.app.content
 
         if getattr(content, "_gen_mode", "t2i") == "i2i":
-            messagebox.showwarning(_("dlg_tip"), _("dlg_batch_no_img2img"))
+            messagebox.showwarning(_("dlg_tip"), _("dlg_batch_no_img2img"), parent=self.app.root)
             return
 
         prompt = content.pt.get("1.0", "end").strip()
         if not prompt:
-            messagebox.showwarning(_("dlg_tip"), _("dlg_empty_prompt"))
+            messagebox.showwarning(_("dlg_tip"), _("dlg_empty_prompt"), parent=self.app.root)
             return
 
         psel = content.pv.get()
         if psel.startswith("───"):
-            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"))
+            messagebox.showinfo(_("dlg_tip"), _("dlg_pick_specific_provider"), parent=self.app.root)
             return
         psel_id = provider_id_for(psel)
 

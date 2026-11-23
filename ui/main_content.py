@@ -789,7 +789,7 @@ class MainContent:
         # DATA-003: 只取最近 200 张，避免大历史库全量加载
         entries = get_all_entries(limit=200)
         if not entries:
-            messagebox.showinfo(_("dlg_tip"), _("dlg_compare_empty"))
+            messagebox.showinfo(_("dlg_tip"), _("dlg_compare_empty"), parent=self.app.root)
             return
 
         win = tk.Toplevel(self.app.root)
