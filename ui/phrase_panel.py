@@ -480,7 +480,10 @@ class PhrasePanel(tk.Toplevel):
         self._rebuild_cats()
         cats = list(self._phrases.keys())
         if cats:
-            self._select_cat(cats[0])
+            # 保留用户当前分类：新增/删除/导入后跳回第一个分类会让
+            # 刚写入的词条「消失」（用户以为失败），也丢失浏览上下文
+            target = self._cur_cat if self._cur_cat in self._phrases else cats[0]
+            self._select_cat(target)
 
     def _rebuild_cats(self, searching: bool = False):
         for w in self._cat_frame.winfo_children():

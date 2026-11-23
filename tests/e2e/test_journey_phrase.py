@@ -73,6 +73,25 @@ def test_add_custom_phrase_end_to_end(e2e):
     assert "my custom e2e phrase" in all_phrases[cat]
 
 
+def test_add_phrase_keeps_current_category(e2e):
+    """在非首个分类新增词条：重载后仍停留在该分类且新词条可见。
+
+    回归：_reload 曾无条件选中首个分类，用户刚写入的词条"消失"。
+    """
+    pp = _open(e2e)
+    cats = list(pp._phrases.keys())
+    assert len(cats) >= 2, "内置词库应有多个分类"
+    second = cats[1]
+    pp._select_cat(second)
+    pp._new_phrase_var.set("category context phrase")
+    pp._add_phrase()
+    e2e.pump()
+
+    assert pp._cur_cat == second, "新增词条后不得跳回首个分类"
+    labels = [str(lbl.cget("text")) for lbl in _walk(pp._chip_inner, tk.Label)]
+    assert "category context phrase" in labels
+
+
 def test_duplicate_phrase_shows_dialog_and_skips(e2e, monkeypatch):
     """重复添加：警告对话框弹出、不重复写入。"""
     pp = _open(e2e)
