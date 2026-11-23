@@ -79,6 +79,27 @@ def test_language_switch_persists_choice(e2e):
     assert app.cfg.get("language") == "zh-CN"
 
 
+def test_about_update_progress_style_follows_active_theme(e2e):
+    """About 更新进度条样式必须配置在当前活动 ttk 主题（clam）上。
+
+    回归：样式曾在导入期配到 default 主题，App 切到 clam 后配置失效，
+    进度条退回浅色系统外观。
+    """
+    from tkinter import ttk
+
+    from config.theme import C
+
+    e2e.app._open_about()
+    e2e.pump()
+    about = e2e.app._about_win
+    assert about is not None and about.winfo_exists()
+    style = ttk.Style()
+    assert style.theme_use() == "clam"
+    assert style.lookup("Update.Horizontal.TProgressbar", "background") == C["ok"]
+    about.event_generate("<Escape>")
+    e2e.pump()
+
+
 def test_batch_panel_renders_six_cells(e2e):
     """批量面板：6 格变体网格在场。"""
     app = e2e.app

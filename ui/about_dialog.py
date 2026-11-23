@@ -66,16 +66,21 @@ _ERR_KEYS = {
 
 REPO_URL = "https://github.com/Aswellle/2image"
 
-_progress_style = ttk.Style()
-_progress_style.theme_use("default")
-_progress_style.configure(
-    "Update.Horizontal.TProgressbar",
-    troughcolor=C["panel"],
-    background=C["ok"],
-    bordercolor=C["panel"],
-    lightcolor=C["ok"],
-    darkcolor=C["ok"],
-)
+
+def _configure_progress_style() -> None:
+    """在**当前活动主题**上配置更新进度条。
+
+    ttk 样式按主题分别存储：导入期切到 default 再 configure，等 App
+    构建时切到 clam，这份配置就失效（进度条退回浅色默认外观）。
+    """
+    ttk.Style().configure(
+        "Update.Horizontal.TProgressbar",
+        troughcolor=C["panel"],
+        background=C["ok"],
+        bordercolor=C["panel"],
+        lightcolor=C["ok"],
+        darkcolor=C["ok"],
+    )
 
 
 def _err_text(code: UpdateErrorCode) -> str:
@@ -102,6 +107,7 @@ class AboutDialog(tk.Toplevel):
         self._manifest = None  # UpdateManifest | None
         self._package_path: Path | None = None
 
+        _configure_progress_style()  # 必须在 clam 主题生效后配置
         self._build()
         self._fill_version()
         self._apply_ui()
