@@ -26,6 +26,7 @@ class ConfigWizard(tk.Toplevel):
 
     def __init__(self, parent: tk.Tk, cfg: dict, on_save: Callable[[dict], None]):
         super().__init__(parent)
+        self.transient(parent)  # 模态归属主窗：grab 期间点击外部不会推到主窗后面
         self.cfg = cfg.copy()
         self.on_save = on_save
         self._closing = False
