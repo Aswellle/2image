@@ -165,7 +165,7 @@ def try_dashscope_qwen(prompt: str, w: int, h: int, seed: int, cfg: dict, log: C
             log("  下载图片中…")
             data = _safe_get_image(img_url, timeout=60)
             log(f"  ✓ 通义万相成功  {len(data) // 1024}KB")
-            return data, "DashScope/Qwen-Image"
+            return data, f"DashScope/{model}"
 
         if status in ("FAILED", "CANCELED", "UNKNOWN"):
             raise ProviderInvalidResponseError(f"DashScope 任务失败：{output.get('message', status)}")
@@ -212,12 +212,16 @@ def _generate_sync(model: str, prompt: str, w: int, h: int, seed: int, key: str,
         raise classify_http_error(resp.status_code, f"DashScope 生成失败 {resp.status_code}: {_safe_error_text(resp)}")
 
     # 响应：output.choices[0].message.content[] 内 type=="image" 项带 image URL
-    output = resp.json().get("output", {})
-    choices = output.get("choices", [])
-    content = choices[0].get("message", {}).get("content", []) if choices else []
-    img_url = next((c.get("image") for c in content if c.get("type") == "image" and c.get("image")), "")
+    try:
+        output = resp.json().get("output", {})
+        choices = output.get("choices", [])
+        content = choices[0].get("message", {}).get("content", []) if choices else []
+        img_url = next((c.get("image") for c in content if c.get("type") == "image" and c.get("image")), "")
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        # 远端 JSON 结构不可信：畸形响应按契约归类为 invalid_response
+        raise ProviderInvalidResponseError(f"DashScope 同步响应结构异常：{exc}")
     if not img_url:
         raise ProviderInvalidResponseError(f"DashScope 同步响应中无图片 URL：{resp.json()}")
     data = _safe_get_image(img_url, timeout=60)
     log(f"  ✓ 通义万相 2.6 成功  {len(data) // 1024}KB")
-    return data, "DashScope/Qwen-Image"
+    return data, f"DashScope/{model}"

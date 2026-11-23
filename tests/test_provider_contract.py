@@ -254,6 +254,7 @@ class TestDashscope:
         ):
             data, used = mod.try_dashscope_qwen("cat", 1024, 1024, 1, cfg, lambda s: None)
         assert data == PNG_BYTES and "DashScope" in used
+        assert used == "DashScope/wan2.5-t2i"  # 标注实际模型而非旧 Qwen 名称
 
     def test_401(self):
         import services.providers.dashscope_qwen as mod
@@ -289,12 +290,23 @@ class TestDashscope:
         ):
             data, used = mod.try_dashscope_qwen("cat", 1280, 1280, 1, self.CFG, lambda s: None)
         assert data == PNG_BYTES and "DashScope" in used
+        assert used == "DashScope/wan2.6-t2i"
         body = sess.post.call_args.kwargs["json"]
         assert body["model"] == "wan2.6-t2i"
         assert body["input"]["messages"][0]["content"][0]["text"] == "cat"
         assert body["parameters"]["size"] == "1280*1280"
         assert body["parameters"]["prompt_extend"] is False
         img.assert_called_once()
+
+    def test_sync_malformed_response_is_invalid_response(self):
+        """畸形同步响应（choices 非数组）按契约归为 invalid_response。"""
+        import services.providers.dashscope_qwen as mod
+
+        sync = _resp(200, {"output": {"choices": "not-a-list"}})
+        sess = _fake_session(post=sync)
+        with patch(f"{self.MOD}._get_session", return_value=sess):
+            with pytest.raises(ProviderInvalidResponseError):
+                mod.try_dashscope_qwen("cat", 1280, 1280, 1, self.CFG, lambda s: None)
 
     def test_task_failed(self):
         import services.providers.dashscope_qwen as mod
