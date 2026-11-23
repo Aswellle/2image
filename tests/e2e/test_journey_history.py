@@ -1,6 +1,11 @@
 """E2E 旅程：历史侧栏全交互（搜索/标签/收藏/重命名/删除/清空/加载）。"""
 
+import tkinter as tk
+
+from config.i18n import _
+from config.theme import C
 from data.repository import add_entry, count_entries, get_all_entries, update_tags, rename_entry, toggle_favorite
+from tests.e2e import driver
 
 
 def _seed(n=3):
@@ -64,6 +69,40 @@ def test_rename_entry_updates_record(e2e):
     e2e.pump()
     refreshed = [x for x in get_all_entries() if x["id"] == entry["id"]][0]
     assert refreshed["nickname"] == "我的城堡"
+
+
+def test_rename_inline_commits_and_updates_counter(e2e):
+    """内联重命名：构造即渲染计数器，确定按钮提交后昵称落库。
+
+    回归：_on_key(*_) 曾把 i18n `_` 遮蔽成参数元组，构造阶段抛
+    TypeError 被 Tk 吞掉——确定/取消按钮根本没被创建，重命名无法提交。
+    """
+    entry = add_entry("rename target prompt", "", "r.png", "FakeProvider/m")
+    right = tk.Frame(e2e.app.root, bg=C["panel"])
+    title = tk.Label(right, text="rename target prompt")
+    card = tk.Frame(right, bg=C["panel"])
+    e2e.app.sidebar._rename_inline(entry, card, right, title)
+    e2e.pump()
+
+    confirms = driver.find_buttons(right, _("btn_confirm"))
+    assert confirms, "内联重命名应渲染确定按钮（此前异常导致按钮缺失）"
+
+    def _find(w, cls):
+        for ch in w.winfo_children():
+            if isinstance(ch, cls):
+                yield ch
+            yield from _find(ch, cls)
+
+    entry_widget = next(_find(right, tk.Entry))
+    driver.set_entry(entry_widget, "新昵称")
+
+    expected = _("lbl_char_count", cur=len("新昵称"), max=e2e.app.MAX_NICK_LEN)
+    assert any(str(lbl.cget("text")) == expected for lbl in _find(right, tk.Label)), "字符计数应随输入更新"
+
+    confirms[0].invoke()
+    e2e.pump()
+    refreshed = [x for x in get_all_entries() if x["id"] == entry["id"]][0]
+    assert refreshed["nickname"] == "新昵称"
 
 
 def test_tag_update_via_editor_service(e2e):

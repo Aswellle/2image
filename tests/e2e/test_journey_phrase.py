@@ -13,6 +13,13 @@ def _open(e2e):
     return e2e.app._phrase_panel
 
 
+def _walk(w, cls):
+    for ch in w.winfo_children():
+        if isinstance(ch, cls):
+            yield ch
+        yield from _walk(ch, cls)
+
+
 def test_open_close_via_escape(e2e):
     """Ctrl+B 旅程之外：直接开面板 → Escape 关闭 → 单例引用清理。"""
     pp = _open(e2e)
@@ -158,6 +165,43 @@ def test_template_variable_dialog_fills_and_appends(e2e):
     e2e.pump()
     prompt_text = e2e.app.content.pt.get("1.0", "end-1c")
     assert "a cat in watercolor style" in prompt_text
+
+
+def test_template_variable_missing_warns_and_keeps_dialog(e2e):
+    """变量留空点追加：警告可见且对话框不关闭。
+
+    回归：_confirm(_=None) 曾把 i18n `_` 遮蔽成事件参数，
+    空值守卫里的 showwarning 调用抛 TypeError，用户看不到任何提示。
+    """
+    pp = _open(e2e)
+    pl.add_custom_phrase(list(pp._phrases.keys())[0], "{{subject}} alone")
+    pp._append_to_input("{{subject}} alone")
+    e2e.pump()
+    dlg = [w for w in pp.winfo_children() if isinstance(w, tk.Toplevel)][-1]
+    append_btn = [b for b in _walk(dlg, tk.Button) if "追加" in str(b.cget("text"))][0]
+
+    append_btn.invoke()
+    e2e.pump()
+
+    assert "showwarning" in e2e.dialog_kinds(), "空变量应弹警告提示"
+    assert dlg.winfo_exists(), "校验失败时对话框必须保留"
+    dlg.destroy()
+
+
+def test_new_category_empty_name_warns_and_keeps_dialog(e2e):
+    """新建分类留空：警告可见且对话框不关闭（同款下划线遮蔽回归）。"""
+    pp = _open(e2e)
+    pp._new_category()
+    e2e.pump()
+    dlg = [w for w in pp.winfo_children() if isinstance(w, tk.Toplevel)][-1]
+    create_btn = [b for b in _walk(dlg, tk.Button) if "创建" in str(b.cget("text"))][0]
+
+    create_btn.invoke()
+    e2e.pump()
+
+    assert "showwarning" in e2e.dialog_kinds()
+    assert dlg.winfo_exists()
+    dlg.destroy()
 
 
 def test_append_updates_char_count_and_usage(e2e):

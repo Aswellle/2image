@@ -68,6 +68,26 @@ def test_template_select_fills_keywords(wizard, e2e):
     assert pw._sel_tid == tid
 
 
+def test_dimension_custom_option_expands_input(wizard, e2e):
+    """维度下拉选“自定义…”：展开自定义输入框，切回预设则收起。
+
+    回归：_on_select(self, _=None) 曾把 i18n `_` 遮蔽成事件参数，
+    选中自定义项时抛 TypeError，输入框永远不出现。
+    """
+    from config.i18n import _
+
+    dim = wizard._dim_mood
+    dim.var.set(_("wizard_custom_option"))
+    dim._on_select()
+    e2e.pump()
+    assert dim._expand.winfo_manager() == "pack", "选中自定义项应展开输入框"
+
+    dim.var.set(dim._presets[0])
+    dim._on_select()
+    e2e.pump()
+    assert dim._expand.winfo_manager() == ""
+
+
 def test_generate_single_candidate(wizard, e2e, monkeypatch):
     """生成：LLM 打桩返回固定文案 → 结果框 + 使用按钮启用。"""
     pw = wizard

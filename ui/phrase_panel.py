@@ -829,7 +829,7 @@ class PhrasePanel(tk.Toplevel):
             ent.pack(fill="x", padx=6, ipady=4)
             entries[name] = ent
 
-        def _confirm(_=None):
+        def _confirm(_event=None):
             values: dict[str, str] = {}
             for name, ent in entries.items():
                 v = ent.get().strip()
@@ -911,7 +911,7 @@ class PhrasePanel(tk.Toplevel):
         )
         ent.pack(fill="x", padx=6, ipady=4)
 
-        def _confirm(_=None):
+        def _confirm(_event=None):
             name = ent.get().strip()
             if not name:
                 messagebox.showwarning(_("dlg_tip"), _("phrase_category_empty"), parent=dlg)
@@ -1002,7 +1002,7 @@ class PhrasePanel(tk.Toplevel):
         txt.pack(fill="both", expand=True)
         txt.insert("1.0", get_custom_desc(phrase))
 
-        def _save(_=None):
+        def _save(_event=None):
             set_custom_desc(phrase, txt.get("1.0", "end-1c"))
             dlg.destroy()
             self.app._toast(_("phrase_desc_saved"), "success")

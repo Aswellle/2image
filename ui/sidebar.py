@@ -1318,7 +1318,7 @@ class HistorySidebar:
         )
         tip.pack(anchor="e")
 
-        def _on_key(*_):
+        def _on_key(*_args):
             v = nick_var.get()
             if len(v) > self.app.MAX_NICK_LEN:
                 nick_var.set(v[: self.app.MAX_NICK_LEN])

@@ -241,7 +241,7 @@ class _DimRow:
             w.bind("<Button-4>", _fwd4, add="+")
             w.bind("<Button-5>", _fwd5, add="+")
 
-    def _on_select(self, _=None):
+    def _on_select(self, _event=None):
         if self.var.get() == _("wizard_custom_option"):
             self._expand.pack(fill="x", after=self._outer, pady=(0, 4))
             self._centry.focus_set()
