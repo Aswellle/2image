@@ -1260,7 +1260,11 @@ class PromptWizard(tk.Toplevel):
         self._history.insert(0, (label, positive))
         self._history = self._history[:8]
         self._hist_cb.config(values=[h[0] for h in self._history])
-        save_prompt_history(self._history)
+        # 历史落盘失败不该中断本次生成的收尾（日志仍要记录结果）
+        try:
+            save_prompt_history(self._history)
+        except Exception as exc:
+            self.app._log(f"⚠ 提示词历史保存失败: {exc}")
         self.app._log(f"✨ 提示词助手: {positive[:60]}…")
 
     def _on_error(self, err: str):
