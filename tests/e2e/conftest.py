@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import tkinter as tk
+import traceback
 
 import pytest
 from PIL import Image
@@ -78,11 +79,19 @@ def e2e(tk_root, monkeypatch, tmp_path):
     # 内联后业务链路（翻译→编排→provider→落盘→UI 回调）全部真实，
     # 仅线程调度同步化；after(0,...) 回调仍需泵事件才执行。
     harness.inline_generation()
+    # Tk 回调异常默认只打印到 stderr，用例照常通过——多候选进度
+    # TypeError 曾因此漏检。挂记录器，teardown 时把回调异常判为失败。
+    previous_hook = tk_root.report_callback_exception
+    tk_root.report_callback_exception = harness._record_callback_exception
     yield harness
+    tk_root.report_callback_exception = previous_hook
     try:
         top.destroy()
     except tk.TclError:
         pass
+    assert not harness.callback_errors, "Tk 回调期间抛出异常（界面状态可能已部分失效）：\n" + "\n".join(
+        harness.callback_errors[:3]
+    )
 
 
 class E2EHarness:
@@ -94,6 +103,10 @@ class E2EHarness:
         self.mp = monkeypatch
         self.saved = saved
         self.dialogs: list[tuple] = []  # (kind, title, message, kwargs)
+        self.callback_errors: list[str] = []  # Tk 回调异常（teardown 判失败）
+
+    def _record_callback_exception(self, exc, val, tb) -> None:
+        self.callback_errors.append("".join(traceback.format_exception(exc, val, tb)))
 
     # ── 模态对话框打桩 ───────────────────────────────────────
     def patch_modals(self):
