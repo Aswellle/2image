@@ -394,10 +394,11 @@ class StatsDashboard:
 
                 # 是否当天
                 is_today = d == _date.today()
-                # 今日：紫色高亮边框
+                # 今日：紫色高亮边框（仅当当天有数据——空数据格子上加紫框
+                # 会破坏空态网格的统一观感，曾被误认为样式污染）
                 # 零值格子：加细暗边框，形成可见网格感（参考 GitHub 热力图网格）
                 # 有数据格子：无边框（颜色自身足够醒目）
-                if is_today:
+                if is_today and level > 0:
                     outline = C["purple"]
                     width = 1.5
                 elif level == 0:
