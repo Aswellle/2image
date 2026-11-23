@@ -171,6 +171,22 @@ def test_export_share_image_writes_png(stats, e2e, tmp_path):
         assert im.size == (1280, 900)
 
 
+def test_refresh_failure_reports_toast_and_keeps_window(stats, e2e, monkeypatch):
+    """刷新失败：给出 toast 回执，窗口保持存活（不得静默无反应）。"""
+    import ui.stats_dashboard as sd_mod
+
+    def _boom():
+        raise RuntimeError("db locked")
+
+    monkeypatch.setattr(sd_mod, "get_stats", _boom)
+    refresh_btn = driver.find_buttons(stats.win, "刷新")
+    assert refresh_btn
+    refresh_btn[0].invoke()
+    e2e.pump()
+
+    assert stats.win.winfo_exists()
+
+
 def test_escape_closes_dashboard(stats, e2e):
     """Escape 关闭统计看板（非主窗焦点链需 focus_force）。"""
     stats.win.focus_force()

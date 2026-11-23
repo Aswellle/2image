@@ -504,6 +504,10 @@ STRINGS = {
         "zh-CN": "已导出 {total} 条自定义词条到：\n{path}",
         "en": "Exported {total} custom phrases to:\n{path}",
     },
+    "phrase_export_failed": {
+        "zh-CN": "词库导出失败：{err}",
+        "en": "Failed to export phrase library: {err}",
+    },
     "dlg_err_body": {
         "zh-CN": "{err}",
         "en": "{err}",
@@ -1870,6 +1874,10 @@ STRINGS = {
     "stats_export_failed": {
         "zh-CN": "导出失败：{err}",
         "en": "Export failed: {err}",
+    },
+    "stats_refresh_failed": {
+        "zh-CN": "统计刷新失败：{err}",
+        "en": "Failed to refresh statistics: {err}",
     },
     "stats_export_brand_line": {
         "zh-CN": "2image 统计导出 · {date}",

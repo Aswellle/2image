@@ -330,6 +330,24 @@ def test_export_import_roundtrip_via_dialogs(e2e, monkeypatch, tmp_path):
     assert pl.get_custom_desc("roundtrip phrase") == "往返说明"
 
 
+def test_export_failure_reports_error(e2e, monkeypatch, tmp_path):
+    """导出落盘失败（磁盘/权限）必须给出错误提示，不能静默无反应。"""
+    pp = _open(e2e)
+    import services.phrase_library as pl_mod
+
+    def _boom(path):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(pl_mod, "export_custom", _boom)
+    e2e.patch_filedialog("asksaveasfilename", str(tmp_path / "exp.json"))
+
+    pp._export_phrases()
+    e2e.pump()
+
+    assert "showerror" in e2e.dialog_kinds()
+    assert pp.winfo_exists()
+
+
 def test_sidebar_save_as_phrase_syncs_panel(e2e):
     """侧栏一键收藏 → 词库「⭐ 我的词条」出现 + 打开中的面板同步刷新。"""
     entry = add_entry("a lighthouse at dusk", "", "lh.png", "FakeProvider/m")

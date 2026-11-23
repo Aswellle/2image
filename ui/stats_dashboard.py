@@ -773,15 +773,19 @@ class StatsDashboard:
 
         # ── 就地刷新：重读数据重绘全部动态区，窗口/滚动位置/年份选择保留 ──
         def _refresh_all():
-            fresh = get_stats()
-            self._upd_lbl.config(text=_("stats_updated_at", time=datetime.now().strftime("%H:%M:%S")))
-            _render_summary(fresh)
-            _render_daily(fresh)
-            _render_providers(fresh)
-            _render_cost()
-            _render_tags(fresh)
-            _build_year_buttons()
-            _draw_heatmap(_sel_year[0])
+            try:
+                fresh = get_stats()
+                self._upd_lbl.config(text=_("stats_updated_at", time=datetime.now().strftime("%H:%M:%S")))
+                _render_summary(fresh)
+                _render_daily(fresh)
+                _render_providers(fresh)
+                _render_cost()
+                _render_tags(fresh)
+                _build_year_buttons()
+                _draw_heatmap(_sel_year[0])
+            except Exception as exc:
+                # 刷新按钮是显式操作：失败要给出回执，不能静默无反应
+                self.app._toast(_("stats_refresh_failed", err=str(exc)[:120]), "error")
 
         stats = get_stats()
         _render_summary(stats)

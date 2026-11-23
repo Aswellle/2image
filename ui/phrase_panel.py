@@ -1094,7 +1094,11 @@ class PhrasePanel(tk.Toplevel):
         )
         if not path:
             return
-        total = export_custom(path)
+        try:
+            total = export_custom(path)
+        except Exception as exc:
+            messagebox.showerror(_("dlg_tip"), _("phrase_export_failed", err=str(exc)[:200]), parent=self)
+            return
         messagebox.showinfo(_("dlg_tip"), _("phrase_export_done", total=total, path=path), parent=self)
         self.app._log(f"📚 词库导出: {total} 条 → {path}")
 
