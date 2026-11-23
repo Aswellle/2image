@@ -794,6 +794,7 @@ class MainContent:
 
         win = tk.Toplevel(self.app.root)
         win.title(_("btn_pick_compare"))
+        win.transient(self.app.root)  # 模态归属主窗：点击外部不会关闭/推后
         win.configure(bg=C["bg"])
         win.resizable(True, True)
         win.minsize(scaled(win, 700), scaled(win, 500))

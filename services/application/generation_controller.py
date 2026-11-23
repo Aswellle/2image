@@ -78,7 +78,9 @@ class GenerationController:
 
         if psel == _("provider_auto"):
             if not self.app.cfg.get("sf_key", "").strip() and not self.app.cfg.get("hf_token", "").strip():
-                if messagebox.askyesno(_("dlg_suggest_free_key_title"), _("dlg_suggest_free_key_body")):
+                if messagebox.askyesno(
+                    _("dlg_suggest_free_key_title"), _("dlg_suggest_free_key_body"), parent=self.app.root
+                ):
                     self.app._open_wizard()
                     return
             porder = get_provider_order(prompt, self.app.cfg)
@@ -177,7 +179,9 @@ class GenerationController:
             is_paid = pid not in FREE_PROVIDERS
             wizard_fn = self.app._open_paid_wizard if is_paid else self.app._open_wizard
             if messagebox.askyesno(
-                _("dlg_need_config_title"), _("dlg_need_keys_body", provider=psel, keys="、".join(required_keys))
+                _("dlg_need_config_title"),
+                _("dlg_need_keys_body", provider=psel, keys="、".join(required_keys)),
+                parent=self.app.root,
             ):
                 wizard_fn()
             return False
@@ -191,7 +195,7 @@ class GenerationController:
         # 缺 Key → 引导配置（付费接口走付费向导）
         is_paid = pid not in FREE_PROVIDERS
         wizard_fn = self.app._open_paid_wizard if is_paid else self.app._open_wizard
-        if messagebox.askyesno(_("dlg_need_config_title"), _("dlg_need_key_body", provider=psel)):
+        if messagebox.askyesno(_("dlg_need_config_title"), _("dlg_need_key_body", provider=psel), parent=self.app.root):
             wizard_fn()
         return False
 

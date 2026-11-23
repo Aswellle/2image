@@ -73,7 +73,7 @@ class ConfigWizard(tk.Toplevel):
         if self._dirty:
             from tkinter import messagebox
 
-            if not messagebox.askyesno(_("wz_close_title"), _("wz_close_msg")):
+            if not messagebox.askyesno(_("wz_close_title"), _("wz_close_msg"), parent=self, icon="warning"):
                 return
         self._closing = True
         try:

@@ -584,6 +584,7 @@ class ImageViewerWindow(tk.Toplevel):
         win = tk.Toplevel(self)
         win.title(_("viewer_crop_preview_title"))
         win.configure(bg=C["bg"])
+        win.transient(self)  # 模态归属查看器：点击外部不会关闭/推后
         win.grab_set()
         win.resizable(True, True)
         win.minsize(scaled(win, 520), scaled(win, 480))

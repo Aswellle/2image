@@ -30,6 +30,7 @@ class ShortcutsWindow(tk.Toplevel):
         win.title("⌨ " + _("settings_shortcuts_title"))
         win.configure(bg=C["bg"])
         win.resizable(False, False)
+        win.transient(parent_app.root)  # 模态归属主窗
         win.grab_set()
         win.update_idletasks()
         w, h = fit_win(self, 520, 620)
@@ -96,6 +97,7 @@ class AppSettingsWindow(tk.Toplevel):
         win.title("🖼 " + _("settings_prefs_title"))
         win.configure(bg=C["bg"])
         win.resizable(False, False)
+        win.transient(parent_app.root)  # 模态归属主窗
         win.grab_set()
         win.update_idletasks()
         w, h = fit_win(self, 460, 440)
