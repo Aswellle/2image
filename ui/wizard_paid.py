@@ -468,7 +468,8 @@ class PaidWizard(tk.Toplevel):
             lbl.pack(fill="x", anchor="w", padx=16, pady=2)
             labels.append(lbl)
         bind_wraplength(card, labels)
-        tk.Label(card, text="").pack(pady=2)
+        # 底部留白占位：必须显式用卡片底色，否则按系统默认色渲染成白色竖条
+        tk.Label(card, text="", bg=card.cget("bg")).pack(pady=2)
 
     def _divider(self, parent):
         tk.Frame(parent, bg=C["sep"], height=1).pack(fill="x", padx=24, pady=12)

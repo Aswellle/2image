@@ -342,7 +342,8 @@ class LLMWizard(tk.Toplevel):
             tk.Label(row, text=_(desc), font=F["small"], bg=C["card"], fg=C["sub"], anchor="w").pack(
                 side="left", padx=(4, 0)
             )
-        tk.Label(model_f, text="").pack(pady=2)
+        # 底部留白占位：背景与卡片同色，避免默认色渲染成白色竖条
+        tk.Label(model_f, text="", bg=model_f.cget("bg")).pack(pady=2)
 
         # Key 输入
         key_row = tk.Frame(inner, bg=C["bg"])
@@ -415,7 +416,7 @@ class LLMWizard(tk.Toplevel):
                 anchor="w",
                 justify="left",
             ).pack(anchor="w", padx=14, pady=(8 if line.startswith("🔒") else 2, 2))
-        tk.Label(privacy_f, text="").pack(pady=2)
+        tk.Label(privacy_f, text="", bg=privacy_f.cget("bg")).pack(pady=2)
 
     # ──────────────────────────────────────────────────────────────
     #   顶部状态横幅
@@ -488,7 +489,7 @@ class LLMWizard(tk.Toplevel):
             lbl.pack(fill="x", anchor="w", padx=16, pady=2)
             labels.append(lbl)
         bind_wraplength(card, labels)
-        tk.Label(card, text="").pack(pady=2)
+        tk.Label(card, text="", bg=card.cget("bg")).pack(pady=2)
 
     def _hint(self, parent, text, px=24):
         tk.Label(
