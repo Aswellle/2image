@@ -54,3 +54,42 @@ def test_both_tooltips_share_the_constants():
 
     sig = inspect.signature(_Tooltip.__init__)
     assert sig.parameters["delay_ms"].default == tooltip.DELAY_MS
+
+
+def test_attach_tooltip_shows_on_focus_and_hides_on_blur(tk_root):
+    """icon 按钮的悬浮说明：键盘聚焦也能看到，失焦/销毁即收起。"""
+    import time
+    import tkinter as tk
+
+    from config.fonts import init_fonts
+    from config.i18n import _
+
+    init_fonts()
+
+    # 合成 Enter/FocusIn 只投递给已映射窗口：用独立 Toplevel 而非 withdrawn 根
+    top = tk.Toplevel(tk_root)
+    top.geometry("320x200+60+60")
+    top.deiconify()
+    btn = tk.Button(top, text="x")
+    btn.pack()
+    tooltip.attach_tooltip(btn, "tip_clear_search")
+    try:
+        top.update()
+        btn.event_generate("<FocusIn>")
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline and tooltip._BUBBLE is None:
+            top.update()
+            time.sleep(0.02)
+        assert tooltip._BUBBLE is not None, "聚焦后应显示悬浮说明"
+        texts = [str(w.cget("text")) for w in tooltip._BUBBLE.winfo_children()]
+        assert _("tip_clear_search") in texts
+
+        btn.event_generate("<FocusOut>")
+        top.update()
+        assert tooltip._BUBBLE is None, "失焦后应关闭悬浮说明"
+    finally:
+        top.destroy()
+        tk_root.update()
+        if tooltip._BUBBLE is not None:
+            tooltip._BUBBLE.destroy()
+            tooltip._BUBBLE = None

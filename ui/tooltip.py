@@ -49,16 +49,30 @@ _BUBBLE = None  # 进程级单例气泡：同一时刻只显示一条
 
 
 def attach_tooltip(widget: tk.Widget, text_key: str) -> None:
-    """给控件挂单行悬浮说明。
+    """给控件挂单行悬浮说明（鼠标悬停与键盘焦点均可触发）。
 
     icon-only 按钮（Segoe 图标字形）的 text 是 PUA 码点，无法向屏幕
-    阅读器传达语义，悬浮说明是 Tkinter 平台上可行的最低成本补充。
+    阅读器传达语义；悬浮/聚焦说明是 Tkinter 平台上可行的最低成本补充。
     时间常量与侧栏/词条库气泡共用一套（DELAY_MS）。
     """
     state = {"after": None}
 
-    def _show(_event=None):
+    def _cancel():
+        if state["after"] is not None:
+            try:
+                widget.after_cancel(state["after"])
+            except Exception:
+                pass
+            state["after"] = None
+
+    def _show():
         global _BUBBLE
+        state["after"] = None
+        try:
+            if not widget.winfo_exists():
+                return
+        except tk.TclError:
+            return
         if _BUBBLE is not None and _BUBBLE.winfo_exists():
             return
         bubble = tk.Toplevel(widget)
@@ -71,12 +85,24 @@ def attach_tooltip(widget: tk.Widget, text_key: str) -> None:
             fg=C["text"],
             padx=8,
             pady=4,
-            bd=1,
-            relief="solid",
+            bd=0,
+            highlightbackground=C["sep"],
+            highlightthickness=1,
+            wraplength=320,
+            justify="left",
         ).pack()
-        x = widget.winfo_rootx() + widget.winfo_width() // 2 - 60
+        bubble.update_idletasks()
+        # 以气泡实测宽度居中，并四向钳回屏幕内（仅 max(0, x) 会让
+        # 贴近屏幕右缘的按钮把气泡推出屏外）
+        bw, bh = bubble.winfo_reqwidth(), bubble.winfo_reqheight()
+        x = widget.winfo_rootx() + widget.winfo_width() // 2 - bw // 2
         y = widget.winfo_rooty() + widget.winfo_height() + 6
-        bubble.wm_geometry("+%d+%d" % (max(0, x), max(0, y)))
+        sw, sh = bubble.winfo_screenwidth(), bubble.winfo_screenheight()
+        if y + bh > sh - 6:  # 下方放不下 → 翻到控件上方
+            y = widget.winfo_rooty() - bh - 6
+        x = max(4, min(x, sw - bw - 6))
+        y = max(4, min(y, sh - bh - 6))
+        bubble.wm_geometry(f"+{x}+{y}")
         try:
             bubble.attributes("-topmost", True)
         except tk.TclError:
@@ -85,12 +111,7 @@ def attach_tooltip(widget: tk.Widget, text_key: str) -> None:
 
     def _hide(_event=None):
         global _BUBBLE
-        if state["after"] is not None:
-            try:
-                widget.after_cancel(state["after"])
-            except Exception:
-                pass
-            state["after"] = None
+        _cancel()
         if _BUBBLE is not None:
             try:
                 if _BUBBLE.winfo_exists():
@@ -99,10 +120,14 @@ def attach_tooltip(widget: tk.Widget, text_key: str) -> None:
                 pass
             _BUBBLE = None
 
-    def _schedule(event=None):
+    def _schedule(_event=None):
+        _cancel()
         state["after"] = widget.after(DELAY_MS, _show)
 
-    widget.bind("<Enter>", _schedule)
-    widget.bind("<Leave>", _hide)
-    widget.bind("<ButtonPress>", _hide)
-    widget.bind("<Destroy>", _hide)
+    # add="+" 不覆盖控件已有的同类绑定；FocusIn/Out 让 Tab 用户也能看到语义
+    widget.bind("<Enter>", _schedule, add="+")
+    widget.bind("<Leave>", _hide, add="+")
+    widget.bind("<ButtonPress>", _hide, add="+")
+    widget.bind("<Destroy>", _hide, add="+")
+    widget.bind("<FocusIn>", _schedule, add="+")
+    widget.bind("<FocusOut>", _hide, add="+")
