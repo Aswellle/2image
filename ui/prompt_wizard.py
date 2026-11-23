@@ -823,7 +823,8 @@ class PromptWizard(tk.Toplevel):
         idx = self._tmpl_order.index(tid)
         nxt = idx + step
         if 0 <= nxt < len(self._tmpl_order):
-            card, _ = self._tmpl_cards[self._tmpl_order[nxt]]
+            # 解包名不得占用 _：i18n 函数在本模块全局即 _（同类事故见 _select_tmpl）
+            card, _card_color = self._tmpl_cards[self._tmpl_order[nxt]]
             card.focus_set()
 
     def _select_tmpl(self, tid: str):
@@ -1105,9 +1106,11 @@ class PromptWizard(tk.Toplevel):
                 pass
 
         def _run():
+            # 本函数任何 _ 赋值都会遮蔽全局 i18n 函数 _；下方进度 lambda
+            # 依赖 _()，解包一律用具名变量（曾致 TypeError: 'str' not callable）
             if not multi:
                 try:
-                    pos, _ = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
+                    pos, _negative = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
                     _emit(lambda: self._on_done(pos, label))
                 except Exception as ex:
                     _emit(lambda e=str(ex): self._on_error(e))
@@ -1122,7 +1125,7 @@ class PromptWizard(tk.Toplevel):
                     )
                 )
                 try:
-                    pos, _ = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
+                    pos, _negative = generate_prompt(cfg=self.app.cfg, log_cb=self.app._log, **args)
                     if pos and pos not in candidates:
                         candidates.append(pos)
                 except Exception as ex:
