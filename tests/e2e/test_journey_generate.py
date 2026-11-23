@@ -38,11 +38,11 @@ def test_generate_result_updates_preview_pane(e2e):
     e2e.set_prompt("sunset over mountains")
     e2e.select_provider("pollinations")
     e2e.click_generate()
-    assert e2e.wait_until(lambda: e2e.history_count() == 1, timeout_ms=15000)
-    e2e.pump()
     content = e2e.app.content
-    # 预览面板存在且不再显示空态占位文本
-    assert hasattr(content, "preview") or hasattr(content, "_preview") or True
+    assert e2e.wait_until(lambda: content._prev_item is not None, timeout_ms=15000), "预览画布未绘制生成图"
+    assert e2e.app._cur_bytes is not None, "生成结果应成为当前预览数据"
+    assert content._prev_orig is not None, "预览原图应已解码"
+    assert content._prev_cv.itemcget(content._prev_ph, "text") == "", "空态占位文案应被清除"
 
 
 def test_generate_failure_shows_error_and_app_survives(e2e):
