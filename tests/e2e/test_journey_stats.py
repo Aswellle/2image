@@ -1,9 +1,23 @@
 """E2E 旅程：统计看板全交互（卡片/切年/刷新/导出/分享图）。"""
 
+from datetime import datetime
+
 import pytest
 import tkinter as tk
+from data import repository
 from data.repository import add_entry
 from tests.e2e import driver
+
+
+def _insert_entry_at(timestamp: str, provider: str = "Pollinations/flux") -> None:
+    """按指定时间插一条记录（跨年切换需要往年数据）。"""
+    conn = repository._conn()
+    conn.execute(
+        "INSERT INTO history(timestamp,prompt,translated,image_path,provider,nickname,favorited,tags)"
+        " VALUES (?,?,?,?,?,NULL,0,'')",
+        (timestamp, "last year prompt", "", "old.png", provider),
+    )
+    conn.commit()
 
 
 @pytest.fixture
@@ -14,11 +28,19 @@ def stats(e2e):
     ):
         for _ in range(4 + day_i * 3):
             add_entry(f"seed {day_i}", "", f"s{day_i}.png", prov)
+    # 往年一条：让「切年」路径有第二个年份可选（否则用例恒 skip）
+    _insert_entry_at(f"{datetime.now().year - 1}-06-15 12:00:00")
     e2e.app._show_stats()
     e2e.pump(8)
     sd = e2e.app._stats_win
     assert sd is not None and sd.winfo_exists()
     yield sd
+    # bind_all 是进程级注册：直接 destroy 会留下指向已销毁画布的滚轮处理器
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        try:
+            sd.win.unbind_all(seq)
+        except tk.TclError:
+            pass
     try:
         sd.win.destroy()
     except tk.TclError:
@@ -39,7 +61,7 @@ def test_summary_cards_render_six_tiles(stats):
             _walk(ch)
 
     _walk(stats.win)
-    assert len(values) >= 5  # 5 数字 + 1 百分比（0 收藏时%）
+    assert len(values) >= 6, f"六张汇总卡应各有一个数值标签，实际 {values}"
 
 
 def test_heatmap_grid_drawn(stats, e2e):
