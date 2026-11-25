@@ -12,11 +12,14 @@ ROUTES: dict = {
     "text_overlay": [
         "ideogram",
         "openai_image",
+        "volcengine_ark",
         "siliconflow",
     ],
     # 高端写实摄影：产品图、人像、杂志封面
     "product_photo": [
         "fal_flux",
+        "volcengine_ark",
+        "minimax_image",
         "stability_ai",
         "siliconflow",
         "openai_image",
@@ -32,6 +35,8 @@ ROUTES: dict = {
     # 电商主图（白底/场景）
     "ecommerce": [
         "fal_flux",
+        "volcengine_ark",
+        "minimax_image",
         "stability_ai",
         "siliconflow",
         "pollinations",
@@ -41,12 +46,14 @@ ROUTES: dict = {
         "siliconflow",
         "fal_flux",
         "gemini",
+        "volcengine_ark",
         "pollinations",
     ],
     # 科技/品牌宣传
     "brand_tech": [
         "fal_flux",
         "openai_image",
+        "minimax_image",
         "siliconflow",
         "recraft",
     ],

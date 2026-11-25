@@ -29,10 +29,12 @@ from services.generation.provider_manifest import (
     resolve_provider_id,
 )
 from services.providers import (
+    COMMERCIAL_PROVIDERS,
     DEFAULT_ORDER,
     FREE_PROVIDERS,
     MULTI_KEY_PROVIDERS,
     OPTIONAL_KEY_PROVIDERS,
+    PAID_PROVIDERS,
     PROVIDER_KEYS,
 )
 
@@ -43,6 +45,22 @@ _KEY_MAP: dict = {name: key for name, key in PROVIDER_KEYS.items() if key}
 
 # set of free provider ids (no key required or key is None)
 _FREE_PROVIDERS: set = set(FREE_PROVIDERS.keys())
+
+# 非场景提示词的付费/商业兜底顺序（仅在 paid_auto_opt_in 开启时追加到免费序列之后）：
+# 通用高质量在前，专精/小众在后；场景路由另有更精确的排布。
+_AUTO_PAID_ORDER = [
+    "openai_image",
+    "bfl_flux",
+    "fal_flux",
+    "gemini_nano_banana_pro",
+    "minimax_image",
+    "volcengine_ark",
+    "stability_ai",
+    "replicate_flux",
+    "recraft",
+    "ideogram",
+    "xai_grok",
+]
 
 
 def _has_key(name: str, cfg: dict) -> bool:
@@ -132,6 +150,15 @@ def get_provider_order(
     for name in fallback_order or DEFAULT_ORDER:
         if name not in base:
             base.append(name)
+
+    # 1b. 非场景提示词同样需要付费/商业兜底：用户显式开启 opt-in 后，
+    # 在免费序列之后补上已配置 Key 的付费与商业接口（_filter_available
+    # 仍会剔除缺 Key、超预算与未 opt-in 的项）。否则「自动」模式会
+    # 完全忽略用户刚配置好的商业接口。
+    if cfg.get("paid_auto_opt_in"):
+        for name in [*_AUTO_PAID_ORDER, *PAID_PROVIDERS, *COMMERCIAL_PROVIDERS]:
+            if name not in base:
+                base.append(name)
 
     # 2. 可用性过滤
     available = _filter_available(base, cfg)

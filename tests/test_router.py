@@ -189,3 +189,45 @@ class TestGetProviderOrder:
         # siliconflow 熔断（OPEN）→ 沉到队尾
         assert order.index("pollinations") < order.index("siliconflow")
         reg.reset("siliconflow")
+
+
+class TestCommercialRouting:
+    """商业接口参与智能路由的端到端规则（场景首选 + 非场景兜底）。"""
+
+    def test_text_overlay_prefers_ideogram_when_opted_in(self):
+        cfg = {"ideogram_key": "ik", "paid_auto_opt_in": True}
+        order = get_provider_order("设计一个 banner 标题", cfg)
+        assert order[0] == "ideogram"
+
+    def test_ecommerce_prefers_fal_when_opted_in(self):
+        cfg = {"fal_key": "fk", "paid_auto_opt_in": True}
+        order = get_provider_order("电商产品图", cfg)
+        assert order[0] == "fal_flux"
+
+    def test_ecommerce_uses_minimax_when_it_is_the_only_key(self):
+        cfg = {"minimax_key": "mk", "paid_auto_opt_in": True}
+        order = get_provider_order("电商产品图", cfg)
+        assert order[0] == "minimax_image"
+
+    def test_illustration_prefers_recraft_when_opted_in(self):
+        cfg = {"recraft_key": "rk", "paid_auto_opt_in": True}
+        order = get_provider_order("扁平插画 icon 设计", cfg)
+        assert order[0] == "recraft"
+
+    def test_non_scene_prompt_appends_paid_after_free_when_opted_in(self):
+        cfg = {"openai_key": "ok", "paid_auto_opt_in": True}
+        order = get_provider_order("a beautiful sunset", cfg)
+        assert "pollinations" in order and "openai_image" in order
+        assert order.index("pollinations") < order.index("openai_image")
+
+    def test_non_scene_prompt_excludes_paid_without_opt_in(self):
+        cfg = {"openai_key": "ok"}
+        order = get_provider_order("a beautiful sunset", cfg)
+        assert "openai_image" not in order
+
+    def test_opted_in_but_keyless_commercial_still_excluded(self):
+        cfg = {"openai_key": "ok", "paid_auto_opt_in": True}
+        order = get_provider_order("a beautiful sunset", cfg)
+        assert "ideogram" not in order
+        assert "fal_flux" not in order
+        assert "minimax_image" not in order
