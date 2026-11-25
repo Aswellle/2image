@@ -11,97 +11,97 @@
  },
  {
   "file": "ui/app.py",
-  "line": 89,
+  "line": 90,
   "text": "主窗口控制器 v5.2。侧栏/主区控件已提取至独立模块。"
  },
  {
   "file": "ui/app.py",
-  "line": 307,
+  "line": 308,
   "text": "主窗口关闭守卫：任务进行中先确认，防守护线程随窗口静默消失。"
  },
  {
   "file": "ui/app.py",
-  "line": 436,
+  "line": 448,
   "text": "当前窗口下侧栏允许的最大宽度。\n\n        侧栏上限不能是固定值：窗口缩到最小（1000px）时若侧栏仍可拖到\n "
  },
  {
   "file": "ui/app.py",
-  "line": 484,
+  "line": 496,
   "text": "双击分隔条恢复默认宽度（§41）。"
  },
  {
   "file": "ui/app.py",
-  "line": 499,
+  "line": 511,
   "text": "Ctrl+\\ 折叠/展开历史侧栏（§42）：折叠后工作区获得完整宽度。"
  },
  {
   "file": "ui/app.py",
-  "line": 553,
+  "line": 565,
   "text": "焦点在可编辑控件上时不拦截编辑类按键。"
  },
  {
   "file": "ui/app.py",
-  "line": 561,
+  "line": 573,
   "text": "Esc 关闭最上层覆盖窗口（查看器/提示词助手/词库）。"
  },
  {
   "file": "ui/app.py",
-  "line": 588,
+  "line": 600,
   "text": "Ctrl+B 打开词库；焦点在输入框时让给编辑键。"
  },
  {
   "file": "ui/app.py",
-  "line": 594,
+  "line": 606,
   "text": "Ctrl+L 清空调试日志；焦点在输入框时让给编辑键。"
  },
  {
   "file": "ui/app.py",
-  "line": 600,
+  "line": 612,
   "text": "方向键/Home/End 在可见（过滤后）列表上移动选中并滚动入视。\n\n        此前走未过滤的 get_all_"
  },
  {
   "file": "ui/app.py",
-  "line": 621,
+  "line": 633,
   "text": "瞬态通知（UIUX §64）：快捷确认走 toast，不长期占据状态栏。"
  },
  {
   "file": "ui/app.py",
-  "line": 667,
+  "line": 679,
   "text": "仅清理选中项关联的预览/对比状态。\n\n        删除历史条目等场景使用：保留用户正在输入的提示词草稿、\n     "
  },
  {
   "file": "ui/app.py",
-  "line": 739,
+  "line": 751,
   "text": "保留变体后刷新历史列表并自动预览。\n\n        修复：\n          · 接收 batch_panel 传来"
  },
  {
   "file": "ui/app.py",
-  "line": 913,
+  "line": 925,
   "text": "根据当前自动发现的 Provider 注册表实时统计顶栏可用接口数。\n\n        不再维护易过期的手写 key 列"
  },
  {
   "file": "ui/app.py",
-  "line": 975,
+  "line": 992,
   "text": "单张生成成功回调：恢复按钮、刷新预览/历史/查看器。\n\n        b8dd17b 重构中误删导致生成成功后界面不更"
  },
  {
   "file": "ui/app.py",
-  "line": 1004,
+  "line": 1021,
   "text": "Handle generation error (kept in App for UI state access).\n\n"
  },
  {
   "file": "ui/app.py",
-  "line": 1080,
+  "line": 1097,
   "text": "单图生成被用户取消：恢复控件并提示（与 _err 同构的收尾）。"
  },
  {
   "file": "ui/app.py",
-  "line": 1088,
+  "line": 1105,
   "text": "导出历史记录（图片副本 + HTML 记录本）到用户选择的目录。"
  },
  {
   "file": "ui/app.py",
-  "line": 124,
+  "line": 125,
   "text": "简体中文"
  },
  {
@@ -391,107 +391,107 @@
  },
  {
   "file": "ui/main_content.py",
-  "line": 68,
+  "line": 69,
   "text": "Canvas 绘制的强度滑块。\n    范围 0.1~0.9；轨道颜色渐变：蓝（微调） → 紫（融合） → 红（重构）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 128,
+  "line": 129,
   "text": "键盘步进：←/→ ±0.05。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 132,
+  "line": 133,
   "text": "Home/End：直接跳到最小/最大强度。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1056,
+  "line": 1059,
   "text": "工具行变窄时收起 Ctrl+Enter 提示，保证按钮不被挤压。\n\n        提示是补充信息，按钮是操作入口。收纳"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1076,
+  "line": 1079,
   "text": "工具栏变窄时收起次要提示，把宽度让给按钮。\n\n        提示文字需要约 150px 才能完整显示；工具栏不足时它会"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1101,
+  "line": 1104,
   "text": "参考图缩略图 Canvas 尺寸随图生图侧栏动画过渡实时变化，\n        用与 _on_prev_resize 相"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1146,
+  "line": 1149,
   "text": "提示词占位符显隐：有内容即隐藏。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1157,
+  "line": 1160,
   "text": "输入框插入回执：短暂高亮后恢复。\n\n        连续触发只保留最后一次恢复定时器；恢复目标固定为 entry 令牌—"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1179,
+  "line": 1182,
   "text": "更新输入框字符计数标签（公开，供 PhrasePanel 等外部调用）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1190,
+  "line": 1193,
   "text": "将提示词文本框内容复制到系统剪贴板，并在字数标签短暂显示反馈。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1209,
+  "line": 1212,
   "text": "构建图生图参考图侧栏——预览 Tab 内 _prev_host 的第 0 列。\n\n        对标 Automati"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1336,
+  "line": 1339,
   "text": "按当前接口选择显隐强度滑杆行；「自动」按任一可选接口支持判定。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1356,
+  "line": 1359,
   "text": "支持图生图、且能在现有向导里配置 Key 的接口。\n\n        真实条件是「向导里有没有该接口的 Key 配置卡片"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1372,
+  "line": 1375,
   "text": "把图生图可用接口名称以竖向分行方式填入侧栏提示区。\n        每次调用先销毁旧行再重建，保证列表长度变化时不会残留"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1395,
+  "line": 1398,
   "text": "postcommand：把弹出 Listbox 撑到最长条目的实际像素宽。\n\n        ttk.Combobox "
  },
  {
   "file": "ui/main_content.py",
-  "line": 1416,
+  "line": 1419,
   "text": "切换文生图/图生图。\n\n        图生图的参考图侧栏固定在预览 Tab 内部（_prev_host 第 0 列），"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1476,
+  "line": 1479,
   "text": "批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个\n        入口并给出提示，避免用户以为批量结果也套"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1496,
+  "line": 1499,
   "text": "在参考图预览 Canvas 上绘制占位符（尺寸取实际渲染宽高，\n        侧栏展开动画期间会随每一帧的宽度实时重绘"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1511,
+  "line": 1514,
   "text": "将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1528,
+  "line": 1531,
   "text": "弹出文件选择器，读取参考图字节并更新预览和 UI 状态。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1549,
+  "line": 1552,
   "text": "清除参考图，恢复占位符。"
  },
  {
@@ -896,17 +896,17 @@
  },
  {
   "file": "ui/wizard_free.py",
-  "line": 25,
+  "line": 26,
   "text": "免费接口配置向导（v5）。"
  },
  {
   "file": "ui/wizard_free.py",
-  "line": 73,
+  "line": 76,
   "text": "关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"
  },
  {
   "file": "ui/wizard_free.py",
-  "line": 968,
+  "line": 1037,
   "text": "绿边 idle，获焦后变隐形。"
  },
  {
@@ -931,13 +931,18 @@
  },
  {
   "file": "ui/wizard_paid.py",
-  "line": 38,
+  "line": 47,
   "text": "付费接口（OpenAI / Stability AI / Replicate / xAI / 豆包）配置窗口。"
  },
  {
   "file": "ui/wizard_paid.py",
-  "line": 80,
+  "line": 100,
   "text": "关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 699,
+  "text": "密钥输入行（标签 + 输入框 + 显示切换），返回绑定变量。"
  },
  {
   "file": "services/application/generation_controller.py",
