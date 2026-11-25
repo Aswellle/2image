@@ -383,6 +383,106 @@ class TestMiniMax:
             mod.try_minimax_image("cat", 1024, 1024, 1, {}, lambda s: None)
 
 
+class TestMiniMaxEdits:
+    """H3 编辑端点契约（2026-11-26 对照官方 API 参考接入）。"""
+
+    MOD = "services.providers.minimax_image"
+    CFG = {"minimax_key": "mm-test", "_ref_image": PNG_BYTES}
+
+    def _ok(self):
+        return _resp(200, {"data": [{"url": "https://cdn.example.com/a.png", "revised_prompt": "better prompt"}]})
+
+    def test_edit_payload_uses_data_uri_and_auto_size(self):
+        import services.providers.minimax_image as mod
+
+        sess = MagicMock()
+        sess.post.return_value = self._ok()
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+            patch.object(mod.time, "sleep"),
+        ):
+            data, used = mod.try_minimax_image("replace background", 1024, 1024, 1, self.CFG, lambda s: None)
+
+        assert data == PNG_BYTES
+        assert used.endswith("-edit")
+        url = sess.post.call_args.args[0]
+        payload = sess.post.call_args.kwargs["json"]
+        assert url.endswith("/v1/images/edits")
+        assert payload["size"] == "auto"
+        assert payload["aspect_ratio"] == "1:1"
+        assert payload["area"] == "1K"
+        assert payload["images"][0]["image_url"].startswith("data:image/png;base64,")
+
+    def test_edit_timeout_is_not_retried(self):
+        """官方声明编辑端点非幂等：超时重试会重复计费。"""
+        import requests
+
+        import services.providers.minimax_image as mod
+
+        sess = MagicMock()
+        sess.post.side_effect = requests.Timeout("stuck")
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch.object(mod.time, "sleep"),
+        ):
+            with pytest.raises(ProviderTransientError) as excinfo:
+                mod.try_minimax_image("x", 1024, 1024, 1, self.CFG, lambda s: None)
+
+        assert excinfo.value.retryable is False
+        assert sess.post.call_count == 1
+
+    def test_edit_5xx_is_not_retried(self):
+        import services.providers.minimax_image as mod
+
+        sess = MagicMock()
+        sess.post.return_value = _resp(500, content=b"server error")
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch.object(mod.time, "sleep"),
+        ):
+            with pytest.raises(ProviderTransientError) as excinfo:
+                mod.try_minimax_image("x", 1024, 1024, 1, self.CFG, lambda s: None)
+
+        assert excinfo.value.retryable is False
+        assert sess.post.call_count == 1
+
+    def test_edit_unsupported_format_converted_to_png(self):
+        import io as _io
+
+        from PIL import Image
+
+        import services.providers.minimax_image as mod
+
+        buf = _io.BytesIO()
+        Image.new("RGB", (16, 16), "red").save(buf, format="BMP")
+        cfg = {"minimax_key": "mm-test", "_ref_image": buf.getvalue()}
+
+        sess = MagicMock()
+        sess.post.return_value = self._ok()
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", return_value=PNG_BYTES),
+            patch.object(mod.time, "sleep"),
+        ):
+            mod.try_minimax_image("x", 1024, 1024, 1, cfg, lambda s: None)
+
+        image_url = sess.post.call_args.kwargs["json"]["images"][0]["image_url"]
+        assert image_url.startswith("data:image/png;base64,")
+
+    def test_edit_auth_error(self):
+        import services.providers.minimax_image as mod
+
+        sess = MagicMock()
+        sess.post.return_value = _resp(401, content=b"unauthorized")
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch.object(mod.time, "sleep"),
+        ):
+            with pytest.raises(ProviderAuthError):
+                mod.try_minimax_image("x", 1024, 1024, 1, self.CFG, lambda s: None)
+
+
 # ── Gemini Nano Banana Pro ─────────────────────────────────────
 
 

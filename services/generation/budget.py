@@ -37,7 +37,7 @@ PRICING_USD_PER_IMAGE: dict[str, float] = {
     "fal_flux": 0.06,  # fal-ai/flux-2-pro
     "recraft": 0.04,  # recraftv4_1
     "bfl_flux": 0.06,  # flux-2-pro
-    "minimax_image": 0.05,  # image-01
+    "minimax_image": 0.05,  # H3-Image
     "gemini_nano_banana_pro": 0.15,  # Gemini 3 Pro Image
     "volcengine_ark": 0.05,  # Seedream 5.5
 }

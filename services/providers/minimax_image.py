@@ -1,21 +1,26 @@
 """
-services/providers/minimax_image.py — MiniMax 图像生成（文生图）
+services/providers/minimax_image.py — MiniMax 图像生成（文生图 + 参考图编辑）
 
 支持模型（2026-11-22 换代）：
   · MiniMax-H3-Image           — H3 旗舰（默认；文生图+编辑，最高 20MP）
   · MiniMax-H3-Image-Highspeed — 同参数更快变体
 
-端点: POST https://api.minimax.io/v1/images/generations（OpenAI 风格：
-model/prompt/aspect_ratio+area/n/response_format）
+端点（2026-11-26 对照 platform.minimax.io 官方 API 参考接入）：
+  · 文生图: POST https://api.minimax.io/v1/images/generations
+            model / prompt / aspect_ratio+area / n / response_format
+  · 编辑:   POST https://api.minimax.io/v1/images/edits
+            model / prompt / images[{image_url}] / size=auto / aspect_ratio+area
+            （1–16 张参考图；image_url 接受公网 URL、mm_file:// 与
+             data:image/<fmt>;base64,<...> data URI，本机参考图走 data URI）
 认证: Header Authorization: Bearer <key>
-响应: data[].url（或 b64_json），usage.generated_images 计成功数
+响应: data[].url（或 b64_json），单项失败在 data[].error，usage.generated_images 计成功数
 
-图生图：H3 的编辑走 /v1/images/edits 端点（最多 16 张参考图），
-其请求契约尚未核验接入——supports_img2img 暂关，旧 image-01 的
-subject_reference 通道随 image-01 退役；edits 接入为后续待办。
+图生图注意：官方声明编辑端点「非幂等」——超时/断连后服务端仍会完成并计费，
+因此编辑路径不做内联重试，瞬态错误标记为不可重试，避免重复扣费。
 """
 
 import base64
+import io
 import threading
 import time
 from typing import Callable, Tuple
@@ -45,8 +50,8 @@ PROVIDER_INFO = {
     "name": "MiniMax Image (付费)",
     "category": "commercial",
     "config_key": "minimax_key",
-    "description": "MiniMax H3-Image 文生图（最高 20MP）",
-    "supports_img2img": False,  # H3 编辑端点契约核验后恢复
+    "description": "MiniMax H3-Image 文生图 + 参考图编辑（最高 20MP）",
+    "supports_img2img": True,
 }
 
 
@@ -55,8 +60,13 @@ _LAST_DONE = [0.0]
 _MIN_INTV = 2.0
 
 _ENDPOINT = "https://api.minimax.io/v1/images/generations"
+_EDIT_ENDPOINT = "https://api.minimax.io/v1/images/edits"
 _TIMEOUT = 120
+# 官方：编辑端点服务端最长等待 600s，客户端超时不得短于该值
+_EDIT_TIMEOUT = 600
 _MAX_RETRIES = 3
+# 参考图原始字节上限（请求体 64MiB，base64 膨胀约 4/3，留出 prompt 余量）
+_MAX_REF_BYTES = 45 * 1024 * 1024
 
 # (ratio_value, aspect_ratio 枚举)
 _ASPECTS = [
@@ -87,6 +97,15 @@ def _best_area(w: int, h: int) -> str:
     return "4K"
 
 
+def _wait_turn() -> None:
+    """限速预占：持锁范围仅限等待，避免批量并发时锁住整个请求周期。"""
+    with _LOCK:
+        gap = time.time() - _LAST_DONE[0]
+        if gap < _MIN_INTV:
+            time.sleep(_MIN_INTV - gap)
+        _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
+
+
 def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     key = cfg.get("minimax_key", "").strip()
     if not key:
@@ -103,6 +122,10 @@ def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
             log(f"[MiniMax] 模型 {model!r} 不在目录，已归一化到默认 {MINIMAX_IMAGE_DEFAULT}")
         model = MINIMAX_IMAGE_DEFAULT
 
+    ref_image = cfg.get("_ref_image")  # bytes or None
+    if ref_image is not None:
+        return _edit_image(prompt, w, h, ref_image, model, headers, log)
+
     aspect = _best_aspect(w, h)
     payload = {
         "model": model,
@@ -117,11 +140,7 @@ def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
     # ── 持锁范围仅限限速等待：预占时间槽后立即放锁 ──────────────────
     # 修复：原版锁覆盖整个重试循环，429 退避与 HTTP 超时都持锁，
     # 批量并发时其余线程最长被阻塞数分钟。等待/请求均在锁外执行。
-    with _LOCK:
-        gap = time.time() - _LAST_DONE[0]
-        if gap < _MIN_INTV:
-            time.sleep(_MIN_INTV - gap)
-        _LAST_DONE[0] = time.time()  # 预占时间槽，锁外等待/请求
+    _wait_turn()
 
     last_err = None
     for attempt in range(1, _MAX_RETRIES + 1):
@@ -159,6 +178,112 @@ def try_minimax_image(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Ca
                 time.sleep(3 * attempt)
 
     raise ProviderTransientError(f"MiniMax 全部重试失败：{last_err}")
+
+
+def _edit_image(
+    prompt: str,
+    w: int,
+    h: int,
+    ref_image: bytes,
+    model: str,
+    headers: dict,
+    log: Callable,
+) -> Tuple[bytes, str]:
+    """H3 参考图编辑：单次提交，失败不内联重试（端点非幂等，重试会重复计费）。"""
+    aspect = _best_aspect(w, h)
+    area = _best_area(w, h)
+    image_url = _ref_data_uri(ref_image)
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        # 官方 schema：size=auto 时才能同时使用 aspect_ratio + area
+        "images": [{"image_url": image_url}],
+        "n": 1,
+        "size": "auto",
+        "aspect_ratio": aspect,
+        "area": area,
+        "response_format": "url",
+        # 输出用 jpeg（官方默认）：20MP 的 PNG 可能超过下载 25MB 上限，
+        # 本机保存时统一再转码为 PNG，不受影响
+        "output_format": "jpeg",
+    }
+    name = MINIMAX_IMAGE_NAMES.get(model, model)
+    log(f"► MiniMax {name}  图生图（参考图编辑）  宽高比={aspect}  档={area}  参考图={len(ref_image) // 1024}KB")
+
+    _wait_turn()
+    try:
+        resp = _get_session().post(_EDIT_ENDPOINT, headers=headers, json=payload, timeout=_EDIT_TIMEOUT)
+    except requests.RequestException as exc:
+        raise _no_retry(ProviderTransientError(f"MiniMax 编辑请求未完成：{exc}"))
+
+    if resp.status_code != 200:
+        try:
+            raise_for_response(resp, "MiniMax Image")
+        except ProviderTransientError as exc:
+            # 5xx / 超时可能已在服务端生成并计费：禁止 orchestrator 重试
+            raise _no_retry(exc)
+
+    try:
+        data = resp.json()
+    except ValueError as exc:
+        raise ProviderInvalidResponseError(f"MiniMax 编辑响应不是 JSON：{exc}")
+
+    image_bytes = _extract_image(data)
+    revised = ""
+    items = data.get("data") or [{}]
+    if isinstance(items[0], dict):
+        revised = str(items[0].get("revised_prompt") or "")
+    if revised:
+        log(f"[MiniMax] 已按编辑提示词重写：{revised[:80]}…")
+    log("[MiniMax] 图生图成功 ✓")
+    return (image_bytes, f"MiniMax/{name}-edit")
+
+
+def _no_retry(err: ProviderError) -> ProviderError:
+    """实例级关闭重试：非幂等端点重复提交会产生重复扣费。"""
+    err.retryable = False
+    return err
+
+
+# 官方允许 jpg/jpeg/png/webp/heic/heif；本机参考图可直传前三类的 data URI，
+# 其余格式（如 BMP/GIF/TIFF）经 Pillow 转码为 PNG。
+_MAGIC_IMAGE_TYPES = (
+    (b"\x89PNG\r\n\x1a\n", "image/png"),
+    (b"\xff\xd8\xff", "image/jpeg"),
+)
+
+
+def _ref_data_uri(ref_image: bytes) -> str:
+    """把本地参考图字节编码为 edits 端点接受的 data URI。"""
+    mime = ""
+    for magic, kind in _MAGIC_IMAGE_TYPES:
+        if ref_image.startswith(magic):
+            mime = kind
+            break
+    if not mime and ref_image[:4] == b"RIFF" and ref_image[8:12] == b"WEBP":
+        mime = "image/webp"
+
+    payload = ref_image
+    if not mime:
+        try:
+            from PIL import Image
+
+            with Image.open(io.BytesIO(ref_image)) as img:
+                img.load()
+                if img.mode not in ("RGB", "RGBA"):
+                    img = img.convert("RGBA" if "A" in img.getbands() else "RGB")
+                buf = io.BytesIO()
+                img.save(buf, format="PNG")
+                payload = buf.getvalue()
+            mime = "image/png"
+        except Exception as exc:
+            raise ProviderConfigError(f"MiniMax 图生图仅支持 PNG / JPEG / WEBP 参考图，且该文件转码失败：{exc}")
+
+    if len(payload) > _MAX_REF_BYTES:
+        raise ProviderConfigError(
+            f"参考图过大（{len(payload) // (1024 * 1024)}MB），MiniMax 编辑请求体上限 64MB，请压缩后再试"
+        )
+    return f"data:{mime};base64,{base64.b64encode(payload).decode()}"
 
 
 def _extract_image(data: dict) -> bytes:

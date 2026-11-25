@@ -182,9 +182,9 @@ COMMERCIAL_MANIFESTS: dict[str, ProviderManifest] = {
         name="MiniMax Image (付费)",
         category="commercial",
         config_key="minimax_key",
-        description="MiniMax H3-Image 文生图（最高 20MP）",
-        supports_img2img=False,
-        capabilities={"text2image"},
+        description="MiniMax H3-Image 文生图 + 参考图编辑（最高 20MP）",
+        supports_img2img=True,
+        capabilities={"text2image", "img2img"},
     ),
     "ideogram": ProviderManifest(
         id="ideogram",
