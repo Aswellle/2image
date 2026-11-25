@@ -6,7 +6,7 @@
 <p><strong>桌面 AI 图片生成器 · 内置 23 个免费、付费及商用生图服务</strong></p>
 
 <p>
-  一个工具，接入市面上主流的免费与付费生图 API，让创作门槛降到最低。<br/>
+  一个工具，接入市面上主流的免费、付费与商业生图 API，让创作门槛降到最低。<br/>
   输入图像描述，一键生成 —— 无需编程，无需搭建，数据完全本地。
 </p>
 
@@ -42,7 +42,7 @@
 
 只需描述你想要的画面，2image 就会自动调用最合适的生图接口为你生成——无需任何编程基础，无需搭建服务，不用担心数据外泄，所有内容都保存在你自己的电脑上。
 
-> "一个工具，接入市面上主流的免费与付费生图API，让创作门槛降到最低。"
+> "一个工具，接入市面上主流的免费、付费与商业生图 API，让创作门槛降到最低。"
 
 ---
 
@@ -74,13 +74,13 @@
 内置 45 条词条、7 个分类，并支持自定义分类与词条。词条中的 `{{变量}}` 会在追加时弹窗逐项填写；自定义词条可编写说明并随导出迁移；词库支持 JSON 导入 / 导出与跨机器合并。搜索覆盖词条及中英双语说明，结果标注归属分类；词条按使用频次置顶，悬浮说明会展示该词条在历史生成记录中的使用情况。历史卡片还可一键把提示词沉淀为「⭐ 我的词条」。
 
 ### 📊 统计看板
-提供全年热力图、接口使用分布、标签热度 Top-10，以及收藏率、近 7 天趋势、连续生成天数和成本估算（历史估算 + 今日台账 + 预算进度）。看板支持就地刷新、年份切换与滚轮 / Escape 操作，并可一键导出多分区 CSV 与 1280×900 分享图。
+提供全年热力图、接口使用分布、标签热度 Top-10，以及收藏率、近 7 天趋势、连续生成天数和成本估算（历史估算 + 今日台账 + 预算进度），并可一键导出多分区 CSV 与 1280×900 分享图。
 
 ### 🀄 中文原生支持
 直接输入中文描述，程序自动调用 MyMemory 翻译为英文再送入生图接口——无需手动翻译，无需额外配置。
 
 ### 🔒 数据完全本地
-所有图片、历史记录、配置均保存在你的电脑（`~/2image/`），不上传任何用户数据。分发给其他人的安装包不含任何个人信息或 API Key。
+所有图片、历史记录、配置均保存在你的电脑（`~/2image/`），不上传任何用户数据。
 
 ---
 
@@ -122,13 +122,13 @@ python main.py
 | 接口 | 模型 | 免费额度 | 是否需要 Key |
 |---|---|---|---|
 | **Pollinations.AI** | FLUX · Turbo · SANA（匿名层实测名单，高质量档含 GPTImage） | 无固定日配额，匿名调用有频率限制 | ❌ 无需注册 |
-| **硅基流动 SiliconFlow** ⭐ | FLUX.1 · SDXL · Kolors | 注册送免费额度 | ✅ 免费注册 |
+| **硅基流动 SiliconFlow** ⭐ | FLUX.1 · SDXL · Kolors · SDXL-Lightning / Turbo | 注册送免费额度 | ✅ 免费注册 |
 | **Google Gemini** | Nano Banana 系列（2.1 默认，2 / 2 Lite / Pro 可切换） | 以 Google AI Studio 当前免费额度为准 | ✅ 免费注册 |
 | **通义万相 Qwen-Image** | wan2.6-t2i（默认，同步协议）· wan2.5-t2i（旧异步协议） | 阿里云新用户免费额度 | ✅ 免费注册 |
 | **Bria AI Fibo** | Fibo | 注册送 1000 次调用 | ✅ 免费注册 |
 | **Cloudflare Workers AI** | FLUX.1-schnell · FLUX.2-dev（高质量档）· SDXL | 1 万 Neurons/天（约 10–20 张高分辨率图） | ✅ 免费注册 |
 | **HuggingFace** | Stable Diffusion 3 Medium | 免费推理 API | ✅ 免费注册 |
-| **StableHorde** | SD 系列 | 匿名可用 | ❌ 可选注册 |
+| **StableHorde** | DreamShaper XL · Stable Diffusion | 匿名可用 | ❌ 可选注册 |
 | **ModelsLab** | FLUX · SDXL · Realistic Vision · SD 1.5 | 100 次/天 | ✅ 免费注册 |
 | **Together AI** | FLUX.1-schnell（官方免费端点） | 免费可用性请以 Together 控制台为准 | ✅ 免费注册 |
 | **OpenRouter** | 统一 Image API（默认 gemini-3.1-flash-image） | 按所选模型计费，免费可用性请以模型页为准 | ✅ 免费注册 |
@@ -139,7 +139,7 @@ python main.py
 | 接口 | 特点 | 定价参考 |
 |---|---|---|
 | **💎 OpenAI GPT-Image** | gpt-image-2 默认（2.5 / 2.6 Flare·Sunburst 可选），文生图与参考图编辑 | 按次计费 |
-| **💎 Nano Banana Pro** | Gemini 3 Pro Image，高画质图生图，复用 Gemini Key | 按量计费 |
+| **💎 Nano Banana Pro** | Gemini 3 Pro Image，高画质文生图与图生图，复用 Gemini Key | 按量计费 |
 | **💎 Black Forest Labs FLUX** | 官方 FLUX.2 单端点文生图与图生图（flux-2-pro 默认） | 按量计费 |
 | **💎 Stability AI** | SD3.5-large / core，支持图生图与「变化强度」控制 | 按积分计费 |
 | **💎 Replicate FLUX** | black-forest-labs/flux-2-pro 官方托管 | 按次计费 |
@@ -181,7 +181,7 @@ main.py
 
 ## 🔌 扩展新接口
 
-只需新建一个免费或付费接口文件，框架自动发现：
+只需新建一个免费、付费或商业接口文件，框架自动发现：
 
 ```python
 # services/providers/my_api.py
@@ -212,7 +212,7 @@ def try_my_api(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable)
     return image_bytes, "我的接口"
 ```
 
-文件保存后即自动出现在主界面下拉菜单与智能路由的兜底序列中；可用性判断由 `config_key` 自动派生，无需手动注册。
+文件保存后即自动出现在主界面下拉菜单；免费接口同时进入自动路由兜底序列，付费与商业接口需在配置向导中开启自动路由后参与。可用性判断由 `config_key` 自动派生，无需手动注册。
 
 接入完整功能还需要：
 
@@ -253,7 +253,7 @@ CI/CD 已配置 GitHub Actions，推送 `v*` 标签自动触发测试 → 构建
 
 所有数据仅存于本机，卸载程序后手动删除该目录即可完全清除。
 
-> **升级说明**：v8 起数据目录从 `~/.text_to_image_app` 迁移至 `~/2image`。首次启动新版本时，旧目录中的数据会自动复制到新目录，旧目录保留作为备份。
+> **升级说明**：数据目录已从旧版的 `~/.text_to_image_app` 迁移至 `~/2image`。首次启动新版本时，旧目录中的数据会自动复制到新目录，旧目录保留作为备份。
 >
 > **模型与兼容性**：接口模型随官方目录持续更新；配置中保存的旧模型 ID（如豆包 4.x / SeedEdit、通义万相 2.1 等已下线版本、MiniMax image-01）会自动归一化到当前默认，升级无需手动改配置。MiniMax H3 图生图走 `/v1/images/edits`（参考图以 data URI 提交）；该端点非幂等，超时后不会自动重试以避免重复计费。
 
@@ -270,8 +270,6 @@ pytest tests/ -q          # 全量 866 项，含 81 项端到端界面旅程
 ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F821,E9
 ruff format --check main.py config/ data/ services/ ui/ tools/ tests/
 ```
-
-当前测试覆盖 `services` / `data` / `config` 约 80%（CI 门槛 68%），并已在 Windows + Python 3.11 / 3.12 双版本验证。
 
 ---
 

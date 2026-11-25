@@ -6,7 +6,7 @@
 <p><strong>Desktop AI Image Generator · 23 Built-in Free, Paid & Commercial Image Generation Services</strong></p>
 
 <p>
-  One tool, all the major free and paid image generation APIs — minimal barrier to creation.<br/>
+  One tool, all the major free, paid and commercial image generation APIs — minimal barrier to creation.<br/>
   Describe your image, generate with one click — no coding, no server setup, all data stays local.
 </p>
 
@@ -43,7 +43,7 @@
 
 Just describe the scene you want, and 2image automatically calls the most suitable image generation API — no coding required, no server setup, no data leaks. Everything stays on your own machine.
 
-> "One tool, all the major free and paid image generation APIs — minimal barrier to creation."
+> "One tool, all the major free, paid and commercial image generation APIs — minimal barrier to creation."
 
 ---
 
@@ -75,13 +75,13 @@ The wizard can generate 3 candidates at once and switch between them with ‹ / 
 Ships with 45 phrases across 7 categories, plus custom categories and phrases. `{{variable}}` placeholders in a phrase open a fill-in dialog before insertion; custom phrases can carry descriptions that travel with exports; the library supports JSON import/export and cross-machine merging. Search covers phrases and their bilingual descriptions and labels each hit with its category; phrases are sorted by usage frequency, and the hover card shows how often a phrase appears in generation history. History cards can also save a prompt to "⭐ My Phrases" in one click.
 
 ### 📊 Statistics Dashboard
-Includes a full-year heatmap, provider usage distribution, Top-10 tags, plus favorite rate, 7-day trend, generation streak, and cost estimates (history estimate + today's ledger + budget progress). The dashboard supports in-place refresh, year switching, wheel/Escape interaction, and one-click export to a multi-section CSV or a 1280×900 share image.
+Includes a full-year heatmap, provider usage distribution, Top-10 tags, plus favorite rate, 7-day trend, generation streak, and cost estimates (history estimate + today's ledger + budget progress), with one-click export to a multi-section CSV or a 1280×900 share image.
 
 ### 🀄 Native Chinese Support
 Enter Chinese descriptions directly — the program automatically calls MyMemory to translate to English before sending to image APIs. No manual translation, no extra configuration.
 
 ### 🔒 Fully Local Data
-All images, history, and configuration are saved on your machine (`~/2image/`). No user data is uploaded. Installers distributed to others contain no personal information or API keys.
+All images, history, and configuration are saved on your machine (`~/2image/`). No user data is uploaded.
 
 ---
 
@@ -123,13 +123,13 @@ The first launch creates the `~/2image/` data directory; no API key is required 
 | API | Model | Free Tier | API Key Required |
 |---|---|---|---|
 | **Pollinations.AI** | FLUX · Turbo · SANA (verified anonymous list; GPTImage in HQ mode) | No fixed daily quota; anonymous calls rate-limited | ❌ No registration needed |
-| **SiliconFlow** ⭐ | FLUX.1 · SDXL · Kolors | Free credits on signup | ✅ Free registration |
+| **SiliconFlow** ⭐ | FLUX.1 · SDXL · Kolors · SDXL-Lightning / Turbo | Free credits on signup | ✅ Free registration |
 | **Google Gemini** | Nano Banana family (2.1 default; 2 / 2 Lite / Pro switchable) | Per Google AI Studio current free tier | ✅ Free registration |
 | **Qwen-Image (Dashscope)** | wan2.6-t2i (default, sync protocol) · wan2.5-t2i (legacy async) | Free tier for new Alibaba Cloud users | ✅ Free registration |
 | **Bria AI Fibo** | Fibo | 1000 free calls on signup | ✅ Free registration |
 | **Cloudflare Workers AI** | FLUX.1-schnell · FLUX.2-dev (HQ mode) · SDXL | 10k Neurons/day (~10–20 high-res images) | ✅ Free registration |
 | **HuggingFace** | Stable Diffusion 3 Medium | Free inference API | ✅ Free registration |
-| **StableHorde** | SD series | Anonymous available | ❌ Optional registration |
+| **StableHorde** | DreamShaper XL · Stable Diffusion | Anonymous available | ❌ Optional registration |
 | **ModelsLab** | FLUX · SDXL · Realistic Vision · SD 1.5 | 100/day | ✅ Free registration |
 | **Together AI** | FLUX.1-schnell (official free endpoint) | Free availability per Together console | ✅ Free registration |
 | **OpenRouter** | Unified Image API (default gemini-3.1-flash-image) | Per-model billing; see model page for free availability | ✅ Free registration |
@@ -140,7 +140,7 @@ The first launch creates the `~/2image/` data directory; no API key is required 
 | API | Features | Pricing |
 |---|---|---|
 | **💎 OpenAI GPT-Image** | gpt-image-2 default (2.5 / 2.6 Flare·Sunburst optional), text-to-image & reference image editing | Per-request |
-| **💎 Nano Banana Pro** | Gemini 3 Pro Image, high-quality img2img, reuses Gemini key | Pay-per-use |
+| **💎 Nano Banana Pro** | Gemini 3 Pro Image, high-quality text-to-image and img2img, reuses Gemini key | Pay-per-use |
 | **💎 Black Forest Labs FLUX** | Official FLUX.2 single endpoint for text-to-image & img2img (flux-2-pro default) | Pay-per-use |
 | **💎 Stability AI** | SD3.5-large / core, supports img2img with a "strength" control | Per-credit |
 | **💎 Replicate FLUX** | black-forest-labs/flux-2-pro officially hosted | Per-request |
@@ -182,7 +182,7 @@ main.py
 
 ## 🔌 Adding a New API
 
-Just create a new file — the framework discovers it automatically:
+Just create a new free, paid or commercial API file — the framework discovers it automatically:
 
 ```python
 # services/providers/my_api.py
@@ -213,7 +213,7 @@ def try_my_api(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable)
     return image_bytes, "My API"
 ```
 
-Once saved, the API appears automatically in the main dropdown and the smart-routing fallback order — availability is derived from `config_key`, no manual registration needed.
+Once saved, the API appears automatically in the main dropdown; free APIs also join the auto-routing fallback chain, while paid and commercial APIs join after auto-routing is enabled in the setup wizard. Availability is derived from `config_key`, no manual registration needed.
 
 To complete the integration:
 
@@ -254,7 +254,7 @@ CI/CD is configured via GitHub Actions — pushing a `v*` tag automatically trig
 
 All data stays local. Delete this directory after uninstalling for complete removal.
 
-> **Upgrade note**: Since v8, the data directory has moved from `~/.text_to_image_app` to `~/2image`. On first launch, data from the old directory is automatically copied to the new location; the old directory is kept as a backup.
+> **Upgrade note**: The data directory has moved from the legacy `~/.text_to_image_app` to `~/2image`. On first launch, data from the old directory is automatically copied to the new location; the old directory is kept as a backup.
 >
 > **Models & compatibility**: API models track the official catalogs; legacy model IDs stored in config (e.g. Doubao 4.x / SeedEdit, retired Qwen-Image models such as 2.1, MiniMax image-01) are automatically normalized to current defaults, so no manual edits are needed. MiniMax H3 img2img uses `/v1/images/edits` (the reference image is sent as a data URI); that endpoint is not idempotent, so timeouts are not retried automatically to avoid double billing.
 
@@ -271,8 +271,6 @@ pytest tests/ -q          # 866 tests, including 81 end-to-end UI journeys
 ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F821,E9
 ruff format --check main.py config/ data/ services/ ui/ tools/ tests/
 ```
-
-Current coverage is about 80% for `services` / `data` / `config` (CI floor 68%), validated on Windows with Python 3.11 and 3.12.
 
 ---
 
