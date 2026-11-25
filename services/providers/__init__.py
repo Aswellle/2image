@@ -34,20 +34,26 @@ IMG2IMG_PROVIDERS: dict[str, callable] = {}
 PROVIDER_NAMES: dict[str, str] = {}
 
 # stable_id 的 Key 是否已在 wizard_free.py / wizard_paid.py 里有配置卡片。
-# 与「分类」是两回事：volcengine_ark 属于 commercial，但付费向导里
-# 已有完整卡片；fal_flux 同属 commercial，却没有任何配置入口。
-# 新增向导卡片时在此登记，否则该接口不会出现在需要先配 Key 的下拉框里。
+# 与「分类」是两回事：付费向导同时承载付费与商业接口卡片。
+# 新增向导卡片时在此登记（tests/test_registry_consistency.py 会与向导源码
+# 实际写入的 cfg 键核对）；图生图下拉框只展示「支持图生图 且 有配置入口」
+# 的接口，主界面文生图下拉框则展示全部已注册接口。
 WIZARD_CONFIGURED: set[str] = {
     "bfl_flux",
     "bria_ai",
     "cloudflare_ai",
     "dashscope_qwen",
+    "fal_flux",
     "gemini",
     "gemini_nano_banana_pro",
     "huggingface",
+    "ideogram",
+    "minimax_image",
     "modelslab",
     "openai_image",
+    "openrouter",
     "pollinations",
+    "recraft",
     "replicate_flux",
     "segmind",
     "siliconflow",
@@ -55,6 +61,7 @@ WIZARD_CONFIGURED: set[str] = {
     "stablehorde",
     "together_ai",
     "volcengine_ark",
+    "xai_grok",
 }
 
 # Display name → stable_id (for backward compatibility)

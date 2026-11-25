@@ -148,6 +148,10 @@ def test_wizard_dropdowns_source_catalog():
     assert "values=list(BFL_IMAGE_NAMES.values())" in wizard_src
     # Replicate 下拉消费 provider 的 MODEL_ORDER + REPLICATE_IMAGE_NAMES
     assert "REPLICATE_IMAGE_NAMES.get(m, m) for m in REPLICATE_MODEL_ORDER" in wizard_src
+    # xAI / MiniMax / Recraft 下拉同样消费目录
+    assert "values=[XAI_IMAGE_NAMES.get(m, m) for m in XAI_IMAGE_MODELS]" in wizard_src
+    assert "values=[MINIMAX_IMAGE_NAMES.get(m, m) for m in MINIMAX_IMAGE_MODELS]" in wizard_src
+    assert "values=[RECRAFT_IMAGE_NAMES.get(m, m) for m in RECRAFT_MODELS]" in wizard_src
 
 
 def test_retired_model_ids_absent_from_wizards():

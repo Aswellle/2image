@@ -16,6 +16,7 @@ from config.i18n import _
 from config.model_catalog import GEMINI_IMAGE_DEFAULT, GEMINI_IMAGE_NAMES
 from config.theme import DARK_THEME as C
 from config.ui_geometry import scaled
+from services.providers.openrouter import DEFAULT_MODEL as OPENROUTER_DEFAULT_MODEL
 from ui.components import bind_follower_wrap, bind_wraplength
 from ui.tooltip import attach_tooltip
 from ui.icons import glyph, icon_font
@@ -65,6 +66,8 @@ class ConfigWizard(tk.Toplevel):
             self.pk_var,
             self.ds_var,
             self.br_var,
+            self.or_var,
+            self.or_model_var,
         ]:
             _var.trace("w", lambda *_: setattr(self, "_dirty", True))
 
@@ -876,6 +879,68 @@ class ConfigWizard(tk.Toplevel):
         ).pack(side="left")
 
         # ══════════════════════════════════════════════════════
+        #   12. OpenRouter 统一 Image API
+        # ══════════════════════════════════════════════════════
+        self._divider(inner)
+        self._section(inner, "12", _("wz_or_title"), _("wz_or_tag"), C["ok"], PX)
+        self._info_card(
+            inner,
+            [
+                _("wz_or_info1"),
+                _("wz_or_info2"),
+                _("wz_or_info3"),
+            ],
+            PX,
+        )
+        or_row = tk.Frame(inner, bg=C["bg"])
+        or_row.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(or_row, text=_("wz_or_key_label"), font=F["btn"], bg=C["bg"], fg=C["text"]).pack(anchor="w")
+        ef_or = tk.Frame(or_row, bg=C["entry"])
+        ef_or.pack(fill="x", pady=(4, 0))
+        self.or_var = tk.StringVar(value=self.cfg.get("openrouter_key", ""))
+        or_entry = tk.Entry(
+            ef_or,
+            textvariable=self.or_var,
+            show="*",
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            font=F["input"],
+            bd=0,
+            relief="flat",
+        )
+        or_entry.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._eye_btn(ef_or, or_entry)
+        or_model_row = tk.Frame(inner, bg=C["bg"])
+        or_model_row.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(or_model_row, text=_("wz_or_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
+        self.or_model_var = tk.StringVar(value=self.cfg.get("openrouter_model", OPENROUTER_DEFAULT_MODEL))
+        tk.Entry(
+            or_model_row,
+            textvariable=self.or_model_var,
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            font=F["input"],
+            bd=0,
+            relief="flat",
+        ).pack(side="left", fill="x", expand=True, padx=(6, 0), ipady=4)
+        or_btns = tk.Frame(inner, bg=C["bg"])
+        or_btns.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Button(
+            or_btns,
+            text=_("wz_or_register"),
+            font=F["body"],
+            bg=C["acc"],
+            fg="white",
+            bd=0,
+            padx=12,
+            pady=5,
+            cursor="hand2",
+            command=lambda: webbrowser.open("https://openrouter.ai/keys"),
+        ).pack(side="left")
+
+        # ══════════════════════════════════════════════════════
         #   变体质量模式
         # ══════════════════════════════════════════════════════
         self._divider(inner)
@@ -1011,6 +1076,8 @@ class ConfigWizard(tk.Toplevel):
         self.cfg["pollinations_key"] = self.pk_var.get().strip()  # v7 新增
         self.cfg["dashscope_key"] = self.ds_var.get().strip()  # v7 新增
         self.cfg["bria_key"] = self.br_var.get().strip()  # v7 新增
+        self.cfg["openrouter_key"] = self.or_var.get().strip()
+        self.cfg["openrouter_model"] = self.or_model_var.get().strip() or OPENROUTER_DEFAULT_MODEL
         self.cfg["variant_quality"] = self.qual_var.get()
         self.cfg["show_wizard_on_start"] = not self.show_wiz_var.get()
         from config.settings import save_config

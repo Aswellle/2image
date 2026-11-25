@@ -114,3 +114,28 @@ def test_delete_guard_respects_typing_focus(app, tk_root, monkeypatch):
     monkeypatch.setattr(a, "_typing_focus", lambda: True)
     a._delete_selected_guarded()
     assert called == [e["id"]]  # 输入焦点在文本框时不触发删除
+
+
+def test_provider_dropdown_includes_commercial_tier(app):
+    """商业接口与免费/付费接口同级出现在主界面下拉框，且都有配置入口。
+
+    历史问题：商业接口虽已实现并注册，却不在下拉框、也没有配置卡片，
+    用户只能手改 config.json 才能用——不属于「可用的前端功能」。
+    """
+    from config.i18n import _
+    from services.providers import ALL_PROVIDERS, COMMERCIAL_PROVIDERS, WIZARD_CONFIGURED, display_name_for
+
+    a, _saved = app
+    values = list(a.content._t2i_provider_list)
+    assert _("provider_commercial_section") in values
+    for pid in COMMERCIAL_PROVIDERS:
+        assert display_name_for(pid) in values, pid
+    # 下拉框里的每个真实接口都必须能在配置向导里配置
+    assert set(ALL_PROVIDERS) <= WIZARD_CONFIGURED
+
+
+def test_img2img_dropdown_includes_commercial_providers(app):
+    a, _ = app
+    ids = a.content._i2i_selectable_providers()
+    assert "fal_flux" in ids
+    assert "minimax_image" in ids

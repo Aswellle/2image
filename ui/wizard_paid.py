@@ -11,7 +11,7 @@ v3 新增：
 
 import tkinter as tk
 import webbrowser
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import Callable
 
 from config.fonts import F
@@ -24,6 +24,15 @@ from config.model_catalog import (
     BFL_TXT2IMG_DEFAULT,
     GPT_IMAGE_DEFAULT,
     GPT_IMAGE_NAMES,
+    MINIMAX_IMAGE_DEFAULT,
+    MINIMAX_IMAGE_MODELS,
+    MINIMAX_IMAGE_NAMES,
+    RECRAFT_DEFAULT,
+    RECRAFT_IMAGE_NAMES,
+    RECRAFT_MODELS,
+    XAI_IMAGE_DEFAULT,
+    XAI_IMAGE_MODELS,
+    XAI_IMAGE_NAMES,
 )
 from config.theme import DARK_THEME as C
 from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
@@ -70,6 +79,17 @@ class PaidWizard(tk.Toplevel):
             self.ark_model_var,
             self.bfl_var,
             self.bfl_model_var,
+            self.xai_var,
+            self.xai_model_var,
+            self.ideo_var,
+            self.fal_var,
+            self.recraft_var,
+            self.recraft_model_var,
+            self.recraft_style_var,
+            self.mm_var,
+            self.mm_model_var,
+            self.paid_opt_var,
+            self.budget_var,
         ]:
             _var.trace("w", lambda *_: setattr(self, "_dirty", True))
         self.bind("<Escape>", lambda _e: self._on_close())
@@ -454,6 +474,248 @@ class PaidWizard(tk.Toplevel):
         self._link_btn(btns5, _("wizard_paid_bfl_key_btn"), "https://dashboard.bfl.ai/get-started")
         self._divider(inner)
 
+        # ══ 6. xAI Grok Imagine ══
+        self._section(inner, "🤖", _("wizard_paid_xai_section_title"), _("wizard_paid_xai_section_sub"), PX)
+        self._info_card(
+            inner,
+            [
+                _("wizard_paid_xai_info_1"),
+                _("wizard_paid_xai_info_2"),
+                _("wizard_paid_xai_info_3"),
+            ],
+            PX,
+        )
+        self.xai_var = self._key_field(inner, _("wizard_paid_xai_key_label"), self.cfg.get("xai_key", ""), PX)
+        opt6 = tk.Frame(inner, bg=C["bg"])
+        opt6.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(opt6, text=_("wizard_paid_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
+        self._xai_name_to_id = {v: k for k, v in XAI_IMAGE_NAMES.items()}
+        self.xai_model_var = tk.StringVar(
+            value=XAI_IMAGE_NAMES.get(self.cfg.get("xai_model", XAI_IMAGE_DEFAULT), XAI_IMAGE_DEFAULT)
+        )
+        ttk.Combobox(
+            opt6,
+            textvariable=self.xai_model_var,
+            width=26,
+            state="readonly",
+            values=[XAI_IMAGE_NAMES.get(m, m) for m in XAI_IMAGE_MODELS],
+        ).pack(side="left", padx=(6, 0))
+        btns6 = tk.Frame(inner, bg=C["bg"])
+        btns6.pack(fill="x", padx=PX, pady=(8, 0))
+        self._link_btn(btns6, _("wizard_paid_xai_register_btn"), "https://x.ai/api")
+        self._link_btn(btns6, _("wizard_paid_xai_key_btn"), "https://console.x.ai")
+        self._divider(inner)
+
+        # ══ 7. Ideogram v4（商业）══
+        self._section(inner, "🅰", _("wizard_paid_ideogram_section_title"), _("wizard_paid_ideogram_section_sub"), PX)
+        self._info_card(
+            inner,
+            [
+                _("wizard_paid_ideogram_info_1"),
+                _("wizard_paid_ideogram_info_2"),
+                _("wizard_paid_ideogram_info_3"),
+            ],
+            PX,
+        )
+        self.ideo_var = self._key_field(
+            inner, _("wizard_paid_ideogram_key_label"), self.cfg.get("ideogram_key", ""), PX
+        )
+        btns7 = tk.Frame(inner, bg=C["bg"])
+        btns7.pack(fill="x", padx=PX, pady=(8, 0))
+        self._link_btn(btns7, _("wizard_paid_ideogram_register_btn"), "https://ideogram.ai/")
+        self._link_btn(btns7, _("wizard_paid_ideogram_key_btn"), "https://ideogram.ai/manage-api")
+        self._divider(inner)
+
+        # ══ 8. fal.ai FLUX.2 Pro（商业）══
+        self._section(inner, "⚡", _("wizard_paid_fal_section_title"), _("wizard_paid_fal_section_sub"), PX)
+        self._info_card(
+            inner,
+            [
+                _("wizard_paid_fal_info_1"),
+                _("wizard_paid_fal_info_2"),
+                _("wizard_paid_fal_info_3"),
+            ],
+            PX,
+        )
+        self.fal_var = self._key_field(inner, _("wizard_paid_fal_key_label"), self.cfg.get("fal_key", ""), PX)
+        btns8 = tk.Frame(inner, bg=C["bg"])
+        btns8.pack(fill="x", padx=PX, pady=(8, 0))
+        self._link_btn(btns8, _("wizard_paid_fal_register_btn"), "https://fal.ai/")
+        self._link_btn(btns8, _("wizard_paid_fal_key_btn"), "https://fal.ai/dashboard/keys")
+        self._divider(inner)
+
+        # ══ 9. Recraft V4.1（商业）══
+        self._section(inner, "🎭", _("wizard_paid_recraft_section_title"), _("wizard_paid_recraft_section_sub"), PX)
+        self._info_card(
+            inner,
+            [
+                _("wizard_paid_recraft_info_1"),
+                _("wizard_paid_recraft_info_2"),
+                _("wizard_paid_recraft_info_3"),
+            ],
+            PX,
+        )
+        self.recraft_var = self._key_field(
+            inner, _("wizard_paid_recraft_key_label"), self.cfg.get("recraft_key", ""), PX
+        )
+        opt9 = tk.Frame(inner, bg=C["bg"])
+        opt9.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(opt9, text=_("wizard_paid_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
+        self._recraft_name_to_id = {v: k for k, v in RECRAFT_IMAGE_NAMES.items()}
+        self.recraft_model_var = tk.StringVar(
+            value=RECRAFT_IMAGE_NAMES.get(self.cfg.get("recraft_model", RECRAFT_DEFAULT), RECRAFT_DEFAULT)
+        )
+        ttk.Combobox(
+            opt9,
+            textvariable=self.recraft_model_var,
+            width=22,
+            state="readonly",
+            values=[RECRAFT_IMAGE_NAMES.get(m, m) for m in RECRAFT_MODELS],
+        ).pack(side="left", padx=(6, 18))
+        tk.Label(opt9, text=_("wizard_paid_recraft_style_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(
+            side="left"
+        )
+        self._recraft_style_labels = [
+            ("realistic_image", _("wizard_paid_recraft_style_realistic")),
+            ("digital_illustration", _("wizard_paid_recraft_style_digital")),
+            ("vector_illustration", _("wizard_paid_recraft_style_vector")),
+        ]
+        current_style = self.cfg.get("recraft_style", "realistic_image")
+        current_style_label = next(
+            (label for code, label in self._recraft_style_labels if code == current_style),
+            self._recraft_style_labels[0][1],
+        )
+        self.recraft_style_var = tk.StringVar(value=current_style_label)
+        ttk.Combobox(
+            opt9,
+            textvariable=self.recraft_style_var,
+            width=16,
+            state="readonly",
+            values=[label for _, label in self._recraft_style_labels],
+        ).pack(side="left", padx=(6, 0))
+        btns9 = tk.Frame(inner, bg=C["bg"])
+        btns9.pack(fill="x", padx=PX, pady=(8, 0))
+        self._link_btn(btns9, _("wizard_paid_recraft_register_btn"), "https://www.recraft.ai/")
+        self._link_btn(btns9, _("wizard_paid_recraft_key_btn"), "https://www.recraft.ai/profile/api")
+        self._divider(inner)
+
+        # ══ 10. MiniMax H3 Image（商业）══
+        self._section(inner, "🌀", _("wizard_paid_minimax_section_title"), _("wizard_paid_minimax_section_sub"), PX)
+        self._info_card(
+            inner,
+            [
+                _("wizard_paid_minimax_info_1"),
+                _("wizard_paid_minimax_info_2"),
+                _("wizard_paid_minimax_info_3"),
+            ],
+            PX,
+        )
+        self.mm_var = self._key_field(inner, _("wizard_paid_minimax_key_label"), self.cfg.get("minimax_key", ""), PX)
+        opt10 = tk.Frame(inner, bg=C["bg"])
+        opt10.pack(fill="x", padx=PX, pady=(8, 0))
+        tk.Label(opt10, text=_("wizard_paid_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
+        self._mm_name_to_id = {v: k for k, v in MINIMAX_IMAGE_NAMES.items()}
+        self.mm_model_var = tk.StringVar(
+            value=MINIMAX_IMAGE_NAMES.get(self.cfg.get("minimax_model", MINIMAX_IMAGE_DEFAULT), MINIMAX_IMAGE_DEFAULT)
+        )
+        ttk.Combobox(
+            opt10,
+            textvariable=self.mm_model_var,
+            width=28,
+            state="readonly",
+            values=[MINIMAX_IMAGE_NAMES.get(m, m) for m in MINIMAX_IMAGE_MODELS],
+        ).pack(side="left", padx=(6, 0))
+        btns10 = tk.Frame(inner, bg=C["bg"])
+        btns10.pack(fill="x", padx=PX, pady=(8, 0))
+        self._link_btn(btns10, _("wizard_paid_minimax_register_btn"), "https://platform.minimax.io/")
+        self._link_btn(
+            btns10,
+            _("wizard_paid_minimax_key_btn"),
+            "https://platform.minimax.io/user-center/basic-information/interface-key",
+        )
+        self._divider(inner)
+
+        # ══ 11. 自动路由与付费预算 ══
+        self._section(inner, "🧭", _("wizard_paid_routing_section_title"), _("wizard_paid_routing_section_sub"), PX)
+        route_card = tk.Frame(inner, bg=C["panel"], highlightbackground=C["sep"], highlightthickness=1)
+        route_card.pack(fill="x", padx=PX, pady=(4, 0))
+        route_inner = tk.Frame(route_card, bg=C["panel"])
+        route_inner.pack(fill="x", padx=16, pady=10)
+        self.paid_opt_var = tk.BooleanVar(value=bool(self.cfg.get("paid_auto_opt_in", False)))
+        tk.Checkbutton(
+            route_inner,
+            text=_("wizard_paid_routing_opt_in"),
+            variable=self.paid_opt_var,
+            font=F["btn"],
+            bg=C["panel"],
+            fg=C["text"],
+            activebackground=C["panel"],
+            activeforeground=C["text"],
+            selectcolor=C["entry"],
+            anchor="w",
+        ).pack(fill="x", anchor="w")
+        opt_hint = tk.Label(
+            route_inner,
+            text=_("wizard_paid_routing_opt_in_hint"),
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["text_muted"],
+            anchor="w",
+            justify="left",
+        )
+        opt_hint.pack(fill="x", anchor="w", pady=(2, 8))
+        budget_row = tk.Frame(route_inner, bg=C["panel"])
+        budget_row.pack(fill="x")
+        tk.Label(budget_row, text=_("wizard_paid_budget_label"), font=F["body"], bg=C["panel"], fg=C["sub"]).pack(
+            side="left"
+        )
+        self.budget_var = tk.StringVar(value=f"{float(self.cfg.get('paid_daily_budget_usd', 2.0)):g}")
+        tk.Entry(
+            budget_row,
+            textvariable=self.budget_var,
+            width=8,
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            font=F["input"],
+            bd=0,
+            relief="flat",
+        ).pack(side="left", padx=(6, 12), ipady=3)
+        budget_hint = tk.Label(
+            budget_row,
+            text=_("wizard_paid_budget_hint"),
+            font=F["small"],
+            bg=C["panel"],
+            fg=C["text_muted"],
+            anchor="w",
+            justify="left",
+        )
+        budget_hint.pack(side="left", fill="x", expand=True, anchor="w")
+        bind_wraplength(route_card, [opt_hint, budget_hint], padx_total=32, floor=200)
+
+    def _key_field(self, parent, label, initial, px=24):
+        """密钥输入行（标签 + 输入框 + 显示切换），返回绑定变量。"""
+        row = tk.Frame(parent, bg=C["bg"])
+        row.pack(fill="x", padx=px, pady=(8, 0))
+        tk.Label(row, text=label, font=F["btn"], bg=C["bg"], fg=C["text"]).pack(anchor="w")
+        ef = tk.Frame(row, bg=C["entry"])
+        ef.pack(fill="x", pady=(4, 0))
+        var = tk.StringVar(value=initial)
+        ent = tk.Entry(
+            ef,
+            textvariable=var,
+            show="*",
+            bg=C["entry"],
+            fg=C["text"],
+            insertbackground="white",
+            font=F["input"],
+            bd=0,
+            relief="flat",
+        )
+        ent.pack(side="left", fill="x", expand=True, ipady=8, padx=10)
+        self._eye_btn(ef, ent)
+        return var
+
     def _section(self, parent, icon, title, sub, px=24):
         f = tk.Frame(parent, bg=C["bg"])
         f.pack(fill="x", padx=px, pady=(16, 4))
@@ -520,6 +782,13 @@ class PaidWizard(tk.Toplevel):
         self._gb(parent, entry)
 
     def _save(self):
+        try:
+            budget = float(self.budget_var.get().strip() or "0")
+            if budget < 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showwarning(_("dlg_tip"), _("wizard_paid_budget_invalid"), parent=self)
+            return
         self._dirty = False
         gpt_name = self.gpt_image_model_var.get()
         gpt_id = self._gpt_image_name_to_id.get(gpt_name, GPT_IMAGE_DEFAULT)
@@ -538,6 +807,20 @@ class PaidWizard(tk.Toplevel):
         self.cfg["bfl_key"] = self.bfl_var.get().strip()
         bfl_name = self.bfl_model_var.get()
         self.cfg["bfl_model"] = self._bfl_name_to_id.get(bfl_name, BFL_TXT2IMG_DEFAULT)
+        self.cfg["xai_key"] = self.xai_var.get().strip()
+        self.cfg["xai_model"] = self._xai_name_to_id.get(self.xai_model_var.get(), XAI_IMAGE_DEFAULT)
+        self.cfg["ideogram_key"] = self.ideo_var.get().strip()
+        self.cfg["fal_key"] = self.fal_var.get().strip()
+        self.cfg["recraft_key"] = self.recraft_var.get().strip()
+        self.cfg["recraft_model"] = self._recraft_name_to_id.get(self.recraft_model_var.get(), RECRAFT_DEFAULT)
+        style_label = self.recraft_style_var.get()
+        self.cfg["recraft_style"] = next(
+            (code for code, label in self._recraft_style_labels if label == style_label), "realistic_image"
+        )
+        self.cfg["minimax_key"] = self.mm_var.get().strip()
+        self.cfg["minimax_model"] = self._mm_name_to_id.get(self.mm_model_var.get(), MINIMAX_IMAGE_DEFAULT)
+        self.cfg["paid_auto_opt_in"] = bool(self.paid_opt_var.get())
+        self.cfg["paid_daily_budget_usd"] = budget
         from config.settings import save_config
 
         save_config(self.cfg)  # 与免费配置向导一致：保存必须落盘

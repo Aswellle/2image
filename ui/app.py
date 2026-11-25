@@ -29,6 +29,7 @@ from services.application import GenerationController, MenuController, SettingsC
 from services.generation.errors import ProviderError
 from services.logger import log_to_file
 from services.providers import (
+    COMMERCIAL_PROVIDERS,
     FREE_PROVIDERS,
     MULTI_KEY_PROVIDERS,
     OPTIONAL_KEY_PROVIDERS,
@@ -331,11 +332,22 @@ class App:
         bar.pack(fill="x")
         bar.pack_propagate(False)
         tk.Label(bar, text=_("app_title"), font=F["title"], bg=C["acc"], fg="white").pack(side="left", padx=16)
+        # 商业接口数量（与免费/付费同级展示）
+        self._top_commercial_lbl = tk.Label(
+            bar,
+            text=_("status_commercial_count", n=0, total=len(COMMERCIAL_PROVIDERS)),
+            font=F["body"],
+            bg=C["acc"],
+            fg=C["sub"],
+        )
+        self._top_commercial_lbl.pack(side="right", padx=(0, 16))
+        # 分隔线
+        tk.Frame(bar, bg=C["sash"], width=1).pack(side="right", fill="y", pady=10)
         # 付费接口数量
         self._top_paid_lbl = tk.Label(
             bar, text=_("status_paid_count", n=0, total=len(PAID_PROVIDERS)), font=F["body"], bg=C["acc"], fg=C["sub"]
         )
-        self._top_paid_lbl.pack(side="right", padx=(0, 16))
+        self._top_paid_lbl.pack(side="right", padx=(4, 8))
         # 分隔线
         tk.Frame(bar, bg=C["sash"], width=1).pack(side="right", fill="y", pady=10)
         # 免费接口数量
@@ -934,6 +946,7 @@ class App:
 
         free_count = sum(_is_available(name) for name in FREE_PROVIDERS)
         paid_count = sum(_is_available(name) for name in PAID_PROVIDERS)
+        commercial_count = sum(_is_available(name) for name in COMMERCIAL_PROVIDERS)
 
         # ── 顶栏计数标签 ──────────────────────────────────────────
         self._top_free_lbl.config(
@@ -943,6 +956,10 @@ class App:
         self._top_paid_lbl.config(
             text=_("status_paid_count", n=paid_count, total=len(PAID_PROVIDERS)),
             fg=C["purple_soft"] if paid_count else C["sub"],
+        )
+        self._top_commercial_lbl.config(
+            text=_("status_commercial_count", n=commercial_count, total=len(COMMERCIAL_PROVIDERS)),
+            fg=C["chip_info_fg"] if commercial_count else C["sub"],
         )
 
     # ══════════════════════════════════════════════════════════

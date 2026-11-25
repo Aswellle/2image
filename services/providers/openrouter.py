@@ -49,7 +49,8 @@ _ENDPOINT = "https://openrouter.ai/api/v1/images"
 # 在册列表（请求会报模型不存在），且当前无 $0 价格的免费图像模型，
 # 保留 free 分类是延续现有归类，实际以账户余量为准，失败时会被
 # 调度器跳过。
-_DEFAULT_MODEL = "google/gemini-3.1-flash-image"
+DEFAULT_MODEL = "google/gemini-3.1-flash-image"
+_DEFAULT_MODEL = DEFAULT_MODEL  # 兼容旧引用
 _TIMEOUT = 120
 _MAX_RETRIES = 3
 

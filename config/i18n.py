@@ -811,6 +811,10 @@ STRINGS = {
         "zh-CN": "─── 💎 付费接口 ───",
         "en": "─── 💎 Paid ───",
     },
+    "provider_commercial_section": {
+        "zh-CN": "─── 🏢 商业接口 ───",
+        "en": "─── 🏢 Commercial ───",
+    },
     "status_free_count": {
         "zh-CN": "🆓 免费接口 {n}/{total}",
         "en": "🆓 Free APIs {n}/{total}",
@@ -818,6 +822,10 @@ STRINGS = {
     "status_paid_count": {
         "zh-CN": "💎 付费接口 {n}/{total}",
         "en": "💎 Paid APIs {n}/{total}",
+    },
+    "status_commercial_count": {
+        "zh-CN": "🏢 商业接口 {n}/{total}",
+        "en": "🏢 Commercial APIs {n}/{total}",
     },
     # ── 批量面板 ────────────────────────────────────────────
     "batch_loading": {
@@ -2110,8 +2118,8 @@ STRINGS = {
         "en": "💎 Paid API Config",
     },
     "wizard_paid_header_subtitle": {
-        "zh-CN": "GPT-Image / 豆包 / BFL / Stability / Replicate",
-        "en": "GPT-Image / Doubao / BFL / Stability / Replicate",
+        "zh-CN": "GPT-Image / 豆包 / BFL / Stability / Replicate / xAI 及商业接口（Ideogram / fal.ai / Recraft / MiniMax）",
+        "en": "GPT-Image / Doubao / BFL / Stability / Replicate / xAI and commercial APIs (Ideogram / fal.ai / Recraft / MiniMax)",
     },
     "wizard_paid_btn_save": {
         "zh-CN": "💾 保存配置",
@@ -2308,6 +2316,212 @@ STRINGS = {
     "wizard_paid_bfl_key_btn": {
         "zh-CN": "🔑 获取 API Key",
         "en": "🔑 Get API Key",
+    },
+    # ── 付费 / 商业接口补充卡片（xAI / Ideogram / fal / Recraft / MiniMax）──
+    "wizard_paid_xai_section_title": {
+        "zh-CN": "xAI Grok Imagine",
+        "en": "xAI Grok Imagine",
+    },
+    "wizard_paid_xai_section_sub": {
+        "zh-CN": "文生图  |  2 种模型  |  新用户赠送 $25",
+        "en": "Text-to-image  |  2 models  |  $25 free credit for new users",
+    },
+    "wizard_paid_xai_info_1": {
+        "zh-CN": "• 模型：grok-imagine-image-2.0（默认）/ grok-imagine-image",
+        "en": "• Models: grok-imagine-image-2.0 (default) / grok-imagine-image",
+    },
+    "wizard_paid_xai_info_2": {
+        "zh-CN": "• 支持宽高比与 1k / 2k 分辨率控制，按配置尺寸自动匹配",
+        "en": "• Aspect-ratio and 1k / 2k resolution control, auto-matched to the selected size",
+    },
+    "wizard_paid_xai_info_3": {
+        "zh-CN": "• 按张计费（约 $0.02–0.04/张）；消费满 $5 可开通数据共享计划再获 $150/月额度",
+        "en": "• Per-image billing (~$0.02–0.04/image); after $5 spend you can join the data-sharing plan for $150/month credit",
+    },
+    "wizard_paid_xai_key_label": {
+        "zh-CN": "xAI API Key:",
+        "en": "xAI API Key:",
+    },
+    "wizard_paid_xai_register_btn": {
+        "zh-CN": "🌐 注册 xAI",
+        "en": "🌐 Sign up xAI",
+    },
+    "wizard_paid_xai_key_btn": {
+        "zh-CN": "🔑 获取 API Key",
+        "en": "🔑 Get API Key",
+    },
+    "wizard_paid_ideogram_section_title": {
+        "zh-CN": "Ideogram v4",
+        "en": "Ideogram v4",
+    },
+    "wizard_paid_ideogram_section_sub": {
+        "zh-CN": "文字入图首选  |  海报 / LOGO / Banner 文字可读  |  按次计费",
+        "en": "Best for text-in-image  |  Readable text in posters / logos / banners  |  Pay-per-use",
+    },
+    "wizard_paid_ideogram_info_1": {
+        "zh-CN": "• 官方 v4 端点（V_4），文字渲染与排版为业内第一梯队",
+        "en": "• Official v4 endpoint (V_4), top-tier text rendering and typography",
+    },
+    "wizard_paid_ideogram_info_2": {
+        "zh-CN": "• 支持 1:3 ~ 3:1 宽高比（含 4:5 / 5:4 / 16:10），按所选尺寸自动匹配",
+        "en": "• Aspect ratios 1:3–3:1 (incl. 4:5 / 5:4 / 16:10), auto-matched to the selected size",
+    },
+    "wizard_paid_ideogram_info_3": {
+        "zh-CN": "• 已在智能路由「文字入图」场景中作为首选接口",
+        "en": "• Already the first choice in the smart router's text-overlay scene",
+    },
+    "wizard_paid_ideogram_key_label": {
+        "zh-CN": "Ideogram API Key:",
+        "en": "Ideogram API Key:",
+    },
+    "wizard_paid_ideogram_register_btn": {
+        "zh-CN": "🌐 注册 Ideogram",
+        "en": "🌐 Sign up Ideogram",
+    },
+    "wizard_paid_ideogram_key_btn": {
+        "zh-CN": "🔑 获取 API Key",
+        "en": "🔑 Get API Key",
+    },
+    "wizard_paid_fal_section_title": {
+        "zh-CN": "fal.ai FLUX.2 Pro",
+        "en": "fal.ai FLUX.2 Pro",
+    },
+    "wizard_paid_fal_section_sub": {
+        "zh-CN": "写实高清  |  文生图 + 指令式编辑  |  按次计费",
+        "en": "Photoreal  |  Text-to-image + instruction editing  |  Pay-per-use",
+    },
+    "wizard_paid_fal_info_1": {
+        "zh-CN": "• 文生图 fal-ai/flux-2-pro，最高 4MP 写实画质",
+        "en": "• Text-to-image via fal-ai/flux-2-pro, up to 4MP photoreal output",
+    },
+    "wizard_paid_fal_info_2": {
+        "zh-CN": "• 图生图走 /edit 端点（image_urls 指令式编辑，最多 8 张参考图）",
+        "en": "• I2I uses the /edit endpoint (instruction editing via image_urls, up to 8 references)",
+    },
+    "wizard_paid_fal_info_3": {
+        "zh-CN": "• 已在智能路由「产品图 / 电商」场景中作为首选接口",
+        "en": "• Already the first choice in the smart router's product / e-commerce scenes",
+    },
+    "wizard_paid_fal_key_label": {
+        "zh-CN": "fal.ai API Key:",
+        "en": "fal.ai API Key:",
+    },
+    "wizard_paid_fal_register_btn": {
+        "zh-CN": "🌐 注册 fal.ai",
+        "en": "🌐 Sign up fal.ai",
+    },
+    "wizard_paid_fal_key_btn": {
+        "zh-CN": "🔑 获取 API Key",
+        "en": "🔑 Get API Key",
+    },
+    "wizard_paid_recraft_section_title": {
+        "zh-CN": "Recraft V4.1",
+        "en": "Recraft V4.1",
+    },
+    "wizard_paid_recraft_section_sub": {
+        "zh-CN": "设计 / 插画 / 矢量风格  |  品牌 VI  |  按次计费",
+        "en": "Design / illustration / vector styles  |  Brand VI  |  Pay-per-use",
+    },
+    "wizard_paid_recraft_info_1": {
+        "zh-CN": "• 模型：recraftv4_1（默认）/ recraftv3（旧版，支持局部编辑操作）",
+        "en": "• Models: recraftv4_1 (default) / recraftv3 (legacy, supports local editing)",
+    },
+    "wizard_paid_recraft_info_2": {
+        "zh-CN": "• 风格：写实摄影 / 数字插画 / 矢量插画，按用途一键切换",
+        "en": "• Styles: realistic / digital illustration / vector illustration",
+    },
+    "wizard_paid_recraft_info_3": {
+        "zh-CN": "• 已在智能路由「设计/插画」场景中作为首选接口",
+        "en": "• Already the first choice in the smart router's illustration scene",
+    },
+    "wizard_paid_recraft_key_label": {
+        "zh-CN": "Recraft API Key:",
+        "en": "Recraft API Key:",
+    },
+    "wizard_paid_recraft_style_label": {
+        "zh-CN": "风格:",
+        "en": "Style:",
+    },
+    "wizard_paid_recraft_register_btn": {
+        "zh-CN": "🌐 注册 Recraft",
+        "en": "🌐 Sign up Recraft",
+    },
+    "wizard_paid_recraft_key_btn": {
+        "zh-CN": "🔑 获取 API Key",
+        "en": "🔑 Get API Key",
+    },
+    "wizard_paid_recraft_style_realistic": {
+        "zh-CN": "写实摄影",
+        "en": "Realistic photo",
+    },
+    "wizard_paid_recraft_style_digital": {
+        "zh-CN": "数字插画",
+        "en": "Digital illustration",
+    },
+    "wizard_paid_recraft_style_vector": {
+        "zh-CN": "矢量插画",
+        "en": "Vector illustration",
+    },
+    "wizard_paid_minimax_section_title": {
+        "zh-CN": "MiniMax H3 Image",
+        "en": "MiniMax H3 Image",
+    },
+    "wizard_paid_minimax_section_sub": {
+        "zh-CN": "文生图 + 参考图编辑  |  最高 20MP  |  按量计费",
+        "en": "Text-to-image + reference editing  |  Up to 20MP  |  Usage-based",
+    },
+    "wizard_paid_minimax_info_1": {
+        "zh-CN": "• 模型：MiniMax-H3-Image（默认）/ H3-Image-Highspeed（更快）",
+        "en": "• Models: MiniMax-H3-Image (default) / H3-Image-Highspeed (faster)",
+    },
+    "wizard_paid_minimax_info_2": {
+        "zh-CN": "• 文生图最高 20MP；图生图走 /v1/images/edits，prompt 中用 image 1 指代参考图",
+        "en": '• Up to 20MP T2I; I2I uses /v1/images/edits, refer to the reference as "image 1" in the prompt',
+    },
+    "wizard_paid_minimax_info_3": {
+        "zh-CN": "• 编辑端点非幂等：超时/断连后服务端仍会计费，因此图生图不做自动重试",
+        "en": "• The edit endpoint is not idempotent: after a timeout the server may still bill, so I2I is never auto-retried",
+    },
+    "wizard_paid_minimax_key_label": {
+        "zh-CN": "MiniMax API Key:",
+        "en": "MiniMax API Key:",
+    },
+    "wizard_paid_minimax_register_btn": {
+        "zh-CN": "🌐 注册 MiniMax",
+        "en": "🌐 Sign up MiniMax",
+    },
+    "wizard_paid_minimax_key_btn": {
+        "zh-CN": "🔑 获取 API Key",
+        "en": "🔑 Get API Key",
+    },
+    # ── 自动路由与付费预算 ──────────────────────────────────
+    "wizard_paid_routing_section_title": {
+        "zh-CN": "自动路由与付费预算",
+        "en": "Auto routing & paid budget",
+    },
+    "wizard_paid_routing_section_sub": {
+        "zh-CN": "决定「自动（按优先级）」模式是否会调用付费 / 商业接口",
+        "en": "Controls whether Auto mode may call paid / commercial APIs",
+    },
+    "wizard_paid_routing_opt_in": {
+        "zh-CN": "允许「自动」模式调用已配置的付费 / 商业接口",
+        "en": "Allow Auto mode to use configured paid / commercial APIs",
+    },
+    "wizard_paid_routing_opt_in_hint": {
+        "zh-CN": "关闭（默认）时自动模式只走免费接口；在下拉框中显式选择付费接口不受此限制",
+        "en": "Off by default: Auto only uses free APIs. Explicitly selecting a paid provider in the dropdown is unaffected.",
+    },
+    "wizard_paid_budget_label": {
+        "zh-CN": "付费日预算（USD）:",
+        "en": "Daily paid budget (USD):",
+    },
+    "wizard_paid_budget_hint": {
+        "zh-CN": "当日估算消耗达到上限后，自动路由剔除付费接口；0 = 不限",
+        "en": "Once today's estimated spend reaches the limit, Auto drops paid APIs; 0 = unlimited",
+    },
+    "wizard_paid_budget_invalid": {
+        "zh-CN": "付费日预算必须是 ≥ 0 的数字（0 表示不限）",
+        "en": "The daily paid budget must be a number ≥ 0 (0 = unlimited)",
     },
     # ── 提示词向导 Pro 版 ────────────────────────────────────
     "wizard_pro_suffix": {
@@ -3384,6 +3598,38 @@ STRINGS = {
     "wz_br_register": {
         "zh-CN": "🌐 注册 Bria AI（送 1000 次）",
         "en": "🌐 Sign up for Bria AI (1,000 free calls)",
+    },
+    "wz_or_title": {
+        "zh-CN": "OpenRouter  统一 Image API",
+        "en": "OpenRouter  Unified Image API",
+    },
+    "wz_or_tag": {
+        "zh-CN": "🆓 免费注册 · 一个 Key 调用多家图像模型",
+        "en": "🆓 Free signup · one key for many image models",
+    },
+    "wz_or_info1": {
+        "zh-CN": "• 端点：/api/v1/images，模型用 provider/model 形式指定",
+        "en": "• Endpoint: /api/v1/images, model specified as provider/model",
+    },
+    "wz_or_info2": {
+        "zh-CN": "• 默认 google/gemini-3.1-flash-image；可填 OpenRouter 在册的其他图像模型",
+        "en": "• Default google/gemini-3.1-flash-image; any listed OpenRouter image model works",
+    },
+    "wz_or_info3": {
+        "zh-CN": "• 是否真正免费取决于所选模型与账户余量，失败时调度器会自动跳过",
+        "en": "• Free availability depends on the chosen model and account credit; failures are skipped automatically",
+    },
+    "wz_or_key_label": {
+        "zh-CN": "OpenRouter API Key:",
+        "en": "OpenRouter API Key:",
+    },
+    "wz_or_model_label": {
+        "zh-CN": "模型:",
+        "en": "Model:",
+    },
+    "wz_or_register": {
+        "zh-CN": "🌐 注册 / 获取 Key",
+        "en": "🌐 Sign up / Get Key",
     },
     "wz_qual_title": {
         "zh-CN": "变体生成质量模式",

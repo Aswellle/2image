@@ -21,6 +21,7 @@ from ui.icons import glyph, icon_font
 from ui.canvas_image import draw_image
 from data.repository import get_all_entries
 from services.providers import (
+    COMMERCIAL_PROVIDERS,
     FREE_PROVIDERS,
     IMG2IMG_PROVIDERS,
     PAID_PROVIDERS,
@@ -394,6 +395,8 @@ class MainContent:
             + [_provider_display(n) for n in FREE_PROVIDERS]
             + [_("provider_paid_section")]
             + [_provider_display(n) for n in PAID_PROVIDERS]
+            + [_("provider_commercial_section")]
+            + [_provider_display(n) for n in COMMERCIAL_PROVIDERS]
         )
         self._provider_cb = ttk.Combobox(
             opt,
@@ -1356,12 +1359,10 @@ class MainContent:
         """支持图生图、且能在现有向导里配置 Key 的接口。
 
         真实条件是「向导里有没有该接口的 Key 配置卡片」，而不是
-        「属于免费/付费分类」。两者并不等价：volcengine_ark 属于
-        commercial，但 wizard_paid.py 已有完整卡片，用户配好即可用；
-        fal_flux 同属 commercial 却没有任何配置入口，选中只会得到
-        一个无从下手的报错。
-
-        因此以 WIZARD_CONFIGURED 为准。新增向导卡片时在注册表登记，
+        「属于免费/付费/商业分类」。分类与配置入口并不等价
+        （历史上 volcengine_ark 属于 commercial 但已有卡片，fal_flux
+        同属 commercial 却一度没有配置入口），因此以
+        WIZARD_CONFIGURED 为准。新增向导卡片时在注册表登记，
         这里无需改动。
         """
         from services.providers import WIZARD_CONFIGURED
