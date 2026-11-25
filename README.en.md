@@ -49,17 +49,17 @@ Just describe the scene you want, and 2image automatically calls the most suitab
 
 ## ✨ Key Features
 
-### 🎯 One Interface, 18 Selectable APIs
-Directly select from 18 free and paid image generation services (12 free + 6 paid) on the main interface, covering Pollinations, SiliconFlow, Gemini Nano Banana, Qwen-Image, Bria AI, OpenAI GPT-Image, Black Forest Labs FLUX, and more. **Start with services that require no API key, then optionally configure free or paid APIs** — generation tries available services in priority order. 5 additional commercial services are implemented (Doubao Seedream already offers a full config card in the paid wizard) — see below.
+### 🎯 One Interface, 23 Selectable APIs
+Directly select from all 23 image generation services (12 free + 6 paid + 5 commercial) on the main interface, covering Pollinations, SiliconFlow, Gemini Nano Banana, Qwen-Image, Bria AI, OpenAI GPT-Image, Black Forest Labs FLUX, Ideogram, fal.ai FLUX.2, Recraft, MiniMax H3, Doubao Seedream and more. **Start with services that require no API key, then optionally configure free, paid or commercial APIs** — every API has a key entry and model picker in the Free or Paid setup wizard, so no manual config-file editing is needed. Generation tries available services in priority order.
 
 ### 🆓 Zero-Cost Start
 **Pollinations.AI works without registration** — ready out of the box. Anonymous calls are subject to rate limits. After registering a few services with free tiers, you can unlock more high-quality models to cover everyday creative needs.
 
 ### 🧠 Smart Routing, One-Click Optimal
-Once services are configured, entering "banner design" prioritizes Ideogram (excellent for text-in-image); entering "e-commerce product photo" prioritizes fal.ai FLUX.2 Pro (photorealistic HD). Different scenes try suitable models in priority order, or you can manually specify an API.
+Once services are configured, entering "banner design" prioritizes Ideogram (excellent for text-in-image); entering "e-commerce product photo" prioritizes fal.ai FLUX.2 Pro (photorealistic HD). Different scenes try suitable models in priority order, or you can manually specify an API. Paid and commercial APIs stay out of Auto mode by default; enable them (and set a daily USD budget) under "Paid API Setup → Auto routing & paid budget".
 
 ### 🖼 Image-to-Image (img2img)
-After uploading a reference image, the program shows only the img2img-capable APIs that have configuration entries — currently 6: Stability AI (with a "strength" slider to control modification intensity), Nano Banana Pro, Black Forest Labs FLUX, the Gemini Nano Banana family, OpenAI GPT-Image, and Doubao Seedream (native reference-image editing). fal.ai implements reference-image handling but has no configuration entry yet; MiniMax's new editing endpoint is still being adapted, so img2img is unavailable for it in this release. Batch variant and queue modes automatically lock to img2img to prevent the reference image from being ignored.
+After uploading a reference image, the program shows only the img2img-capable APIs that have configuration entries — currently 8: Stability AI (with a "strength" slider to control modification intensity), Nano Banana Pro, Black Forest Labs FLUX, the Gemini Nano Banana family, OpenAI GPT-Image, Doubao Seedream, fal.ai FLUX.2, and MiniMax H3 (native reference editing via `/v1/images/edits`). Batch variant and queue modes automatically lock to img2img to prevent the reference image from being ignored.
 
 ### 🎲 Batch Variants — 6 Images at Once
 Automatically generates multiple seed variants from the same prompt, compare and pick the best one — greatly improves creative efficiency. Supports standard mode and higher-quality mode (more steps / better models).
@@ -148,15 +148,15 @@ The first launch creates the `~/2image/` data directory; no API key is required 
 
 ### Commercial APIs
 
-These services are auto-discovered by the registry but are not yet integrated into the main UI dropdown — suitable for commercial use cases where you can add your own configuration entry points. (Doubao Seedream already offers a full config card in the paid wizard — key and model selection — but its category is `commercial`, so it does not appear in the main dropdown.)
+These services appear in the main UI dropdown at the same level as free / paid APIs, with key entry and model selection in the Paid API setup wizard — no custom configuration entry points required.
 
 | API | Features |
 |---|---|
 | **Ideogram v4** | Best for text-in-image: banners, logos, posters with readable text |
 | **fal.ai FLUX.2 Pro** | Text-to-image `fal-ai/flux-2-pro` + instruction-based `/edit`, up to 4MP ultra-HD photorealistic — best for product photos / portraits |
-| **Recraft v4.1** | Design / illustration / vector style, ideal for brand VI (recraftv4_1 default; switchable back to v3) |
-| **MiniMax H3 Image** | H3-Image / H3-Image-Highspeed text-to-image, up to 20MP (no dedicated config card; the editing endpoint is being adapted, so img2img is unavailable in this release) |
-| **Doubao Seedream (Volcengine)** | Seedream 5.5 (default) / 5.0 Pro / 5.0 Flash text-to-image + native reference-image editing (key and model selectable in the paid wizard) |
+| **Recraft v4.1** | Design / illustration / vector style, ideal for brand VI (recraftv4_1 default; switchable back to v3, three styles) |
+| **MiniMax H3 Image** | H3-Image / H3-Image-Highspeed text-to-image + reference editing (`/v1/images/edits`), up to 20MP |
+| **Doubao Seedream (Volcengine)** | Seedream 5.5 (default) / 5.0 Pro / 5.0 Flash text-to-image + native reference-image editing |
 
 ---
 
@@ -256,7 +256,7 @@ All data stays local. Delete this directory after uninstalling for complete remo
 
 > **Upgrade note**: Since v8, the data directory has moved from `~/.text_to_image_app` to `~/2image`. On first launch, data from the old directory is automatically copied to the new location; the old directory is kept as a backup.
 >
-> **Models & compatibility**: API models track the official catalogs; legacy model IDs stored in config (e.g. Doubao 4.x / SeedEdit, retired Qwen-Image models such as 2.1, MiniMax image-01) are automatically normalized to current defaults, so no manual edits are needed. Since v2.11.0, MiniMax img2img is paused while its new editing endpoint is being adapted; other img2img providers are unaffected.
+> **Models & compatibility**: API models track the official catalogs; legacy model IDs stored in config (e.g. Doubao 4.x / SeedEdit, retired Qwen-Image models such as 2.1, MiniMax image-01) are automatically normalized to current defaults, so no manual edits are needed. MiniMax H3 img2img uses `/v1/images/edits` (the reference image is sent as a data URI); that endpoint is not idempotent, so timeouts are not retried automatically to avoid double billing.
 
 ---
 
@@ -267,7 +267,7 @@ File an Issue to report problems, or submit a Pull Request to contribute code.
 Before submitting a PR, make sure tests and gates pass:
 
 ```bash
-pytest tests/ -q          # 852 tests, including 81 end-to-end UI journeys
+pytest tests/ -q          # 866 tests, including 81 end-to-end UI journeys
 ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F821,E9
 ruff format --check main.py config/ data/ services/ ui/ tools/ tests/
 ```

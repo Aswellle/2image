@@ -48,17 +48,17 @@
 
 ## ✨ 核心亮点
 
-### 🎯 一个界面，18 个可选接口
-主界面可直接选择 18 个免费与付费生图服务（12 个免费 + 6 个付费），覆盖 Pollinations、硅基流动、Gemini Nano Banana、通义万相、Bria AI、OpenAI GPT-Image 与 Black Forest Labs FLUX 等。**可先使用无需 Key 的服务，再按需配置免费或付费 API**；生成会按当前优先序列依次尝试可用服务。另有 5 个商用服务实现（其中豆包 Seedream 已支持在付费配置向导中配置），见下方说明。
+### 🎯 一个界面，23 个可选接口
+主界面可直接选择全部 23 个生图服务（12 个免费 + 6 个付费 + 5 个商业），覆盖 Pollinations、硅基流动、Gemini Nano Banana、通义万相、Bria AI、OpenAI GPT-Image、Black Forest Labs FLUX、Ideogram、fal.ai FLUX.2、Recraft、MiniMax H3 与豆包 Seedream 等。**可先使用无需 Key 的服务，再按需配置免费、付费或商业 API**；所有接口都能在「🆓 免费配置」或「💎 付费接口配置」向导里填写 Key 与选择模型，无需手改配置文件。生成会按当前优先序列依次尝试可用服务。
 
 ### 🆓 零成本起步
 **Pollinations.AI 无需注册即可体验**，开箱即用；匿名调用仍受频率限制。注册几个提供免费额度的服务后，还能解锁更多高质量模型，覆盖日常创作需求。
 
 ### 🧠 智能路由，一键最优
-配置可用服务后，输入「banner 设计」会优先排列 Ideogram（擅长文字入图）；输入「电商产品图」会优先排列 fal.ai FLUX.2 Pro（写实高清）。不同场景按优先序列尝试适合的模型，也可手动指定接口。
+配置可用服务后，输入「banner 设计」会优先排列 Ideogram（擅长文字入图）；输入「电商产品图」会优先排列 fal.ai FLUX.2 Pro（写实高清）。不同场景按优先序列尝试适合的模型，也可手动指定接口。付费与商业接口默认不参与「自动」模式，可在「💎 付费接口配置 → 自动路由与付费预算」中开启，并设置每日美元预算上限。
 
 ### 🖼 图生图（img2img）
-上传参考图后，程序会只显示已接入且已有配置入口的图生图接口，当前共 6 个：Stability AI（「变化强度」滑杆控制改动幅度）、Nano Banana Pro、Black Forest Labs FLUX、Gemini Nano Banana 系列、OpenAI GPT-Image 与豆包 Seedream（原生参考图编辑）。fal.ai 已实现参考图逻辑但暂无配置入口；MiniMax 的新编辑端点适配中，本版暂不支持图生图。批量变体和顺序队列会在图生图模式下自动锁定，避免参考图被忽略。
+上传参考图后，程序会只显示已接入且已有配置入口的图生图接口，当前共 8 个：Stability AI（「变化强度」滑杆控制改动幅度）、Nano Banana Pro、Black Forest Labs FLUX、Gemini Nano Banana 系列、OpenAI GPT-Image、豆包 Seedream、fal.ai FLUX.2 与 MiniMax H3（原生参考图编辑）。批量变体和顺序队列会在图生图模式下自动锁定，避免参考图被忽略。
 
 ### 🎲 批量变体，一次生成 6 张
 同一提示词自动生成多张不同种子的变体，对比挑选最满意的一张，极大提升创作效率。支持标准模式与高质量模式（更高步数 / 更好模型）。
@@ -147,15 +147,15 @@ python main.py
 
 ### 商业变现接口
 
-以下服务已由注册表自动发现；当前尚未接入常规的主界面下拉菜单，适合需要自行补充配置入口的商用场景（豆包 Seedream 已在付费配置向导中提供完整配置卡片——Key 与模型选择，但分类仍为 commercial，因此不出现在主界面下拉菜单）。
+以下服务与免费 / 付费接口同级出现在主界面下拉菜单，并可在「💎 付费接口配置」中填写 Key、选择模型，无需自行补配置入口。
 
 | 接口 | 特点 |
 |---|---|
 | **Ideogram v4** | 文字入图首选，Banner / LOGO / 海报中文字可读 |
 | **fal.ai FLUX.2 Pro** | 文生图 `fal-ai/flux-2-pro` + 指令式编辑 `/edit`，最高 4MP 超清写实，产品图 / 人像首选 |
-| **Recraft v4.1** | 设计 / 插画 / 矢量风格，品牌 VI 利器（默认 recraftv4_1，可切回 v3） |
-| **MiniMax H3 Image** | H3-Image / H3-Image-Highspeed 文生图，最高 20MP（无独立配置卡片；编辑端点适配中，图生图暂不可用） |
-| **豆包 Seedream（火山引擎）** | Seedream 5.5（默认）/ 5.0 Pro / 5.0 Flash 文生图 + 原生参考图编辑（付费配置向导可填 Key 并选模型） |
+| **Recraft v4.1** | 设计 / 插画 / 矢量风格，品牌 VI 利器（默认 recraftv4_1，可切回 v3，支持三种风格切换） |
+| **MiniMax H3 Image** | H3-Image / H3-Image-Highspeed 文生图 + 参考图编辑（`/v1/images/edits`），最高 20MP |
+| **豆包 Seedream（火山引擎）** | Seedream 5.5（默认）/ 5.0 Pro / 5.0 Flash 文生图 + 原生参考图编辑 |
 
 ---
 
@@ -255,7 +255,7 @@ CI/CD 已配置 GitHub Actions，推送 `v*` 标签自动触发测试 → 构建
 
 > **升级说明**：v8 起数据目录从 `~/.text_to_image_app` 迁移至 `~/2image`。首次启动新版本时，旧目录中的数据会自动复制到新目录，旧目录保留作为备份。
 >
-> **模型与兼容性**：接口模型随官方目录持续更新；配置中保存的旧模型 ID（如豆包 4.x / SeedEdit、通义万相 2.1 等已下线版本、MiniMax image-01）会自动归一化到当前默认，升级无需手动改配置。v2.11.0 起 MiniMax 图生图暂停（新编辑端点适配中），其余图生图接口不受影响。
+> **模型与兼容性**：接口模型随官方目录持续更新；配置中保存的旧模型 ID（如豆包 4.x / SeedEdit、通义万相 2.1 等已下线版本、MiniMax image-01）会自动归一化到当前默认，升级无需手动改配置。MiniMax H3 图生图走 `/v1/images/edits`（参考图以 data URI 提交）；该端点非幂等，超时后不会自动重试以避免重复计费。
 
 ---
 
@@ -266,7 +266,7 @@ CI/CD 已配置 GitHub Actions，推送 `v*` 标签自动触发测试 → 构建
 在提交 PR 前，请确保测试与门禁通过：
 
 ```bash
-pytest tests/ -q          # 全量 852 项，含 81 项端到端界面旅程
+pytest tests/ -q          # 全量 866 项，含 81 项端到端界面旅程
 ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F821,E9
 ruff format --check main.py config/ data/ services/ ui/ tools/ tests/
 ```

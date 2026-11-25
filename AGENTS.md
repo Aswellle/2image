@@ -318,7 +318,7 @@ Extended semantic keys (added as the single source of truth for recurring UI pat
 
 ### i18n System
 
-`config/i18n.py` provides a `_(key, **kwargs)` function with 889 translation keys across 2 locales (`zh-CN`, `en`). Initialize at startup with `init_language(cfg)`. Key parity is guarded by `tools/check_i18n.py` + `tools/i18n_baseline.json`. Usage:
+`config/i18n.py` provides a `_(key, **kwargs)` function with 950 translation keys across 2 locales (`zh-CN`, `en`). Initialize at startup with `init_language(cfg)`. Key parity is guarded by `tools/check_i18n.py` + `tools/i18n_baseline.json`. Usage:
 
 ```python
 from config.i18n import _
@@ -357,7 +357,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`config/settings.py`|Path constants (`APP_DIR`, `IMAGES_DIR`, `DB_FILE`), `DEFAULT_CONFIG` dict (all API keys + defaults), `load_config()`/`save_config()`, config v1→v2 migration|
 |`config/fonts.py`|Font loading/caching, `F` dict, `init_fonts()`|
 |`config/theme.py`|`DARK_THEME` (single dark theme), `tag_color()`, global `C`|
-|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (889 keys, 2 locales), `init_language()`|
+|`config/i18n.py`|`_(key)` translation function, `STRINGS` dict (950 keys, 2 locales), `init_language()`|
 |`config/model_catalog.py`|每族图像模型「可选值+默认值+可读名称」唯一来源（OpenAI/Gemini/MiniMax/Ark/BFL/xAI/DashScope），被 settings 默认值、provider 兜底与向导下拉共同引用；一致性由 `tests/test_model_catalog_consistency.py` 锁定|
 |`data/repository.py`|SQLite schema (`history` table: id, timestamp, prompt, translated, image_path, provider, nickname, favorited), tags via junction table (`entry_tags`), full CRUD API, stats, heatmap, JSON→SQLite migration, `_set_test_db()` for in-memory testing|
 |`services/image_service.py`|`generate_image()` — iterates providers in order, catches `ValueError`, falls back; `save_image_file()` — saves bytes to disk|
@@ -403,7 +403,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 ## Testing & QA
 
 - **Framework**: pytest（CI 矩阵 3.11/3.12 双版本 + coverage 上报）
-- **Test count**: 852 items across 64 test files（`pytest tests/` 全量约 6 分钟）
+- **Test count**: 866 items across 64 test files（`pytest tests/` 全量约 6 分钟）
 - **GUI**: 真实 Tk 会话级共享 root（`tk_session_root`），App 以 Toplevel 承载——规避 Windows 下反复创建/销毁解释器的 Tcl 崩溃
 
 ### Test Layout
@@ -480,7 +480,7 @@ manifest 一致性由 `tests/test_registry_consistency.py` 护栏锁定。
 |Commercial|Ideogram|`ideogram_key`|`ideogram.py`|
 |Commercial|fal.ai FLUX Ultra|`fal_key`|`fal_flux.py`|
 |Commercial|Recraft|`recraft_key` + `recraft_style` + `recraft_model`|`recraft.py`|
-|Commercial|MiniMax Image|`minimax_key`（模型可手改 `minimax_model`）|`minimax_image.py`|
+|Commercial|MiniMax Image|`minimax_key` + `minimax_model`|`minimax_image.py`|
 |Commercial|火山引擎 豆包 Seedream|`volcengine_key` + `ark_model`|`volcengine_ark.py`|
 
 ---
@@ -494,9 +494,9 @@ manifest 一致性由 `tests/test_registry_consistency.py` 护栏锁定。
    - Raise `ValueError` on missing key; call `validate_image_url()` before downloading any URL from the API response
 2. No manual registration needed — `services/providers/__init__.py` auto-discovers via `pkgutil.iter_modules`
 3. Add config key to `DEFAULT_CONFIG` in `config/settings.py`
-4. Add wizard UI card in `ui/wizard_free.py` or `ui/wizard_paid.py`
+4. Add wizard UI card in `ui/wizard_free.py` or `ui/wizard_paid.py`, then register the stable ID in `WIZARD_CONFIGURED` (`services/providers/__init__.py`) — this is what makes missing-key prompts and the img2img dropdown agree with reality (`tests/test_registry_consistency.py` locks both)
 5. If commercial tier: use `try/except ImportError` wrapper in `__init__.py` (see `ideogram.py` pattern) so app starts even if import fails
-6. Add entry to `_KEY_MAP` in `services/smart_router.py` if paid/commercial, and to `_ROUTES` for scene-based routing
+6. Add the stable ID to `services/generation/scenes.py::ROUTES` if it should participate in scene-based smart routing; key availability, paid opt-in and daily budget gating are applied automatically by `services/generation/router.py`
 
 ---
 
