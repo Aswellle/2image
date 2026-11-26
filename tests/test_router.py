@@ -231,3 +231,11 @@ class TestCommercialRouting:
         assert "ideogram" not in order
         assert "fal_flux" not in order
         assert "minimax_image" not in order
+
+    def test_auto_paid_order_matches_registry(self):
+        """兜底顺序必须与注册表同集合，新增付费/商业接口不会漏出网。"""
+        from services.generation.router import _AUTO_PAID_ORDER
+        from services.providers import COMMERCIAL_PROVIDERS, PAID_PROVIDERS
+
+        assert set(_AUTO_PAID_ORDER) == set(PAID_PROVIDERS) | set(COMMERCIAL_PROVIDERS)
+        assert len(_AUTO_PAID_ORDER) == len(set(_AUTO_PAID_ORDER))

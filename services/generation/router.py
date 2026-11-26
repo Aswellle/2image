@@ -47,8 +47,9 @@ _KEY_MAP: dict = {name: key for name, key in PROVIDER_KEYS.items() if key}
 _FREE_PROVIDERS: set = set(FREE_PROVIDERS.keys())
 
 # 非场景提示词的付费/商业兜底顺序（仅在 paid_auto_opt_in 开启时追加到免费序列之后）：
-# 通用高质量在前，专精/小众在后；场景路由另有更精确的排布。
-_AUTO_PAID_ORDER = [
+# 以下仅为人工优选顺序，导入时与注册表求交并按注册表补齐 ——
+# 新增/下线的付费与商业接口无需再改这里。
+_PAID_PRIORITY = [
     "openai_image",
     "bfl_flux",
     "fal_flux",
@@ -61,6 +62,8 @@ _AUTO_PAID_ORDER = [
     "ideogram",
     "xai_grok",
 ]
+_AUTO_PAID_ORDER = [pid for pid in _PAID_PRIORITY if pid in PAID_PROVIDERS or pid in COMMERCIAL_PROVIDERS]
+_AUTO_PAID_ORDER += [pid for pid in (*PAID_PROVIDERS, *COMMERCIAL_PROVIDERS) if pid not in _AUTO_PAID_ORDER]
 
 
 def _has_key(name: str, cfg: dict) -> bool:
@@ -156,7 +159,7 @@ def get_provider_order(
     # 仍会剔除缺 Key、超预算与未 opt-in 的项）。否则「自动」模式会
     # 完全忽略用户刚配置好的商业接口。
     if cfg.get("paid_auto_opt_in"):
-        for name in [*_AUTO_PAID_ORDER, *PAID_PROVIDERS, *COMMERCIAL_PROVIDERS]:
+        for name in _AUTO_PAID_ORDER:
             if name not in base:
                 base.append(name)
 
