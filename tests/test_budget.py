@@ -120,3 +120,21 @@ def test_estimate_history_cost_empty(in_memory_db):
     assert est["paid_count"] == 0
     assert est["avg"] == 0.0
     assert est["by_provider"] == {}
+
+
+def test_parse_budget_input_accepts_finite_values():
+    assert budget.parse_budget_input("5.5") == pytest.approx(5.5)
+    assert budget.parse_budget_input("") == 0.0
+    assert budget.parse_budget_input("0") == 0.0
+    assert budget.parse_budget_input(2) == pytest.approx(2.0)
+
+
+def test_parse_budget_input_rejects_non_finite_and_negative():
+    for raw in ("nan", "inf", "-inf", "-1", "abc", None):
+        assert budget.parse_budget_input(raw) is None, raw
+
+
+def test_parse_budget_input_uses_default_for_init_display():
+    assert budget.parse_budget_input("abc", default=2.0) == 2.0
+    assert budget.parse_budget_input(float("nan"), default=2.0) == 2.0
+    assert budget.parse_budget_input(-3, default=2.0) == 2.0

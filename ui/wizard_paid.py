@@ -35,6 +35,7 @@ from config.model_catalog import (
     XAI_IMAGE_NAMES,
 )
 from config.theme import DARK_THEME as C
+from services.generation.budget import parse_budget_input
 from services.providers.replicate_flux import MODEL_ORDER as REPLICATE_MODEL_ORDER
 from services.providers.replicate_flux import REPLICATE_IMAGE_NAMES
 from config.ui_geometry import scaled
@@ -99,8 +100,6 @@ class PaidWizard(tk.Toplevel):
     def _on_close(self):
         """关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"""
         if self._dirty and not self._closing:
-            from tkinter import messagebox
-
             if not messagebox.askyesno(
                 _("wz_close_title"), _("wz_close_msg"), parent=self, icon="warning", default=messagebox.NO
             ):
@@ -669,7 +668,8 @@ class PaidWizard(tk.Toplevel):
         tk.Label(budget_row, text=_("wizard_paid_budget_label"), font=F["body"], bg=C["panel"], fg=C["sub"]).pack(
             side="left"
         )
-        self.budget_var = tk.StringVar(value=f"{float(self.cfg.get('paid_daily_budget_usd', 2.0)):g}")
+        budget_initial = parse_budget_input(self.cfg.get("paid_daily_budget_usd", 2.0), default=2.0)
+        self.budget_var = tk.StringVar(value=f"{budget_initial:g}")
         tk.Entry(
             budget_row,
             textvariable=self.budget_var,
@@ -782,11 +782,8 @@ class PaidWizard(tk.Toplevel):
         self._gb(parent, entry)
 
     def _save(self):
-        try:
-            budget = float(self.budget_var.get().strip() or "0")
-            if budget < 0:
-                raise ValueError
-        except ValueError:
+        budget = parse_budget_input(self.budget_var.get())
+        if budget is None:
             messagebox.showwarning(_("dlg_tip"), _("wizard_paid_budget_invalid"), parent=self)
             return
         self._dirty = False

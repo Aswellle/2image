@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import threading
 from datetime import datetime
@@ -212,6 +213,23 @@ def daily_budget(cfg: dict) -> float:
         return float(cfg.get("paid_daily_budget_usd", 0.0) or 0.0)
     except (TypeError, ValueError):
         return 0.0
+
+
+def parse_budget_input(value, default: float | None = None) -> float | None:
+    """把用户输入的预算值规范化为 >=0 的有限浮点数。
+
+    非数字、nan、inf 与负数均视为非法：``default`` 为 None 时返回 None
+    （调用方提示用户重填），否则返回 ``default``（用于向导初始化显示）。
+    非有限值必须在入口拦截——``over_budget`` 对 nan/inf 恒为 False，
+    会让预算守卫静默失效。
+    """
+    try:
+        num = float(str(value).strip() or "0")
+    except (TypeError, ValueError):
+        return default
+    if not math.isfinite(num) or num < 0:
+        return default
+    return num
 
 
 def over_budget(cfg: dict) -> bool:
