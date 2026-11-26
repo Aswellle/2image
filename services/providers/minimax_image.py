@@ -209,6 +209,7 @@ def _edit_image(
     }
     name = MINIMAX_IMAGE_NAMES.get(model, model)
     log(f"► MiniMax {name}  图生图（参考图编辑）  宽高比={aspect}  档={area}  参考图={len(ref_image) // 1024}KB")
+    log("⏳ 编辑为同步请求：官方服务端最长等待 600s，期间无法中断；取消将在本次请求返回后生效")
 
     _wait_turn()
     try:

@@ -2479,8 +2479,8 @@ STRINGS = {
         "en": '• Up to 20MP T2I; I2I uses /v1/images/edits, refer to the reference as "image 1" in the prompt',
     },
     "wizard_paid_minimax_info_3": {
-        "zh-CN": "• 编辑端点非幂等：超时/断连后服务端仍会计费，因此图生图不做自动重试",
-        "en": "• The edit endpoint is not idempotent: after a timeout the server may still bill, so I2I is never auto-retried",
+        "zh-CN": "• 编辑端点非幂等：超时/断连后服务端仍会计费，因此图生图不做自动重试；同步请求最长等待约 10 分钟",
+        "en": "• The edit endpoint is not idempotent: after a timeout the server may still bill, so I2I is never auto-retried; a sync edit can take up to 10 minutes",
     },
     "wizard_paid_minimax_key_label": {
         "zh-CN": "MiniMax API Key:",

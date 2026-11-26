@@ -256,7 +256,7 @@ All data stays local. Delete this directory after uninstalling for complete remo
 
 > **Upgrade note**: The data directory has moved from the legacy `~/.text_to_image_app` to `~/2image`. On first launch, data from the old directory is automatically copied to the new location; the old directory is kept as a backup.
 >
-> **Models & compatibility**: API models track the official catalogs; legacy model IDs stored in config (e.g. Doubao 4.x / SeedEdit, retired Qwen-Image models such as 2.1, MiniMax image-01) are automatically normalized to current defaults, so no manual edits are needed. MiniMax H3 img2img uses `/v1/images/edits` (the reference image is sent as a data URI); that endpoint is not idempotent, so timeouts are not retried automatically to avoid double billing.
+> **Models & compatibility**: API models track the official catalogs; legacy model IDs stored in config (e.g. Doubao 4.x / SeedEdit, retired Qwen-Image models such as 2.1, MiniMax image-01) are automatically normalized to current defaults, so no manual edits are needed. MiniMax H3 img2img uses `/v1/images/edits` (the reference image is sent as a data URI); that endpoint is not idempotent, so timeouts are not retried automatically to avoid double billing. Edits are synchronous and can take up to 10 minutes; a cancel takes effect after the request returns.
 
 ---
 
