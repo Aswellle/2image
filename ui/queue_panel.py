@@ -27,6 +27,7 @@ from config.i18n import _
 from ui.tooltip import attach_tooltip
 from ui.button_states import set_enabled
 from services.providers import provider_id_for
+from services.generation.router import get_provider_order
 
 
 _STATUS = {
@@ -57,6 +58,17 @@ class _QueueItem:
         self.error = ""
         self.elapsed = 0.0
         self.added_at = time.strftime("%H:%M:%S")
+
+
+def _order_for_item(item: "_QueueItem", cfg: dict) -> list:
+    """队列执行时的接口顺序。
+
+    显式选择沿用入队时保存的顺序；“自动”档在任务真正执行时
+    才按提示词做场景路由，避免队列与主界面行为不一致。
+    """
+    if item.porder is not None:
+        return list(item.porder)
+    return get_provider_order(item.prompt, cfg, template_id=getattr(item, "template_id", ""))
 
 
 # ══════════════════════════════════════════════════════════════
@@ -462,7 +474,7 @@ class QueuePanel(tk.Frame):
                     h_n,
                     seed,
                     self.app.cfg,
-                    provider_order=item.porder,
+                    provider_order=_order_for_item(item, self.app.cfg),
                     log_cb=self.app._log,
                     token=self._job_token,
                 )

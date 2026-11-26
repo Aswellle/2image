@@ -139,3 +139,35 @@ def test_img2img_dropdown_includes_commercial_providers(app):
     ids = a.content._i2i_selectable_providers()
     assert "fal_flux" in ids
     assert "minimax_image" in ids
+
+
+def test_queue_auto_order_resolved_at_execution(monkeypatch):
+    """队列自动档必须在执行时按提示词路由，而不是沿用 DEFAULT_ORDER。"""
+    import ui.queue_panel as qp
+
+    class _Item:
+        porder = None
+        prompt = "设计一个 banner"
+        template_id = ""
+
+    seen = {}
+
+    def fake_order(prompt, cfg, template_id=""):
+        seen["args"] = (prompt, template_id)
+        return ["ideogram", "siliconflow"]
+
+    monkeypatch.setattr(qp, "get_provider_order", fake_order)
+    assert qp._order_for_item(_Item(), {}) == ["ideogram", "siliconflow"]
+    assert seen["args"] == ("设计一个 banner", "")
+
+
+def test_queue_explicit_order_kept(monkeypatch):
+    import ui.queue_panel as qp
+
+    class _Item:
+        porder = ["pollinations"]
+        prompt = "x"
+        template_id = ""
+
+    monkeypatch.setattr(qp, "get_provider_order", lambda *a, **k: ["ideogram"])
+    assert qp._order_for_item(_Item(), {}) == ["pollinations"]
