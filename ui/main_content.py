@@ -1316,7 +1316,7 @@ class MainContent:
             str_row, text=f"{self._ref_strength.get():.1f}", font=F["small_b"], bg=_BG, fg=C["ok"], width=3, anchor="w"
         )
         self._strength_val_lbl.pack(side="left", padx=(8, 0))
-        self._ref_strength.trace("w", lambda *_: self._strength_val_lbl.config(text=f"{self._ref_strength.get():.1f}"))
+        self._ref_strength.trace("w", self._on_ref_strength_changed)
 
         self._strength_desc = tk.Label(
             body,
@@ -1356,6 +1356,13 @@ class MainContent:
         # 时整行收起，避免可调但无效的哑控件。
         self.pv.trace("w", lambda *_: self._update_strength_row())
         self._update_strength_row()
+
+    def _on_ref_strength_changed(self, *_args):
+        """强度数值回显；窗口销毁期间 trace 可能晚到，忽略已失效控件。"""
+        try:
+            self._strength_val_lbl.config(text=f"{self._ref_strength.get():.1f}")
+        except tk.TclError:
+            pass
 
     def _update_strength_row(self):
         """按当前接口选择显隐强度滑杆行；「自动」按任一可选接口支持判定。"""

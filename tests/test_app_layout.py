@@ -210,3 +210,10 @@ def test_template_id_survives_modified_event_after_insert(app):
     a.content.set_template_id("xhs_hot")
     a.root.update()
     assert a.content._last_template_id == "xhs_hot"
+
+
+def test_strength_label_trace_ignores_destroyed_widget(app):
+    """窗口销毁后强度 trace 仍可能触发，不得向 Tk 回调抛 TclError。"""
+    a, _saved = app
+    a.content._strength_val_lbl.destroy()
+    a.content._on_ref_strength_changed()  # 不应抛异常
