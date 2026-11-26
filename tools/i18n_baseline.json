@@ -452,51 +452,56 @@
  {
   "file": "ui/main_content.py",
   "line": 1361,
+  "text": "强度数值回显；窗口销毁期间 trace 可能晚到，忽略已失效控件。"
+ },
+ {
+  "file": "ui/main_content.py",
+  "line": 1368,
   "text": "按当前接口选择显隐强度滑杆行；「自动」按任一可选接口支持判定。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1381,
+  "line": 1388,
   "text": "支持图生图、且能在现有向导里配置 Key 的接口。\n\n        真实条件是「向导里有没有该接口的 Key 配置卡片"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1395,
+  "line": 1402,
   "text": "把图生图可用接口名称以竖向分行方式填入侧栏提示区。\n        每次调用先销毁旧行再重建，保证列表长度变化时不会残留"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1418,
+  "line": 1425,
   "text": "postcommand：把弹出 Listbox 撑到最长条目的实际像素宽。\n\n        ttk.Combobox "
  },
  {
   "file": "ui/main_content.py",
-  "line": 1439,
+  "line": 1446,
   "text": "切换文生图/图生图。\n\n        图生图的参考图侧栏固定在预览 Tab 内部（_prev_host 第 0 列），"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1499,
+  "line": 1506,
   "text": "批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个\n        入口并给出提示，避免用户以为批量结果也套"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1519,
+  "line": 1526,
   "text": "在参考图预览 Canvas 上绘制占位符（尺寸取实际渲染宽高，\n        侧栏展开动画期间会随每一帧的宽度实时重绘"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1534,
+  "line": 1541,
   "text": "将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1551,
+  "line": 1558,
   "text": "弹出文件选择器，读取参考图字节并更新预览和 UI 状态。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1572,
+  "line": 1579,
   "text": "清除参考图，恢复占位符。"
  },
  {
