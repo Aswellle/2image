@@ -19,6 +19,7 @@ import pytest
 
 from services.generation.errors import (
     ProviderAuthError,
+    ProviderConfigError,
     ProviderInvalidResponseError,
     ProviderTransientError,
 )
@@ -514,6 +515,31 @@ class TestMiniMaxEdits:
         ):
             with pytest.raises(ProviderAuthError):
                 mod.try_minimax_image("x", 1024, 1024, 1, self.CFG, lambda s: None)
+
+    def test_ref_data_uri_webp_passthrough(self):
+        import io as _io
+
+        from PIL import Image
+
+        import services.providers.minimax_image as mod
+
+        buf = _io.BytesIO()
+        Image.new("RGB", (8, 8), "blue").save(buf, format="WEBP")
+        uri = mod._ref_data_uri(buf.getvalue())
+        assert uri.startswith("data:image/webp;base64,")
+
+    def test_ref_data_uri_rejects_oversize(self):
+        import services.providers.minimax_image as mod
+
+        with patch.object(mod, "_MAX_REF_BYTES", 8):
+            with pytest.raises(ProviderConfigError, match="过大"):
+                mod._ref_data_uri(PNG_BYTES)
+
+    def test_ref_data_uri_rejects_non_image(self):
+        import services.providers.minimax_image as mod
+
+        with pytest.raises(ProviderConfigError, match="转码失败"):
+            mod._ref_data_uri(b"definitely-not-an-image")
 
 
 # ── Gemini Nano Banana Pro ─────────────────────────────────────
