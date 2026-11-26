@@ -18,26 +18,33 @@ ROUTES: dict = {
     # 高端写实摄影：产品图、人像、杂志封面
     "product_photo": [
         "fal_flux",
+        "bfl_flux",
         "volcengine_ark",
         "minimax_image",
+        "gemini_nano_banana_pro",
         "stability_ai",
+        "replicate_flux",
         "siliconflow",
         "openai_image",
+        "xai_grok",
         "pollinations",
     ],
     # 设计/插画/品牌VI
     "illustration": [
         "recraft",
         "openai_image",
+        "gemini_nano_banana_pro",
         "siliconflow",
         "gemini",
     ],
     # 电商主图（白底/场景）
     "ecommerce": [
         "fal_flux",
+        "bfl_flux",
         "volcengine_ark",
         "minimax_image",
         "stability_ai",
+        "replicate_flux",
         "siliconflow",
         "pollinations",
     ],
@@ -46,6 +53,7 @@ ROUTES: dict = {
         "siliconflow",
         "fal_flux",
         "gemini",
+        "gemini_nano_banana_pro",
         "volcengine_ark",
         "pollinations",
     ],
@@ -53,6 +61,8 @@ ROUTES: dict = {
     "brand_tech": [
         "fal_flux",
         "openai_image",
+        "bfl_flux",
+        "xai_grok",
         "minimax_image",
         "siliconflow",
         "recraft",

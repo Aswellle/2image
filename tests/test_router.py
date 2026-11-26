@@ -250,3 +250,31 @@ def test_multi_key_provider_requires_all_credentials():
     """Cloudflare 双凭证：只填 Account ID 不得进入自动路由。"""
     assert "cloudflare_ai" not in get_provider_order("a cat", {"cf_account_id": "acc"})
     assert "cloudflare_ai" in get_provider_order("a cat", {"cf_account_id": "acc", "cf_api_token": "tok"})
+
+
+def test_all_scene_route_ids_are_registered_providers():
+    from services.generation.scenes import ROUTES
+    from services.providers import ALL_PROVIDERS
+
+    unknown = {pid for ids in ROUTES.values() for pid in ids} - set(ALL_PROVIDERS)
+    assert not unknown
+
+
+def test_every_paid_provider_participates_in_a_scene():
+    """付费/商业接口应至少在一个场景中有明确优先级，而非只能等免费兜底。"""
+    from services.generation.scenes import ROUTES
+    from services.providers import COMMERCIAL_PROVIDERS, PAID_PROVIDERS
+
+    routed = {pid for ids in ROUTES.values() for pid in ids}
+    missing = (set(PAID_PROVIDERS) | set(COMMERCIAL_PROVIDERS)) - routed
+    assert not missing, missing
+
+
+def test_require_img2img_limits_order_to_capable_providers():
+    from services.providers import IMG2IMG_PROVIDERS
+
+    cfg = {"sf_key": "x", "openai_key": "y", "paid_auto_opt_in": True}
+    order = get_provider_order("电商产品图", cfg, require_img2img=True)
+    assert order
+    assert all(pid in IMG2IMG_PROVIDERS for pid in order)
+    assert "pollinations" not in order

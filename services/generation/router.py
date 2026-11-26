@@ -32,6 +32,7 @@ from services.providers import (
     COMMERCIAL_PROVIDERS,
     DEFAULT_ORDER,
     FREE_PROVIDERS,
+    IMG2IMG_PROVIDERS,
     MULTI_KEY_PROVIDERS,
     OPTIONAL_KEY_PROVIDERS,
     PAID_PROVIDERS,
@@ -136,6 +137,7 @@ def get_provider_order(
     cfg: dict | None = None,
     template_id: str = "",
     fallback_order: list | None = None,
+    require_img2img: bool = False,
 ) -> list:
     """
     返回针对当前请求的最优接口优先序列。
@@ -146,6 +148,7 @@ def get_provider_order(
     cfg           : 配置字典（key 可用性 + 付费 opt-in + 预算）
     template_id   : 当前模板ID（优先于关键词检测）
     fallback_order: 兜底顺序，None 时使用 DEFAULT_ORDER
+    require_img2img: 仅保留支持参考图编辑的接口（图生图自动路由）
 
     Returns
     -------
@@ -170,14 +173,18 @@ def get_provider_order(
             if name not in base:
                 base.append(name)
 
+    # 1c. 能力过滤：图生图自动路由不得落到纯文生图接口
+    if require_img2img:
+        base = [name for name in base if name in IMG2IMG_PROVIDERS]
+
     # 2. 可用性过滤
     available = _filter_available(base, cfg)
 
     # 3. 健康降级排序
     available = _demote_unhealthy(available)
 
-    # 4. 兜底：仅当 Pollinations 未被用户关闭时
-    if not available and bool(cfg.get("pollinations_enabled", True)):
+    # 4. 兜底：仅当未限制图生图且 Pollinations 未被用户关闭时
+    if not available and not require_img2img and bool(cfg.get("pollinations_enabled", True)):
         available = ["pollinations"]
 
     return available
@@ -185,9 +192,11 @@ def get_provider_order(
 
 class Router:
     """
-    能力/健康评分路由（manifest 驱动，与场景路由互补）。
+    能力/健康评分路由（manifest 驱动，实验性实现）。
 
-    用于需要按能力过滤的场景（如 img2img）或显式指定 provider：
+    注意：生产入口是 get_provider_order()；本类目前只被测试使用，
+    保留用于验证 manifest 评分模型。生产侧的能力过滤请使用
+    get_provider_order(require_img2img=True)。
 
         router = Router(cfg={"sf_key": "xxx", ...})
         order = router.get_order(
