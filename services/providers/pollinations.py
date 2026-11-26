@@ -27,7 +27,7 @@ import time
 import urllib.parse
 import requests
 from typing import Callable, Tuple
-from services.generation.errors import ProviderAuthError, ProviderTransientError
+from services.generation.errors import ProviderAuthError, ProviderConfigError, ProviderTransientError
 from services.providers._net import (
     get_session as _get_session,
     validate_image_url as _validate_image_url,
@@ -59,6 +59,8 @@ _MAX_RETRY = 3
 
 def try_pollinations(prompt: str, w: int, h: int, seed: int, cfg: dict, log: Callable) -> Tuple[bytes, str]:
     """线程安全地调用 Pollinations.AI，遵守官方 15s 限速。"""
+    if not cfg.get("pollinations_enabled", True):
+        raise ProviderConfigError("Pollinations.AI 已在「🆓 免费配置」中关闭")
     hq_mode = bool(cfg.get("variant_hq", False))
     mode_tag = "HQ变体" if hq_mode else "标准"
     log(f"► Pollinations.AI（完全免费，无需 Key）[{mode_tag}]…")

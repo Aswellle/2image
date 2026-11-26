@@ -186,6 +186,8 @@ def generate_image(
             continue
         if only_img2img and name not in IMG2IMG_PROVIDERS:
             continue
+        if name == "pollinations" and not cfg.get("pollinations_enabled", True):
+            continue
         if name not in FREE_PROVIDERS and (not paid_allowed or over_budget):
             continue
         required_keys = MULTI_KEY_PROVIDERS.get(name)

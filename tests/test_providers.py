@@ -313,3 +313,11 @@ def test_safe_get_image_initial_invalid_url_blocked():
 
     with pytest.raises(ProviderInvalidResponseError, match="[Bb]locked"):
         safe_get_image("http://example.com/img.png")
+
+
+def test_pollinations_disabled_raises_config_error():
+    from services.generation.errors import ProviderConfigError
+    from services.providers.pollinations import try_pollinations
+
+    with pytest.raises(ProviderConfigError):
+        try_pollinations("x", 512, 512, 1, {"pollinations_enabled": False}, lambda s: None)

@@ -239,3 +239,8 @@ class TestCommercialRouting:
 
         assert set(_AUTO_PAID_ORDER) == set(PAID_PROVIDERS) | set(COMMERCIAL_PROVIDERS)
         assert len(_AUTO_PAID_ORDER) == len(set(_AUTO_PAID_ORDER))
+
+
+def test_pollinations_toggle_is_respected():
+    assert "pollinations" in get_provider_order("a cat", {})
+    assert "pollinations" not in get_provider_order("a cat", {"pollinations_enabled": False})

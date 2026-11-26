@@ -137,3 +137,22 @@ def test_img2img_fallback_skips_text_only_providers():
     assert data == b"i2i-image"
     assert used == "GoodI2I"
     assert "t2i_only" not in calls
+
+
+def test_disabled_pollinations_is_not_appended_as_fallback():
+    calls: list[str] = []
+
+    def bad_provider(prompt, w, h, seed, cfg, log):
+        calls.append("bad")
+        raise RuntimeError("provider failed")
+
+    def pollinations_provider(prompt, w, h, seed, cfg, log):
+        calls.append("pollinations")
+        return b"image", "Pollinations"
+
+    providers = {"bad": bad_provider, "pollinations": pollinations_provider}
+    patches = _patch_registry(providers, set(providers))
+    with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+        with pytest.raises(Exception):
+            generate_image("test", 512, 512, 42, {"pollinations_enabled": False}, provider_order=["bad"])
+    assert "pollinations" not in calls

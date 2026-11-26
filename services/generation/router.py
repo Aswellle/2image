@@ -69,6 +69,9 @@ _AUTO_PAID_ORDER += [pid for pid in (*PAID_PROVIDERS, *COMMERCIAL_PROVIDERS) if 
 def _has_key(name: str, cfg: dict) -> bool:
     """A provider is key-ready when it needs no key, its key is optional
     (e.g. StableHorde anonymous), or a non-empty key is configured."""
+    if name == "pollinations":
+        # 免 Key 不等于始终可用：用户可在免费配置中显式关闭
+        return bool(cfg.get("pollinations_enabled", True))
     key = _KEY_MAP.get(name)
     if not key or name in OPTIONAL_KEY_PROVIDERS:
         return True
@@ -142,7 +145,7 @@ def get_provider_order(
 
     Returns
     -------
-    list[str]  稳定 provider_id 列表，至少包含一个免费兜底接口
+    list[str]  稳定 provider_id 列表；全部被过滤时为空列表
     """
     cfg = cfg or {}
 
@@ -169,8 +172,8 @@ def get_provider_order(
     # 3. 健康降级排序
     available = _demote_unhealthy(available)
 
-    # 4. 保证最终列表非空
-    if not available:
+    # 4. 兜底：仅当 Pollinations 未被用户关闭时
+    if not available and bool(cfg.get("pollinations_enabled", True)):
         available = ["pollinations"]
 
     return available
