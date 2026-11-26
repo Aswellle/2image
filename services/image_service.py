@@ -157,7 +157,7 @@ def generate_image(
             eff_cfg = dict(cfg)
         eff_cfg["_cancel_check"] = token.throw_if_cancelled
 
-    order = list(provider_order or DEFAULT_ORDER)
+    order = list(DEFAULT_ORDER if provider_order is None else provider_order)
 
     # Build providers dict with error mapping wrapper
     providers = {}
@@ -165,11 +165,13 @@ def generate_image(
         fn = ALL_PROVIDERS.get(name)
         if fn is not None:
             providers[name] = _wrap_provider_fn(fn)
-    # Add any remaining providers not in explicit order as final fallback.
+    # Add any remaining providers not in the given order as final fallback.
     # 过滤未配置 Key / 未开启付费 opt-in / 超预算的接口——防止显式选择
     # 免费接口失败后，自动回退链产生未授权的付费调用。
+    # 图生图只追加支持参考图的接口：否则参考图会被静默忽略。
     from services.providers import (
         FREE_PROVIDERS,
+        IMG2IMG_PROVIDERS,
         MULTI_KEY_PROVIDERS,
         OPTIONAL_KEY_PROVIDERS,
         PROVIDER_KEYS,
@@ -178,8 +180,11 @@ def generate_image(
 
     paid_allowed = bool(cfg.get("paid_auto_opt_in"))
     over_budget = _budget.over_budget(cfg)
+    only_img2img = ref_image is not None
     for name, fn in ALL_PROVIDERS.items():
         if name in providers or fn is None:
+            continue
+        if only_img2img and name not in IMG2IMG_PROVIDERS:
             continue
         if name not in FREE_PROVIDERS and (not paid_allowed or over_budget):
             continue
@@ -192,6 +197,10 @@ def generate_image(
             if key_name and name not in OPTIONAL_KEY_PROVIDERS and not str(cfg.get(key_name, "") or "").strip():
                 continue
         providers[name] = _wrap_provider_fn(fn)
+        if name not in order:
+            # orchestrator 只遍历 provider_order：追加的兜底接口必须同步
+            # 写入顺序，否则永远不会被尝试（历史死代码）。
+            order.append(name)
 
     orch = GenerationOrchestrator(
         providers=providers,

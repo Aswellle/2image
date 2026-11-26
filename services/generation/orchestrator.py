@@ -92,7 +92,7 @@ class GenerationOrchestrator:
         deadline = Deadline(self.deadline_seconds)
         health_reg = get_health_registry()
 
-        order = provider_order or list(self.providers.keys())
+        order = list(self.providers.keys()) if provider_order is None else provider_order
         start_time = time.monotonic()
         final_error: Exception | None = None  # 任务级：最后一个真实失败（跨 provider）
 
