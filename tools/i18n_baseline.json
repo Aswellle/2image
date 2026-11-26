@@ -456,42 +456,42 @@
  },
  {
   "file": "ui/main_content.py",
-  "line": 1375,
+  "line": 1373,
   "text": "把图生图可用接口名称以竖向分行方式填入侧栏提示区。\n        每次调用先销毁旧行再重建，保证列表长度变化时不会残留"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1398,
+  "line": 1396,
   "text": "postcommand：把弹出 Listbox 撑到最长条目的实际像素宽。\n\n        ttk.Combobox "
  },
  {
   "file": "ui/main_content.py",
-  "line": 1419,
+  "line": 1417,
   "text": "切换文生图/图生图。\n\n        图生图的参考图侧栏固定在预览 Tab 内部（_prev_host 第 0 列），"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1479,
+  "line": 1477,
   "text": "批量生成 / 加入队列在图生图模式下暂不支持参考图，锁定这两个\n        入口并给出提示，避免用户以为批量结果也套"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1499,
+  "line": 1497,
   "text": "在参考图预览 Canvas 上绘制占位符（尺寸取实际渲染宽高，\n        侧栏展开动画期间会随每一帧的宽度实时重绘"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1514,
+  "line": 1512,
   "text": "将参考图字节渲染为预览缩略图（尺寸取实际渲染宽高）。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1531,
+  "line": 1529,
   "text": "弹出文件选择器，读取参考图字节并更新预览和 UI 状态。"
  },
  {
   "file": "ui/main_content.py",
-  "line": 1552,
+  "line": 1550,
   "text": "清除参考图，恢复占位符。"
  },
  {
@@ -906,7 +906,7 @@
  },
  {
   "file": "ui/wizard_free.py",
-  "line": 1037,
+  "line": 1033,
   "text": "绿边 idle，获焦后变隐形。"
  },
  {
@@ -931,17 +931,27 @@
  },
  {
   "file": "ui/wizard_paid.py",
-  "line": 47,
+  "line": 48,
+  "text": "构造模型下拉选项与当前显示值。\n\n    目录外的自定义 ID（用户手改 config 接入官方新快照）原样保留在\n  "
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 62,
+  "text": "显示名 → 模型 ID；目录外自定义 ID 原样保留，空值回落默认。"
+ },
+ {
+  "file": "ui/wizard_paid.py",
+  "line": 70,
   "text": "付费接口（OpenAI / Stability AI / Replicate / xAI / 豆包）配置窗口。"
  },
  {
   "file": "ui/wizard_paid.py",
-  "line": 100,
+  "line": 123,
   "text": "关闭窗口前先解绑 bind_all，防止 Canvas 销毁后仍触发 TclError。"
  },
  {
   "file": "ui/wizard_paid.py",
-  "line": 699,
+  "line": 721,
   "text": "密钥输入行（标签 + 输入框 + 显示切换），返回绑定变量。"
  },
  {
