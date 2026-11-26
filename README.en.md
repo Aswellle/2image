@@ -267,7 +267,7 @@ File an Issue to report problems, or submit a Pull Request to contribute code.
 Before submitting a PR, make sure tests and gates pass:
 
 ```bash
-pytest tests/ -q          # 866 tests, including 81 end-to-end UI journeys
+pytest tests/ -q          # 876 tests, including 81 end-to-end UI journeys
 ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F821,E9
 ruff format --check main.py config/ data/ services/ ui/ tools/ tests/
 ```

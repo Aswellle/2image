@@ -266,7 +266,7 @@ CI/CD 已配置 GitHub Actions，推送 `v*` 标签自动触发测试 → 构建
 在提交 PR 前，请确保测试与门禁通过：
 
 ```bash
-pytest tests/ -q          # 全量 866 项，含 81 项端到端界面旅程
+pytest tests/ -q          # 全量 876 项，含 81 项端到端界面旅程
 ruff check main.py config/ data/ services/ ui/ tools/ tests/ --select F821,E9
 ruff format --check main.py config/ data/ services/ ui/ tools/ tests/
 ```
