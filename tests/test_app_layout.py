@@ -148,7 +148,7 @@ def test_queue_auto_order_resolved_at_execution(monkeypatch):
     class _Item:
         porder = None
         prompt = "设计一个 banner"
-        template_id = ""
+        template_id = "xhs_hot"
 
     seen = {}
 
@@ -158,7 +158,7 @@ def test_queue_auto_order_resolved_at_execution(monkeypatch):
 
     monkeypatch.setattr(qp, "get_provider_order", fake_order)
     assert qp._order_for_item(_Item(), {}) == ["ideogram", "siliconflow"]
-    assert seen["args"] == ("设计一个 banner", "")
+    assert seen["args"] == ("设计一个 banner", "xhs_hot")
 
 
 def test_queue_explicit_order_kept(monkeypatch):
@@ -171,3 +171,42 @@ def test_queue_explicit_order_kept(monkeypatch):
 
     monkeypatch.setattr(qp, "get_provider_order", lambda *a, **k: ["ideogram"])
     assert qp._order_for_item(_Item(), {}) == ["pollinations"]
+
+
+def test_template_id_cleared_when_prompt_is_edited(app):
+    a, _saved = app
+    a.content.set_template_id("xhs_hot")
+    assert a.content._last_template_id == "xhs_hot"
+
+    a.content.pt.insert("end", "手动修改")
+    a.content.pt.edit_modified(True)
+    a.root.update()
+    assert a.content._last_template_id == ""
+
+
+def test_auto_order_passes_template_id(app, monkeypatch):
+    from types import SimpleNamespace
+
+    import services.application.generation_controller as gc
+
+    a, _saved = app
+    seen = {}
+
+    def fake_order(prompt, cfg, template_id=""):
+        seen["template_id"] = template_id
+        return ["pollinations"]
+
+    monkeypatch.setattr(gc, "get_provider_order", fake_order)
+    order = a.gen_controller._auto_order("banner", SimpleNamespace(_last_template_id="xhs_hot"))
+    assert order == ["pollinations"]
+    assert seen["template_id"] == "xhs_hot"
+
+
+def test_template_id_survives_modified_event_after_insert(app):
+    """<<Modified>> 异步触发：向导刚写入的模板 ID 不能被自己的事件清掉。"""
+    a, _saved = app
+    a.content.pt.delete("1.0", "end")
+    a.content.pt.insert("1.0", "banner prompt")
+    a.content.set_template_id("xhs_hot")
+    a.root.update()
+    assert a.content._last_template_id == "xhs_hot"

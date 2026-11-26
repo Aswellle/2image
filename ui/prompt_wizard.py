@@ -285,6 +285,7 @@ class PromptWizard(tk.Toplevel):
         self._generating = False
         self._anim_id = None
         self._sel_tid = None  # 已选模板 ID
+        self._result_template_id = None  # 当前结果来自模板时记录模板 ID
         self._last_gen_args = None  # 上次生成的完整参数快照（供一键重试）
         self._variant_list: list[str] = []  # 多候选提示词（‹/› 切换）
         self._variant_idx = 0
@@ -1180,6 +1181,7 @@ class PromptWizard(tk.Toplevel):
         # 用户按 › 会把模板结果换成上一轮 LLM 候选
         self._reset_variants()
         self._on_done(pos, _("wizard_label_template_prefix", text=t["name"]))
+        self._result_template_id = self._sel_tid
         self._tmpl_status.config(text=_("wizard_applied", name=t["name"]), fg=C["ok"])
 
     def _set_template_state(self, state: str):
@@ -1244,6 +1246,7 @@ class PromptWizard(tk.Toplevel):
                 set_enabled(self._retry_btn, True, bg=C["acc"], fg="white")
 
     def _on_done(self, positive: str, label: str):
+        self._result_template_id = None  # 模板路径在调用后单独回填
         self._stop_anim()
         self._generating = False
         try:
@@ -1395,6 +1398,11 @@ class PromptWizard(tk.Toplevel):
             return
         self.app.pt.delete("1.0", "end")
         self.app.pt.insert("1.0", pos)
+        # 插入会触发 <<Modified>> 清空模板来源，须在写入之后再登记
+        try:
+            self.app.content.set_template_id(self._result_template_id or "")
+        except Exception:
+            pass
         self.app._log(f"✨ 使用助手提示词: {pos[:60]}…")
         self._set_template_state(self._TEMPLATE_IDLE)
         self._status_lbl.config(text=_("wizard_filled_main"), fg=C["ok"])
@@ -1418,6 +1426,7 @@ class PromptWizard(tk.Toplevel):
         idx = self._hist_cb.current()
         if 0 <= idx < len(self._history):
             _, pos = self._history[idx]
+            self._result_template_id = None  # 历史结果不携带模板来源
             self._set_result(pos)
             self._set_template_state(self._TEMPLATE_PENDING_FILL)
 

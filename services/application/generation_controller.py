@@ -16,7 +16,8 @@ from data.repository import add_entry
 from services.generation.cancellation import CancellationToken
 from services.generation.errors import DeadlineExceeded, GenerationCancelled
 from services.image_service import generate_image, save_image_file
-from services.providers import provider_id_for
+from services.providers import display_name_for, provider_id_for
+from services.generation import scenes
 from services.generation.router import get_provider_order
 from services.translation import has_chinese, translate_zh_to_en
 
@@ -29,6 +30,16 @@ class GenerationController:
         self.root = app.root
         self._cancel_token: CancellationToken | None = None
         self._running = False
+
+    def _auto_order(self, prompt: str, content) -> list:
+        """计算「自动」顺序并记录场景与优先级，便于用户理解路由结果。"""
+        template_id = getattr(content, "_last_template_id", "") or ""
+        order = get_provider_order(prompt, self.app.cfg, template_id=template_id)
+        scene = scenes.scene_for_template(template_id) or scenes.detect_scene(prompt)
+        names = " > ".join(display_name_for(pid) for pid in order[:4])
+        suffix = " …" if len(order) > 4 else ""
+        self.app._log(f"🧭 智能路由 [{scene or 'default'}]：{names or '无可用接口'}{suffix}")
+        return order
 
     def generate_or_cancel(self, event=None) -> None:
         """主生成按钮统一入口：空闲时启动生成，运行中变为取消。
@@ -83,7 +94,7 @@ class GenerationController:
                 ):
                     self.app._open_wizard()
                     return
-            porder = get_provider_order(prompt, self.app.cfg)
+            porder = self._auto_order(prompt, content)
         else:
             porder = [psel_id]
 
@@ -301,7 +312,7 @@ class GenerationController:
         w, h = [int(x) for x in sz.replace("×", "x").split("x")]
 
         if psel == _("provider_auto"):
-            porder = get_provider_order(prompt, self.app.cfg)
+            porder = self._auto_order(prompt, content)
         else:
             porder = [psel_id]
 

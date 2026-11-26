@@ -45,12 +45,13 @@ _STATUS = {
 class _QueueItem:
     _counter = 0
 
-    def __init__(self, prompt: str, size: str, porder):
+    def __init__(self, prompt: str, size: str, porder, template_id: str = ""):
         _QueueItem._counter += 1
         self.item_id = _QueueItem._counter
         self.prompt = prompt
         self.size = size
         self.porder = porder
+        self.template_id = template_id
         self.status = "waiting"
         self.result_path = ""
         self.result_data: Optional[bytes] = None
@@ -303,8 +304,8 @@ class QueuePanel(tk.Frame):
     # ══════════════════════════════════════════════════════════
     #   公开 API
     # ══════════════════════════════════════════════════════════
-    def add_task(self, prompt: str, size: str = "1024x1024", porder=None) -> None:
-        item = _QueueItem(prompt, size, porder)
+    def add_task(self, prompt: str, size: str = "1024x1024", porder=None, template_id: str = "") -> None:
+        item = _QueueItem(prompt, size, porder, template_id)
         widget = _ItemWidget(self._inner, item, on_remove=self._remove, on_view=self._view)
         widget.pack(fill="x", padx=8, pady=3)
         self._widgets.append(widget)
@@ -339,7 +340,7 @@ class QueuePanel(tk.Frame):
         # 英文界面下匹配不到会导致伪造的供应商顺序被传入。
         # 下拉框是 display name，队列存 stable id。
         pord = None if (not psel or psel == _("provider_auto")) else [provider_id_for(psel)]
-        self.add_task(prompt, sz, pord)
+        self.add_task(prompt, sz, pord, template_id=getattr(self.app.content, "_last_template_id", "") or "")
 
     def set_img2img_lock(self, locked: bool):
         """图生图模式下锁定「加入队列」入口（见 MainContent._switch_mode）。"""

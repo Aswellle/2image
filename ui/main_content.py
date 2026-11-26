@@ -246,6 +246,9 @@ class MainContent:
         self._ref_image: bytes | None = None
         self._ref_strength = tk.DoubleVar(value=0.6)
         self._ref_thumb_photo = None  # 预览缩略图 PhotoImage（防 GC）
+        # 最近一次来自提示词助手模板的模板 ID；提示词被改写后清空
+        self._last_template_id = ""
+        self._template_prompt = ""  # 登记模板时的提示词快照
 
         # Resize timers
         self._prev_resize_timer = None
@@ -357,6 +360,17 @@ class MainContent:
                 self.pt.edit_modified(False)
             except Exception:
                 pass
+            # 提示词被手动/外部改写后，模板场景优先不再适用。
+            # <<Modified>> 会在插入后异步触发：只有文本与登记快照不同
+            # 才清除，避免刚由向导写入的模板 ID 被自己的事件清掉。
+            if self._last_template_id:
+                try:
+                    current = self.pt.get("1.0", "end").strip()
+                except tk.TclError:
+                    current = ""
+                if current != self._template_prompt:
+                    self._last_template_id = ""
+                    self._template_prompt = ""
             self._update_char_count()
 
         self.pt.bind("<<Modified>>", _on_text_modified)
@@ -1155,6 +1169,14 @@ class MainContent:
             self._pt_ph.place(x=10, y=8)
         else:
             self._pt_ph.place_forget()
+
+    def set_template_id(self, template_id: str) -> None:
+        """记录提示词助手模板来源，供下一次自动路由做场景优先。"""
+        self._last_template_id = (template_id or "").strip()
+        try:
+            self._template_prompt = self.pt.get("1.0", "end").strip()
+        except tk.TclError:
+            self._template_prompt = ""
 
     def flash_prompt(self, delay_ms: int = 250) -> None:
         """输入框插入回执：短暂高亮后恢复。
