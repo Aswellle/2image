@@ -447,6 +447,39 @@ class TestMiniMaxEdits:
         assert excinfo.value.retryable is False
         assert sess.post.call_count == 1
 
+    def test_edit_download_timeout_is_not_retried(self):
+        """生成已计费：图片下载阶段的瞬态失败不得重试整笔编辑请求。"""
+        import services.providers.minimax_image as mod
+
+        sess = MagicMock()
+        sess.post.return_value = self._ok()
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch(f"{self.MOD}._safe_get_image", side_effect=ProviderTransientError("Download timeout")),
+            patch.object(mod.time, "sleep"),
+        ):
+            with pytest.raises(ProviderTransientError) as excinfo:
+                mod.try_minimax_image("x", 1024, 1024, 1, self.CFG, lambda s: None)
+
+        assert excinfo.value.retryable is False
+        assert sess.post.call_count == 1
+
+    def test_edit_malformed_response_is_invalid_not_retried(self):
+        """非 dict 响应不应变成可重试的瞬态错误。"""
+        import services.providers.minimax_image as mod
+
+        sess = MagicMock()
+        sess.post.return_value = _resp(200, ["not", "a", "dict"])
+        with (
+            patch(f"{self.MOD}._get_session", return_value=sess),
+            patch.object(mod.time, "sleep"),
+        ):
+            with pytest.raises(ProviderInvalidResponseError) as excinfo:
+                mod.try_minimax_image("x", 1024, 1024, 1, self.CFG, lambda s: None)
+
+        assert excinfo.value.retryable is False
+        assert sess.post.call_count == 1
+
     def test_edit_unsupported_format_converted_to_png(self):
         import io as _io
 

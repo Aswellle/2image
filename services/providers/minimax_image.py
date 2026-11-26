@@ -228,10 +228,20 @@ def _edit_image(
     except ValueError as exc:
         raise ProviderInvalidResponseError(f"MiniMax 编辑响应不是 JSON：{exc}")
 
-    image_bytes = _extract_image(data)
+    # 生成已成功并计费：响应解析与图片下载阶段的瞬态失败同样不得触发
+    # orchestrator 重试，否则会重复提交编辑请求并重复扣费。
+    try:
+        image_bytes = _extract_image(data)
+    except ProviderTransientError as exc:
+        raise _no_retry(exc)
+    except ProviderError:
+        raise
+    except Exception as exc:
+        raise ProviderInvalidResponseError(f"MiniMax 编辑响应解析失败：{exc}")
+
     revised = ""
-    items = data.get("data") or [{}]
-    if isinstance(items[0], dict):
+    items = data.get("data") if isinstance(data, dict) else None
+    if isinstance(items, list) and items and isinstance(items[0], dict):
         revised = str(items[0].get("revised_prompt") or "")
     if revised:
         log(f"[MiniMax] 已按编辑提示词重写：{revised[:80]}…")
