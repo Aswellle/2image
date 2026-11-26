@@ -121,3 +121,8 @@ def test_unknown_providers_in_route_do_not_crash():
 
     assert _filter_available(["nonexistent_id"], {}) == []
     assert _filter_available(["NonExistentProvider"], {}) == []
+
+
+def test_detect_scene_social_media_keywords():
+    assert _detect_scene("小红书封面设计") == "social_media"
+    assert _detect_scene("social media post for instagram") == "social_media"

@@ -165,6 +165,23 @@ KEYWORD_RULES: list = [
         "ecommerce",
     ),
     (["人像", "写真", "棚拍", "商业摄影", "portrait", "model", "模特", "硬照", "fashion", "Fashion"], "product_photo"),
+    (
+        [
+            "小红书",
+            "公众号",
+            "朋友圈",
+            "社媒",
+            "社交媒体",
+            "短视频",
+            "封面",
+            "social media",
+            "instagram",
+            "facebook",
+            "twitter",
+            "tiktok",
+        ],
+        "social_media",
+    ),
     (["科技", "品牌", "发布", "宣传", "tech", "brand", "launch", "企业", "corporate"], "brand_tech"),
 ]
 
