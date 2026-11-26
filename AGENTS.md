@@ -29,7 +29,7 @@ main.py  (entry: DPI → fonts → legacy-data migration → DB init → tk.Tk �
           ├── data/repository.py    ← SQLite CRUD (thread-local connections)
           ├── services/
           │   ├── image_service.py  ← dispatch to providers
-          │   ├── smart_router.py   ← scene-aware provider selection
+          │   ├── smart_router.py   ← 兼容层（生产实现见 generation/router.py）
           │   ├── application/      ← Generation/Menu/Settings controllers (App delegates here)
           │   ├── providers/*.py    ← individual API clients (auto-discovered)
           │   ├── generation/       ← orchestrator, router, budget, cancellation, downloader
@@ -101,7 +101,7 @@ pip install -r requirements.txt
 # Run the application
 python main.py
 
-# Run all tests (full suite ≈ 4 min)
+# Run all tests (full suite ≈ 6 min)
 pytest tests/ -v --tb=short
 
 # Run specific test file
@@ -330,7 +330,7 @@ Current language is module-global (`_current_lang`). Log messages and provider n
 
 ### Smart Router Pattern
 
-`get_provider_order(prompt, cfg, template_id, fallback_order)` (`services/smart_router.py`) returns a priority-ordered provider list based on:
+`get_provider_order(prompt, cfg, template_id, fallback_order)` (`services/generation/router.py`；`services/smart_router.py` 为兼容层) returns a priority-ordered provider list based on:
 1. Template ID → scene mapping (`_TEMPLATE_SCENE`)
 2. Keyword detection → scene mapping (`_KEYWORD_RULES`)
 3. Scene → provider priority list (`_ROUTES`)
@@ -361,7 +361,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`config/model_catalog.py`|每族图像模型「可选值+默认值+可读名称」唯一来源（OpenAI/Gemini/MiniMax/Ark/BFL/xAI/DashScope），被 settings 默认值、provider 兜底与向导下拉共同引用；一致性由 `tests/test_model_catalog_consistency.py` 锁定|
 |`data/repository.py`|SQLite schema (`history` table: id, timestamp, prompt, translated, image_path, provider, nickname, favorited), tags via junction table (`entry_tags`), full CRUD API, stats, heatmap, JSON→SQLite migration, `_set_test_db()` for in-memory testing|
 |`services/image_service.py`|`generate_image()` — iterates providers in order, catches `ValueError`, falls back; `save_image_file()` — saves bytes to disk|
-|`services/smart_router.py`|`get_provider_order()` — scene-aware routing: template→scene→providers, keyword detection, filters unavailable paid providers|
+|`services/smart_router.py`|兼容层，仅保留旧导入路径；生产路由实现见 `services/generation/router.py`（健康感知 + 场景路由）|
 |`services/providers/__init__.py`|Auto-discovers all `try_*` functions via `pkgutil.iter_modules`, populates `FREE_PROVIDERS`, `PAID_PROVIDERS`, `COMMERCIAL_PROVIDERS`, `ALL_PROVIDERS`, `DEFAULT_ORDER`|
 |`services/generation/orchestrator.py`|Task-level generation orchestration — cancellation/deadline/health/retry/fallback|
 |`services/application/`|`GenerationController` / `MenuController` / `SettingsController` — business logic behind `App`'s forwarding methods|
@@ -478,7 +478,7 @@ manifest 一致性由 `tests/test_registry_consistency.py` 护栏锁定。
 |Paid|BFL（FLUX 官方）|`bfl_key` + `bfl_model`|`bfl_flux.py`|
 |Paid|Gemini Nano Banana Pro|`gemini_key`（与 gemini 共用）|`gemini_nano_banana_pro.py`|
 |Commercial|Ideogram|`ideogram_key`|`ideogram.py`|
-|Commercial|fal.ai FLUX Ultra|`fal_key`|`fal_flux.py`|
+|Commercial|fal.ai FLUX.2 Pro|`fal_key`|`fal_flux.py`|
 |Commercial|Recraft|`recraft_key` + `recraft_style` + `recraft_model`|`recraft.py`|
 |Commercial|MiniMax Image|`minimax_key` + `minimax_model`|`minimax_image.py`|
 |Commercial|火山引擎 豆包 Seedream|`volcengine_key` + `ark_model`|`volcengine_ark.py`|

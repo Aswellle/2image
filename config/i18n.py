@@ -2508,8 +2508,8 @@ STRINGS = {
         "en": "Allow Auto mode to use configured paid / commercial APIs",
     },
     "wizard_paid_routing_opt_in_hint": {
-        "zh-CN": "关闭（默认）时自动模式只走免费接口；在下拉框中显式选择付费接口不受此限制",
-        "en": "Off by default: Auto only uses free APIs. Explicitly selecting a paid provider in the dropdown is unaffected.",
+        "zh-CN": "关闭（默认）时自动模式只走免费接口；开启后，非场景提示词也会在免费接口之后尝试付费 / 商业接口。在下拉框中显式选择付费接口不受此限制",
+        "en": "Off by default: Auto only uses free APIs. When enabled, prompts without a matched scene also try paid / commercial APIs after the free ones. Explicitly selecting a paid provider in the dropdown is unaffected.",
     },
     "wizard_paid_budget_label": {
         "zh-CN": "付费日预算（USD）:",
