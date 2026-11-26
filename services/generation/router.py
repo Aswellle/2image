@@ -72,6 +72,10 @@ def _has_key(name: str, cfg: dict) -> bool:
     if name == "pollinations":
         # 免 Key 不等于始终可用：用户可在免费配置中显式关闭
         return bool(cfg.get("pollinations_enabled", True))
+    required = MULTI_KEY_PROVIDERS.get(name)
+    if required:
+        # 双凭证接口（Cloudflare）必须全部就绪，否则运行时必然失败
+        return all(str(cfg.get(k, "") or "").strip() for k in required)
     key = _KEY_MAP.get(name)
     if not key or name in OPTIONAL_KEY_PROVIDERS:
         return True

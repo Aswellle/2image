@@ -244,3 +244,9 @@ class TestCommercialRouting:
 def test_pollinations_toggle_is_respected():
     assert "pollinations" in get_provider_order("a cat", {})
     assert "pollinations" not in get_provider_order("a cat", {"pollinations_enabled": False})
+
+
+def test_multi_key_provider_requires_all_credentials():
+    """Cloudflare 双凭证：只填 Account ID 不得进入自动路由。"""
+    assert "cloudflare_ai" not in get_provider_order("a cat", {"cf_account_id": "acc"})
+    assert "cloudflare_ai" in get_provider_order("a cat", {"cf_account_id": "acc", "cf_api_token": "tok"})
