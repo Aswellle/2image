@@ -330,13 +330,16 @@ Current language is module-global (`_current_lang`). Log messages and provider n
 
 ### Smart Router Pattern
 
-`get_provider_order(prompt, cfg, template_id, fallback_order)` (`services/generation/router.py`；`services/smart_router.py` 为兼容层) returns a priority-ordered provider list based on:
+`get_provider_order(prompt, cfg, template_id, fallback_order, require_img2img)` (`services/generation/router.py`；`services/smart_router.py` 为兼容层) returns a priority-ordered provider list based on:
 1. Template ID → scene mapping (`_TEMPLATE_SCENE`)
-2. Keyword detection → scene mapping (`_KEYWORD_RULES`)
+2. Keyword detection → scene mapping (`_KEYWORD_RULES`; `social_media` 也有中英关键词)
 3. Scene → provider priority list (`_ROUTES`)
-4. Filter unavailable paid providers via `_filter_available()`
+4. Availability: `pollinations_enabled`、可选 Key、`MULTI_KEY_PROVIDERS` 全凭证、付费 opt-in、日预算
+5. Health-aware demotion (`_demote_unhealthy`)
 
-Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at least `Pollinations.AI` is available.
+Callers: `GenerationController`（单图 + 批量变体）与 `QueuePanel._order_for_item`（队列自动档在执行时路由）。PromptWizard 通过 `MainContent.set_template_id()` 登记模板 ID，提示词文本与登记快照不一致时自动清除。`require_img2img=True` 时只保留 `IMG2IMG_PROVIDERS`，图生图兜底不会落到纯文生图接口。
+
+Fallback order is `DEFAULT_ORDER`, test-locked to `FREE_PROVIDERS`; paid/commercial providers are appended only when `paid_auto_opt_in` is on. All filtered → empty list (the caller handles the failure).
 
 ### UI Panel Communication
 
@@ -361,7 +364,8 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 |`config/model_catalog.py`|每族图像模型「可选值+默认值+可读名称」唯一来源（OpenAI/Gemini/MiniMax/Ark/BFL/xAI/DashScope），被 settings 默认值、provider 兜底与向导下拉共同引用；一致性由 `tests/test_model_catalog_consistency.py` 锁定|
 |`data/repository.py`|SQLite schema (`history` table: id, timestamp, prompt, translated, image_path, provider, nickname, favorited), tags via junction table (`entry_tags`), full CRUD API, stats, heatmap, JSON→SQLite migration, `_set_test_db()` for in-memory testing|
 |`services/image_service.py`|`generate_image()` — iterates providers in order, catches `ValueError`, falls back; `save_image_file()` — saves bytes to disk|
-|`services/smart_router.py`|兼容层，仅保留旧导入路径；生产路由实现见 `services/generation/router.py`（健康感知 + 场景路由）|
+|`services/generation/router.py`|`get_provider_order()` — 生产路由入口：场景/模板优先、可用性与预算过滤、付费 opt-in、健康降级、图生图能力过滤|
+|`services/smart_router.py`|兼容层，仅保留旧导入路径；生产路由实现见 `services/generation/router.py`|
 |`services/providers/__init__.py`|Auto-discovers all `try_*` functions via `pkgutil.iter_modules`, populates `FREE_PROVIDERS`, `PAID_PROVIDERS`, `COMMERCIAL_PROVIDERS`, `ALL_PROVIDERS`, `DEFAULT_ORDER`|
 |`services/generation/orchestrator.py`|Task-level generation orchestration — cancellation/deadline/health/retry/fallback|
 |`services/application/`|`GenerationController` / `MenuController` / `SettingsController` — business logic behind `App`'s forwarding methods|
@@ -403,7 +407,7 @@ Fallback order is `DEFAULT_ORDER` (all free providers). Always guarantees at lea
 ## Testing & QA
 
 - **Framework**: pytest（CI 矩阵 3.11/3.12 双版本 + coverage 上报）
-- **Test count**: 876 items across 64 test files（`pytest tests/` 全量约 6 分钟）
+- **Test count**: 892 items across 64 test files（`pytest tests/` 全量约 6 分钟）
 - **GUI**: 真实 Tk 会话级共享 root（`tk_session_root`），App 以 Toplevel 承载——规避 Windows 下反复创建/销毁解释器的 Tcl 崩溃
 
 ### Test Layout
