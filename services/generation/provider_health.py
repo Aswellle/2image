@@ -3,6 +3,9 @@ services/generation/provider_health.py — Health tracking & circuit breaker
 ────────────────────────────────────────────────────────────────────────
 Tracks per-provider success rate, latency, consecutive failures,
 and implements a simple circuit breaker (HEALTHY → DEGRADED → OPEN → HALF_OPEN).
+
+状态为进程内单例，重启后清零：熔断只用于保护当前会话，避免把一次
+临时故障长期带入下一次启动。
 """
 
 from __future__ import annotations
