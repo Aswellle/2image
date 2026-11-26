@@ -148,10 +148,11 @@ def test_wizard_dropdowns_source_catalog():
     assert "values=list(BFL_IMAGE_NAMES.values())" in wizard_src
     # Replicate 下拉消费 provider 的 MODEL_ORDER + REPLICATE_IMAGE_NAMES
     assert "REPLICATE_IMAGE_NAMES.get(m, m) for m in REPLICATE_MODEL_ORDER" in wizard_src
-    # xAI / MiniMax / Recraft 下拉同样消费目录
-    assert "values=[XAI_IMAGE_NAMES.get(m, m) for m in XAI_IMAGE_MODELS]" in wizard_src
+    # xAI / MiniMax / Recraft 下拉同样消费目录（xAI/Recraft 经
+    # _model_choices 组装，目录外自定义 ID 会保留在首位）
+    assert "XAI_IMAGE_MODELS, XAI_IMAGE_NAMES" in wizard_src
     assert "values=[MINIMAX_IMAGE_NAMES.get(m, m) for m in MINIMAX_IMAGE_MODELS]" in wizard_src
-    assert "values=[RECRAFT_IMAGE_NAMES.get(m, m) for m in RECRAFT_MODELS]" in wizard_src
+    assert "RECRAFT_MODELS, RECRAFT_IMAGE_NAMES" in wizard_src
 
 
 def test_retired_model_ids_absent_from_wizards():
@@ -237,3 +238,22 @@ def test_llm_chain_display_pinned():
     # DeepSeek 预设：向导键集与运行时预设完全一致
     wizard_keys = {key for key, _title, _desc in wz._DEEPSEEK_PRESETS_INFO}
     assert wizard_keys == set(pa._DEEPSEEK_PRESET_MODELS)
+
+
+def test_wizard_model_helpers_preserve_custom_ids():
+    """手改 config 接入的目录外模型 ID 不得在向导保存时被静默改回默认。"""
+    from ui.wizard_paid import _model_choices, _model_id_from_display
+
+    names = {"m1": "Model 1", "m2": "Model 2"}
+
+    labels, current = _model_choices(["m1", "m2"], names, "vendor/snapshot-3")
+    assert labels == ["vendor/snapshot-3", "Model 1", "Model 2"]
+    assert current == "vendor/snapshot-3"
+
+    labels, current = _model_choices(["m1", "m2"], names, "")
+    assert labels == ["Model 1", "Model 2"]
+    assert current == "Model 1"
+
+    assert _model_id_from_display("Model 1", {"Model 1": "m1"}, "m1") == "m1"
+    assert _model_id_from_display("vendor/snapshot-3", {"Model 1": "m1"}, "m1") == "vendor/snapshot-3"
+    assert _model_id_from_display("", {"Model 1": "m1"}, "m1") == "m1"

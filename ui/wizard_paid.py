@@ -44,6 +44,28 @@ from ui.tooltip import attach_tooltip
 from ui.icons import glyph, icon_font
 
 
+def _model_choices(models: list[str], names: dict[str, str], current: str) -> tuple[list[str], str]:
+    """构造模型下拉选项与当前显示值。
+
+    目录外的自定义 ID（用户手改 config 接入官方新快照）原样保留在
+    选项首位，避免打开向导再保存就被静默改回目录默认值。
+    """
+    labels = [names.get(m, m) for m in models]
+    current = (current or "").strip()
+    display = names.get(current, current) if current else (labels[0] if labels else "")
+    if display and display not in labels:
+        labels.insert(0, display)
+    return labels, display
+
+
+def _model_id_from_display(display: str, name_to_id: dict[str, str], default: str) -> str:
+    """显示名 → 模型 ID；目录外自定义 ID 原样保留，空值回落默认。"""
+    text = (display or "").strip()
+    if not text:
+        return default
+    return name_to_id.get(text, text)
+
+
 class PaidWizard(tk.Toplevel):
     """付费接口（OpenAI / Stability AI / Replicate / xAI / 豆包）配置窗口。"""
 
@@ -489,15 +511,16 @@ class PaidWizard(tk.Toplevel):
         opt6.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(opt6, text=_("wizard_paid_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
         self._xai_name_to_id = {v: k for k, v in XAI_IMAGE_NAMES.items()}
-        self.xai_model_var = tk.StringVar(
-            value=XAI_IMAGE_NAMES.get(self.cfg.get("xai_model", XAI_IMAGE_DEFAULT), XAI_IMAGE_DEFAULT)
+        xai_values, xai_current = _model_choices(
+            XAI_IMAGE_MODELS, XAI_IMAGE_NAMES, self.cfg.get("xai_model", XAI_IMAGE_DEFAULT)
         )
+        self.xai_model_var = tk.StringVar(value=xai_current)
         ttk.Combobox(
             opt6,
             textvariable=self.xai_model_var,
             width=26,
             state="readonly",
-            values=[XAI_IMAGE_NAMES.get(m, m) for m in XAI_IMAGE_MODELS],
+            values=xai_values,
         ).pack(side="left", padx=(6, 0))
         btns6 = tk.Frame(inner, bg=C["bg"])
         btns6.pack(fill="x", padx=PX, pady=(8, 0))
@@ -561,15 +584,16 @@ class PaidWizard(tk.Toplevel):
         opt9.pack(fill="x", padx=PX, pady=(8, 0))
         tk.Label(opt9, text=_("wizard_paid_model_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(side="left")
         self._recraft_name_to_id = {v: k for k, v in RECRAFT_IMAGE_NAMES.items()}
-        self.recraft_model_var = tk.StringVar(
-            value=RECRAFT_IMAGE_NAMES.get(self.cfg.get("recraft_model", RECRAFT_DEFAULT), RECRAFT_DEFAULT)
+        recraft_values, recraft_current = _model_choices(
+            RECRAFT_MODELS, RECRAFT_IMAGE_NAMES, self.cfg.get("recraft_model", RECRAFT_DEFAULT)
         )
+        self.recraft_model_var = tk.StringVar(value=recraft_current)
         ttk.Combobox(
             opt9,
             textvariable=self.recraft_model_var,
             width=22,
             state="readonly",
-            values=[RECRAFT_IMAGE_NAMES.get(m, m) for m in RECRAFT_MODELS],
+            values=recraft_values,
         ).pack(side="left", padx=(6, 18))
         tk.Label(opt9, text=_("wizard_paid_recraft_style_label"), font=F["body"], bg=C["bg"], fg=C["sub"]).pack(
             side="left"
@@ -805,11 +829,15 @@ class PaidWizard(tk.Toplevel):
         bfl_name = self.bfl_model_var.get()
         self.cfg["bfl_model"] = self._bfl_name_to_id.get(bfl_name, BFL_TXT2IMG_DEFAULT)
         self.cfg["xai_key"] = self.xai_var.get().strip()
-        self.cfg["xai_model"] = self._xai_name_to_id.get(self.xai_model_var.get(), XAI_IMAGE_DEFAULT)
+        self.cfg["xai_model"] = _model_id_from_display(
+            self.xai_model_var.get(), self._xai_name_to_id, XAI_IMAGE_DEFAULT
+        )
         self.cfg["ideogram_key"] = self.ideo_var.get().strip()
         self.cfg["fal_key"] = self.fal_var.get().strip()
         self.cfg["recraft_key"] = self.recraft_var.get().strip()
-        self.cfg["recraft_model"] = self._recraft_name_to_id.get(self.recraft_model_var.get(), RECRAFT_DEFAULT)
+        self.cfg["recraft_model"] = _model_id_from_display(
+            self.recraft_model_var.get(), self._recraft_name_to_id, RECRAFT_DEFAULT
+        )
         style_label = self.recraft_style_var.get()
         self.cfg["recraft_style"] = next(
             (code for code, label in self._recraft_style_labels if label == style_label), "realistic_image"
