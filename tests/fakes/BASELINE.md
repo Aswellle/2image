@@ -42,7 +42,6 @@ DEFAULT_CONFIG_KEYS = [
     "replicate_model",
     "gemini_model",
     "bfl_model",
-    "default_provider",
     "default_size",
     "show_wizard_on_start",
     "theme",

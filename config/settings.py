@@ -132,7 +132,6 @@ DEFAULT_CONFIG: dict = {
     "bfl_model": BFL_TXT2IMG_DEFAULT,  # 可选值见 config.model_catalog（图生图走 FLUX.2 Pro input_image）
     "deepseek_key": "",  # DeepSeek 官方 API Key（Pro / Flash 预设）
     # ── 通用设置 ───────────────────────────────────────────────
-    "default_provider": "自动（按优先级）",
     "default_size": "1024x1024",
     "show_wizard_on_start": True,
     "prompt_llm_variants": False,  # 提示词助手一次生成 3 个候选（耗时约 3 倍）

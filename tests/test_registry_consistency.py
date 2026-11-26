@@ -113,3 +113,9 @@ def test_wizard_configured_matches_actual_wizards():
         keys = MULTI_KEY_PROVIDERS.get(pid) or ((info["config_key"],) if info.get("config_key") else ())
         covered = all(k in written for k in keys) if keys else True
         assert (pid in registry.WIZARD_CONFIGURED) == covered, pid
+
+
+def test_default_order_covers_all_free_providers():
+    """自动路由兜底顺序必须与免费接口注册表同集合，新增免费接口不得漏网。"""
+    assert set(registry.DEFAULT_ORDER) == set(registry.FREE_PROVIDERS)
+    assert len(registry.DEFAULT_ORDER) == len(set(registry.DEFAULT_ORDER))
